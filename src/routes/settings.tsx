@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +92,11 @@ function normalizeSocial(kind: "instagram" | "facebook" | "tiktok" | "youtube" |
   }
 }
 
+function normalizeContactEmail(value?: string | null): string | null {
+  const normalized = (value || "").trim();
+  return normalized ? normalized : null;
+}
+
 function SettingsComponent() {
   const queryClient = useQueryClient();
   const { user, loading, role } = useAuth();
@@ -102,6 +107,7 @@ function SettingsComponent() {
   const [saving, setSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const initialContactEmailRef = useRef<string | null>(null);
 
 
   const [formData, setFormData] = useState<any>({
@@ -271,6 +277,8 @@ function SettingsComponent() {
           profile.logo_url ||
           shopData?.logo_url ||
           "";
+        const loadedContactEmail = (profile as any).contact_email || "";
+        initialContactEmailRef.current = normalizeContactEmail(loadedContactEmail);
         setFormData({
           business_name: profile.business_name || shopData?.name || "",
           responsible_name: (profile as any).responsible_name || "",
@@ -312,7 +320,7 @@ function SettingsComponent() {
           pix_key: profile.pix_key || "",
           pix_qr_code_url: profile.pix_qr_code_url || "",
           whatsapp_number: settingsData?.whatsapp_number || profile.whatsapp_number || "",
-          contact_email: (profile as any).contact_email || profile.email || "",
+          contact_email: loadedContactEmail,
           instance_id: settingsData?.instance_id || "",
           instance_token: settingsData?.instance_token || "",
           client_token: settingsData?.client_token || "",
@@ -486,36 +494,44 @@ function SettingsComponent() {
       return;
     }
 
-    // Desacoplamento de contact_email: salvar separadamente para não bloquear o salvamento principal
+    // Desacoplamento inteligente de contact_email: salvar separadamente SOMENTE se foi alterado
+    const originalContactEmail = normalizeContactEmail(initialContactEmailRef.current);
+    const currentContactEmail = normalizeContactEmail(formData.contact_email);
+    const contactEmailChanged = originalContactEmail !== currentContactEmail;
+
     let contactEmailWarning = false;
-    const normalizedContactEmail = formData.contact_email?.trim() || null;
-    const { error: contactEmailError } = await supabase
-      .from("profiles")
-      .update({
-        contact_email: normalizedContactEmail,
-      } as any)
-      .eq("id", targetId);
 
-    if (contactEmailError) {
-      const isSchemaError =
-        contactEmailError.code === "42703" ||
-        contactEmailError.code === "PGRST204" ||
-        (contactEmailError.message || "").toLowerCase().includes("contact_email") ||
-        (contactEmailError.message || "").toLowerCase().includes("schema cache");
+    if (contactEmailChanged) {
+      const { error: contactEmailError } = await supabase
+        .from("profiles")
+        .update({
+          contact_email: currentContactEmail,
+        } as any)
+        .eq("id", targetId);
 
-      if (isSchemaError) {
-        contactEmailWarning = true;
-        console.warn("[/settings] contact_email column schema drift detected, bypassed gracefully:", contactEmailError);
+      if (contactEmailError) {
+        const isSchemaError =
+          contactEmailError.code === "42703" ||
+          contactEmailError.code === "PGRST204" ||
+          (contactEmailError.message || "").toLowerCase().includes("contact_email") ||
+          (contactEmailError.message || "").toLowerCase().includes("schema cache");
+
+        if (isSchemaError) {
+          contactEmailWarning = true;
+          console.warn("[/settings] contact_email column schema drift detected, bypassed gracefully:", contactEmailError);
+        } else {
+          console.error("[/settings] Unexpected error saving contact_email:", contactEmailError);
+          toast.error("Erro ao salvar e-mail de contato: " + contactEmailError.message);
+        }
       } else {
-        console.error("[/settings] Unexpected error saving contact_email:", contactEmailError);
-        toast.error("Erro ao salvar e-mail de contato: " + contactEmailError.message);
+        initialContactEmailRef.current = currentContactEmail;
       }
     }
 
     setSaving(false);
 
     if (contactEmailWarning) {
-      toast.warning("Configurações gerais salvas. O e-mail de contato ainda não pôde ser sincronizado com o banco.");
+      toast.warning("Configurações salvas com sucesso. Apenas o e-mail de contato não pôde ser sincronizado no momento.");
     } else {
       toast.success("Configurações salvas com sucesso!");
     }
