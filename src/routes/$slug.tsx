@@ -761,6 +761,7 @@ function ShopPageComponent() {
           slug,
           whatsapp_number,
           whatsapp_enabled,
+          contact_email,
           primary_color,
           secondary_color,
           logo_url,
