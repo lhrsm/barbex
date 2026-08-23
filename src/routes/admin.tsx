@@ -1,14 +1,14 @@
-import { createFileRoute, Outlet, useNavigate, Link, useRouterState } from "@tanstack/react-router";
+﻿import { createFileRoute, Outlet, useNavigate, Link, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  LayoutDashboard, 
-  Building2, 
-  CreditCard, 
-  BarChart3, 
-  Activity, 
-  AlertCircle, 
+import {
+  LayoutDashboard,
+  Building2,
+  CreditCard,
+  BarChart3,
+  Activity,
+  AlertCircle,
   LifeBuoy,
   Lightbulb,
   ChevronLeft,
@@ -60,6 +60,7 @@ const adminNavItems = [
   { label: "Logs do Sistema", icon: History, to: "/admin/errors" },
   { label: "Notificações", icon: Bell, to: "/admin/notifications" },
   { label: "Status", icon: Activity, to: "/admin/status" },
+  { label: "Configurações", icon: Settings, to: "/admin/settings" },
   { label: "Suporte", icon: LifeBuoy, to: "/admin/support" },
   { label: "Sugestões", icon: Lightbulb, to: "/admin/suggestions" },
   { label: "LGPD", icon: ShieldCheck, to: "/admin/lgpd" },
@@ -67,7 +68,6 @@ const adminNavItems = [
   { label: "Vouchers", icon: Ticket, to: "/admin/vouchers" },
   { label: "Recomendações", icon: TrendingUp, to: "/admin/upgrade-recommendations" },
   { label: "Tutoriais", icon: GraduationCap, to: "/admin/tutorials" },
-  { label: "Configurações", icon: Settings, to: "/admin/settings" },
 ];
 
 function AdminLayout() {
@@ -108,7 +108,7 @@ function AdminLayout() {
       navigate({ to: "/dashboard" });
       return;
     }
-    
+
     console.log("Admin route guard: Access granted for super_admin");
   }, [user, loading, role, navigate]);
 
@@ -117,8 +117,8 @@ function AdminLayout() {
 
     const channel = supabase
       .channel('admin-support-notifications')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
+      .on('postgres_changes', {
+        event: 'INSERT',
         table: 'support_tickets',
         schema: 'public'
       }, (payload) => {
@@ -127,8 +127,8 @@ function AdminLayout() {
           icon: <LifeBuoy className="h-4 w-4 text-purple-500" />,
         });
       })
-      .on('postgres_changes', { 
-        event: 'INSERT', 
+      .on('postgres_changes', {
+        event: 'INSERT',
         table: 'support_messages',
         schema: 'public',
         filter: 'is_admin_reply=eq.false'
@@ -240,27 +240,9 @@ function AdminLayout() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Desktop */}
         <aside className="hidden md:flex flex-col w-64 border-r border-white/10 bg-black/20 shrink-0 backdrop-blur-xl">
-          <nav className="flex-1 px-4 py-6 flex flex-col gap-1">
-            <div className="flex-1 space-y-1">
-              {adminNavItems.slice(0, -1).map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group",
-                    pathname === item.to
-                      ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  <item.icon size={18} className={cn("transition-colors", pathname === item.to ? "text-purple-400" : "group-hover:text-pink-400")} />
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-            
-            <div className="pt-4 border-t border-white/5">
-              {adminNavItems.slice(-1).map((item) => (
+          <nav className="flex-1 px-4 py-6 flex flex-col gap-1 overflow-y-auto">
+            <div className="space-y-1">
+              {adminNavItems.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
@@ -277,7 +259,7 @@ function AdminLayout() {
               ))}
             </div>
 
-            <div className="mt-auto pt-4 border-t border-white/5 space-y-2">
+            <div className="mt-auto pt-4 border-t border-white/5 space-y-2 shrink-0">
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all duration-300 rounded-lg text-gray-400 hover:text-white hover:bg-purple-500/10 hover:shadow-[0_0_15px_rgba(168,85,247,0.1)] group"

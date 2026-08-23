@@ -122,8 +122,8 @@ function AdminSettings() {
     <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white italic uppercase truncate">{formData?.saas_name || "Configurações de SaaS"}</h2>
-          <p className="text-gray-400 font-medium text-sm truncate">{formData?.main_url || "Gerenciamento global de infraestrutura e segurança."}</p>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white italic uppercase truncate">Configurações da Plataforma</h2>
+          <p className="text-gray-400 font-medium text-sm truncate">Gerencie identidade pública, comunicação e informações institucionais do Barbex.</p>
         </div>
         <Button
           onClick={handleSave}
@@ -286,10 +286,10 @@ function AdminSettings() {
             </Card>
 
             {/* Subseção: Landing Institucional & Contato Público (Hotfix 18) */}
-            <Card className="glass border-white/5 rounded-[2.5rem] p-8 lg:col-span-2 border-gold/20">
+            <Card className="glass border-white/5 rounded-[2.5rem] p-8 lg:col-span-2 border-purple-500/20">
               <CardHeader className="p-0 mb-8">
                 <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
-                  <Globe className="text-gold w-5 h-5" />
+                  <Globe className="text-purple-400 w-5 h-5" />
                   Landing Institucional & Contato Público
                 </CardTitle>
                 <CardDescription className="text-gray-400 text-xs">
@@ -300,7 +300,7 @@ function AdminSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Informações Institucionais & Canais */}
                 <div className="space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-gold flex items-center gap-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-purple-400 flex items-center gap-2">
                     <Info className="w-3.5 h-3.5" />
                     Dados Institucionais Públicos
                   </h4>
@@ -314,7 +314,7 @@ function AdminSettings() {
                       placeholder="Ex: contato@barbex.shop"
                       value={formData.public_email || ""}
                       onChange={(e) => setFormData({...formData, public_email: e.target.value})}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                     <p className="text-[11px] text-gray-500 px-1">
                       Exibido publicamente no rodapé e na seção de contato da landing.
@@ -329,7 +329,7 @@ function AdminSettings() {
                       placeholder="Ex: (11) 3000-0000"
                       value={formData.phone || ""}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -341,7 +341,7 @@ function AdminSettings() {
                       placeholder="Ex: 5511999999999 ou (11) 99999-9999"
                       value={formData.whatsapp_number || ""}
                       onChange={(e) => setFormData({...formData, whatsapp_number: e.target.value})}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -353,12 +353,12 @@ function AdminSettings() {
                       placeholder="Ex: Av. Paulista, 1000 - São Paulo/SP"
                       value={formData.address || ""}
                       onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
                   <div className="pt-4 border-t border-white/5 space-y-2">
-                    <Label className="text-gold text-[10px] uppercase font-black tracking-widest px-1 flex items-center gap-1.5">
+                    <Label className="text-purple-400 text-[10px] uppercase font-black tracking-widest px-1 flex items-center gap-1.5">
                       <Mail className="w-3.5 h-3.5" />
                       E-mail para receber mensagens da landing
                     </Label>
@@ -367,7 +367,7 @@ function AdminSettings() {
                       placeholder="Ex: leads@barbex.shop ou atendimento@barbex.shop"
                       value={formData.contact_email || ""}
                       onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                      className="h-12 bg-white/5 border-gold/30 rounded-xl focus:ring-gold/20"
+                      className="h-12 bg-white/5 border-purple-500/30 rounded-xl focus:ring-purple-500/20"
                     />
                     <p className="text-[11px] text-gray-400 px-1 leading-relaxed">
                       Este endereço receberá as mensagens enviadas pelo formulário de contato da landing institucional do Barbex. Este e-mail <strong>não será exibido publicamente</strong>; será utilizado somente para receber mensagens do formulário. Enquanto estiver vazio, o formulário de envio por e-mail permanecerá oculto na landing.
@@ -377,7 +377,7 @@ function AdminSettings() {
 
                 {/* Redes Sociais da Plataforma */}
                 <div className="space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-gold flex items-center gap-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-purple-400 flex items-center gap-2">
                     <Share2 className="w-3.5 h-3.5" />
                     Redes Sociais Oficiais
                   </h4>
@@ -393,7 +393,7 @@ function AdminSettings() {
                         ...formData,
                         social_links: { ...(formData.social_links || {}), instagram: e.target.value }
                       })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -408,7 +408,7 @@ function AdminSettings() {
                         ...formData,
                         social_links: { ...(formData.social_links || {}), facebook: e.target.value }
                       })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -423,7 +423,7 @@ function AdminSettings() {
                         ...formData,
                         social_links: { ...(formData.social_links || {}), tiktok: e.target.value }
                       })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -438,7 +438,7 @@ function AdminSettings() {
                         ...formData,
                         social_links: { ...(formData.social_links || {}), linkedin: e.target.value }
                       })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -453,7 +453,7 @@ function AdminSettings() {
                         ...formData,
                         social_links: { ...(formData.social_links || {}), youtube: e.target.value }
                       })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
 
@@ -468,7 +468,7 @@ function AdminSettings() {
                         ...formData,
                         social_links: { ...(formData.social_links || {}), twitter: e.target.value }
                       })}
-                      className="h-12 bg-white/5 border-white/10 rounded-xl"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
                 </div>
