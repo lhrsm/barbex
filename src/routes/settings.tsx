@@ -18,15 +18,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImageIcon } from "lucide-react";
-import { 
-  MessageSquare, 
-  CreditCard, 
-  Palette, 
-  Globe, 
-  Save, 
-  Plus, 
-  Trash2, 
-  QrCode, 
+import {
+  MessageSquare,
+  CreditCard,
+  Palette,
+  Globe,
+  Save,
+  Plus,
+  Trash2,
+  QrCode,
   Lock,
   CheckCircle2,
   RefreshCw,
@@ -378,61 +378,63 @@ function SettingsComponent() {
       updatedData.payment_gateway_provider = "none";
       updatedData.payment_gateway_key = "";
     }
-
     const { barbershop_logo_url: _, ...profileUpdateData } = updatedData;
+    const mainProfilePayload = {
+      business_name: profileUpdateData.business_name,
+      responsible_name: profileUpdateData.responsible_name,
+      slug: profileUpdateData.slug,
+      whatsapp_enabled: profileUpdateData.whatsapp_enabled,
+      scheduling_mode: profileUpdateData.scheduling_mode,
+      slot_buffer_minutes: Number(profileUpdateData.slot_buffer_minutes || 0),
+
+      payment_gateway_provider: profileUpdateData.payment_gateway_provider === "none" ? null : profileUpdateData.payment_gateway_provider,
+      payment_gateway_key: profileUpdateData.payment_gateway_key,
+      ...(profileUpdateData.primary_color ? { primary_color: profileUpdateData.primary_color } : {}),
+      ...(profileUpdateData.secondary_color ? { secondary_color: profileUpdateData.secondary_color } : {}),
+      logo_url: profileUpdateData.logo_url,
+      avatar_url: profileUpdateData.avatar_url,
+      barbershop_logo_url: updatedData.barbershop_logo_url,
+
+      loyalty_mode: profileUpdateData.loyalty_enabled
+        ? 'loyalty'
+        : (profileUpdateData.cashback_enabled ? 'cashback' : 'none'),
+      cashback_enabled: !!profileUpdateData.cashback_enabled,
+      cashback_percentage: profileUpdateData.cashback_percentage,
+      cashback_type: profileUpdateData.cashback_type,
+      cashback_fixed_value: profileUpdateData.cashback_fixed_value,
+      cashback_minimum_amount: profileUpdateData.cashback_minimum_amount,
+      cashback_expiration_days: parseInt(profileUpdateData.cashback_expiration_days) || null,
+      free_service_threshold: profileUpdateData.loyalty_appointments_required || profileUpdateData.free_service_threshold,
+
+      address: profileUpdateData.address,
+      google_maps_url: profileUpdateData.google_maps_url,
+      font_family: profileUpdateData.font_family,
+      font_size: profileUpdateData.font_size,
+      font_color: profileUpdateData.font_color,
+      pix_key: profileUpdateData.pix_key,
+      pix_qr_code_url: profileUpdateData.pix_qr_code_url,
+      whatsapp_number: profileUpdateData.whatsapp_number,
+      opening_date: profileUpdateData.opening_date || null,
+      cancellation_window_hours: parseInt(profileUpdateData.cancellation_window_hours) || 2,
+      barber_can_cancel: !!profileUpdateData.barber_can_cancel,
+      barber_can_reschedule: !!profileUpdateData.barber_can_reschedule,
+      social_links: {
+        instagram: normalizeSocial("instagram", profileUpdateData.social_instagram),
+        facebook: normalizeSocial("facebook", profileUpdateData.social_facebook),
+        tiktok: normalizeSocial("tiktok", profileUpdateData.social_tiktok),
+        youtube: normalizeSocial("youtube", profileUpdateData.social_youtube),
+        whatsapp: normalizeSocial("whatsapp", profileUpdateData.social_whatsapp),
+      },
+      gallery_images: Array.isArray(profileUpdateData.gallery_images) ? profileUpdateData.gallery_images : [],
+      updated_at: new Date().toISOString(),
+    };
+
+    const targetId = effectiveTenantId || user.id;
+
     const { error: profileError } = await supabase
       .from("profiles")
-      .update({
-        business_name: profileUpdateData.business_name,
-        responsible_name: profileUpdateData.responsible_name,
-        slug: profileUpdateData.slug,
-        whatsapp_enabled: profileUpdateData.whatsapp_enabled,
-        scheduling_mode: profileUpdateData.scheduling_mode,
-        slot_buffer_minutes: Number(profileUpdateData.slot_buffer_minutes || 0),
-
-        payment_gateway_provider: profileUpdateData.payment_gateway_provider === "none" ? null : profileUpdateData.payment_gateway_provider,
-        payment_gateway_key: profileUpdateData.payment_gateway_key,
-        ...(profileUpdateData.primary_color ? { primary_color: profileUpdateData.primary_color } : {}),
-        ...(profileUpdateData.secondary_color ? { secondary_color: profileUpdateData.secondary_color } : {}),
-        logo_url: profileUpdateData.logo_url,
-        avatar_url: profileUpdateData.avatar_url,
-        barbershop_logo_url: updatedData.barbershop_logo_url,
-
-        loyalty_mode: profileUpdateData.loyalty_enabled
-          ? 'loyalty'
-          : (profileUpdateData.cashback_enabled ? 'cashback' : 'none'),
-        cashback_enabled: !!profileUpdateData.cashback_enabled,
-        cashback_percentage: profileUpdateData.cashback_percentage,
-        cashback_type: profileUpdateData.cashback_type,
-        cashback_fixed_value: profileUpdateData.cashback_fixed_value,
-        cashback_minimum_amount: profileUpdateData.cashback_minimum_amount,
-        cashback_expiration_days: parseInt(profileUpdateData.cashback_expiration_days) || null,
-        free_service_threshold: profileUpdateData.loyalty_appointments_required || profileUpdateData.free_service_threshold,
-
-        address: profileUpdateData.address,
-        google_maps_url: profileUpdateData.google_maps_url,
-        font_family: profileUpdateData.font_family,
-        font_size: profileUpdateData.font_size,
-        font_color: profileUpdateData.font_color,
-        pix_key: profileUpdateData.pix_key,
-        pix_qr_code_url: profileUpdateData.pix_qr_code_url,
-        whatsapp_number: profileUpdateData.whatsapp_number,
-        contact_email: profileUpdateData.contact_email?.trim() || null,
-        opening_date: profileUpdateData.opening_date || null,
-        cancellation_window_hours: parseInt(profileUpdateData.cancellation_window_hours) || 2,
-        barber_can_cancel: !!profileUpdateData.barber_can_cancel,
-        barber_can_reschedule: !!profileUpdateData.barber_can_reschedule,
-        social_links: {
-          instagram: normalizeSocial("instagram", profileUpdateData.social_instagram),
-          facebook: normalizeSocial("facebook", profileUpdateData.social_facebook),
-          tiktok: normalizeSocial("tiktok", profileUpdateData.social_tiktok),
-          youtube: normalizeSocial("youtube", profileUpdateData.social_youtube),
-          whatsapp: normalizeSocial("whatsapp", profileUpdateData.social_whatsapp),
-        },
-        gallery_images: Array.isArray(profileUpdateData.gallery_images) ? profileUpdateData.gallery_images : [],
-        updated_at: new Date().toISOString(),
-      } as any)
-      .eq("id", user.id);
+      .update(mainProfilePayload as any)
+      .eq("id", targetId);
 
     // Update Auth metadata to keep identity consistent across profile and metadata
     await supabase.auth.updateUser({
@@ -447,7 +449,7 @@ function SettingsComponent() {
     const { error: settingsError } = await supabase
       .from("barbershop_settings")
       .upsert({
-        barber_id: user.id,
+        barber_id: targetId,
         instance_id: updatedData.instance_id,
         instance_token: updatedData.instance_token,
         client_token: updatedData.client_token,
@@ -460,7 +462,7 @@ function SettingsComponent() {
     const { error: loyaltyError } = await supabase
       .from("loyalty_settings" as any)
       .upsert({
-        tenant_id: user.id,
+        tenant_id: targetId,
         enabled: loyaltyEnabledFinal,
         appointments_required: Math.max(1, parseInt(String(updatedData.loyalty_appointments_required)) || 10),
         benefit_type: updatedData.loyalty_benefit_type || 'free_service',
@@ -472,10 +474,8 @@ function SettingsComponent() {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'tenant_id' });
 
-
-    setSaving(false);
-
     if (profileError || settingsError || loyaltyError) {
+      setSaving(false);
       const error = profileError || settingsError || loyaltyError;
 
       if (error?.code === "23505") {
@@ -486,7 +486,40 @@ function SettingsComponent() {
       return;
     }
 
-    toast.success("Configurações salvas com sucesso!");
+    // Desacoplamento de contact_email: salvar separadamente para não bloquear o salvamento principal
+    let contactEmailWarning = false;
+    const normalizedContactEmail = formData.contact_email?.trim() || null;
+    const { error: contactEmailError } = await supabase
+      .from("profiles")
+      .update({
+        contact_email: normalizedContactEmail,
+      } as any)
+      .eq("id", targetId);
+
+    if (contactEmailError) {
+      const isSchemaError =
+        contactEmailError.code === "42703" ||
+        contactEmailError.code === "PGRST204" ||
+        (contactEmailError.message || "").toLowerCase().includes("contact_email") ||
+        (contactEmailError.message || "").toLowerCase().includes("schema cache");
+
+      if (isSchemaError) {
+        contactEmailWarning = true;
+        console.warn("[/settings] contact_email column schema drift detected, bypassed gracefully:", contactEmailError);
+      } else {
+        console.error("[/settings] Unexpected error saving contact_email:", contactEmailError);
+        toast.error("Erro ao salvar e-mail de contato: " + contactEmailError.message);
+      }
+    }
+
+    setSaving(false);
+
+    if (contactEmailWarning) {
+      toast.warning("Configurações gerais salvas. O e-mail de contato ainda não pôde ser sincronizado com o banco.");
+    } else {
+      toast.success("Configurações salvas com sucesso!");
+    }
+
     // Invalidate tenant branding & profile queries specifically and globally
     if (effectiveTenantId) {
       queryClient.invalidateQueries({ queryKey: ["tenant-branding", effectiveTenantId] });
@@ -616,30 +649,30 @@ function SettingsComponent() {
                       </div>
                       <div className="w-full max-w-sm space-y-2 text-center">
                         <Label htmlFor="profile_avatar" className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Foto de Perfil</Label>
-                        <Input 
-                          id="profile_avatar" 
-                          type="file" 
+                        <Input
+                          id="profile_avatar"
+                          type="file"
                           accept="image/*"
                           className="h-11 rounded-xl cursor-pointer bg-[#05070d] border-[#1f2937] text-white file:bg-[#ea580c] file:text-black file:font-bold file:border-none file:px-4 file:h-full file:mr-4 hover:border-[#ea580c]/50 transition-all"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file || !user) return;
-                            
+
                             try {
                               setSaving(true);
                               const fileExt = file.name.split('.').pop();
                               const fileName = `${user.id}-avatar-${Date.now()}.${fileExt}`;
-                              
+
                               const { error: uploadError } = await supabase.storage
                                 .from('barber-avatars')
                                 .upload(fileName, file);
-                                
+
                               if (uploadError) throw uploadError;
-                              
+
                               const { data: { publicUrl } } = supabase.storage
                                 .from('barber-avatars')
                                 .getPublicUrl(fileName);
-                              
+
                               setFormData({ ...formData, avatar_url: publicUrl });
                               toast.success("Foto de perfil atualizada!");
                             } catch (error: any) {
@@ -661,9 +694,9 @@ function SettingsComponent() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="profile_name" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Nome para Exibição</Label>
-                        <Input 
-                          id="profile_name" 
-                          value={formData.responsible_name} 
+                        <Input
+                          id="profile_name"
+                          value={formData.responsible_name}
                           onChange={(e) => setFormData({ ...formData, responsible_name: e.target.value })}
                           placeholder="Seu nome (administrador)"
                           className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -685,8 +718,8 @@ function SettingsComponent() {
                     </CardTitle>
                     <CardDescription className="text-slate-400 font-medium">Logado como: <span className="text-[#ea580c]">{user?.email}</span></CardDescription>
                   </div>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     type="button"
                     onClick={handleForceSync}
                     disabled={isSyncing}
@@ -713,8 +746,8 @@ function SettingsComponent() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                           <p className="text-white text-[10px] font-bold uppercase tracking-widest">Alterar</p>
                         </div>
-                        <input 
-                          type="file" 
+                        <input
+                          type="file"
                           accept="image/*"
                           className="absolute inset-0 opacity-0 cursor-pointer"
                           onChange={async (e) => {
@@ -743,9 +776,9 @@ function SettingsComponent() {
                     <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-1 gap-6 pt-4">
                       <div className="grid gap-2">
                         <Label htmlFor="business_name" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Nome da Barbearia</Label>
-                        <Input 
-                          id="business_name" 
-                          value={formData.business_name} 
+                        <Input
+                          id="business_name"
+                          value={formData.business_name}
                           onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                           placeholder="Ex: Barbearia Premium"
                           required
@@ -755,18 +788,18 @@ function SettingsComponent() {
                       <div className="grid gap-2">
                         <Label htmlFor="slug" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">URL da sua Página</Label>
                         <div className="flex items-center gap-2">
-                          <Input 
-                            id="slug" 
-                            value={formData.slug} 
+                          <Input
+                            id="slug"
+                            value={formData.slug}
                             onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                             placeholder="minha-barbearia"
                             required
                             className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12 flex-1"
                           />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
                             onClick={() => {
                               const url = `${window.location.origin}/${formData.slug}`;
                               navigator.clipboard.writeText(url);
@@ -777,10 +810,10 @@ function SettingsComponent() {
                           >
                             <Copy className="h-5 w-5" />
                           </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
                             asChild
                             className="h-12 w-12 border-[#1f2937] bg-[#05070d] hover:bg-[#1f2937] text-[#ea580c] transition-all rounded-xl"
                             title="Ver página"
@@ -794,10 +827,10 @@ function SettingsComponent() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="opening_date" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Data de inauguração da barbearia</Label>
-                        <Input 
-                          id="opening_date" 
+                        <Input
+                          id="opening_date"
                           type="date"
-                          value={formData.opening_date} 
+                          value={formData.opening_date}
                           onChange={(e) => setFormData({ ...formData, opening_date: e.target.value })}
                           className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
                         />
@@ -894,15 +927,15 @@ function SettingsComponent() {
                     <div className="grid gap-3">
                       <Label htmlFor="primary_color" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Cor Primária (Destaques)</Label>
                       <div className="flex gap-2">
-                        <Input 
-                          id="primary_color" 
-                          type="color" 
+                        <Input
+                          id="primary_color"
+                          type="color"
                           className="w-14 h-12 p-1 bg-[#05070d] border-[#1f2937] rounded-xl cursor-pointer"
-                          value={formData.primary_color} 
+                          value={formData.primary_color}
                           onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
                         />
-                        <Input 
-                          value={formData.primary_color} 
+                        <Input
+                          value={formData.primary_color}
                           onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
                           placeholder="#EA580C"
                           className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -912,15 +945,15 @@ function SettingsComponent() {
                     <div className="grid gap-3">
                       <Label htmlFor="secondary_color" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Cor de Fundo</Label>
                       <div className="flex gap-2">
-                        <Input 
-                          id="secondary_color" 
-                          type="color" 
+                        <Input
+                          id="secondary_color"
+                          type="color"
                           className="w-14 h-12 p-1 bg-[#05070d] border-[#1f2937] rounded-xl cursor-pointer"
-                          value={formData.secondary_color} 
+                          value={formData.secondary_color}
                           onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
                         />
-                        <Input 
-                          value={formData.secondary_color} 
+                        <Input
+                          value={formData.secondary_color}
                           onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
                           placeholder="#05070D"
                           className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -934,8 +967,8 @@ function SettingsComponent() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="grid gap-2">
                         <Label htmlFor="font_family" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Família de Fonte</Label>
-                        <Select 
-                          value={formData.font_family} 
+                        <Select
+                          value={formData.font_family}
                           onValueChange={(value) => setFormData({ ...formData, font_family: value })}
                         >
                           <SelectTrigger id="font_family" className="bg-[#05070d] border-[#1f2937] text-white h-12 rounded-xl focus:ring-[#ea580c]">
@@ -952,8 +985,8 @@ function SettingsComponent() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="font_size" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Tamanho Base</Label>
-                        <Select 
-                          value={formData.font_size} 
+                        <Select
+                          value={formData.font_size}
                           onValueChange={(value) => setFormData({ ...formData, font_size: value })}
                         >
                           <SelectTrigger id="font_size" className="bg-[#05070d] border-[#1f2937] text-white h-12 rounded-xl focus:ring-[#ea580c]">
@@ -970,15 +1003,15 @@ function SettingsComponent() {
                       <div className="grid gap-2">
                         <Label htmlFor="font_color" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Cor do Texto</Label>
                         <div className="flex gap-2">
-                          <Input 
-                            id="font_color" 
-                            type="color" 
+                          <Input
+                            id="font_color"
+                            type="color"
                             className="w-14 h-12 p-1 bg-[#05070d] border-[#1f2937] rounded-xl cursor-pointer"
-                            value={formData.font_color} 
+                            value={formData.font_color}
                             onChange={(e) => setFormData({ ...formData, font_color: e.target.value })}
                           />
-                          <Input 
-                            value={formData.font_color} 
+                          <Input
+                            value={formData.font_color}
                             onChange={(e) => setFormData({ ...formData, font_color: e.target.value })}
                             placeholder="#FFFFFF"
                             className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -1000,30 +1033,30 @@ function SettingsComponent() {
                       </div>
                       <div className="flex-1 space-y-3 w-full">
                         <Label htmlFor="logo_file" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Anexar Arquivo de Logo</Label>
-                        <Input 
-                          id="logo_file" 
-                          type="file" 
+                        <Input
+                          id="logo_file"
+                          type="file"
                           accept="image/*"
                           className="h-11 rounded-xl cursor-pointer bg-[#05070d] border-[#1f2937] text-white file:bg-[#ea580c] file:text-black file:font-bold file:border-none file:px-4 file:h-full file:mr-4"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file || !user) return;
-                            
+
                             try {
                               setSaving(true);
                               const fileExt = file.name.split('.').pop();
                               const fileName = `${user.id}-logo-${Math.random()}.${fileExt}`;
-                              
+
                               const { error: uploadError } = await supabase.storage
-                                .from('barber-avatars') 
+                                .from('barber-avatars')
                                 .upload(fileName, file);
-                                
+
                               if (uploadError) throw uploadError;
-                              
+
                               const { data: { publicUrl } } = supabase.storage
                                 .from('barber-avatars')
                                 .getPublicUrl(fileName);
-                                
+
                               setFormData({ ...formData, logo_url: publicUrl });
                               toast.success("Logo carregado com sucesso!");
                             } catch (error: any) {
@@ -1038,9 +1071,9 @@ function SettingsComponent() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="logo_url" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Ou Link Direto da Imagem (URL)</Label>
-                      <Input 
-                        id="logo_url" 
-                        value={formData.logo_url} 
+                      <Input
+                        id="logo_url"
+                        value={formData.logo_url}
                         onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
                         placeholder="https://exemplo.com/logo.png"
                         className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -1143,13 +1176,13 @@ function SettingsComponent() {
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   <div className="grid grid-cols-1 gap-4">
-                    <div 
+                    <div
                       className={cn(
                         "flex items-start gap-4 p-5 border rounded-2xl transition-all cursor-pointer group",
-                        formData.scheduling_mode === 'manual' 
-                          ? "bg-[#ea580c]/5 border-[#ea580c] shadow-[0_0_15px_rgba(234,88,12,0.1)]" 
+                        formData.scheduling_mode === 'manual'
+                          ? "bg-[#ea580c]/5 border-[#ea580c] shadow-[0_0_15px_rgba(234,88,12,0.1)]"
                           : "bg-[#05070d] border-[#1f2937] hover:border-[#ea580c]/30"
-                      )} 
+                      )}
                       onClick={() => setFormData({ ...formData, scheduling_mode: "manual" })}
                     >
                       <div className="mt-1">
@@ -1165,13 +1198,13 @@ function SettingsComponent() {
                       </div>
                     </div>
 
-                    <div 
+                    <div
                       className={cn(
                         "flex items-start gap-4 p-5 border rounded-2xl transition-all cursor-pointer group",
-                        formData.scheduling_mode === 'automatic' 
-                          ? "bg-[#ea580c]/5 border-[#ea580c] shadow-[0_0_15px_rgba(234,88,12,0.1)]" 
+                        formData.scheduling_mode === 'automatic'
+                          ? "bg-[#ea580c]/5 border-[#ea580c] shadow-[0_0_15px_rgba(234,88,12,0.1)]"
                           : "bg-[#05070d] border-[#1f2937] hover:border-[#ea580c]/30"
-                      )} 
+                      )}
                       onClick={() => setFormData({ ...formData, scheduling_mode: "automatic" })}
                     >
                       <div className="mt-1">
@@ -1236,11 +1269,11 @@ function SettingsComponent() {
                 <CardContent className="p-6 space-y-6">
                   <div className="grid gap-2">
                     <Label htmlFor="cancellation_window" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Antecedência Mínima para Cancelamento (Horas)</Label>
-                    <Input 
-                      id="cancellation_window" 
+                    <Input
+                      id="cancellation_window"
                       type="number"
                       min="0"
-                      value={formData.cancellation_window_hours} 
+                      value={formData.cancellation_window_hours}
                       onChange={(e) => setFormData({ ...formData, cancellation_window_hours: e.target.value })}
                       placeholder="Ex: 2"
                       className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -1300,9 +1333,9 @@ function SettingsComponent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="grid gap-2">
                       <Label htmlFor="whatsapp_number" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">WhatsApp da Barbearia (Formatado)</Label>
-                      <Input 
-                        id="whatsapp_number" 
-                        value={formData.whatsapp_number} 
+                      <Input
+                        id="whatsapp_number"
+                        value={formData.whatsapp_number}
                         onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
                         placeholder="Ex: 5571999999999"
                         className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -1311,9 +1344,9 @@ function SettingsComponent() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="instance_id" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">ID da Instância</Label>
-                      <Input 
-                        id="instance_id" 
-                        value={formData.instance_id} 
+                      <Input
+                        id="instance_id"
+                        value={formData.instance_id}
                         onChange={(e) => setFormData({ ...formData, instance_id: e.target.value })}
                         placeholder="ID da sua instância Z-API"
                         className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12"
@@ -1322,10 +1355,10 @@ function SettingsComponent() {
                     <div className="grid gap-2">
                       <Label htmlFor="instance_token" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Token da Instância</Label>
                       <div className="relative">
-                        <Input 
-                          id="instance_token" 
+                        <Input
+                          id="instance_token"
                           type="password"
-                          value={formData.instance_token} 
+                          value={formData.instance_token}
                           onChange={(e) => setFormData({ ...formData, instance_token: e.target.value })}
                           placeholder="Token secreto"
                           className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12 pr-12"
@@ -1336,10 +1369,10 @@ function SettingsComponent() {
                     <div className="grid gap-2">
                       <Label htmlFor="client_token" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Client Token</Label>
                       <div className="relative">
-                        <Input 
-                          id="client_token" 
+                        <Input
+                          id="client_token"
                           type="password"
-                          value={formData.client_token} 
+                          value={formData.client_token}
                           onChange={(e) => setFormData({ ...formData, client_token: e.target.value })}
                           placeholder="Client token"
                           className="bg-[#05070d] border-[#1f2937] text-white focus:border-[#ea580c] transition-all rounded-xl h-12 pr-12"
@@ -1348,19 +1381,19 @@ function SettingsComponent() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="pt-4 border-t border-[#1f2937]/30 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       size="sm"
                       className="group relative overflow-hidden bg-gradient-to-r from-gold via-[#F5D877] to-gold text-black rounded-lg font-black uppercase text-[11px] tracking-wide h-8 px-3 shadow-[0_2px_10px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_14px_rgba(212,175,55,0.4)] transition-all"
                     >
                       <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                       <span className="relative">Testar Conexão</span>
                     </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       className="border-gold/40 text-gold bg-gold/5 hover:bg-gold/15 hover:text-[#F5D877] hover:border-gold/70 rounded-lg font-bold uppercase text-[11px] tracking-wide h-8 px-3 transition-all"
                     >
@@ -1676,9 +1709,9 @@ function SettingsComponent() {
                 <CardContent className="p-6 space-y-8">
                   <div className="grid gap-3 p-5 bg-[#05070d] border border-[#1f2937] rounded-2xl">
                     <Label htmlFor="pix_key" className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Chave PIX (CPF, E-mail, Celular ou Aleatória)</Label>
-                    <Input 
-                      id="pix_key" 
-                      value={formData.pix_key} 
+                    <Input
+                      id="pix_key"
+                      value={formData.pix_key}
                       onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
                       placeholder="Sua chave PIX aqui"
                       className="bg-[#0b0f17] border-[#1f2937] text-white focus:border-[#ea580c] h-12 rounded-xl text-lg font-bold"
@@ -1698,30 +1731,30 @@ function SettingsComponent() {
                       </div>
                       <div className="w-full max-w-sm space-y-3 px-6">
                         <Label htmlFor="pix_qr_file" className="text-center block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Upload do QR Code (Imagem)</Label>
-                        <Input 
-                          id="pix_qr_file" 
-                          type="file" 
+                        <Input
+                          id="pix_qr_file"
+                          type="file"
                           accept="image/*"
                           className="h-11 rounded-xl cursor-pointer bg-[#05070d] border-[#1f2937] text-white file:bg-[#ea580c] file:text-black file:font-bold file:border-none file:px-4 file:h-full file:mr-4"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file || !user) return;
-                            
+
                             try {
                               setSaving(true);
                               const fileExt = file.name.split('.').pop();
                               const fileName = `${user.id}-pix-qr-${Math.random()}.${fileExt}`;
-                              
+
                               const { error: uploadError } = await supabase.storage
-                                .from('barber-avatars') 
+                                .from('barber-avatars')
                                 .upload(fileName, file);
-                                
+
                               if (uploadError) throw uploadError;
-                              
+
                               const { data: { publicUrl } } = supabase.storage
                                 .from('barber-avatars')
                                 .getPublicUrl(fileName);
-                                
+
                               setFormData({ ...formData, pix_qr_code_url: publicUrl });
                               toast.success("QR Code carregado com sucesso!");
                             } catch (error: any) {
@@ -1740,9 +1773,9 @@ function SettingsComponent() {
             </TabsContent>
 
             <div className="flex justify-center pt-10 pb-20">
-              <Button 
-                type="submit" 
-                className="gap-2 bg-[#ea580c] text-white hover:bg-[#ea580c]/90 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 h-12 px-8 w-full max-w-[320px] rounded-xl font-black uppercase text-xs tracking-widest shadow-lg group" 
+              <Button
+                type="submit"
+                className="gap-2 bg-[#ea580c] text-white hover:bg-[#ea580c]/90 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 h-12 px-8 w-full max-w-[320px] rounded-xl font-black uppercase text-xs tracking-widest shadow-lg group"
                 disabled={saving || !dataLoaded}
               >
                 {saving ? (
