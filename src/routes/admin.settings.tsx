@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -80,6 +80,7 @@ function AdminSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-system-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-public-settings"] });
       toast.success("Configurações atualizadas com sucesso!");
     },
     onError: (error) => {

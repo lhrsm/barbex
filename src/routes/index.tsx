@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Scissors,
@@ -64,6 +64,14 @@ import {
 } from "@/components/ui/social-icons";
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    try {
+      const settings = await getPlatformPublicSettings();
+      return { settings };
+    } catch {
+      return { settings: null };
+    }
+  },
   component: LandingPage,
   head: () => ({
     title: "Barbex — A plataforma completa para barbearias de alta performance",
@@ -118,9 +126,12 @@ function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showRegisterWizard, setShowRegisterWizard] = useState(false);
 
+  const loaderData = Route.useLoaderData();
+
   const { data: settings } = useQuery({
     queryKey: ["platform-public-settings"],
     queryFn: () => getPlatformPublicSettings(),
+    initialData: loaderData?.settings ?? undefined,
     staleTime: 1000 * 60 * 5,
   });
 
