@@ -48,49 +48,16 @@ function checkRateLimit(key: string, limit = 5, windowMs = 10 * 60 * 1000): bool
 export const getPlatformPublicSettings = createServerFn({ method: "GET" })
   .handler(async (): Promise<PlatformPublicSettings> => {
     try {
-      let data: any = null;
-      let error: any = null;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      // 1. Try supabaseAdmin first (server-side with service role to bypass RLS)
-      try {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const res = await (supabaseAdmin as any)
-          .from("system_settings")
-          .select("saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links")
-          .limit(1)
-          .maybeSingle();
-        if (res?.data) {
-          data = res.data;
-        }
-        if (res?.error) {
-          error = res.error;
-        }
-      } catch (adminErr) {
-        console.warn("[PlatformSettings] supabaseAdmin unavailable, attempting standard client:", adminErr);
-      }
+      const { data, error } = await (supabaseAdmin as any)
+        .from("system_settings")
+        .select("saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links")
+        .limit(1)
+        .maybeSingle();
 
-      // 2. Fallback to standard client if no data from admin client
-      if (!data) {
-        try {
-          const { supabase } = await import("@/integrations/supabase/client");
-          const res = await (supabase as any)
-            .from("system_settings")
-            .select("saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links")
-            .limit(1)
-            .maybeSingle();
-          if (res?.data) {
-            data = res.data;
-          }
-          if (res?.error && !error) {
-            error = res.error;
-          }
-        } catch (clientErr) {
-          console.warn("[PlatformSettings] standard client query error:", clientErr);
-        }
-      }
-
-      if (error && !data) {
-        console.error("[PlatformSettings] Error loading system settings from database:", error);
+      if (error) {
+        console.error("[PlatformSettings] Database error fetching system_settings with admin client:", error);
       }
 
       const raw = data || {};
@@ -109,7 +76,7 @@ export const getPlatformPublicSettings = createServerFn({ method: "GET" })
         has_contact_form: hasContactForm,
       };
     } catch (err) {
-      console.error("[PlatformSettings] Failed to fetch settings:", err);
+      console.error("[PlatformSettings] Failed to execute getPlatformPublicSettings:", err);
       return {
         saas_name: "Barbex",
         main_url: "https://barbex.shop",
