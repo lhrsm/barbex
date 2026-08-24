@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +51,7 @@ function formatSocialUrl(platform: string, rawValue?: string): string {
 }
 
 export function PublicContactSection({ shop, slug }: PublicContactSectionProps) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -58,6 +60,16 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
   const [honeypot, setHoneypot] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Timer cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const businessName = shop?.business_name || "Barbearia";
   const rawWhatsapp = shop?.whatsapp_number || (shop?.social_links as any)?.whatsapp;
@@ -86,6 +98,7 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isSubmitted) return;
 
     if (!name.trim()) {
       toast.error("Por favor, preencha o seu nome.");
@@ -117,20 +130,23 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
       });
 
       if (res?.success) {
-        toast.success(res.message || "Mensagem enviada com sucesso! A barbearia entrará em contato com você.");
-        setName("");
-        setEmail("");
-        setPhone("");
-        setSubject("Dúvida Geral");
-        setMessage("");
         setIsSubmitted(true);
+        toast.success("Mensagem enviada com sucesso!", {
+          description: "Obrigado pelo contato. A barbearia recebeu sua mensagem.",
+        });
+
+        // Delay 1500ms and navigate to /$slug top
+        timerRef.current = setTimeout(() => {
+          navigate({ to: `/${slug}` as any });
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }, 1500);
       } else {
         toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+        setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error("[PublicContactSection] Error submitting contact form:", err);
       toast.error(err.message || "Não foi possível enviar sua mensagem. Tente novamente.");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -165,23 +181,22 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
             {/* Formulário Principal */}
             <div className="lg:col-span-7 bg-[#080D1A]/90 border border-gold/15 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
               {isSubmitted ? (
-                <div className="py-12 text-center space-y-5">
+                <div
+                  className="py-12 text-center space-y-5 animate-in fade-in zoom-in-95 duration-500"
+                  aria-live="polite"
+                >
                   <div className="h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mx-auto flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.2)]">
                     <CheckCircle2 size={32} />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-white">Mensagem Enviada com Sucesso!</h3>
-                    <p className="text-slate-400 text-sm max-w-md mx-auto">
-                      Agradecemos seu contato. A equipe da <strong className="text-white">{businessName}</strong> responderá em breve.
+                    <h3 className="text-xl font-bold text-white">Mensagem enviada com sucesso!</h3>
+                    <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                      Obrigado pelo contato. A barbearia recebeu sua mensagem e retornará em breve.
+                    </p>
+                    <p className="text-xs text-gold/70 font-semibold tracking-wider uppercase pt-2">
+                      Redirecionando para a página principal...
                     </p>
                   </div>
-                  <Button
-                    onClick={() => setIsSubmitted(false)}
-                    variant="outline"
-                    className="mt-4 rounded-full border-gold/30 text-gold hover:bg-gold hover:text-black font-bold text-xs uppercase tracking-wider"
-                  >
-                    Enviar Outra Mensagem
-                  </Button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -207,6 +222,7 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                       placeholder="Ex: Carlos Eduardo"
                       required
                       maxLength={100}
+                      disabled={isSubmitting || isSubmitted}
                       className="bg-black/40 border-white/10 text-white placeholder:text-slate-600 focus:border-gold focus:ring-gold/20 h-11 rounded-xl"
                     />
                   </div>
@@ -223,6 +239,7 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="carlos@exemplo.com"
                         maxLength={100}
+                        disabled={isSubmitting || isSubmitted}
                         className="bg-black/40 border-white/10 text-white placeholder:text-slate-600 focus:border-gold focus:ring-gold/20 h-11 rounded-xl"
                       />
                     </div>
@@ -238,6 +255,7 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="(11) 99999-9999"
                         maxLength={20}
+                        disabled={isSubmitting || isSubmitted}
                         className="bg-black/40 border-white/10 text-white placeholder:text-slate-600 focus:border-gold focus:ring-gold/20 h-11 rounded-xl"
                       />
                     </div>
@@ -251,7 +269,7 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                     <Label htmlFor="contact-subject" className="text-xs font-bold uppercase tracking-wider text-slate-300">
                       Assunto
                     </Label>
-                    <Select value={subject} onValueChange={setSubject}>
+                    <Select value={subject} onValueChange={setSubject} disabled={isSubmitting || isSubmitted}>
                       <SelectTrigger id="contact-subject" className="bg-black/40 border-white/10 text-white focus:border-gold focus:ring-gold/20 h-11 rounded-xl">
                         <SelectValue placeholder="Selecione um assunto" />
                       </SelectTrigger>
@@ -280,13 +298,14 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                       required
                       maxLength={1000}
                       rows={4}
+                      disabled={isSubmitting || isSubmitted}
                       className="bg-black/40 border-white/10 text-white placeholder:text-slate-600 focus:border-gold focus:ring-gold/20 rounded-xl resize-none"
                     />
                   </div>
 
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isSubmitted}
                     className="w-full h-12 rounded-full font-black uppercase tracking-wider text-black bg-gradient-to-r from-[#F5C542] via-[#E6B800] to-[#D4A017] hover:from-[#F8D265] hover:to-[#D4A017] shadow-[0_10px_25px_rgba(245,197,66,0.3)] transition-all hover:-translate-y-0.5"
                   >
                     {isSubmitting ? (
