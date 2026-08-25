@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -352,7 +352,7 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="p-8 md:p-12 rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-xl text-center space-y-6"
+                className="p-8 md:p-12 rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-xl text-center space-y-8"
               >
                 <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/20 text-gold flex items-center justify-center mx-auto">
                   <MessageSquare size={28} />
@@ -364,17 +364,143 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                   </p>
                 </div>
 
-                {whatsappNumber && (
-                  <div className="pt-2">
-                    <Button
-                      asChild
-                      className="h-14 px-8 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-black font-black uppercase tracking-widest text-xs shadow-lg shadow-[#25D366]/20 gap-2"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto text-left">
+                  {whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${whatsappNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/30 hover:bg-white/[0.06] transition-all group"
                     >
-                      <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
+                      <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 text-[#25D366] flex items-center justify-center shrink-0">
                         <MessageSquare size={18} />
-                        Conversar no WhatsApp
-                      </a>
-                    </Button>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">WhatsApp</div>
+                        <div className="text-white text-xs font-bold truncate">Falar com especialista</div>
+                      </div>
+                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                    </a>
+                  )}
+
+                  {publicEmail && (
+                    <a
+                      href={`mailto:${publicEmail}`}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/30 hover:bg-white/[0.06] transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                        <Mail size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">E-mail</div>
+                        <div className="text-white text-xs font-bold truncate">{publicEmail}</div>
+                      </div>
+                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                    </a>
+                  )}
+
+                  {directPhone && (
+                    <a
+                      href={`tel:${directPhone.replace(/\D/g, "")}`}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/30 hover:bg-white/[0.06] transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                        <Phone size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Telefone</div>
+                        <div className="text-white text-xs font-bold truncate">{directPhone}</div>
+                      </div>
+                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                    </a>
+                  )}
+
+                  {address && (
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-gold flex items-center justify-center shrink-0 mt-0.5">
+                        <MapPin size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sede</div>
+                        <div className="text-slate-300 text-xs font-medium truncate">{address}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {Object.keys(socialLinks).some((k) => Boolean(socialLinks[k as keyof typeof socialLinks])) && (
+                  <div className="pt-6 border-t border-white/5 space-y-3">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      Siga o Barbex nas redes
+                    </div>
+                    <div className="flex justify-center flex-wrap gap-2">
+                      {socialLinks.instagram && (
+                        <a
+                          href={formatSocialUrl("instagram", socialLinks.instagram)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Instagram Barbex"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-gold/30 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-gold transition-all"
+                        >
+                          <Instagram size={18} />
+                        </a>
+                      )}
+                      {socialLinks.facebook && (
+                        <a
+                          href={formatSocialUrl("facebook", socialLinks.facebook)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Facebook Barbex"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-gold/30 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-gold transition-all"
+                        >
+                          <Facebook size={18} />
+                        </a>
+                      )}
+                      {socialLinks.tiktok && (
+                        <a
+                          href={formatSocialUrl("tiktok", socialLinks.tiktok)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="TikTok Barbex"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-gold/30 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-gold transition-all"
+                        >
+                          <TikTok size={18} />
+                        </a>
+                      )}
+                      {socialLinks.linkedin && (
+                        <a
+                          href={formatSocialUrl("linkedin", socialLinks.linkedin)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="LinkedIn Barbex"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-gold/30 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-gold transition-all"
+                        >
+                          <LinkedIn size={18} />
+                        </a>
+                      )}
+                      {socialLinks.youtube && (
+                        <a
+                          href={formatSocialUrl("youtube", socialLinks.youtube)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="YouTube Barbex"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-gold/30 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-gold transition-all"
+                        >
+                          <Youtube size={18} />
+                        </a>
+                      )}
+                      {socialLinks.twitter && (
+                        <a
+                          href={formatSocialUrl("twitter", socialLinks.twitter)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="X / Twitter Barbex"
+                          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-gold/30 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-gold transition-all"
+                        >
+                          <Twitter size={18} />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </motion.div>
