@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +88,16 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
   const hasContactForm = Boolean(settings?.has_contact_form);
   const whatsappNumber = settings?.whatsapp_number ? normalizePhone(settings.whatsapp_number) : "";
   const publicEmail = settings?.public_email || "";
@@ -97,6 +107,7 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isSuccess) return;
 
     if (!name.trim() || name.trim().length < 2) {
       toast.error("Por favor informe seu nome (mínimo 2 caracteres).");
@@ -127,18 +138,21 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
 
       if (response?.success) {
         setIsSuccess(true);
-        toast.success("Mensagem enviada com sucesso! Nossa equipe entrará em contato.");
-        setName("");
-        setEmail("");
-        setPhone("");
-        setCompany("");
-        setMessage("");
-        setSubject(SUBJECT_OPTIONS[0]);
+        toast.success("Mensagem enviada com sucesso!", {
+          description: "Obrigado pelo contato. Recebemos sua mensagem.",
+        });
+
+        // Delay ~1500ms and hard-refresh to "/"
+        timerRef.current = setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
+      } else {
+        toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+        setIsSubmitting(false);
       }
     } catch (error: any) {
       console.error("[PlatformContact] Submission error:", error);
       toast.error(error.message || "Erro ao enviar mensagem. Tente novamente.");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -189,23 +203,16 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                 className="p-8 md:p-10 rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-xl shadow-2xl relative overflow-hidden"
               >
                 {isSuccess ? (
-                  <div className="py-12 text-center space-y-6">
+                  <div className="py-12 text-center space-y-6" aria-live="polite">
                     <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/20 text-gold flex items-center justify-center mx-auto">
                       <CheckCircle2 size={32} />
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-2xl font-black uppercase italic text-white tracking-tight">Mensagem Enviada!</h3>
                       <p className="text-slate-400 text-sm max-w-md mx-auto">
-                        Agradecemos seu contato. Nossa equipe técnica e comercial retornará o mais breve possível.
+                        Obrigado pelo contato. Recebemos sua mensagem e nossa equipe retornará o mais breve possível.
                       </p>
                     </div>
-                    <Button
-                      onClick={() => setIsSuccess(false)}
-                      variant="outline"
-                      className="rounded-xl border-white/20 text-white hover:bg-white/10 text-xs font-bold uppercase tracking-wider"
-                    >
-                      Enviar Nova Mensagem
-                    </Button>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">

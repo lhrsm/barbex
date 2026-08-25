@@ -159,13 +159,14 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
       data: {
         recipient: platformContactEmail,
         replyTo: data.email,
+        customSubject: `[Barbex] Nova mensagem pelo site — ${data.name.trim()}`,
         templateKey: "platform_contact_form_message",
         templateData: {
-          platformName: settingsRow.saas_name || "Barbex Enterprise",
+          platformName: settingsRow.saas_name || "Barbex",
           visitorName: data.name,
           visitorEmail: data.email,
-          visitorPhone: data.phone || "Não informado",
-          company: data.company || "Não informado",
+          visitorPhone: data.phone || "",
+          company: data.company || "",
           subject: data.subject,
           message: data.message,
           timestamp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),

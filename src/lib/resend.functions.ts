@@ -180,6 +180,8 @@ export const sendTransactionalEmail = createServerFn({ method: "POST" })
       let html = "";
       if (data.templateKey === "contact_form_message") {
         html = renderContactFormEmailHtml(data.templateData);
+      } else if (data.templateKey === "platform_contact_form_message") {
+        html = renderPlatformContactFormEmailHtml(data.templateData);
       } else {
         html = `
           <!DOCTYPE html>
@@ -462,6 +464,207 @@ function renderContactFormEmailHtml(data: any = {}) {
           <tr>
             <td align="center" style="padding: 24px 20px; background-color: #fafafa; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b; line-height: 1.5;">
               Mensagem enviada através da página pública da <strong>${barbershopName}</strong> no Barbex.<br/>
+              <span style="color: #9ca3af; font-size: 11px; font-weight: 600; margin-top: 4px; display: inline-block;">Barbex &bull; Gestão inteligente para barbearias</span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+function renderPlatformContactFormEmailHtml(data: any = {}) {
+  const name = escapeHtml(data.visitorName || data.name || "Visitante");
+  const rawEmail = data.visitorEmail || data.email || null;
+  const email = rawEmail ? escapeHtml(rawEmail) : null;
+  const rawPhone = data.visitorPhone || data.phone || null;
+  const formattedPhone = rawPhone ? escapeHtml(formatPhoneDisplay(rawPhone)) : null;
+  const waPhone = rawPhone ? normalizePhoneWa(rawPhone) : null;
+  const company = data.company ? escapeHtml(data.company) : null;
+  const subject = escapeHtml(data.subject || "Contato Institucional");
+  const message = escapeHtml(data.message || "").replace(/\n/g, "<br />");
+  const sentAt = escapeHtml(data.timestamp || data.sentAt || new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }));
+
+  return `
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nova Mensagem Institucional - Barbex</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f3f4f6; padding: 30px 12px;">
+    <tr>
+      <td align="center">
+        <!-- Container Principal (640px Max) -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+          <!-- Header Barbex Premium -->
+          <tr>
+            <td align="center" style="background-color: #050505; padding: 36px 20px; border-bottom: 3px solid #D4AF37;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <span style="color: #D4AF37; font-size: 28px; font-weight: 900; font-style: italic; letter-spacing: 2px; text-transform: uppercase; display: block;">BARBEX</span>
+                    <span style="color: #94a3b8; font-size: 11px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; display: block;">NOVA MENSAGEM PELO SITE</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Corpo do E-mail -->
+          <tr>
+            <td style="padding: 36px 28px;">
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
+                <tr>
+                  <td>
+                    <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">
+                      Novo Contato Institucional
+                    </h2>
+                    <p style="margin: 0; font-size: 14px; color: #64748b; line-height: 1.5;">
+                      Um visitante enviou uma mensagem através da landing page oficial do Barbex (<strong>barbex.shop</strong>).
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Card: Dados do Contato -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                    <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block;">DADOS DO CONTATO</span>
+                  </td>
+                </tr>
+
+                <!-- Nome -->
+                <tr>
+                  <td style="padding: 12px 0 8px 0;">
+                    <span style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Nome</span>
+                    <span style="font-size: 15px; color: #0f172a; font-weight: 700; display: block;">${name}</span>
+                  </td>
+                </tr>
+
+                <!-- E-mail -->
+                ${email ? `
+                <tr>
+                  <td style="padding: 8px 0; border-top: 1px solid #f8fafc;">
+                    <span style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">E-mail</span>
+                    <a href="mailto:${email}" style="font-size: 15px; color: #0f172a; font-weight: 600; text-decoration: underline;">${email}</a>
+                  </td>
+                </tr>` : ''}
+
+                <!-- Telefone / WhatsApp -->
+                ${formattedPhone ? `
+                <tr>
+                  <td style="padding: 8px 0; border-top: 1px solid #f8fafc;">
+                    <span style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Telefone / WhatsApp</span>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size: 15px; color: #0f172a; font-weight: 700; padding-right: 12px;">${formattedPhone}</td>
+                        ${waPhone ? `
+                        <td>
+                          <a href="https://wa.me/${waPhone}" style="display: inline-block; font-size: 12px; font-weight: 800; color: #059669; text-decoration: none; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 10px; border-radius: 6px;">
+                            Falar pelo WhatsApp &rarr;
+                          </a>
+                        </td>` : ''}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>` : ''}
+
+                <!-- Empresa / Barbearia -->
+                ${company ? `
+                <tr>
+                  <td style="padding: 8px 0; border-top: 1px solid #f8fafc;">
+                    <span style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Barbearia / Empresa</span>
+                    <span style="font-size: 14px; color: #334155; font-weight: 600; display: block;">${company}</span>
+                  </td>
+                </tr>` : ''}
+
+                <!-- Assunto -->
+                ${subject ? `
+                <tr>
+                  <td style="padding: 8px 0 4px 0; border-top: 1px solid #f8fafc;">
+                    <span style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Assunto</span>
+                    <span style="font-size: 14px; color: #334155; font-weight: 600; display: block;">${subject}</span>
+                  </td>
+                </tr>` : ''}
+              </table>
+
+              <!-- Bloco: Mensagem -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #D4AF37; border-radius: 10px; padding: 20px; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block;">MENSAGEM DO VISITANTE</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 15px; color: #1e293b; line-height: 1.7; word-break: break-word;">
+                    ${message}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Ações Rápidas -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="padding-bottom: 12px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block;">RESPONDER AO CONTATO</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        ${email ? `
+                        <td style="padding-right: 12px; padding-bottom: 8px;">
+                          <a href="mailto:${email}" style="display: inline-block; padding: 13px 24px; background-color: #D4AF37; color: #000000 !important; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
+                            Responder por e-mail
+                          </a>
+                        </td>` : ''}
+                        ${waPhone ? `
+                        <td style="padding-bottom: 8px;">
+                          <a href="https://wa.me/${waPhone}" style="display: inline-block; padding: 13px 24px; background-color: #10b981; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
+                            Responder pelo WhatsApp
+                          </a>
+                        </td>` : ''}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Informações de Envio (Discreto) -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; padding: 14px 16px;">
+                <tr>
+                  <td style="padding-bottom: 8px;">
+                    <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block;">INFORMAÇÕES DO ENVIO</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 12px; color: #64748b; line-height: 1.6;">
+                    <strong>Página:</strong> barbex.shop<br/>
+                    <strong>Data/Hora:</strong> ${sentAt}<br/>
+                    <strong>Origem:</strong> Landing institucional Barbex
+                    ${company ? `<br/><strong>Empresa informada:</strong> ${company}` : ''}
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer Discreto -->
+          <tr>
+            <td align="center" style="padding: 24px 20px; background-color: #fafafa; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b; line-height: 1.5;">
+              Mensagem enviada através da landing oficial do Barbex.<br/>
               <span style="color: #9ca3af; font-size: 11px; font-weight: 600; margin-top: 4px; display: inline-block;">Barbex &bull; Gestão inteligente para barbearias</span>
             </td>
           </tr>
