@@ -148,7 +148,7 @@ function LandingPage() {
   const socialLinks = settings?.social_links || {};
 
   return (
-    <div className="min-h-screen bg-[#05070d] text-white selection:bg-gold selection:text-black">
+    <div className="min-h-screen bg-[#05070d] text-white selection:bg-gold selection:text-black overflow-x-hidden">
 
       {/* Mobile Drawer Menu */}
       <AnimatePresence>
@@ -217,7 +217,7 @@ function LandingPage() {
         "fixed top-0 w-full z-50 transition-all duration-300 border-b",
         isScrolled ? "bg-black/95 backdrop-blur-md border-gold/20 h-20 shadow-2xl" : "bg-transparent border-transparent h-24"
       )}>
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <Link to="/" className="flex items-center shrink-0">
             <BarbexLogo size="md" showText={false} className="w-[120px] md:w-[150px]" />
           </Link>
@@ -253,7 +253,7 @@ function LandingPage() {
       </header>
 
       {/* 1. Hero */}
-      <section className="relative pt-32 pb-16 md:pb-24 px-6 overflow-hidden bg-[#05070d]">
+      <section className="relative pt-28 pb-14 md:pt-36 md:pb-20 lg:pt-40 lg:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[#05070d]">
         {/* Hero Background Image with Parallax-ready blend */}
         <div className="absolute inset-0 z-0">
           <img
@@ -265,7 +265,7 @@ function LandingPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(245,158,11,0.18),transparent_45%)]" />
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 relative z-10 text-center">
+        <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 relative z-10 text-center">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-gold/20 bg-gold/5 text-gold text-[9px] md:text-[10px] font-black uppercase tracking-widest">
             <Sparkles size={12} />
             Gestão Premium de Barbearias
@@ -275,7 +275,7 @@ function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-[40px] leading-[1.05] sm:text-6xl md:text-[80px] font-black uppercase italic tracking-tighter py-2 text-balance max-w-5xl mx-auto"
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-[76px] font-black uppercase italic tracking-tighter leading-[0.98] py-2 text-balance max-w-5xl mx-auto"
           >
             A plataforma <span className="text-gold">completa</span> para barbearias que querem <span className="relative inline-block text-gold">crescer<div className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-1 bg-gold/30 rounded-full blur-[2px]" /></span>
           </motion.h1>
@@ -284,7 +284,7 @@ function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium"
+            className="text-slate-400 text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-balance"
           >
             Centralize agenda, clientes, equipe, financeiro, loja, assinaturas, marketing e automações em uma única plataforma Enterprise.
           </motion.p>
@@ -320,14 +320,14 @@ function LandingPage() {
       </section>
 
       {/* 2. System Mockup Visual */}
-      <section className="relative w-full px-6 max-w-[1100px] mx-auto overflow-hidden pb-24">
+      <section className="relative w-full px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto overflow-hidden pb-16 md:pb-24 lg:pb-32">
         <SystemMockup />
       </section>
 
       {/* 3. Trust Bar / Benefits */}
-      <section className="py-12 border-y border-white/5 bg-gradient-to-r from-zinc-950/80 via-black to-zinc-950/80 backdrop-blur-md overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-wrap justify-center md:justify-between items-center gap-8 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+      <section className="py-10 md:py-12 border-y border-white/5 bg-gradient-to-r from-zinc-950/80 via-black to-zinc-950/80 backdrop-blur-md overflow-hidden px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-wrap justify-center md:justify-between items-center gap-6 md:gap-8 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
             {[
               { icon: Calendar, label: "Agenda Online" },
               { icon: Smartphone, label: "Portal do Cliente" },
@@ -346,19 +346,21 @@ function LandingPage() {
       </section>
 
       {/* 4. Features Grid */}
-      <section id="recursos" className="py-24 md:py-32 bg-gradient-to-b from-[#05070d] via-[#090d16] to-[#05070d] relative overflow-hidden">
+      <section id="recursos" className="py-16 md:py-24 lg:py-32 bg-gradient-to-b from-[#05070d] via-[#090d16] to-[#05070d] relative overflow-hidden px-4 sm:px-6 lg:px-8">
         <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">
           <img src="https://images.unsplash.com/photo-1599351431202-180f0b485ff8?q=80&w=1000&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-l from-[#05070d] via-[#05070d]/80 to-[#05070d]" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16 space-y-4">
-            <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px]">Poder Operacional</span>
-            <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-white">Recursos Desenvolvidos para Alta Performance</h2>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-12 md:mb-16 space-y-4">
+            <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px]">Poder Operacional</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
+              Recursos Desenvolvidos para Alta Performance
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: Calendar, title: "Gestão de Agenda", desc: "Online, manual, walk-in e lista de espera inteligente com proteção de conflitos." },
               { icon: Users, title: "CRM & Clientes", desc: "Perfil 360°, histórico de consumo, preferências e fidelização ativa." },
@@ -368,10 +370,10 @@ function LandingPage() {
               <motion.div
                 key={i}
                 whileHover={{ y: -5 }}
-                className="p-8 rounded-[2rem] border border-white/5 bg-zinc-900/40 hover:border-gold/30 hover:bg-zinc-900/60 transition-all backdrop-blur-sm"
+                className="p-6 sm:p-8 rounded-[2rem] border border-white/5 bg-zinc-900/40 hover:border-gold/30 hover:bg-zinc-900/60 transition-all backdrop-blur-sm shadow-xl"
               >
                 <f.icon className="text-gold mb-6" size={32} />
-                <h4 className="text-white font-black uppercase tracking-tight mb-2">{f.title}</h4>
+                <h4 className="text-white font-black uppercase tracking-tight mb-2 text-base sm:text-lg">{f.title}</h4>
                 <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -380,97 +382,135 @@ function LandingPage() {
       </section>
 
       {/* 5. Solution Overview (Bento Grid) */}
-      <section id="solucoes" className="py-32 bg-[#05070d] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(212,175,55,0.06),transparent_50%)]" />
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-20 space-y-4">
-            <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px]">Ecossistema Enterprise</span>
-            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white">Um único sistema para toda a operação</h2>
+      <section id="solucoes" className="py-16 md:py-24 lg:py-32 bg-[#05070d] relative overflow-hidden px-4 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(212,175,55,0.06),transparent_50%)] pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-12 md:mb-16 space-y-4">
+            <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px]">Ecossistema Enterprise</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
+              Um único sistema para toda a operação
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-20">
-            {/* Main Feature */}
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-16 md:mb-20">
+            {/* Card A: Agenda Inteligente */}
             <motion.div
               whileHover={{ y: -5 }}
-              className="md:col-span-3 p-10 rounded-[2.5rem] border border-gold/20 bg-gradient-to-br from-zinc-900 to-black overflow-hidden group relative min-h-[400px]"
+              className="md:col-span-3 p-6 sm:p-8 md:p-10 rounded-[2.5rem] border border-gold/25 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black overflow-hidden group relative min-h-[420px] flex flex-col justify-between shadow-2xl transition-all"
             >
-              <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
-                <Calendar size={120} className="text-gold" />
+              {/* Background contextual com imagem e glow dourado */}
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <img
+                  src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=1200&auto=format&fit=crop"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover opacity-15 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-950/80 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.18),transparent_60%)]" />
               </div>
-              <Calendar size={48} className="text-gold mb-8" />
-              <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white mb-4">Agenda Inteligente</h3>
-              <p className="text-slate-400 text-lg leading-relaxed mb-8 max-w-sm">
-                Agendamento online, manual, walk-in e check-in. Gestão de conflitos, buffers automáticos e sincronização em tempo real.
-              </p>
-              <div className="flex flex-wrap gap-2">
+
+              <div className="absolute top-0 right-0 p-8 opacity-15 group-hover:opacity-30 transition-opacity pointer-events-none">
+                <Calendar size={130} className="text-gold" />
+              </div>
+
+              <div className="relative z-10">
+                <Calendar size={44} className="text-gold mb-6 md:mb-8" />
+                <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white mb-3">Agenda Inteligente</h3>
+                <p className="text-slate-400 text-base sm:text-lg leading-relaxed mb-6 max-w-md">
+                  Agendamento online, manual, walk-in e check-in. Gestão de conflitos, buffers automáticos e sincronização em tempo real.
+                </p>
+              </div>
+
+              <div className="relative z-10 flex flex-wrap gap-2 pt-4">
                 {["Walk-in", "Check-in", "Lista de Espera", "Buffers"].map(t => (
-                  <span key={t} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-300">{t}</span>
+                  <span key={t} className="px-3 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-gold">{t}</span>
                 ))}
               </div>
             </motion.div>
 
-            {/* Middle Feature 1 */}
+            {/* Card B: CRM & Clientes 360° */}
             <motion.div
               whileHover={{ y: -5 }}
-              className="md:col-span-3 p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950 flex flex-col justify-between group"
+              className="md:col-span-3 p-6 sm:p-8 md:p-10 rounded-[2.5rem] border border-white/10 hover:border-gold/30 bg-gradient-to-br from-zinc-950 via-zinc-900/60 to-black flex flex-col justify-between group relative overflow-hidden shadow-2xl transition-all"
             >
-              <div className="flex justify-between items-start mb-6">
+              {/* Background contextual de atendimento com glow âmbar */}
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <img
+                  src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=1000&auto=format&fit=crop"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover opacity-15 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-950/85 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(245,158,11,0.12),transparent_60%)]" />
+              </div>
+
+              <div className="relative z-10 flex justify-between items-start mb-6">
                 <Users size={32} className="text-gold group-hover:scale-110 transition-transform" />
                 <ArrowUpRight size={20} className="text-slate-600 group-hover:text-gold transition-colors" />
               </div>
-              <div>
-                <h4 className="text-xl font-black uppercase italic tracking-tight text-white mb-2">CRM & Clientes 360°</h4>
-                <p className="text-slate-400 text-sm leading-relaxed">Histórico completo, frequência, ticket médio, cashback e preferências individuais.</p>
+              <div className="relative z-10">
+                <h4 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white mb-2">CRM & Clientes 360°</h4>
+                <p className="text-slate-400 text-sm sm:text-base leading-relaxed">Histórico completo, frequência, ticket médio, cashback e preferências individuais.</p>
               </div>
             </motion.div>
 
-            {/* Middle Feature 2 */}
+            {/* Card C: Financeiro & BI */}
             <motion.div
               whileHover={{ y: -5 }}
-              className="md:col-span-3 p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950 flex flex-col justify-between group"
+              className="md:col-span-3 p-6 sm:p-8 md:p-10 rounded-[2.5rem] border border-white/10 hover:border-gold/30 bg-gradient-to-br from-zinc-950 via-zinc-900/60 to-black flex flex-col justify-between group relative overflow-hidden shadow-2xl transition-all"
             >
-              <div className="flex justify-between items-start mb-6">
+              {/* Background com micro-glow esmeralda/dourado e grid sutil */}
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(16,185,129,0.12),transparent_60%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
+              </div>
+
+              <div className="relative z-10 flex justify-between items-start mb-6">
                 <BarChart3 size={32} className="text-gold group-hover:scale-110 transition-transform" />
                 <ArrowUpRight size={20} className="text-slate-600 group-hover:text-gold transition-colors" />
               </div>
-              <div>
-                <h4 className="text-xl font-black uppercase italic tracking-tight text-white mb-2">Financeiro & BI</h4>
-                <p className="text-slate-400 text-sm leading-relaxed">Fluxo de caixa, DRE gerencial, comissões automáticas e indicadores de saúde do negócio.</p>
+              <div className="relative z-10">
+                <h4 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white mb-2">Financeiro & BI</h4>
+                <p className="text-slate-400 text-sm sm:text-base leading-relaxed">Fluxo de caixa, DRE gerencial, comissões automáticas e indicadores de saúde do negócio.</p>
               </div>
             </motion.div>
           </div>
 
-          {/* 6. Imagem 01: Operação sem fricção */}
-          <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
+          {/* 6. Imagem 01: Operação sem fricção + Floating Cards (Requisito D) */}
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16 lg:gap-24 items-center">
             <div className="relative group">
               <LandingImage
                 src="https://images.unsplash.com/photo-1599351431202-180f0b485ff8?q=80&w=2000&auto=format&fit=crop"
                 alt="Equipe de uma barbearia moderna trabalhando com apoio de tecnologia."
                 className="border-gold/10 shadow-[0_20px_50px_-15px_rgba(212,175,55,0.15)]"
               />
-              {/* Floating Cards */}
+              {/* Floating Cards com micro-glow (Requisito D) */}
               <div className="absolute -top-6 -right-6 hidden md:block animate-bounce-slow">
-                <div className="bg-black/80 backdrop-blur-md border border-gold/20 p-4 rounded-2xl shadow-2xl">
+                <div className="bg-zinc-950/90 backdrop-blur-xl border border-gold/20 p-4 rounded-2xl shadow-[0_15px_30px_-5px_rgba(0,0,0,0.8)]">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-white">Agenda organizada</span>
                   </div>
                 </div>
               </div>
               <div className="absolute -bottom-6 -left-6 hidden md:block animate-bounce-slow" style={{ animationDelay: '1s' }}>
-                <div className="bg-black/80 backdrop-blur-md border border-gold/20 p-4 rounded-2xl shadow-2xl">
+                <div className="bg-zinc-950/90 backdrop-blur-xl border border-gold/20 p-4 rounded-2xl shadow-[0_15px_30px_-5px_rgba(0,0,0,0.8)]">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-white">Próximo atendimento: 14:30</span>
                   </div>
                 </div>
               </div>
             </div>
             <div className="space-y-6">
-              <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-white">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
                 Operação sem fricção. <br /> Lucratividade máxima.
               </h3>
-              <p className="text-slate-400 text-lg">
+              <p className="text-slate-400 text-base sm:text-lg leading-relaxed text-balance">
                 O Barbex foi desenhado para eliminar gargalos operacionais e permitir que você foque no que realmente importa: a arte e a experiência do cliente.
               </p>
               <div className="flex items-center gap-4 pt-4">
@@ -484,15 +524,17 @@ function LandingPage() {
       </section>
 
       {/* 7. Prova Visual (Mockup Contextual) */}
-      <section className="py-24 md:py-32 px-6 overflow-hidden bg-gradient-to-b from-black via-zinc-950 to-black relative">
+      <section className="py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-b from-black via-zinc-950 to-black relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
-        <div className="max-w-7xl mx-auto text-center mb-16">
-          <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px] mb-4 block">Experiência de Uso</span>
-          <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-white">Tecnologia que <span className="text-gold">eleva</span> o seu negócio</h2>
+        <div className="max-w-7xl mx-auto text-center mb-12 md:mb-16">
+          <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px] mb-3 block">Experiência de Uso</span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
+            Tecnologia que <span className="text-gold">eleva</span> o seu negócio
+          </h2>
         </div>
 
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
             <motion.div
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -515,7 +557,7 @@ function LandingPage() {
               initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="space-y-6"
+              className="space-y-4 md:space-y-6"
             >
               {[
                 { title: "Alta Resolução", desc: "Interfaces nítidas e otimizadas para telas Retina e 4K." },
@@ -523,13 +565,13 @@ function LandingPage() {
                 { title: "Mobile First", desc: "Experiência nativa no celular sem precisar baixar nada." },
                 { title: "Segurança Bancária", desc: "Seus dados protegidos com criptografia de ponta a ponta." }
               ].map((item, i) => (
-                <div key={i} className="flex gap-4 p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+                <div key={i} className="flex gap-4 p-5 sm:p-6 rounded-2xl border border-white/5 bg-zinc-900/30 hover:border-gold/25 hover:bg-zinc-900/50 transition-all backdrop-blur-sm shadow-xl">
                   <div className="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0">
                     <Check size={20} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black uppercase italic tracking-tight text-white mb-1">{item.title}</h4>
-                    <p className="text-slate-400 text-sm">{item.desc}</p>
+                    <h4 className="text-base sm:text-lg font-black uppercase italic tracking-tight text-white mb-1">{item.title}</h4>
+                    <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -537,42 +579,37 @@ function LandingPage() {
           </div>
         </div>
 
-        {/* 8. Separator Image (Tradição & Futuro) */}
-        <div className="mt-24 w-full rounded-[2.5rem] overflow-hidden relative border border-white/10 shadow-2xl max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 min-h-[350px]">
-            <div className="relative h-full overflow-hidden border-r border-white/5">
-              <img
-                src="https://images.unsplash.com/photo-1593702275677-f916c8c96045?q=80&w=2000&auto=format&fit=crop"
-                alt="Instrumentos tradicionais de barbearia integrados a dispositivos digitais."
-                className="w-full h-full object-cover opacity-40 mix-blend-luminosity"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black/80" />
-            </div>
-            <div className="relative h-full overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1512690196236-d44d3204003d?q=80&w=2000&auto=format&fit=crop"
-                alt="Tecnologia na barbearia"
-                className="w-full h-full object-cover opacity-30 mix-blend-luminosity"
-              />
-              <div className="absolute inset-0 bg-gradient-to-l from-black via-transparent to-black/80" />
-            </div>
+        {/* 8. Separator Editorial (Tradição & Futuro - Requisito E) */}
+        <div className="mt-16 md:mt-24 w-full rounded-[2.5rem] overflow-hidden relative border border-white/10 shadow-2xl max-w-6xl mx-auto min-h-[380px] md:min-h-[440px] flex items-center justify-center">
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1593702275677-f916c8c96045?q=80&w=2000&auto=format&fit=crop"
+              alt="Instrumentos tradicionais de barbearia integrados a dispositivos digitais."
+              className="w-full h-full object-cover opacity-35 mix-blend-luminosity"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#05070d] via-black/60 to-[#05070d]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-transparent to-black/90" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.18),transparent_70%)]" />
           </div>
 
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
-
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center space-y-4 px-6 z-10">
-              <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px]">Elegância & Precisão</span>
-              <h3 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-white">Onde a tradição encontra o futuro</h3>
-            </div>
+          <div className="relative z-10 text-center space-y-4 px-6 max-w-3xl mx-auto py-12">
+            <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px] md:text-[11px] block">
+              Elegância & Precisão
+            </span>
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
+              Onde a tradição encontra o futuro
+            </h3>
+            <p className="text-slate-300 text-base md:text-lg max-w-xl mx-auto font-medium leading-relaxed text-balance">
+              O equilíbrio perfeito entre a arte clássica da barbearia e a vanguarda tecnológica Enterprise.
+            </p>
           </div>
         </div>
       </section>
 
       {/* 9. Separador Visual Premium */}
-      <section className="py-24 bg-[#05070d] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-6 h-[400px]">
+      <section className="py-12 md:py-16 lg:py-20 bg-[#05070d] overflow-hidden px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 h-[320px] md:h-[400px]">
              <LandingImage
                src="https://images.unsplash.com/photo-1590540179852-2110a54f813a?q=80&w=1000&auto=format&fit=crop"
                alt="Ferramentas de barbearia clássica"
@@ -588,26 +625,26 @@ function LandingPage() {
       </section>
 
       {/* 10. Tradição e Cuidado (Sobre Nós) */}
-      <section id="sobre" className="py-24 md:py-32 bg-gradient-to-b from-black via-[#090d16] to-black relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 md:gap-24 items-center">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px]">Sobre o Barbex</span>
-              <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white">
+      <section id="sobre" className="py-16 md:py-24 lg:py-32 bg-gradient-to-b from-black via-[#090d16] to-black relative overflow-hidden px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 md:gap-16 lg:gap-24 items-center">
+          <div className="space-y-6 md:space-y-8">
+            <div className="space-y-3 md:space-y-4">
+              <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px]">Sobre o Barbex</span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
                 Tradição e cuidado <br /> em cada detalhe
               </h2>
             </div>
-            <p className="text-slate-400 text-lg leading-relaxed">
+            <p className="text-slate-400 text-base sm:text-lg leading-relaxed text-balance">
               Elevamos o padrão da sua barbearia unindo a precisão da barbearia clássica com a inteligência da gestão moderna Enterprise.
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                <div className="text-gold font-black text-xl">12+</div>
+              <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/40 border border-white/10 backdrop-blur-sm">
+                <div className="text-gold font-black text-xl sm:text-2xl">12+</div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Profissionais</div>
               </div>
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                <div className="text-gold font-black text-xl">450+</div>
+              <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/40 border border-white/10 backdrop-blur-sm">
+                <div className="text-gold font-black text-xl sm:text-2xl">450+</div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Agendamentos/mês</div>
               </div>
             </div>
@@ -668,17 +705,18 @@ function LandingPage() {
       </CTASection>
 
       {/* 14. Financeiro & BI */}
-      <section className="py-24 md:py-32 px-6 bg-[#05070d] relative">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 md:gap-24 items-center">
-          <div className="space-y-8">
-            <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px]">Financeiro & BI</span>
-            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white leading-none">
+      <section className="py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 bg-[#05070d] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(16,185,129,0.06),transparent_50%)] pointer-events-none" />
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 md:gap-16 lg:gap-24 items-center relative z-10">
+          <div className="space-y-6 md:space-y-8">
+            <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px]">Financeiro & BI</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
               Dados reais para decisões inteligentes
             </h2>
-            <p className="text-slate-400 text-lg">
+            <p className="text-slate-400 text-base sm:text-lg leading-relaxed text-balance">
               Fluxo de caixa, DRE gerencial, indicadores de ticket médio e recorrência. Saiba exatamente quanto sua barbearia lucra, sem planilhas complexas.
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
+            <div className="flex flex-wrap gap-4 pt-2">
               <Button className="h-14 px-8 rounded-2xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90" onClick={() => setShowRegisterWizard(true)}>
                 Testar Financeiro
               </Button>
@@ -686,7 +724,7 @@ function LandingPage() {
           </div>
 
           <div className="relative group">
-            <div className="relative rounded-[2.5rem] border border-gold/20 bg-zinc-950 overflow-hidden shadow-2xl p-6 md:p-8">
+            <div className="relative rounded-[2.5rem] border border-gold/20 bg-zinc-950/90 backdrop-blur-xl overflow-hidden shadow-2xl p-6 md:p-8">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {[
                   { label: "Receita Mensal", val: "R$ 42.850", icon: TrendingUp, color: "text-green-400" },
@@ -757,10 +795,10 @@ function LandingPage() {
         title="Sua barbearia pode operar em outro nível"
         description="Comece seu teste gratuito e centralize toda a gestão da sua barbearia em uma única plataforma."
         backgroundImage="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2000&auto=format&fit=crop"
-        className="py-36 md:py-48"
+        className="py-20 md:py-28 lg:py-36"
       >
-        <div className="w-full space-y-12">
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+        <div className="w-full space-y-10 md:space-y-12">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
             <Button
               className="h-16 px-12 rounded-2xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90 text-sm shadow-[0_20px_40px_-10px_rgba(212,175,55,0.4)]"
               onClick={() => setShowRegisterWizard(true)}
@@ -776,7 +814,7 @@ function LandingPage() {
             </Button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
+          <div className="flex flex-wrap justify-center gap-x-8 md:gap-x-12 gap-y-3 text-[10px] font-black uppercase tracking-[0.25em] text-slate-300">
             <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-gold" /> 15 dias grátis</div>
             <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-gold" /> Sem cartão de crédito</div>
             <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-gold" /> Cancele quando quiser</div>
@@ -788,7 +826,7 @@ function LandingPage() {
       <PlatformContactSection settings={settings} />
 
       {/* 20. Footer Institucional Dinâmico */}
-      <footer className="py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#05070d] to-black">
+      <footer className="py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-t border-white/10 bg-gradient-to-b from-[#05070d] to-black">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             {/* Coluna 1: Identidade & Redes */}

@@ -158,13 +158,23 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
   };
 
   return (
-    <section id="contato" className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-b from-[#05070d] via-[#090d16] to-[#04060a]">
-      {/* Background Decorative Ambient Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(245,158,11,0.06),transparent_50%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(245,158,11,0.04),transparent_50%)] pointer-events-none" />
+    <section id="contato" className="py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#05070d]">
+      {/* Background Ambience with Dark Blend and Golden Glow */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img
+          src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover opacity-15 mix-blend-luminosity"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#05070d] via-[#090d16]/90 to-[#04060a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(245,158,11,0.08),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(245,158,11,0.06),transparent_50%)]" />
+      </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-16 space-y-4">
+        <div className="text-center mb-12 md:mb-16 space-y-4">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -178,7 +188,7 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-white"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance"
           >
             Fale com o <span className="text-gold">Barbex</span>
           </motion.h2>
@@ -186,7 +196,7 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto font-medium"
+            className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed text-balance"
           >
             Quer saber mais sobre a plataforma, planos Enterprise ou implantação? Envie uma mensagem para nossa equipe de especialistas.
           </motion.p>
@@ -200,7 +210,7 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="p-8 md:p-10 rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-xl shadow-2xl relative overflow-hidden"
+                className="p-6 sm:p-8 md:p-10 rounded-[2.5rem] border border-white/10 bg-zinc-950/85 backdrop-blur-2xl shadow-2xl relative overflow-hidden"
               >
                 {isSuccess ? (
                   <div className="py-12 text-center space-y-6" aria-live="polite">
@@ -520,7 +530,7 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="p-8 rounded-[2.5rem] border border-white/10 bg-zinc-950/60 backdrop-blur-md space-y-6"
+              className="p-6 sm:p-8 rounded-[2.5rem] border border-white/10 bg-zinc-950/85 backdrop-blur-2xl space-y-6 shadow-2xl"
             >
               <h4 className="text-base font-black uppercase italic tracking-tight text-white flex items-center gap-2">
                 <ShieldCheck className="text-gold w-5 h-5" />

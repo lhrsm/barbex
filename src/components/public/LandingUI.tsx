@@ -1,4 +1,4 @@
-﻿import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { BarbexLogo } from "@/components/ui/barbex-logo";
@@ -109,7 +109,7 @@ export function CTASection({
 }: CTASectionProps) {
   return (
     <section className={cn(
-      "relative py-24 md:py-32 px-6 overflow-hidden min-h-[400px] flex items-center",
+      "relative py-20 md:py-28 lg:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden min-h-[380px] flex items-center",
       variant === "primary" ? "bg-black" : "bg-[#05070d]",
       className
     )}>
@@ -121,15 +121,15 @@ export function CTASection({
               alt=""
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover opacity-85 mix-blend-normal"
+              className="w-full h-full object-cover opacity-20 mix-blend-luminosity"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#05070d] via-black/80 to-[#05070d]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.12),transparent_70%)]" />
           </div>
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            className="absolute inset-0 z-[1] bg-black/60 backdrop-blur-[1px]"
+            className="absolute inset-0 z-[1] bg-black/40 backdrop-blur-[1px]"
           />
         </>
       )}
@@ -142,13 +142,16 @@ export function CTASection({
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-3xl mx-auto space-y-4 md:space-y-6"
+          className={cn(
+            "space-y-4 md:space-y-6",
+            align === "center" ? "max-w-3xl mx-auto" : "max-w-3xl"
+          )}
         >
-          <h2 className="text-3xl md:text-6xl font-black uppercase italic tracking-tighter text-white leading-[0.95] text-balance">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
             {title}
           </h2>
           {description && (
-            <p className="text-slate-400 text-base md:text-xl font-medium leading-tight text-balance">
+            <p className="text-slate-400 text-base md:text-lg lg:text-xl font-medium leading-relaxed text-balance">
               {description}
             </p>
           )}

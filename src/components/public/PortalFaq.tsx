@@ -74,13 +74,15 @@ export function PortalFaq({
   ];
 
   return (
-    <section id="faq" className="py-24 md:py-32 bg-black relative">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.05),transparent_50%)]" />
+    <section id="faq" className="py-16 md:py-24 lg:py-32 bg-black relative px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.06),transparent_60%)]" />
       
-      <div className="max-w-4xl mx-auto px-6 relative">
-        <div className="text-center mb-16 space-y-4">
-          <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px]">Dúvidas Frequentes</span>
-          <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter text-white">FAQ Premium</h2>
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className="text-center mb-12 md:mb-16 space-y-4">
+          <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px]">Dúvidas Frequentes</span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
+            FAQ Premium
+          </h2>
         </div>
 
         <div className="space-y-3">
@@ -89,16 +91,16 @@ export function PortalFaq({
               key={idx}
               initial={false}
               className={cn(
-                "group rounded-2xl border border-white/5 bg-zinc-900/20 transition-all duration-300",
-                openIndex === idx ? "border-gold/30 bg-zinc-900/40" : "hover:border-white/10 hover:bg-zinc-900/30"
+                "group rounded-2xl border border-white/5 bg-zinc-900/30 transition-all duration-300",
+                openIndex === idx ? "border-gold/30 bg-zinc-900/50" : "hover:border-white/10 hover:bg-zinc-900/40"
               )}
             >
               <button
                 onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-                className="flex w-full items-center justify-between gap-6 px-8 py-6 text-left"
+                className="flex w-full items-center justify-between gap-4 sm:gap-6 px-6 sm:px-8 py-5 sm:py-6 text-left"
               >
                 <span className={cn(
-                  "text-[17px] md:text-[18px] font-semibold tracking-tight transition-colors duration-300",
+                  "text-base sm:text-lg font-bold tracking-tight transition-colors duration-300 leading-snug",
                   openIndex === idx ? "text-gold" : "text-slate-200 group-hover:text-white"
                 )}>
                   {faq.q}
