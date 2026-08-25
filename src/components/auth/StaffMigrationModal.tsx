@@ -110,6 +110,7 @@ export function StaffMigrationModal({
         data: {
           email: cleanEmail,
           code: otpCode,
+          barberId: barber.id,
         },
       });
 

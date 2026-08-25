@@ -9099,8 +9099,10 @@ export type Database = {
       verification_challenges: {
         Row: {
           attempts: number | null
+          barber_id: string | null
           client_id: string | null
           code_hash: string
+          consumed_at: string | null
           created_at: string
           email: string
           expires_at: string
@@ -9110,8 +9112,10 @@ export type Database = {
         }
         Insert: {
           attempts?: number | null
+          barber_id?: string | null
           client_id?: string | null
           code_hash: string
+          consumed_at?: string | null
           created_at?: string
           email: string
           expires_at: string
@@ -9121,8 +9125,10 @@ export type Database = {
         }
         Update: {
           attempts?: number | null
+          barber_id?: string | null
           client_id?: string | null
           code_hash?: string
+          consumed_at?: string | null
           created_at?: string
           email?: string
           expires_at?: string
@@ -9131,6 +9137,13 @@ export type Database = {
           verified_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "verification_challenges_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "barbers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "verification_challenges_client_id_fkey"
             columns: ["client_id"]
