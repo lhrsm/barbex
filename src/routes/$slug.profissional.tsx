@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, useSearch, useParams } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
@@ -65,6 +65,7 @@ function ProfessionalDashboard() {
   const { session, loading, logout } = useProfessionalAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { slug: routeSlug } = useParams({ from: '/$slug/profissional' });
   const search = useSearch({ from: '/$slug/profissional' }) as any;
   const [currentTab, setCurrentTab] = useState(search.tab || "appointments");
   const { updateStatus: centralUpdateStatus } = useAppointmentStatus();
@@ -151,12 +152,24 @@ function ProfessionalDashboard() {
     console.log("[PROFISSIONAL_PAGE_MOUNTED]");
   }, []);
 
+  // Route Guard: Redireciona para /auth se após loading não houver sessão profissional
   useEffect(() => {
     if (!loading && !session) {
       console.log("[PROFISSIONAL_NO_SESSION] Redirecting to /auth");
       navigate({ to: "/auth" });
     }
   }, [session, loading, navigate]);
+
+  // Anti Cross-Tenant Security: Redireciona para o slug real do tenant se o slug da URL for divergente
+  useEffect(() => {
+    if (!loading && session) {
+      const correctSlug = tenant?.slug || session.tenant_slug;
+      if (correctSlug && routeSlug && routeSlug !== correctSlug) {
+        console.warn("[PROFISSIONAL_CROSS_TENANT_REDIRECT] Divergent slug in URL:", { current: routeSlug, target: correctSlug });
+        navigate({ to: `/${correctSlug}/profissional` as any, replace: true });
+      }
+    }
+  }, [loading, session, tenant, routeSlug, navigate]);
 
 
   const fetchData = async () => {
@@ -185,19 +198,19 @@ function ProfessionalDashboard() {
       console.log("[PROFISSIONAL_BARBER_DATA]", bData);
       setBarber(bData);
 
-      // Tenant profile (business name, permissions, phone)
-      if (bData?.user_id) {
+      // Tenant profile (business name, permissions, phone) via tenant_id canônico
+      const tenantIdToQuery = bData?.tenant_id || session.tenant_id;
+      if (tenantIdToQuery) {
         const { data: tData } = await supabase
           .from("profiles")
           .select("business_name, slug, phone, barber_can_cancel, barber_can_reschedule")
-          .eq("id", bData.user_id)
+          .eq("id", tenantIdToQuery)
           .maybeSingle();
         setTenant(tData);
       }
 
 
-      // Appointments (via SECURITY DEFINER RPC — barber panel uses anon session,
-      // so direct SELECT is blocked by RLS for confirmed/completed appointments)
+      // Appointments (via SECURITY DEFINER RPC)
       const { data: allApps, error: aError } = await supabase
         .rpc("get_barber_appointments", { p_barber_id: session.barber_id });
 
@@ -210,16 +223,17 @@ function ProfessionalDashboard() {
 
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
       const today = new Date().toISOString().slice(0, 10);
+      const effectiveTenantId = bData?.tenant_id || session.tenant_id;
       const [{ data: entries, error: entriesError }, { data: summary, error: summaryError }] = await Promise.all([
         supabase.rpc("get_barber_commissions", {
-          p_tenant_id: bData.tenant_id || bData.user_id,
+          p_tenant_id: effectiveTenantId,
           p_barber_id: session.barber_id,
           p_start_date: monthStart,
           p_end_date: today,
           p_status: undefined,
         }),
         supabase.rpc("get_barber_commission_summary", {
-          p_tenant_id: bData.tenant_id || bData.user_id,
+          p_tenant_id: effectiveTenantId,
           p_barber_id: session.barber_id,
           p_start_date: monthStart,
           p_end_date: today,

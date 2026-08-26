@@ -96,7 +96,7 @@ export function getDefaultRouteForRole(role: UserRole | null | undefined, slug?:
       return "/reception";
     case "barber":
     case "professional":
-      return slug && slug !== "general" ? `/${slug}/profissional` : "/dashboard";
+      return slug && slug !== "general" ? `/${slug}/profissional` : "/auth";
     case "client":
       return slug && slug !== "general" ? `/${slug}/portal` : "/auth";
     case "manager":
@@ -105,7 +105,8 @@ export function getDefaultRouteForRole(role: UserRole | null | undefined, slug?:
     case "cashier":
     case "admin":
     case "tenant_admin":
-    default:
       return "/dashboard";
+    default:
+      return "/auth";
   }
 }

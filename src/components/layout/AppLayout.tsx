@@ -138,7 +138,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const loading = authLoading || profLoading;
 
 
-  const slug = tenantProfile?.slug || authProfile?.slug || "general";
+  const slug = tenantProfile?.slug || session?.tenant_slug || authProfile?.slug || "general";
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -185,7 +185,8 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const { isEnabled: isModuleEnabled } = useModules();
   const { hasPermission } = usePermissions();
 
-  const rawNav = role === 'barber' || role === 'professional' ? [...barberNavItems(slug)] : [...defaultNavItems];
+  const resolvedBarberSlug = tenantProfile?.slug || session?.tenant_slug || (slug !== 'general' ? slug : '');
+  const rawNav = role === 'barber' || role === 'professional' ? (resolvedBarberSlug ? [...barberNavItems(resolvedBarberSlug)] : []) : [...defaultNavItems];
   const navItems = rawNav.filter((item: NavItem) => {
     const moduleEnabled = !item.module || isModuleEnabled(item.module);
     const permissionGranted = !item.permission || hasPermission(item.permission);
@@ -217,19 +218,29 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
     }
 
     // Redirect by role
-    if (user && !pathname.startsWith('/auth') && pathname === '/dashboard') {
+    if (user && !pathname.startsWith('/auth') && (pathname === '/dashboard' || pathname === '/dashboard/')) {
       console.log('[AUTH_REDIRECT_TRACE] User found on /dashboard, resolving role redirect:', role);
       if (role === 'super_admin' && !isImpersonating) {
-        navigate({ to: "/admin/dashboard" });
+        navigate({ to: "/admin/dashboard", replace: true });
       } else if (role === 'reception' || role === 'receptionist') {
-        navigate({ to: "/reception" });
+        navigate({ to: "/reception", replace: true });
       } else if (role === 'professional' || role === 'barber') {
-        navigate({ to: `/${slug}/profissional` as any });
+        const targetBarberSlug = tenantProfile?.slug || session?.tenant_slug || (slug !== 'general' ? slug : null);
+        if (targetBarberSlug) {
+          navigate({ to: `/${targetBarberSlug}/profissional` as any, replace: true });
+        } else {
+          navigate({ to: "/auth", replace: true });
+        }
       } else if (role === 'client') {
-        navigate({ to: `/${slug}/portal` as any });
+        const targetClientSlug = tenantProfile?.slug || (slug !== 'general' ? slug : null);
+        if (targetClientSlug) {
+          navigate({ to: `/${targetClientSlug}/portal` as any, replace: true });
+        } else {
+          navigate({ to: "/auth", replace: true });
+        }
       }
     }
-  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug]);
+  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session]);
 
 
   useEffect(() => {

@@ -92,23 +92,50 @@ export function AuthForm() {
         ]);
 
         const effectiveRole = userRole?.role || membership?.role || profile?.role || "admin";
-        const effectiveSlug = profile?.slug || "general";
+        let effectiveSlug: string | null = profile?.slug || null;
 
-        // Se for barbeiro/profissional, sincroniza também a sessão profissional
+        // Se for barbeiro/profissional, sincroniza a sessão profissional e busca o slug do TENANT da barbearia
         if (effectiveRole === "barber" || effectiveRole === "professional") {
-          const { data: barberRec } = await supabase
+          // 1. Buscar prioritariamente pelo vínculo canônico user_id == auth.users.id
+          let { data: barberRec } = await supabase
             .from("barbers")
             .select("id, name, user_id, tenant_id")
-            .or(`email.eq.${email},id.eq.${data.user.id}`)
+            .eq("user_id", data.user.id)
             .maybeSingle();
 
+          // 2. Fallback de compatibilidade por e-mail caso ainda em migração
+          if (!barberRec && email) {
+            const { data: barberByEmail } = await supabase
+              .from("barbers")
+              .select("id, name, user_id, tenant_id")
+              .eq("email", email.trim().toLowerCase())
+              .maybeSingle();
+            barberRec = barberByEmail;
+          }
+
           if (barberRec) {
+            const resolvedTenantId = barberRec.tenant_id || membership?.tenant_id || profile?.tenant_id;
+
+            // Buscar o slug do perfil do TENANT (dono do estabelecimento), não do próprio barbeiro
+            if (resolvedTenantId) {
+              const { data: tenantProfile } = await supabase
+                .from("profiles")
+                .select("slug")
+                .eq("id", resolvedTenantId)
+                .maybeSingle();
+
+              if (tenantProfile?.slug) {
+                effectiveSlug = tenantProfile.slug;
+              }
+            }
+
             login({
               phone: data.user.phone || "",
               barber_id: barberRec.id,
               name: barberRec.name,
               role: "barber",
-              tenant_id: barberRec.tenant_id || barberRec.user_id,
+              tenant_id: resolvedTenantId || "",
+              tenant_slug: effectiveSlug || undefined,
             });
           }
         }
@@ -120,7 +147,18 @@ export function AuthForm() {
         } else if (effectiveRole === "reception" || effectiveRole === "receptionist") {
           navigate({ to: "/reception" });
         } else if (effectiveRole === "barber" || effectiveRole === "professional") {
-          navigate({ to: `/${effectiveSlug}/profissional` as any });
+          if (effectiveSlug && effectiveSlug !== "general") {
+            navigate({ to: `/${effectiveSlug}/profissional` as any });
+          } else {
+            console.error("[AUTH] Não foi possível resolver o slug do estabelecimento para o colaborador.");
+            toast.error("Não foi possível identificar o estabelecimento do profissional. Contate o administrador.");
+          }
+        } else if (effectiveRole === "client") {
+          if (effectiveSlug && effectiveSlug !== "general") {
+            navigate({ to: `/${effectiveSlug}/portal` as any });
+          } else {
+            navigate({ to: "/auth" as any });
+          }
         } else {
           navigate({ to: "/dashboard" as any });
         }

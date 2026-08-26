@@ -18,7 +18,7 @@ export const Route = createFileRoute("/dashboard/")({
 
 function DashboardIndexComponent() {
   const { user, profile: authProfile, role, loading: authLoading, initialized: authInitialized } = useAuth();
-  const { tenantId, isLoading: tenantLoading } = useTenant();
+  const { tenantId, tenantProfile, isLoading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { refresh: refreshLimits, loading: planLoading } = usePlanLimits();
@@ -94,6 +94,29 @@ function DashboardIndexComponent() {
       return;
     }
 
+    // RBAC HARDENING: Barbeiros e Profissionais NUNCA podem acessar o dashboard administrativo
+    if (role === 'barber' || role === 'professional') {
+      console.warn('[RBAC_BLOCK] Barber attempting to access /dashboard, redirecting to professional panel');
+      const targetSlug = tenantProfile?.slug || authProfile?.slug;
+      if (targetSlug && targetSlug !== "general") {
+        navigate({ to: `/${targetSlug}/profissional` as any, replace: true });
+      } else {
+        navigate({ to: "/auth" as any, replace: true });
+      }
+      return;
+    }
+
+    // Clientes também são redirecionados para seu portal exclusivo
+    if (role === 'client') {
+      const targetSlug = tenantProfile?.slug || authProfile?.slug;
+      if (targetSlug && targetSlug !== "general") {
+        navigate({ to: `/${targetSlug}/portal` as any, replace: true });
+      } else {
+        navigate({ to: "/auth" as any, replace: true });
+      }
+      return;
+    }
+
     if (role === 'super_admin') {
       const impersonatedId = typeof window !== 'undefined' ? sessionStorage.getItem("impersonated_tenant_id") : null;
       if (!impersonatedId) {
@@ -101,11 +124,11 @@ function DashboardIndexComponent() {
         return;
       }
     }
-  }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing]);
+  }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing, tenantProfile, authProfile]);
 
 
   useEffect(() => {
-    if (!tenantId) return;
+    if (!tenantId || role === 'barber' || role === 'professional' || role === 'client') return;
 
     fetchStats();
     fetchTodayAppointments();
@@ -361,27 +384,9 @@ function DashboardIndexComponent() {
 
   const renderSpecializedView = () => {
     switch (role) {
-      case 'manager':
-        return (
-          <ManagerDashboardView
-            stats={stats}
-            todayAppointments={todayAppointments}
-            barbers={barbers}
-            birthdaysCount={birthdayCustomers.length}
-            tenantId={tenantId || ""}
-            navigate={navigate}
-            name={authProfile?.responsible_name || authProfile?.full_name || user?.user_metadata?.responsible_name || user?.user_metadata?.full_name || user?.email?.split('@')[0]}
-          />
-        );
-      case 'finance':
-        return (
-          <FinanceDashboardView
-            stats={stats}
-            tenantId={tenantId || ""}
-            navigate={navigate}
-          />
-        );
-      default:
+      case 'super_admin':
+      case 'admin':
+      case 'tenant_admin':
         return (
           <AdminDashboardView
             stats={stats}
@@ -396,6 +401,33 @@ function DashboardIndexComponent() {
             name={authProfile?.responsible_name || authProfile?.full_name || user?.user_metadata?.responsible_name || user?.user_metadata?.full_name || user?.email?.split('@')[0]}
           />
         );
+      case 'manager':
+        return (
+          <ManagerDashboardView
+            stats={stats}
+            todayAppointments={todayAppointments}
+            barbers={barbers}
+            birthdaysCount={birthdayCustomers.length}
+            tenantId={tenantId || ""}
+            navigate={navigate}
+            name={authProfile?.responsible_name || authProfile?.full_name || user?.user_metadata?.responsible_name || user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+          />
+        );
+      case 'finance':
+      case 'financial':
+        return (
+          <FinanceDashboardView
+            stats={stats}
+            tenantId={tenantId || ""}
+            navigate={navigate}
+          />
+        );
+      case 'barber':
+      case 'professional':
+      case 'client':
+      default:
+        // Fail-closed: nunca renderizar painel administrativo para papéis sem permissão explícita
+        return null;
     }
   };
 
