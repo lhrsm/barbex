@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,7 @@ export function StaffMigrationModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
   const { login } = useProfessionalAuth();
 
   const reqVerification = useServerFn(requestStaffEmailVerification);
@@ -69,11 +70,13 @@ export function StaffMigrationModal({
   // ETAPA 1 -> 2: Enviar OTP para o e-mail digitado
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!email || !email.includes("@")) {
       toast.error("Informe um e-mail válido.");
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const res = await reqVerification({
@@ -91,6 +94,7 @@ export function StaffMigrationModal({
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar código.");
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };
@@ -98,11 +102,13 @@ export function StaffMigrationModal({
   // ETAPA 3: Validar código OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (otpCode.length !== 6) {
       toast.error("Digite o código completo de 6 dígitos.");
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
@@ -142,9 +148,11 @@ export function StaffMigrationModal({
 
         setStep(5);
       } else {
+        submittingRef.current = false;
         setStep(4);
       }
     } catch (err: any) {
+      submittingRef.current = false;
       toast.error(err.message || "Código incorreto ou expirado.");
     } finally {
       setLoading(false);
@@ -154,6 +162,7 @@ export function StaffMigrationModal({
   // ETAPA 4: Criar senha e finalizar migração (somente contas novas)
   const handleFinalizeSetup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (password.length < 6) {
       toast.error("A senha deve ter no mínimo 6 caracteres.");
       return;
@@ -163,6 +172,7 @@ export function StaffMigrationModal({
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
@@ -194,6 +204,7 @@ export function StaffMigrationModal({
 
       setStep(5);
     } catch (err: any) {
+      submittingRef.current = false;
       toast.error(err.message || "Erro ao finalizar configuração.");
     } finally {
       setLoading(false);
