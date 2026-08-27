@@ -135,6 +135,7 @@ export function ProfessionalAuthProvider({ children }: { children: React.ReactNo
       localStorage.setItem('barber_session', JSON.stringify(fullSession));
     }
     setSession(fullSession);
+    setLoading(false);
   };
 
   const logout = async () => {

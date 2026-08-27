@@ -148,14 +148,9 @@ function ProfessionalDashboard() {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [rescheduleAppointment, setRescheduleAppointment] = useState<any>(null);
 
-  useEffect(() => {
-    console.log("[PROFISSIONAL_PAGE_MOUNTED]");
-  }, []);
-
   // Route Guard: Redireciona para /auth se após loading não houver sessão profissional
   useEffect(() => {
     if (!loading && !session) {
-      console.log("[PROFISSIONAL_NO_SESSION] Redirecting to /auth");
       navigate({ to: "/auth" });
     }
   }, [session, loading, navigate]);
@@ -165,7 +160,6 @@ function ProfessionalDashboard() {
     if (!loading && session) {
       const correctSlug = tenant?.slug || session.tenant_slug;
       if (correctSlug && routeSlug && routeSlug !== correctSlug) {
-        console.warn("[PROFISSIONAL_CROSS_TENANT_REDIRECT] Divergent slug in URL:", { current: routeSlug, target: correctSlug });
         navigate({ to: `/${correctSlug}/profissional` as any, replace: true });
       }
     }
@@ -377,11 +371,13 @@ function ProfessionalDashboard() {
     );
   }
 
-  if (!stats && !error) {
+  if (loading || (!stats && !error)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#05070d] gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
-        <p className="text-[#6B7280] text-sm font-medium">Sincronizando dados...</p>
+        <p className="text-[#6B7280] text-sm font-medium">
+          {loading ? "Carregando painel do profissional..." : "Sincronizando dados..."}
+        </p>
       </div>
     );
   }

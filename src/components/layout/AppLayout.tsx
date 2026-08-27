@@ -201,12 +201,12 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // PROTEÇÃO CRÍTICA: Não agir enquanto estiver em loading ou hidratando
     if (loading || authLoading || tenantLoading) {
-      console.log('[AUTH_REDIRECT_TRACE] Waiting for hydration...', { loading, authLoading, tenantLoading });
       return;
     }
 
     // Se não há usuário e a rota não é pública, redirecionar para login
-    const isPublicPath = pathname === "/auth" || pathname === "/" || pathname.endsWith("/portal") || pathname.includes("/agendamento/") || pathname.includes("/review/");
+    // Rotas com guards dedicados (ex: /profissional e /portal) não devem ser ejetadas pelo AppLayout
+    const isPublicPath = pathname === "/auth" || pathname === "/" || pathname.endsWith("/portal") || pathname.includes("/agendamento/") || pathname.includes("/review/") || pathname.endsWith("/profissional");
     
     if (!user && !isPublicPath) {
       console.warn('[AUTH_REDIRECT_TRACE] No session found on protected path:', {
@@ -240,7 +240,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
         }
       }
     }
-  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session]);
+  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session, resolvedBarberSlug]);
 
 
   useEffect(() => {

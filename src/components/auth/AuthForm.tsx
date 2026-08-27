@@ -142,26 +142,28 @@ export function AuthForm() {
 
         toast.success("Login realizado com sucesso!");
 
+        let targetUrl = "/dashboard";
         if (effectiveRole === "super_admin") {
-          navigate({ to: "/admin/dashboard" });
+          targetUrl = "/admin/dashboard";
         } else if (effectiveRole === "reception" || effectiveRole === "receptionist") {
-          navigate({ to: "/reception" });
+          targetUrl = "/reception";
         } else if (effectiveRole === "barber" || effectiveRole === "professional") {
           if (effectiveSlug && effectiveSlug !== "general") {
-            navigate({ to: `/${effectiveSlug}/profissional` as any });
+            targetUrl = `/${effectiveSlug}/profissional`;
           } else {
             console.error("[AUTH] Não foi possível resolver o slug do estabelecimento para o colaborador.");
             toast.error("Não foi possível identificar o estabelecimento do profissional. Contate o administrador.");
+            return;
           }
         } else if (effectiveRole === "client") {
           if (effectiveSlug && effectiveSlug !== "general") {
-            navigate({ to: `/${effectiveSlug}/portal` as any });
+            targetUrl = `/${effectiveSlug}/portal`;
           } else {
-            navigate({ to: "/auth" as any });
+            targetUrl = "/auth";
           }
-        } else {
-          navigate({ to: "/dashboard" as any });
         }
+
+        navigate({ to: targetUrl as any });
       } else {
         const cleanPhone = phone.replace(/\D/g, '');
         const { data: barber, error: barberError } = await supabase

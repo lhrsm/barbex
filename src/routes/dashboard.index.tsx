@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
+import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { useEffect, useState } from "react";
 import { WalkinModal } from "@/components/calendar/WalkinModal";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/dashboard/")({
 function DashboardIndexComponent() {
   const { user, profile: authProfile, role, loading: authLoading, initialized: authInitialized } = useAuth();
   const { tenantId, tenantProfile, isLoading: tenantLoading } = useTenant();
+  const { session: proSession } = useProfessionalAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { refresh: refreshLimits, loading: planLoading } = usePlanLimits();
@@ -97,7 +99,7 @@ function DashboardIndexComponent() {
     // RBAC HARDENING: Barbeiros e Profissionais NUNCA podem acessar o dashboard administrativo
     if (role === 'barber' || role === 'professional') {
       console.warn('[RBAC_BLOCK] Barber attempting to access /dashboard, redirecting to professional panel');
-      const targetSlug = tenantProfile?.slug || authProfile?.slug;
+      const targetSlug = proSession?.tenant_slug || tenantProfile?.slug || (authProfile?.role === 'barber' ? null : authProfile?.slug);
       if (targetSlug && targetSlug !== "general") {
         navigate({ to: `/${targetSlug}/profissional` as any, replace: true });
       } else {
@@ -124,7 +126,7 @@ function DashboardIndexComponent() {
         return;
       }
     }
-  }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing, tenantProfile, authProfile]);
+  }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing, tenantProfile, authProfile, proSession]);
 
 
   useEffect(() => {
