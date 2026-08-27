@@ -199,29 +199,78 @@ export const getPendingInvitations = createServerFn({ method: "GET" })
     return invites;
   });
 
+export const validateInvitationToken = createServerFn({ method: "GET" })
+  .inputValidator(z.object({
+    token: z.string()
+  }))
+  .handler(async ({ data }) => {
+    const { token } = data;
+    if (!token || typeof token !== "string" || !/^[a-fA-F0-9]{64}$/.test(token.trim())) {
+      return { valid: false as const };
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: invite, error } = await supabaseAdmin
+      .from('user_invitations')
+      .select('*, tenant:profiles!user_invitations_tenant_id_fkey(business_name, display_name)')
+      .eq('token_hash', token.trim())
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (error || !invite) {
+      return { valid: false as const };
+    }
+
+    if (invite.status !== 'pending' || (invite as any).accepted_at) {
+      return { valid: false as const };
+    }
+
+    if (new Date(invite.expires_at) <= new Date()) {
+      return { valid: false as const };
+    }
+
+    const tenantProfile = invite.tenant as any;
+    const barbershopName = tenantProfile?.business_name || tenantProfile?.display_name || "Barbearia";
+
+    return {
+      valid: true as const,
+      email: invite.email,
+      role: invite.role,
+      barbershopName,
+      expiresAt: invite.expires_at
+    };
+  });
+
 export const acceptTeamInvitation = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     token: z.string(),
     password: z.string().min(6)
   }))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { token, password } = data;
+    if (!token || typeof token !== "string" || !/^[a-fA-F0-9]{64}$/.test(token.trim())) {
+      throw new Error("Convite inválido ou malformado.");
+    }
 
-    // 1. Validate Invitation
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Validate Invitation (Server-Side pre-check)
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from('user_invitations')
       .select('*')
-      .eq('token_hash', token)
+      .eq('token_hash', token.trim())
       .eq('status', 'pending')
-      .single();
+      .maybeSingle();
 
-    if (inviteError || !invite) throw new Error("Convite inválido ou expirado.");
+    if (inviteError || !invite || invite.status !== 'pending' || (invite as any).accepted_at) {
+      throw new Error("Convite inválido ou já utilizado.");
+    }
 
-    if (new Date(invite.expires_at) < new Date()) {
+    if (new Date(invite.expires_at) <= new Date()) {
       await supabaseAdmin
         .from('user_invitations')
-        .update({ status: 'expired' })
+        .update({ status: 'expired' } as any)
         .eq('id', invite.id);
       throw new Error("Este convite expirou.");
     }
@@ -229,7 +278,7 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
     // 2. Check if Auth User exists
     const { data: authData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     if (listError) throw new Error("Erro ao verificar usuários.");
-    let user = authData.users.find(u => u.email === invite.email);
+    let user = authData.users.find(u => Boolean(u.email) && u.email!.toLowerCase() === invite.email.toLowerCase());
 
     if (!user) {
       // Create Auth User
@@ -244,6 +293,22 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
       });
       if (createError) throw new Error(createError.message);
       user = newUser.user;
+    } else {
+      // Existing user: check if account holds owner/admin privileges before updating password
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const isPrivileged = existingProfile?.role === 'super_admin' || existingProfile?.role === 'admin' || existingProfile?.role === 'tenant_admin';
+
+      if (!isPrivileged) {
+        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          password: password,
+          email_confirm: true
+        });
+      }
     }
 
     // 3. Link Membership & Profile
@@ -258,16 +323,40 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
 
     if (membershipError) throw new Error(membershipError.message);
 
-    // 4. Update Invitation Status
-    await supabaseAdmin
+    // Update profile role only if user is not already an administrator/owner
+    const { data: currentProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!currentProfile?.role || currentProfile.role === 'client' || currentProfile.role === 'customer') {
+      await supabaseAdmin
+        .from('profiles')
+        .update({
+          role: invite.role,
+          tenant_id: invite.tenant_id,
+          status: 'active'
+        } as any)
+        .eq('id', user.id);
+    }
+
+    // 4. Update Invitation Status (Conditional Atomic Claim)
+    const { data: claimedInvite, error: updateInviteError } = await supabaseAdmin
       .from('user_invitations')
       .update({ 
         status: 'accepted',
         accepted_at: new Date().toISOString(),
         accepted_by: user.id
       } as any)
-      .eq('id', invite.id);
+      .eq('id', invite.id)
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
+
+    if (updateInviteError || !claimedInvite) {
+      throw new Error("Convite já foi utilizado por outra sessão concorrente.");
+    }
 
     return { success: true };
   });
-
