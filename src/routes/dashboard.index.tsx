@@ -108,14 +108,16 @@ function DashboardIndexComponent() {
       return;
     }
 
-    // Clientes também são redirecionados para seu portal exclusivo
-    if (role === 'client') {
-      const targetSlug = tenantProfile?.slug || authProfile?.slug;
-      if (targetSlug && targetSlug !== "general") {
-        navigate({ to: `/${targetSlug}/portal` as any, replace: true });
-      } else {
-        navigate({ to: "/auth" as any, replace: true });
+    // Clientes e identidades desconhecidas são redirecionados para seu portal ou login
+    if (role === 'client' || role === 'customer' || role === 'unknown') {
+      if (role !== 'unknown') {
+        const targetSlug = identity?.tenantSlug || tenantProfile?.slug || authProfile?.slug;
+        if (targetSlug && targetSlug !== "general") {
+          navigate({ to: `/${targetSlug}/portal` as any, replace: true });
+          return;
+        }
       }
+      navigate({ to: "/auth" as any, replace: true });
       return;
     }
 
@@ -126,11 +128,11 @@ function DashboardIndexComponent() {
         return;
       }
     }
-  }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing, tenantProfile, authProfile, proSession]);
+  }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing, tenantProfile, authProfile, proSession, identity]);
 
 
   useEffect(() => {
-    if (!tenantId || role === 'barber' || role === 'professional' || role === 'client') return;
+    if (!tenantId || role === 'barber' || role === 'professional' || role === 'client' || role === 'customer' || role === 'unknown') return;
 
     fetchStats();
     fetchTodayAppointments();
@@ -427,6 +429,8 @@ function DashboardIndexComponent() {
       case 'barber':
       case 'professional':
       case 'client':
+      case 'customer':
+      case 'unknown':
       default:
         // Fail-closed: nunca renderizar painel administrativo para papéis sem permissão explícita
         return null;

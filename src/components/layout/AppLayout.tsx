@@ -231,13 +231,15 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
         } else {
           navigate({ to: "/auth", replace: true });
         }
-      } else if (role === 'client') {
+      } else if (role === 'client' || role === 'customer') {
         const targetClientSlug = authIdentity?.tenantSlug || tenantProfile?.slug || (slug !== 'general' ? slug : null);
         if (targetClientSlug) {
           navigate({ to: `/${targetClientSlug}/portal` as any, replace: true });
         } else {
           navigate({ to: "/auth", replace: true });
         }
+      } else if (role === 'unknown') {
+        navigate({ to: "/auth", replace: true });
       }
     }
   }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session, authIdentity]);

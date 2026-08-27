@@ -69,6 +69,8 @@ export const ROLE_PERMISSIONS_MATRIX: Record<UserRole, PermissionKey[] | ["*"]> 
   ],
 
   client: [],
+  customer: [],
+  unknown: [],
 };
 
 /**
@@ -98,6 +100,7 @@ export function getDefaultRouteForRole(role: UserRole | null | undefined, slug?:
     case "professional":
       return slug && slug !== "general" ? `/${slug}/profissional` : "/auth";
     case "client":
+    case "customer":
       return slug && slug !== "general" ? `/${slug}/portal` : "/auth";
     case "manager":
     case "financial":
@@ -106,6 +109,7 @@ export function getDefaultRouteForRole(role: UserRole | null | undefined, slug?:
     case "admin":
     case "tenant_admin":
       return "/dashboard";
+    case "unknown":
     default:
       return "/auth";
   }
