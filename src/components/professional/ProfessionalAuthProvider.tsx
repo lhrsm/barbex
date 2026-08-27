@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export interface ProfessionalSession {
@@ -23,7 +22,7 @@ interface ProfessionalAuthContextType {
 const ProfessionalAuthContext = createContext<ProfessionalAuthContextType | undefined>(undefined);
 
 export function ProfessionalAuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, role, loading: authLoading, initialized: authInitialized, logout: authLogout } = useAuth();
+  const { user, identity, loading: authLoading, initialized: authInitialized, logout: authLogout } = useAuth();
   const [session, setSession] = useState<ProfessionalSession | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -36,95 +35,40 @@ export function ProfessionalAuthProvider({ children }: { children: React.ReactNo
     }
 
     if (!authInitialized || authLoading) {
+      setLoading(true);
       return;
     }
 
-    // FAIL CLOSED: Se não há usuário Supabase Auth ativo, limpa qualquer resquício
-    if (!user) {
+    // FAIL CLOSED: Se não há usuário Supabase Auth ativo ou identidade resolvida
+    if (!user || !identity) {
       if (session) setSession(null);
       localStorage.removeItem('barber_session');
       setLoading(false);
       return;
     }
 
-    // Se o usuário autenticado não for barber/professional, limpa sessão profissional
-    if (role && role !== 'barber' && role !== 'professional') {
+    // Se a identidade canônica for de colaborador/barbeiro, sincroniza a sessão profissional
+    if (identity.role === 'barber' || identity.role === 'professional') {
+      const validSession: ProfessionalSession = {
+        barber_id: identity.barberId || "",
+        user_id: identity.userId,
+        phone: identity.phone || user.phone || "",
+        name: identity.displayName || "Profissional",
+        role: 'barber',
+        tenant_id: identity.tenantId || "",
+        tenant_slug: identity.tenantSlug || undefined,
+      };
+
+      setSession(validSession);
+      localStorage.setItem('barber_session', JSON.stringify(validSession));
+      setLoading(false);
+    } else {
+      // Para qualquer outro perfil (admin, super_admin, manager, client), descarta sessão de barbeiro
       if (session) setSession(null);
       localStorage.removeItem('barber_session');
       setLoading(false);
-      return;
     }
-
-    let isMounted = true;
-
-    async function hydrateProfessionalSession() {
-      try {
-        if (!user?.id) {
-          if (isMounted) {
-            setSession(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Buscar registro de barbeiro vinculado a este auth.users.id
-        const { data: barberData, error: barberErr } = await supabase
-          .from("barbers")
-          .select("id, name, phone, user_id, tenant_id, active")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (barberErr || !barberData || !barberData.active) {
-          console.warn("[ProfessionalAuth] Usuário autenticado não possui vínculo ativo em barbers:", user.id);
-          if (isMounted) {
-            setSession(null);
-            localStorage.removeItem('barber_session');
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Buscar slug do tenant correspondente
-        let tenantSlug: string | undefined;
-        if (barberData.tenant_id) {
-          const { data: tenantProfile } = await supabase
-            .from("profiles")
-            .select("slug")
-            .eq("id", barberData.tenant_id)
-            .maybeSingle();
-          tenantSlug = tenantProfile?.slug || undefined;
-        }
-
-        const validSession: ProfessionalSession = {
-          barber_id: barberData.id,
-          user_id: barberData.user_id,
-          phone: barberData.phone || user.phone || "",
-          name: barberData.name,
-          role: 'barber',
-          tenant_id: barberData.tenant_id || "",
-          tenant_slug: tenantSlug,
-        };
-
-        if (isMounted) {
-          setSession(validSession);
-          localStorage.setItem('barber_session', JSON.stringify(validSession));
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("[ProfessionalAuth] Erro ao hidratar sessão profissional:", err);
-        if (isMounted) {
-          setSession(null);
-          setLoading(false);
-        }
-      }
-    }
-
-    hydrateProfessionalSession();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, role, authLoading, authInitialized]);
+  }, [user, identity, authLoading, authInitialized]);
 
   const login = (sessionData: ProfessionalSession) => {
     const fullSession: ProfessionalSession = {

@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { Phone, Mail, Lock, Eye, EyeOff, Send, ArrowRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
+import { resolveAuthenticatedIdentity } from "@/lib/auth-identity.resolver";
 import { StaffMigrationModal } from "./StaffMigrationModal";
 
 export function AuthForm() {
@@ -37,7 +37,6 @@ export function AuthForm() {
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   
   const navigate = useNavigate();
-  const { login } = useProfessionalAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +71,7 @@ export function AuthForm() {
       if (loginMethod === "email") {
         console.log("[AUTH_LOGIN_ATTEMPT] Direct Supabase sign-in for:", email);
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim().toLowerCase(),
           password,
         });
 
@@ -84,86 +83,20 @@ export function AuthForm() {
           throw error;
         }
 
-        // Buscar perfil e papel para redirecionamento inteligente imediato
-        const [{ data: profile }, { data: userRole }, { data: membership }] = await Promise.all([
-          supabase.from("profiles").select("role, slug, tenant_id").eq("id", data.user.id).maybeSingle(),
-          supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle(),
-          supabase.from("tenant_memberships").select("role, tenant_id").eq("user_id", data.user.id).maybeSingle(),
-        ]);
+        if (!data?.user) {
+          throw new Error("Não foi possível autenticar o usuário.");
+        }
 
-        const effectiveRole = userRole?.role || membership?.role || profile?.role || "admin";
-        let effectiveSlug: string | null = profile?.slug || null;
+        // Resolução Canônica de Identidade Unificada
+        const identity = await resolveAuthenticatedIdentity(data.user.id);
+        console.log("[AUTH_IDENTITY_RESOLVED]", identity);
 
-        // Se for barbeiro/profissional, sincroniza a sessão profissional e busca o slug do TENANT da barbearia
-        if (effectiveRole === "barber" || effectiveRole === "professional") {
-          // 1. Buscar prioritariamente pelo vínculo canônico user_id == auth.users.id
-          let { data: barberRec } = await supabase
-            .from("barbers")
-            .select("id, name, user_id, tenant_id")
-            .eq("user_id", data.user.id)
-            .maybeSingle();
-
-          // 2. Fallback de compatibilidade por e-mail caso ainda em migração
-          if (!barberRec && email) {
-            const { data: barberByEmail } = await supabase
-              .from("barbers")
-              .select("id, name, user_id, tenant_id")
-              .eq("email", email.trim().toLowerCase())
-              .maybeSingle();
-            barberRec = barberByEmail;
-          }
-
-          if (barberRec) {
-            const resolvedTenantId = barberRec.tenant_id || membership?.tenant_id || profile?.tenant_id;
-
-            // Buscar o slug do perfil do TENANT (dono do estabelecimento), não do próprio barbeiro
-            if (resolvedTenantId) {
-              const { data: tenantProfile } = await supabase
-                .from("profiles")
-                .select("slug")
-                .eq("id", resolvedTenantId)
-                .maybeSingle();
-
-              if (tenantProfile?.slug) {
-                effectiveSlug = tenantProfile.slug;
-              }
-            }
-
-            login({
-              phone: data.user.phone || "",
-              barber_id: barberRec.id,
-              name: barberRec.name,
-              role: "barber",
-              tenant_id: resolvedTenantId || "",
-              tenant_slug: effectiveSlug || undefined,
-            });
-          }
+        if (!identity || identity.destination === "/auth") {
+          throw new Error("Acesso não autorizado ou perfil não configurado.");
         }
 
         toast.success("Login realizado com sucesso!");
-
-        let targetUrl = "/dashboard";
-        if (effectiveRole === "super_admin") {
-          targetUrl = "/admin/dashboard";
-        } else if (effectiveRole === "reception" || effectiveRole === "receptionist") {
-          targetUrl = "/reception";
-        } else if (effectiveRole === "barber" || effectiveRole === "professional") {
-          if (effectiveSlug && effectiveSlug !== "general") {
-            targetUrl = `/${effectiveSlug}/profissional`;
-          } else {
-            console.error("[AUTH] Não foi possível resolver o slug do estabelecimento para o colaborador.");
-            toast.error("Não foi possível identificar o estabelecimento do profissional. Contate o administrador.");
-            return;
-          }
-        } else if (effectiveRole === "client") {
-          if (effectiveSlug && effectiveSlug !== "general") {
-            targetUrl = `/${effectiveSlug}/portal`;
-          } else {
-            targetUrl = "/auth";
-          }
-        }
-
-        navigate({ to: targetUrl as any });
+        navigate({ to: identity.destination as any });
       } else {
         const cleanPhone = phone.replace(/\D/g, '');
         const { data: barber, error: barberError } = await supabase

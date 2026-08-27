@@ -18,7 +18,7 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function DashboardIndexComponent() {
-  const { user, profile: authProfile, role, loading: authLoading, initialized: authInitialized } = useAuth();
+  const { user, identity, profile: authProfile, role, loading: authLoading, initialized: authInitialized } = useAuth();
   const { tenantId, tenantProfile, isLoading: tenantLoading } = useTenant();
   const { session: proSession } = useProfessionalAuth();
   const queryClient = useQueryClient();
@@ -99,7 +99,7 @@ function DashboardIndexComponent() {
     // RBAC HARDENING: Barbeiros e Profissionais NUNCA podem acessar o dashboard administrativo
     if (role === 'barber' || role === 'professional') {
       console.warn('[RBAC_BLOCK] Barber attempting to access /dashboard, redirecting to professional panel');
-      const targetSlug = proSession?.tenant_slug || tenantProfile?.slug || (authProfile?.role === 'barber' ? null : authProfile?.slug);
+      const targetSlug = identity?.tenantSlug || proSession?.tenant_slug || tenantProfile?.slug || (authProfile?.role === 'barber' ? null : authProfile?.slug);
       if (targetSlug && targetSlug !== "general") {
         navigate({ to: `/${targetSlug}/profissional` as any, replace: true });
       } else {

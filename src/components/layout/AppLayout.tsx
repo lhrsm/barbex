@@ -126,7 +126,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const instanceId = useId().replace(/:/g, "");
   const { tenantProfile, isImpersonating, stopImpersonation, tenantId, isLoading: tenantLoading } = useTenant();
-  const { role: authRole, user: authUser, loading: authLoading, profile: authProfile } = useAuth();
+  const { role: authRole, user: authUser, identity: authIdentity, loading: authLoading, profile: authProfile } = useAuth();
   const { session, loading: profLoading, logout: profLogout } = useProfessionalAuth();
   const { isExpired, isTrial, subscription, plan, trialEndsAt, loading: planLoading } = usePlanLimits();
   const navigate = useNavigate();
@@ -225,14 +225,14 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
       } else if (role === 'reception' || role === 'receptionist') {
         navigate({ to: "/reception", replace: true });
       } else if (role === 'professional' || role === 'barber') {
-        const targetBarberSlug = tenantProfile?.slug || session?.tenant_slug || (slug !== 'general' ? slug : null);
+        const targetBarberSlug = authIdentity?.tenantSlug || tenantProfile?.slug || session?.tenant_slug || (slug !== 'general' ? slug : null);
         if (targetBarberSlug) {
           navigate({ to: `/${targetBarberSlug}/profissional` as any, replace: true });
         } else {
           navigate({ to: "/auth", replace: true });
         }
       } else if (role === 'client') {
-        const targetClientSlug = tenantProfile?.slug || (slug !== 'general' ? slug : null);
+        const targetClientSlug = authIdentity?.tenantSlug || tenantProfile?.slug || (slug !== 'general' ? slug : null);
         if (targetClientSlug) {
           navigate({ to: `/${targetClientSlug}/portal` as any, replace: true });
         } else {
@@ -240,7 +240,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
         }
       }
     }
-  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session, resolvedBarberSlug]);
+  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session, authIdentity]);
 
 
   useEffect(() => {

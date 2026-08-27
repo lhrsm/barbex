@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import {
+  type UserRole,
+  type AuthenticatedIdentity,
+  resolveAuthenticatedIdentity,
+  getDefaultRouteForIdentity
+} from "@/lib/auth-identity.resolver";
 
-export type UserRole = 'super_admin' | 'admin' | 'tenant_admin' | 'manager' | 'receptionist' | 'financial' | 'cashier' | 'professional' | 'client' | 'reception' | 'finance' | 'barber';
+export type { UserRole, AuthenticatedIdentity };
 
 export type IdentityStatus = 'legacy' | 'pending' | 'completed';
 
-interface Profile {
+export interface Profile {
   id: string;
   role: UserRole;
   tenant_id: string | null;
@@ -20,22 +26,28 @@ interface Profile {
   phone: string | null;
 }
 
-// Global state shared across useAuth instances.
+// Global state shared across useAuth instances
 let globalUser: User | null = null;
 let globalSession: Session | null = null;
+let globalIdentity: AuthenticatedIdentity | null = null;
 let globalProfile: Profile | null = null;
 let globalLoading = false; 
 let globalAuthInitialized = false;
 let globalRefreshing = false;
+
 if (typeof window === 'undefined') {
   globalLoading = false;
   globalAuthInitialized = true;
 }
+
 let initialized = false;
 let initializationPromise: Promise<void> | null = null;
+let currentResolutionId = 0;
+
 const listeners = new Set<(state: {
   user: User | null;
   session: Session | null;
+  identity: AuthenticatedIdentity | null;
   profile: Profile | null;
   loading: boolean;
   initialized: boolean;
@@ -46,6 +58,7 @@ function emit() {
   const state = {
     user: globalUser,
     session: globalSession,
+    identity: globalIdentity,
     profile: globalProfile,
     loading: globalLoading,
     initialized: globalAuthInitialized,
@@ -57,6 +70,7 @@ function emit() {
 function setState(partial: Partial<{
   user: User | null;
   session: Session | null;
+  identity: AuthenticatedIdentity | null;
   profile: Profile | null;
   loading: boolean;
   initialized: boolean;
@@ -64,6 +78,7 @@ function setState(partial: Partial<{
 }>) {
   if (partial.user !== undefined) globalUser = partial.user;
   if (partial.session !== undefined) globalSession = partial.session;
+  if (partial.identity !== undefined) globalIdentity = partial.identity;
   if (partial.profile !== undefined) globalProfile = partial.profile;
   if (partial.loading !== undefined) globalLoading = partial.loading;
   if (partial.initialized !== undefined) globalAuthInitialized = partial.initialized;
@@ -71,53 +86,60 @@ function setState(partial: Partial<{
   emit();
 }
 
-async function fetchProfileData(userId: string) {
+/**
+ * Executa a resolução assíncrona da identidade fora do GoTrue auth lock.
+ * Possui proteção de geração (resolutionId) contra race conditions e logout concorrente.
+ */
+async function executeIdentityResolution(userId: string, resolutionId: number) {
   try {
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, role, tenant_id, business_name, responsible_name, display_name, slug, email, identity_status, phone")
-      .eq("id", userId)
-      .maybeSingle();
+    const identity = await resolveAuthenticatedIdentity(userId);
 
-    if (profileError) {
-      console.error("[useAuth] Error fetching profile:", profileError);
-    }
-
-    const { data: roleData, error: roleError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (roleError) {
-      console.error("[useAuth] Error fetching user role:", roleError);
-    }
-
-    const resolvedRole = (roleData?.role as UserRole | null) ?? (profileData?.role as UserRole | null) ?? null;
-
-    if (!profileData && !resolvedRole) {
-      setState({ profile: null });
+    // Stale check: se a sessão foi alterada/deslogada durante a query, descarta o resultado
+    if (resolutionId !== currentResolutionId) {
+      console.warn("[useAuth] Descartando resolução obsoleta para usuário:", userId);
       return null;
     }
 
-    const normalizedProfile: Profile = {
-      id: profileData?.id ?? userId,
-      role: resolvedRole ?? "client",
-      tenant_id: profileData?.tenant_id ?? null,
-      business_name: profileData?.business_name ?? null,
-      full_name: profileData?.responsible_name ?? null,
-      responsible_name: profileData?.responsible_name ?? null,
-      display_name: profileData?.display_name ?? null,
-      slug: resolvedRole === 'client' ? null : (profileData?.slug ?? null),
-      email: profileData?.email ?? null,
-      identity_status: (profileData?.identity_status as IdentityStatus) ?? 'legacy',
-      phone: profileData?.phone ?? null,
+    if (!identity) {
+      setState({
+        identity: null,
+        profile: null,
+        loading: false,
+        refreshing: false,
+        initialized: true,
+      });
+      return null;
+    }
+
+    // Mapeamento compatível para interface Profile legada
+    const profile: Profile = {
+      id: identity.userId,
+      role: identity.role,
+      tenant_id: identity.tenantId,
+      business_name: identity.businessName,
+      full_name: identity.displayName,
+      responsible_name: identity.displayName,
+      display_name: identity.displayName,
+      slug: identity.tenantSlug,
+      email: identity.email,
+      identity_status: 'completed',
+      phone: identity.phone,
     };
 
-    setState({ profile: normalizedProfile });
-    return normalizedProfile;
+    setState({
+      identity,
+      profile,
+      loading: false,
+      refreshing: false,
+      initialized: true,
+    });
+
+    return identity;
   } catch (err) {
-    console.error("[useAuth] fetchProfileData crash:", err);
+    console.error("[useAuth] Erro ao resolver identidade:", err);
+    if (resolutionId === currentResolutionId) {
+      setState({ loading: false, refreshing: false, initialized: true });
+    }
     return null;
   }
 }
@@ -129,58 +151,60 @@ async function initializeAuth() {
     if (initialized) return;
     initialized = true;
 
-    // INICIO: Hydration logic with explicit locking and profile synchronization
     if (!globalAuthInitialized) {
       setState({ loading: true, initialized: false });
     }
 
     // 1. Subscribe to auth events
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    // REGRA CRÍTICA HOTFIX 15G: Callback síncrono e mínimo sem await dentro do GoTrue lock
+    supabase.auth.onAuthStateChange((event, session) => {
       console.log(`[AUTH_TRACE] onAuthStateChange: ${event}`, { 
         hasSession: !!session,
         userId: session?.user?.id,
         authInitialized: globalAuthInitialized
       });
       
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        currentResolutionId++; // Invalida qualquer resolução pendente
         globalAuthInitialized = true;
-        setState({ session: null, user: null, profile: null, loading: false, refreshing: false, initialized: true });
-      } else if (event === 'USER_UPDATED' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-        if (session?.user) {
-          const isSameUser = Boolean(globalProfile?.id === session.user.id && globalUser?.id === session.user.id && globalProfile !== null);
-          
-          if (!isSameUser || (!globalUser && event === 'SIGNED_IN')) {
-            // New user login or first session hydration
-            if (!globalAuthInitialized) {
-              setState({ session, user: session.user, profile: null, loading: true, refreshing: false, initialized: false });
-            } else {
-              setState({ session, user: session.user, refreshing: true });
-            }
+        setState({
+          session: null,
+          user: null,
+          identity: null,
+          profile: null,
+          loading: false,
+          refreshing: false,
+          initialized: true
+        });
+        return;
+      }
 
-            const profile = await fetchProfileData(session.user.id);
-            if (!profile && event === 'SIGNED_IN') {
-              // Retry once if profile not found immediately after sign in
-              await new Promise(r => setTimeout(r, 500));
-              await fetchProfileData(session.user.id);
-            }
-            globalAuthInitialized = true;
-            setState({ loading: false, refreshing: false, initialized: true });
-          } else {
-            // Same user background refresh (TOKEN_REFRESHED / window focus / reconnect)
-            // Stale-while-revalidate: keep existing profile and loading=false
-            setState({ session, user: session.user, refreshing: false });
-            if (event === 'USER_UPDATED' || !globalProfile) {
-              fetchProfileData(session.user.id);
-            }
-          }
-        } else if (event !== 'INITIAL_SESSION') {
-          globalAuthInitialized = true;
-          setState({ session: null, user: null, profile: null, loading: false, refreshing: false, initialized: true });
+      // Background token refresh para o mesmo usuário já identificado
+      if (event === 'TOKEN_REFRESHED' && globalUser?.id === session.user.id && globalIdentity) {
+        setState({ session, user: session.user, refreshing: false });
+        return;
+      }
+
+      const isSameUser = Boolean(globalUser?.id === session.user.id && globalIdentity !== null);
+
+      if (!isSameUser || (!globalUser && event === 'SIGNED_IN')) {
+        if (!globalAuthInitialized) {
+          setState({ session, user: session.user, identity: null, profile: null, loading: true, refreshing: false, initialized: false });
+        } else {
+          setState({ session, user: session.user, refreshing: true });
         }
+
+        // Agenda a resolução da identidade fora do ciclo do listener GoTrue
+        const resolutionId = ++currentResolutionId;
+        setTimeout(() => {
+          executeIdentityResolution(session.user.id, resolutionId);
+        }, 0);
+      } else {
+        setState({ session, user: session.user, refreshing: false });
       }
     });
 
-    // 2. Initial hydration
+    // 2. Initial hydration síncrona/inicial
     try {
       if (typeof window !== 'undefined') {
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -190,25 +214,22 @@ async function initializeAuth() {
       console.log("[AUTH_TRACE] Initial getSession:", { hasSession: !!session });
       
       if (session?.user) {
-        if (!globalProfile) {
-          setState({ session, user: session.user, loading: true, initialized: false });
-          await fetchProfileData(session.user.id);
-        } else {
-          setState({ session, user: session.user });
-        }
+        setState({ session, user: session.user, loading: true, initialized: false });
+        const resolutionId = ++currentResolutionId;
+        await executeIdentityResolution(session.user.id, resolutionId);
       } else {
-        setState({ session: null, user: null, profile: null });
+        setState({ session: null, user: null, identity: null, profile: null, loading: false, initialized: true });
       }
     } catch (err) {
       console.error("[AUTH_TRACE] getSession error:", err);
-      setState({ session: null, user: null, profile: null });
+      setState({ session: null, user: null, identity: null, profile: null, loading: false, initialized: true });
     } finally {
       globalAuthInitialized = true;
       setState({ loading: false, refreshing: false, initialized: true });
       console.log("[AUTH_TRACE] Initialization complete", { 
         loading: globalLoading, 
         user: !!globalUser, 
-        profile: !!globalProfile,
+        identity: !!globalIdentity,
         initialized: globalAuthInitialized
       });
     }
@@ -217,11 +238,11 @@ async function initializeAuth() {
   return initializationPromise;
 }
 
-
 export function useAuth() {
   const [state, setLocalState] = useState({
     user: globalUser,
     session: globalSession,
+    identity: globalIdentity,
     profile: globalProfile,
     loading: typeof window === 'undefined' ? false : (!globalAuthInitialized ? true : globalLoading),
     initialized: globalAuthInitialized,
@@ -229,11 +250,11 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    // Se já inicializou, sincroniza o estado local imediatamente
     if (initialized) {
       setLocalState({
         user: globalUser,
         session: globalSession,
+        identity: globalIdentity,
         profile: globalProfile,
         loading: globalLoading,
         initialized: globalAuthInitialized,
@@ -256,20 +277,29 @@ export function useAuth() {
   }, []);
 
   const logout = async () => {
-    const currentSlug = globalProfile?.role === 'client' ? null : globalProfile?.slug;
+    currentResolutionId++;
     await supabase.auth.signOut();
-    setState({ session: null, user: null, profile: null, loading: false, refreshing: false, initialized: true });
+    setState({
+      session: null,
+      user: null,
+      identity: null,
+      profile: null,
+      loading: false,
+      refreshing: false,
+      initialized: true
+    });
   };
 
   return {
     user: state.user,
     session: state.session,
+    identity: state.identity,
     profile: state.profile,
-    role: state.profile?.role,
+    role: state.identity?.role || state.profile?.role || null,
+    destination: state.identity?.destination || (state.profile ? getDefaultRouteForIdentity(state.identity) : "/auth"),
     loading: state.loading,
     initialized: state.initialized,
     refreshing: state.refreshing,
     logout,
   };
 }
-

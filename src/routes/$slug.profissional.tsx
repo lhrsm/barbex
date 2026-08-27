@@ -371,18 +371,31 @@ function ProfessionalDashboard() {
     );
   }
 
-  if (loading || (!stats && !error)) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#05070d] gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
         <p className="text-[#6B7280] text-sm font-medium">
-          {loading ? "Carregando painel do profissional..." : "Sincronizando dados..."}
+          Carregando painel do profissional...
         </p>
       </div>
     );
   }
 
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
+
+  if (!stats && !error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#05070d] gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+        <p className="text-[#6B7280] text-sm font-medium">
+          Sincronizando dados...
+        </p>
+      </div>
+    );
+  }
 
   const dayNames: Record<string, string> = {
     monday: "Segunda-feira",
