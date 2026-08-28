@@ -64,6 +64,8 @@ import { useModules, type ModuleKey } from "@/hooks/use-modules";
 import { usePermissions, type PermissionKey } from "@/hooks/use-permissions";
 import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { getDefaultRouteForRole } from "@/lib/permissions.matrix";
+import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { ProfileCompletionBanner } from "@/components/profile/ProfileCompletionBanner";
 
 interface NavItem {
   label: string;
@@ -124,6 +126,7 @@ const barberNavItems = (slug: string) => [
 export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const instanceId = useId().replace(/:/g, "");
   const { tenantProfile, isImpersonating, stopImpersonation, tenantId, isLoading: tenantLoading } = useTenant();
   const { role: authRole, user: authUser, identity: authIdentity, loading: authLoading, profile: authProfile } = useAuth();
@@ -437,7 +440,20 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
                 );
               })}
             </div>
-            <div className="pt-4 border-t border-white/10 mt-4 space-y-4">
+            <div className="pt-4 border-t border-white/10 mt-4 space-y-3">
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs justify-start border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-gold/40 h-10 px-4 rounded-xl"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsEditProfileOpen(true);
+                  }}
+                >
+                  <User className="mr-2 h-4 w-4 text-gold" /> Meu Perfil
+                </Button>
+              )}
               <LogoutButton />
               <div className="pb-6">
                 <span className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
@@ -511,10 +527,20 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
           </nav>
 
           {/* Sidebar footer */}
-          <div className="p-4 border-t border-white/5 space-y-3">
+          <div className="p-4 border-t border-white/5 space-y-2.5">
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs justify-start border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-gold/40 h-9"
+                onClick={() => setIsEditProfileOpen(true)}
+              >
+                <User className="mr-2 h-3.5 w-3.5 text-gold" /> Meu Perfil
+              </Button>
+            )}
             <PwaInstallButton variant="compact" className="w-full justify-center" />
             <LogoutButton />
-            <div className="flex flex-col items-center gap-2 pb-4">
+            <div className="flex flex-col items-center gap-2 pb-2">
               <span className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
                 Powered by BARBEX
               </span>
@@ -551,14 +577,25 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/5 border border-zinc-800 rounded-lg h-9 px-3"
+                  onClick={() => setIsEditProfileOpen(true)}
+                >
+                  <User className="mr-1.5 h-3.5 w-3.5 text-gold" /> Meu Perfil
+                </Button>
+              )}
               <NotificationsCenter />
               {role === 'super_admin' && <AdminNotifications />}
             </div>
           </header>
 
           <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
-            <div className="max-w-[1600px] mx-auto w-full space-y-3">
+            <div className="max-w-[1600px] mx-auto w-full space-y-4">
+              <ProfileCompletionBanner />
               <InternalTestingBannerSlot />
               <AddonPaymentFailedBanner />
               <TrialEndingBanner />
@@ -567,6 +604,11 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
           </main>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+      />
     </div>
   );
 });

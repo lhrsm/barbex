@@ -394,22 +394,34 @@ export const getTeamMembers = createServerFn({ method: "GET" })
       throw new Error("Acesso negado: você não tem permissão para visualizar os membros da equipe.");
     }
 
-    const { data: members, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: members, error } = await supabaseAdmin
       .from('tenant_memberships')
       .select(`
-        *,
+        id,
+        user_id,
+        tenant_id,
+        role,
+        status,
+        created_at,
+        updated_at,
         profile:profiles!tenant_memberships_user_id_fkey(
           id,
           display_name,
+          responsible_name,
           email,
+          phone,
           avatar_url,
-          responsible_name
+          role,
+          status
         )
       `)
-      .eq('tenant_id', data.tenantId);
+      .eq('tenant_id', data.tenantId)
+      .order('created_at', { ascending: true });
 
     if (error) throw new Error(error.message);
-    return members;
+    return members || [];
   });
 
 export const getPendingInvitations = createServerFn({ method: "GET" })
@@ -627,7 +639,7 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
     // Update profile role only if user is not already an administrator/owner
     const { data: currentProfile } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, phone')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -637,14 +649,18 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
       currentProfile?.role === 'tenant_admin';
 
     if (!isPrivilegedProfile) {
+      const profilePatch: Record<string, any> = {
+        role: invite.role,
+        tenant_id: invite.tenant_id,
+        status: 'active',
+        updated_at: new Date().toISOString()
+      };
+      if (invite.phone && !currentProfile?.phone) {
+        profilePatch.phone = invite.phone;
+      }
       await supabaseAdmin
         .from('profiles')
-        .update({
-          role: invite.role,
-          tenant_id: invite.tenant_id,
-          status: 'active',
-          updated_at: new Date().toISOString()
-        } as any)
+        .update(profilePatch as any)
         .eq('id', user.id);
     }
 

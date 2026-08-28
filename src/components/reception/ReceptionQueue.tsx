@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, LogIn, PlayCircle, XCircle, Eye, Clock } from "lucide-react";
+import { CheckCircle2, LogIn, PlayCircle, XCircle, Eye, Clock, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,15 @@ function delayInfo(startTime: string, arrived: string | null) {
   return { label: `Atraso crítico (${diff} min)`, tone: "text-destructive" };
 }
 
-export function ReceptionQueue({ date, barberId }: { date?: string; barberId?: string }) {
+export function ReceptionQueue({
+  date,
+  barberId,
+  onNewAppointment,
+}: {
+  date?: string;
+  barberId?: string;
+  onNewAppointment?: () => void;
+}) {
   const { tenantId, can } = useReception();
   const { updateStatus } = useAppointmentStatus();
   const queryClient = useQueryClient();
@@ -106,35 +114,43 @@ export function ReceptionQueue({ date, barberId }: { date?: string; barberId?: s
   const items = useMemo(() => data || [], [data]);
 
   async function handleCheckin(appt: any) {
-    if (appt.arrived_at) return;
-    setBusyId(appt.id);
-    const { error } = await supabase.from("appointment_checkins").insert({
-      appointment_id: appt.id,
-      tenant_id: tenantId!,
-      customer_id: appt.customers?.id ?? null,
-      source: "reception",
-    });
-    setBusyId(null);
-    if (error) {
-      toast.error("Não foi possível registrar o check-in.");
-      return;
+    try {
+      setBusyId(appt.id);
+      const { error } = await supabase.from("appointment_checkins").insert({
+        appointment_id: appt.id,
+        tenant_id: tenantId!,
+        customer_id: appt.customers?.id ?? null,
+        source: "reception",
+      });
+      if (error) throw error;
+      await updateStatus(appt.id, "confirmed", {}, "reception_portal");
+      toast.success(`Check-in registrado para ${appt.customers?.name || "cliente"}`);
+      queryClient.invalidateQueries({ queryKey: ["reception-queue"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao registrar check-in");
+    } finally {
+      setBusyId(null);
     }
-    toast.success(`Cliente chegou às ${format(new Date(), "HH:mm")}.`);
-    queryClient.invalidateQueries({ queryKey: ["reception-queue"] });
   }
 
-  async function handleStatus(appt: any, status: string) {
-    setBusyId(appt.id);
-    await updateStatus(appt.id, status, {}, "reception_portal");
-    setBusyId(null);
-    queryClient.invalidateQueries({ queryKey: ["reception-queue"] });
+  async function handleStatus(appt: any, nextStatus: string) {
+    try {
+      setBusyId(appt.id);
+      await updateStatus(appt.id, nextStatus as any, {}, "reception_portal");
+      toast.success(`Status atualizado para ${STATUS_LABEL[nextStatus] || nextStatus}`);
+      queryClient.invalidateQueries({ queryKey: ["reception-queue"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar status");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   if (isLoading) {
     return (
       <div className="space-y-3">
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          <Skeleton key={i} className="h-24 w-full rounded-xl bg-zinc-900" />
         ))}
       </div>
     );
@@ -142,12 +158,26 @@ export function ReceptionQueue({ date, barberId }: { date?: string; barberId?: s
 
   if (items.length === 0) {
     return (
-      <Card className="flex flex-col items-center justify-center gap-2 p-10 text-center">
-        <Clock className="h-8 w-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm font-medium">Nenhum atendimento para hoje</p>
-        <p className="text-xs text-muted-foreground">
-          Novos agendamentos aparecem aqui automaticamente.
-        </p>
+      <Card className="flex flex-col items-center justify-center gap-3 p-8 sm:p-10 text-center bg-[#0b0f17] border-zinc-800/80 shadow-md">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400">
+          <Clock className="h-6 w-6 text-zinc-400" aria-hidden />
+        </div>
+        <div className="space-y-1">
+          <p className="text-base font-bold text-white">Nenhum atendimento para hoje</p>
+          <p className="text-xs text-zinc-400 max-w-sm">
+            Novos agendamentos e atendimentos presenciais aparecerão aqui.
+          </p>
+        </div>
+        {onNewAppointment && (
+          <Button
+            size="sm"
+            onClick={onNewAppointment}
+            className="mt-1 bg-gold hover:bg-gold/90 text-black font-semibold text-xs shadow-md shadow-gold/10"
+          >
+            <CalendarPlus className="mr-1.5 h-3.5 w-3.5" />
+            Novo agendamento
+          </Button>
+        )}
       </Card>
     );
   }
