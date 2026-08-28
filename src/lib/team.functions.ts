@@ -648,6 +648,30 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
         .eq('id', user.id);
     }
 
+    // Se o convite for para recepção, sincroniza defensivamente reception_permissions e user_roles
+    if (invite.role === 'reception' || invite.role === 'receptionist') {
+      const { DEFAULT_RECEPTION_PERMISSIONS } = await import("@/lib/reception-permissions");
+      await supabaseAdmin
+        .from('reception_permissions')
+        .upsert(
+          {
+            user_id: user.id,
+            tenant_id: invite.tenant_id,
+            permissions: DEFAULT_RECEPTION_PERMISSIONS,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          } as any,
+          { onConflict: 'user_id' }
+        );
+    }
+
+    await supabaseAdmin
+      .from('user_roles')
+      .upsert(
+        { user_id: user.id, role: invite.role as any },
+        { onConflict: 'user_id,role' }
+      );
+
     // 4. Update Invitation Status (Conditional Atomic Claim)
     const { data: claimedInvite, error: updateInviteError } = await supabaseAdmin
       .from('user_invitations')
