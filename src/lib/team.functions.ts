@@ -47,25 +47,79 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       throw new Error("Não é permitido convidar administradores globais.");
     }
 
-    // 1. Check if user already has membership
-    const { data: existingUser } = await supabase
+    const sanitizedEmail = email.trim().toLowerCase();
+
+    // 1. Check if there is already an active pending invitation for this email in this tenant
+    const { data: pendingInvite } = await supabaseAdmin
+      .from('user_invitations')
+      .select('id, expires_at, status')
+      .eq('tenant_id', tenantId)
+      .ilike('email', sanitizedEmail)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (pendingInvite) {
+      const isExpired = new Date(pendingInvite.expires_at) <= new Date();
+      if (!isExpired) {
+        throw new Error("Já existe um convite pendente para este e-mail.");
+      } else {
+        // Mark previous expired invite
+        await supabaseAdmin
+          .from('user_invitations')
+          .update({ status: 'expired', updated_at: new Date().toISOString() } as any)
+          .eq('id', pendingInvite.id);
+      }
+    }
+
+    // 2. Validate real tenant membership
+    const { data: existingUser } = await supabaseAdmin
       .from('profiles')
-      .select('id')
-      .eq('email', email)
+      .select('id, role')
+      .ilike('email', sanitizedEmail)
       .maybeSingle();
 
     if (existingUser) {
-      const { data: membership } = await supabase
+      const { data: existingMembership } = await supabaseAdmin
         .from('tenant_memberships')
-        .select('id')
+        .select('id, role, status')
         .eq('tenant_id', tenantId)
         .eq('user_id', existingUser.id)
         .maybeSingle();
-      
-      if (membership) throw new Error("Este usuário já faz parte desta barbearia.");
+
+      if (existingMembership && existingMembership.status === 'active') {
+        const isPrivileged =
+          existingMembership.role === 'super_admin' ||
+          existingMembership.role === 'admin' ||
+          existingMembership.role === 'tenant_admin' ||
+          existingUser.role === 'super_admin' ||
+          existingUser.role === 'admin' ||
+          existingUser.role === 'tenant_admin';
+
+        if (isPrivileged) {
+          throw new Error("Este usuário já possui privilégios de administrador nesta barbearia.");
+        }
+
+        if (existingMembership.role === role) {
+          throw new Error("Este usuário já possui acesso ativo a esta barbearia.");
+        }
+      }
     }
 
-    // Generate token
+    // 3. If professionalId provided, ensure it belongs to this tenant
+    if (professionalId) {
+      const { data: prof } = await supabaseAdmin
+        .from('barbers')
+        .select('id')
+        .eq('id', professionalId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (!prof) {
+        throw new Error("Profissional não encontrado neste estabelecimento.");
+      }
+    }
+
+    // 4. Generate token and insert invitation
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 72); // 72 hours expiration
@@ -74,7 +128,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       .from('user_invitations')
       .insert({
         tenant_id: tenantId,
-        email,
+        email: sanitizedEmail,
         phone,
         role,
         professional_id: professionalId,
