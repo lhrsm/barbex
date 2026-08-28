@@ -511,17 +511,64 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Link Membership & Profile
-    const { error: membershipError } = await supabaseAdmin
+    // 3. Link Membership & Profile (Idempotent & Defensive)
+    const { data: existingMembership } = await supabaseAdmin
       .from('tenant_memberships')
-      .upsert({
-        tenant_id: invite.tenant_id,
-        user_id: user.id,
-        role: invite.role,
-        status: 'active'
-      });
+      .select('id, role, status')
+      .eq('tenant_id', invite.tenant_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (membershipError) throw new Error(membershipError.message);
+    if (existingMembership) {
+      // Existing membership: preserve privileged roles, allow updates for staff roles
+      const isPrivilegedRole =
+        existingMembership.role === 'super_admin' ||
+        existingMembership.role === 'admin' ||
+        existingMembership.role === 'tenant_admin';
+
+      const targetRole = isPrivilegedRole ? existingMembership.role : invite.role;
+
+      const { error: updateMemError } = await supabaseAdmin
+        .from('tenant_memberships')
+        .update({
+          role: targetRole,
+          status: 'active',
+          updated_at: new Date().toISOString()
+        } as any)
+        .eq('id', existingMembership.id);
+
+      if (updateMemError) {
+        throw new Error("Erro ao atualizar o vínculo da equipe.");
+      }
+    } else {
+      // Create new membership with explicit composite unique key conflict resolution
+      const { error: insertMemError } = await supabaseAdmin
+        .from('tenant_memberships')
+        .upsert(
+          {
+            tenant_id: invite.tenant_id,
+            user_id: user.id,
+            role: invite.role,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          } as any,
+          { onConflict: 'tenant_id,user_id' }
+        );
+
+      if (insertMemError) {
+        // Defensive check: if race condition 23505 occurs, confirm membership exists
+        const { data: retryMem } = await supabaseAdmin
+          .from('tenant_memberships')
+          .select('id')
+          .eq('tenant_id', invite.tenant_id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!retryMem) {
+          throw new Error("Erro ao estabelecer vínculo com o estabelecimento.");
+        }
+      }
+    }
 
     // Update profile role only if user is not already an administrator/owner
     const { data: currentProfile } = await supabaseAdmin
@@ -530,13 +577,19 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
       .eq('id', user.id)
       .maybeSingle();
 
-    if (!currentProfile?.role || currentProfile.role === 'client' || currentProfile.role === 'customer') {
+    const isPrivilegedProfile =
+      currentProfile?.role === 'super_admin' ||
+      currentProfile?.role === 'admin' ||
+      currentProfile?.role === 'tenant_admin';
+
+    if (!isPrivilegedProfile) {
       await supabaseAdmin
         .from('profiles')
         .update({
           role: invite.role,
           tenant_id: invite.tenant_id,
-          status: 'active'
+          status: 'active',
+          updated_at: new Date().toISOString()
         } as any)
         .eq('id', user.id);
     }
@@ -547,7 +600,8 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
       .update({ 
         status: 'accepted',
         accepted_at: new Date().toISOString(),
-        accepted_by: user.id
+        accepted_by: user.id,
+        updated_at: new Date().toISOString()
       } as any)
       .eq('id', invite.id)
       .eq('status', 'pending')
