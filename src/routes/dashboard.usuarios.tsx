@@ -1,14 +1,14 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Users, UserPlus, ShieldAlert, Mail, UserCheck, Loader2 } from "lucide-react";
+import { Users, UserPlus, ShieldAlert, Mail, UserCheck, Loader2, RotateCw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getTeamMembers, getPendingInvitations } from "@/lib/team.functions";
+import { getTeamMembers, getPendingInvitations, resendTeamInvitation, revokeTeamInvitation } from "@/lib/team.functions";
 import { useTenant } from "@/hooks/use-tenant";
 import { AddUserModal } from "@/components/team/AddUserModal";
 import { PermissionMatrix } from "@/components/security/PermissionMatrix";
@@ -28,9 +28,14 @@ export const Route = createFileRoute("/dashboard/usuarios")({
 
 function TeamManagementPage() {
   const { tenantId } = useTenant();
+  const queryClient = useQueryClient();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
+
   const fetchMembers = useServerFn(getTeamMembers);
   const fetchInvites = useServerFn(getPendingInvitations);
+  const resendInviteFn = useServerFn(resendTeamInvitation);
+  const revokeInviteFn = useServerFn(revokeTeamInvitation);
 
   const { data: members, isLoading: loadingMembers } = useQuery({
     queryKey: ['team-members', tenantId],
@@ -43,6 +48,34 @@ function TeamManagementPage() {
     queryFn: () => fetchInvites({ data: { tenantId: tenantId! } }),
     enabled: !!tenantId
   });
+
+  const handleResend = async (invitationId: string) => {
+    if (!tenantId) return;
+    setActionInProgressId(invitationId);
+    try {
+      await resendInviteFn({ data: { invitationId, tenantId } });
+      toast.success("Convite reenviado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ['team-invites', tenantId] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao reenviar convite");
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
+  const handleRevoke = async (invitationId: string) => {
+    if (!tenantId) return;
+    setActionInProgressId(invitationId);
+    try {
+      await revokeInviteFn({ data: { invitationId, tenantId } });
+      toast.success("Convite revogado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ['team-invites', tenantId] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao revogar convite");
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -188,11 +221,29 @@ function TeamManagementPage() {
                   <TableCell className="text-zinc-400">
                     {new Date(invite.expires_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white" onClick={() => toast.info("Funcionalidade de reenvio em breve")}>
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={actionInProgressId === invite.id}
+                      className="text-zinc-400 hover:text-white"
+                      onClick={() => handleResend(invite.id)}
+                    >
+                      {actionInProgressId === invite.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 text-gold" />
+                      ) : (
+                        <RotateCw className="h-3.5 w-3.5 mr-1" />
+                      )}
                       Reenviar
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300" onClick={() => toast.info("Funcionalidade de revogação em breve")}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={actionInProgressId === invite.id}
+                      className="text-red-400 hover:text-red-300"
+                      onClick={() => handleRevoke(invite.id)}
+                    >
+                      <XCircle className="h-3.5 w-3.5 mr-1" />
                       Revogar
                     </Button>
                   </TableCell>

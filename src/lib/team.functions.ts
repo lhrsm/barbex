@@ -18,7 +18,9 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     const { email, phone, role, professionalId, tenantId } = data;
-    // 0. Authorization check: Caller must be owner, admin or manager of tenantId
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 0. Authorization check: Caller must be owner, admin or tenant_admin of tenantId
     const { data: callerProfile } = await supabase
       .from('profiles')
       .select('role')
@@ -36,16 +38,13 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     const isOwner = userId === tenantId || callerProfile?.role === 'super_admin' || callerProfile?.role === 'admin' || callerProfile?.role === 'tenant_admin';
     const callerRole = isOwner ? 'admin' : (callerMembership?.role || callerProfile?.role);
 
-    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin' && callerRole !== 'manager') {
+    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin') {
       throw new Error("Acesso negado: você não possui permissão para gerenciar a equipe deste estabelecimento.");
     }
 
     // Prevenção de escalação de privilégios:
     if (role === 'super_admin' && callerProfile?.role !== 'super_admin') {
       throw new Error("Não é permitido convidar administradores globais.");
-    }
-    if (callerRole === 'manager' && (role === 'admin' || role === 'tenant_admin' || role === 'super_admin')) {
-      throw new Error("Gerentes não podem convidar administradores.");
     }
 
     // 1. Check if user already has membership
@@ -69,9 +68,9 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     // Generate token
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 72);
+    expiresAt.setHours(expiresAt.getHours() + 72); // 72 hours expiration
 
-    const { error: inviteError } = await supabase
+    const { error: inviteError } = await supabaseAdmin
       .from('user_invitations')
       .insert({
         tenant_id: tenantId,
@@ -79,38 +78,236 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
         phone,
         role,
         professional_id: professionalId,
-        token_hash: token, // In prod, hash this
+        token_hash: token,
+        status: 'pending',
         expires_at: expiresAt.toISOString(),
         invited_by: userId
-      });
+      } as any);
 
-    if (inviteError) throw new Error(inviteError.message);
+    if (inviteError) {
+      throw new Error(inviteError.message);
+    }
 
     // 2. Send Email via Resend
     // We'll import the send function inside handler to avoid module scope issues
     const { sendTransactionalEmail } = await import("./resend.functions");
     
-    const inviteUrl = `${process.env['VITE_APP_URL'] || 'https://barberlm.lovable.app'}/invite/${token}`;
+    const appUrl = process.env['VITE_APP_URL'] || process.env['APP_URL'] || 'https://barbex.shop';
+    const inviteUrl = `${appUrl}/invite/${token}`;
 
     const { data: tenant } = await supabase
       .from('profiles')
-      .select('display_name')
+      .select('display_name, business_name')
       .eq('id', tenantId)
       .maybeSingle();
 
-    await sendTransactionalEmail({
-      data: {
-        recipient: email,
-        templateKey: 'internal_user_invitation',
-        templateData: {
-          barbershopName: tenant?.display_name || 'Barbex',
-          role,
-          inviteUrl
-        },
-        tenantId,
-        userId
-      }
-    });
+    try {
+      await sendTransactionalEmail({
+        data: {
+          recipient: email,
+          templateKey: 'internal_user_invitation',
+          templateData: {
+            barbershopName: tenant?.business_name || tenant?.display_name || 'Barbex',
+            role,
+            inviteUrl
+          },
+          tenantId,
+          userId
+        }
+      });
+    } catch (emailError: any) {
+      // Rollback: remove the invitation if email fails
+      await supabaseAdmin
+        .from('user_invitations')
+        .delete()
+        .eq('tenant_id', tenantId)
+        .eq('email', email)
+        .eq('token_hash', token);
+
+      throw new Error(`Falha no envio do e-mail de convite (${emailError?.message || 'serviço indisponível'}). O convite foi cancelado.`);
+    }
+
+    return { success: true };
+  });
+
+export const resendTeamInvitation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    invitationId: z.string().uuid(),
+    tenantId: z.string().uuid()
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { invitationId, tenantId } = data;
+
+    // Caller authorization check (strictly matching users:manage permission)
+    const { data: callerMembership } = await supabase
+      .from('tenant_memberships')
+      .select('role')
+      .eq('tenant_id', tenantId)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const isOwner = userId === tenantId || callerProfile?.role === 'super_admin' || callerProfile?.role === 'admin' || callerProfile?.role === 'tenant_admin';
+    const callerRole = isOwner ? 'admin' : (callerMembership?.role || callerProfile?.role);
+
+    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin') {
+      throw new Error("Acesso negado: você não tem permissão para reenviar convites.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Fetch existing invitation
+    const { data: invite, error: fetchError } = await supabaseAdmin
+      .from('user_invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (fetchError || !invite) {
+      throw new Error("Convite não encontrado.");
+    }
+
+    if (invite.status === 'accepted') {
+      throw new Error("Este convite já foi aceito e o usuário já está ativo.");
+    }
+
+    if (invite.status === 'revoked') {
+      throw new Error("Este convite foi revogado. Crie um novo convite.");
+    }
+
+    // Capture previous state for rollback compensation
+    const previousToken = invite.token_hash;
+    const previousExpiresAt = invite.expires_at;
+    const previousStatus = invite.status;
+
+    // Generate new token and refresh expiration for 72 hours
+    const newToken = randomBytes(32).toString('hex');
+    const newExpiresAt = new Date();
+    newExpiresAt.setHours(newExpiresAt.getHours() + 72);
+
+    const { error: updateError } = await supabaseAdmin
+      .from('user_invitations')
+      .update({
+        token_hash: newToken,
+        status: 'pending',
+        expires_at: newExpiresAt.toISOString(),
+        updated_at: new Date().toISOString()
+      } as any)
+      .eq('id', invitationId)
+      .eq('tenant_id', tenantId);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    // Send updated transactional email
+    const { sendTransactionalEmail } = await import("./resend.functions");
+    const appUrl = process.env['VITE_APP_URL'] || process.env['APP_URL'] || 'https://barbex.shop';
+    const inviteUrl = `${appUrl}/invite/${newToken}`;
+
+    const { data: tenantProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('business_name, display_name')
+      .eq('id', tenantId)
+      .maybeSingle();
+
+    try {
+      await sendTransactionalEmail({
+        data: {
+          recipient: invite.email,
+          templateKey: 'internal_user_invitation',
+          templateData: {
+            barbershopName: tenantProfile?.business_name || tenantProfile?.display_name || 'Barbex',
+            role: invite.role,
+            inviteUrl
+          },
+          tenantId,
+          userId
+        }
+      });
+    } catch (emailError: any) {
+      // Conditional rollback: restore previous token only if this resend token is still the active one
+      await supabaseAdmin
+        .from('user_invitations')
+        .update({
+          token_hash: previousToken,
+          status: previousStatus,
+          expires_at: previousExpiresAt,
+          updated_at: new Date().toISOString()
+        } as any)
+        .eq('id', invitationId)
+        .eq('tenant_id', tenantId)
+        .eq('token_hash', newToken);
+
+      throw new Error(`Falha no envio do e-mail de convite (${emailError?.message || 'serviço indisponível'}). O convite anterior foi preservado.`);
+    }
+
+    return { success: true };
+  });
+
+export const revokeTeamInvitation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    invitationId: z.string().uuid(),
+    tenantId: z.string().uuid()
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { invitationId, tenantId } = data;
+
+    // Caller authorization check
+    const { data: callerMembership } = await supabase
+      .from('tenant_memberships')
+      .select('role')
+      .eq('tenant_id', tenantId)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const isOwner = userId === tenantId || callerProfile?.role === 'super_admin' || callerProfile?.role === 'admin' || callerProfile?.role === 'tenant_admin';
+    const callerRole = isOwner ? 'admin' : (callerMembership?.role || callerProfile?.role);
+
+    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin') {
+      throw new Error("Acesso negado: você não tem permissão para revogar convites.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Atomic revocation of pending invitation
+    const { data: revokedInvite, error: revokeError } = await supabaseAdmin
+      .from('user_invitations')
+      .update({
+        status: 'revoked',
+        updated_at: new Date().toISOString()
+      } as any)
+      .eq('id', invitationId)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
+
+    if (revokeError) {
+      throw new Error(revokeError.message);
+    }
+
+    if (!revokedInvite) {
+      throw new Error("Convite não encontrado ou já processado.");
+    }
 
     return { success: true };
   });
@@ -121,7 +318,7 @@ export const getTeamMembers = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
 
-    // Caller authorization: must be admin or manager of tenantId
+    // Caller authorization: must be admin or tenant_admin of tenantId
     const { data: callerMembership } = await supabase
       .from('tenant_memberships')
       .select('role')
@@ -139,7 +336,7 @@ export const getTeamMembers = createServerFn({ method: "GET" })
     const isOwner = userId === data.tenantId || callerProfile?.role === 'super_admin' || callerProfile?.role === 'admin' || callerProfile?.role === 'tenant_admin';
     const callerRole = isOwner ? 'admin' : (callerMembership?.role || callerProfile?.role);
 
-    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin' && callerRole !== 'manager') {
+    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin') {
       throw new Error("Acesso negado: você não tem permissão para visualizar os membros da equipe.");
     }
 
@@ -167,7 +364,7 @@ export const getPendingInvitations = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
 
-    // Caller authorization: must be admin or manager of tenantId
+    // Caller authorization: must be admin or tenant_admin of tenantId
     const { data: callerMembership } = await supabase
       .from('tenant_memberships')
       .select('role')
@@ -185,7 +382,7 @@ export const getPendingInvitations = createServerFn({ method: "GET" })
     const isOwner = userId === data.tenantId || callerProfile?.role === 'super_admin' || callerProfile?.role === 'admin' || callerProfile?.role === 'tenant_admin';
     const callerRole = isOwner ? 'admin' : (callerMembership?.role || callerProfile?.role);
 
-    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin' && callerRole !== 'manager') {
+    if (!isOwner && callerRole !== 'admin' && callerRole !== 'tenant_admin') {
       throw new Error("Acesso negado: você não tem permissão para visualizar convites pendentes.");
     }
 
@@ -282,13 +479,16 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
 
     if (!user) {
       // Create Auth User
+      // Note: Passing role only (without tenant_id in raw_user_meta_data) ensures the trigger
+      // handle_new_user creates the initial profile without triggering tg_admin_notify_new_tenant
+      // which crashes on legacy profiles without barbershop_name.
+      // Tenant association and permissions are explicitly and securely assigned in Step 3 below.
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: invite.email,
         password: password,
         email_confirm: true,
         user_metadata: {
-          role: invite.role,
-          tenant_id: invite.tenant_id
+          role: invite.role
         }
       });
       if (createError) throw new Error(createError.message);
