@@ -366,6 +366,61 @@ export const revokeTeamInvitation = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+export interface UnifiedTeamMember {
+  id: string;
+  entityType: 'barber' | 'staff';
+  domainId: string;
+  userId: string | null;
+  name: string;
+  displayName: string | null;
+  responsibleName: string | null;
+  email: string;
+  phone: string;
+  avatarUrl: string | null;
+  role: string;
+  roleLabel: string;
+  category: 'barber' | 'reception' | 'manager' | 'financial' | 'admin';
+  status: 'active' | 'inactive';
+  accessStatus: 'active_account' | 'no_auth';
+  isProfileComplete: boolean;
+  commissionRate: number | null;
+  commissionType: string | null;
+  barberCategory: string | null;
+  specialties: string[] | null;
+  appointmentsCount: number;
+  createdAt: string | null;
+}
+
+function getRoleLabel(role?: string | null, category?: string | null): string {
+  const map: Record<string, string> = {
+    admin: "Administrador",
+    tenant_admin: "Dono / Administrador",
+    super_admin: "Super Admin",
+    manager: "Gerente",
+    reception: "Recepção",
+    receptionist: "Recepcionista",
+    financial: "Financeiro",
+    finance: "Financeiro",
+    cashier: "Caixa",
+    barber: "Barbeiro",
+    professional: "Profissional",
+  };
+  if (category) {
+    return `Barbeiro (${category})`;
+  }
+  return (role && map[role.toLowerCase()]) || role || "Colaborador";
+}
+
+function mapRoleToCategory(role?: string | null): 'barber' | 'reception' | 'manager' | 'financial' | 'admin' {
+  const r = (role || "").toLowerCase();
+  if (r === "barber" || r === "professional") return "barber";
+  if (r === "reception" || r === "receptionist") return "reception";
+  if (r === "manager") return "manager";
+  if (r === "financial" || r === "finance" || r === "cashier") return "financial";
+  if (r === "admin" || r === "tenant_admin" || r === "super_admin") return "admin";
+  return "admin";
+}
+
 export const getTeamMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ tenantId: z.string() }))
@@ -396,32 +451,208 @@ export const getTeamMembers = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: members, error } = await supabaseAdmin
-      .from('tenant_memberships')
+    // 1. Fetch all barbers for tenant
+    const { data: barbers, error: bErr } = await supabaseAdmin
+      .from('barbers')
       .select(`
         id,
         user_id,
         tenant_id,
-        role,
-        status,
-        created_at,
-        updated_at,
-        profile:profiles!tenant_memberships_user_id_fkey(
-          id,
-          display_name,
-          responsible_name,
-          email,
-          phone,
-          avatar_url,
-          role,
-          status
-        )
+        name,
+        phone,
+        email,
+        active,
+        avatar_url,
+        category,
+        commission_rate,
+        commission_type,
+        commission_fixed_value,
+        commission_bonus_value,
+        monthly_goal,
+        working_hours,
+        specialties,
+        bio,
+        pix_key,
+        pix_key_type,
+        accepts_tips,
+        auth_migration_status,
+        created_at
       `)
+      .eq('tenant_id', data.tenantId)
+      .order('name', { ascending: true });
+
+    if (bErr) throw new Error(`Erro ao buscar barbeiros: ${bErr.message}`);
+
+    // 2. Fetch tenant_memberships
+    const { data: memberships, error: mErr } = await supabaseAdmin
+      .from('tenant_memberships')
+      .select('id, user_id, tenant_id, role, status, created_at, updated_at')
       .eq('tenant_id', data.tenantId)
       .order('created_at', { ascending: true });
 
-    if (error) throw new Error(error.message);
-    return members || [];
+    if (mErr) throw new Error(`Erro ao buscar membros: ${mErr.message}`);
+
+    // 3. Collect all user_ids to fetch profiles in batch
+    const userIdsToFetch = new Set<string>();
+    userIdsToFetch.add(data.tenantId);
+    (barbers || []).forEach(b => { if (b.user_id) userIdsToFetch.add(b.user_id); });
+    (memberships || []).forEach(m => { if (m.user_id) userIdsToFetch.add(m.user_id); });
+
+    const { data: profilesById } = await supabaseAdmin
+      .from('profiles')
+      .select('id, display_name, responsible_name, email, phone, avatar_url, role, status, business_name, created_at')
+      .in('id', Array.from(userIdsToFetch));
+
+    const { data: profilesByTenant } = await supabaseAdmin
+      .from('profiles')
+      .select('id, display_name, responsible_name, email, phone, avatar_url, role, status, business_name, created_at')
+      .eq('tenant_id', data.tenantId);
+
+    const profilesMap = new Map<string, any>();
+    (profilesById || []).forEach(p => profilesMap.set(p.id, p));
+    (profilesByTenant || []).forEach(p => profilesMap.set(p.id, p));
+
+    // 4. Fetch appointments count per barber for stats
+    const { data: appCounts } = await supabaseAdmin
+      .from('appointments')
+      .select('barber_id')
+      .eq('tenant_id', data.tenantId);
+
+    const appointmentsCountByBarber = new Map<string, number>();
+    (appCounts || []).forEach(a => {
+      if (a.barber_id) {
+        appointmentsCountByBarber.set(a.barber_id, (appointmentsCountByBarber.get(a.barber_id) || 0) + 1);
+      }
+    });
+
+    const unifiedList: UnifiedTeamMember[] = [];
+    const processedBarberUserIds = new Set<string>();
+    const processedProfileIds = new Set<string>();
+
+    // Process Barbers
+    for (const b of (barbers || [])) {
+      const linkedProfile = b.user_id ? profilesMap.get(b.user_id) : null;
+      const hasDistinctAuthUser = Boolean(b.user_id && b.user_id !== data.tenantId);
+      if (hasDistinctAuthUser && b.user_id) {
+        processedBarberUserIds.add(b.user_id);
+      }
+
+      const email = b.email || linkedProfile?.email || "";
+      const phone = b.phone || linkedProfile?.phone || "";
+      const avatarUrl = b.avatar_url || linkedProfile?.avatar_url || null;
+      const isProfileComplete = Boolean(b.name && (phone || email));
+      const accessStatus = hasDistinctAuthUser ? 'active_account' : 'no_auth';
+
+      unifiedList.push({
+        id: b.id,
+        entityType: 'barber',
+        domainId: b.id,
+        userId: b.user_id,
+        name: b.name,
+        displayName: linkedProfile?.display_name || b.name,
+        responsibleName: linkedProfile?.responsible_name || b.name,
+        email: email,
+        phone: phone,
+        avatarUrl: avatarUrl,
+        role: b.category || 'barber',
+        roleLabel: getRoleLabel('barber', b.category),
+        category: 'barber',
+        status: b.active ? 'active' : 'inactive',
+        accessStatus: accessStatus,
+        isProfileComplete: isProfileComplete,
+        commissionRate: b.commission_rate ?? null,
+        commissionType: b.commission_type ?? 'percentage',
+        barberCategory: b.category,
+        specialties: b.specialties || null,
+        appointmentsCount: appointmentsCountByBarber.get(b.id) || 0,
+        createdAt: b.created_at || null,
+      });
+    }
+
+    // Process Memberships
+    for (const m of (memberships || [])) {
+      if (m.user_id && processedBarberUserIds.has(m.user_id)) {
+        continue; // Already processed as barber
+      }
+      if (m.user_id) {
+        processedProfileIds.add(m.user_id);
+      }
+      const p = m.user_id ? profilesMap.get(m.user_id) : null;
+      const name = p?.responsible_name || p?.display_name || p?.email || "Colaborador";
+      const cat = mapRoleToCategory(m.role);
+      const isProfileComplete = Boolean((p?.responsible_name || p?.display_name) && (p?.email || p?.phone));
+
+      unifiedList.push({
+        id: m.id,
+        entityType: 'staff',
+        domainId: m.id,
+        userId: m.user_id,
+        name: name,
+        displayName: p?.display_name || null,
+        responsibleName: p?.responsible_name || null,
+        email: p?.email || "",
+        phone: p?.phone || "",
+        avatarUrl: p?.avatar_url || null,
+        role: m.role,
+        roleLabel: getRoleLabel(m.role),
+        category: cat,
+        status: m.status === 'active' ? 'active' : 'inactive',
+        accessStatus: 'active_account',
+        isProfileComplete: isProfileComplete,
+        commissionRate: null,
+        commissionType: null,
+        barberCategory: null,
+        specialties: null,
+        appointmentsCount: 0,
+        createdAt: m.created_at || null,
+      });
+    }
+
+    // Process Tenant Owner & Direct Staff Profiles
+    for (const [pId, p] of profilesMap.entries()) {
+      if (processedBarberUserIds.has(pId) || processedProfileIds.has(pId)) {
+        continue;
+      }
+      // Skip clients / customers
+      if (p.role === 'client' || p.role === 'customer') {
+        continue;
+      }
+
+      const isOwner = pId === data.tenantId || p.role === 'admin' || p.role === 'tenant_admin';
+      const role = p.role || (isOwner ? 'tenant_admin' : 'staff');
+      const cat = mapRoleToCategory(role);
+      const name = p.responsible_name || p.display_name || p.email || (isOwner ? "Dono / Administrador" : "Colaborador");
+      const isProfileComplete = Boolean((p.responsible_name || p.display_name) && (p.email || p.phone));
+
+      processedProfileIds.add(pId);
+
+      unifiedList.push({
+        id: p.id,
+        entityType: 'staff',
+        domainId: p.id,
+        userId: p.id,
+        name: name,
+        displayName: p.display_name,
+        responsibleName: p.responsible_name,
+        email: p.email || "",
+        phone: p.phone || "",
+        avatarUrl: p.avatar_url,
+        role: role,
+        roleLabel: getRoleLabel(role),
+        category: cat,
+        status: p.status === 'inactive' ? 'inactive' : 'active',
+        accessStatus: 'active_account',
+        isProfileComplete: isProfileComplete,
+        commissionRate: null,
+        commissionType: null,
+        barberCategory: null,
+        specialties: null,
+        appointmentsCount: 0,
+        createdAt: p.created_at || null,
+      });
+    }
+
+    return unifiedList;
   });
 
 export const getPendingInvitations = createServerFn({ method: "GET" })
