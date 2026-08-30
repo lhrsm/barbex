@@ -158,7 +158,7 @@ function TeamManagementPage() {
     const activeMembers = members.filter(m => m.status === "active").length;
 
     return {
-      total: totalMembers + pendingInvites,
+      total: totalMembers,
       activeMembers,
       barbers,
       reception,
@@ -173,6 +173,10 @@ function TeamManagementPage() {
   const filteredMembers = useMemo(() => {
     if (!members) return [];
     return members.filter((member) => {
+      // Security & Data Integrity: Exclude client/customer roles
+      if (member.role === "client" || member.role === "customer") return false;
+      if (!["barber", "reception", "manager", "financial", "admin"].includes(member.category)) return false;
+
       // Category filter
       if (activeTab === "barbers" && member.category !== "barber") return false;
       if (activeTab === "reception" && member.category !== "reception") return false;
