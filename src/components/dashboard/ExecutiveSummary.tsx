@@ -103,7 +103,7 @@ export const ExecutiveSummary = memo(({ name, appointments, stats, birthdaysCoun
       </div>
 
       {appointments.length > 0 && (
-        <Card className="glass border-white/5 rounded-3xl overflow-hidden mt-8">
+        <Card className="glass border-white/5 rounded-2xl overflow-hidden mt-8">
           <CardContent className="p-0">
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <div>

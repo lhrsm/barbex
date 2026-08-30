@@ -53,8 +53,8 @@ export function FinancesTabsList({ role, financeTab, setFinanceTab }: FinancesTa
                   className={cn(
                     "group relative inline-flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[12px] font-semibold uppercase tracking-wider transition-all duration-300 rounded-t-[22px] focus-visible:outline-none",
                     active
-                      ? "bg-white text-[#111111] font-bold shadow-[0_-2px_12px_rgba(0,0,0,.15)]"
-                      : "text-white/70 hover:text-white"
+                      ? "bg-gold text-black font-bold shadow-[0_-2px_12px_rgba(212,175,55,0.25)]"
+                      : "text-white/70 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/50"
                   )}
                 >
                   <Icon size={15} className="opacity-90" />

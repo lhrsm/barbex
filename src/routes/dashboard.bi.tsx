@@ -77,7 +77,7 @@ function BusinessIntelligencePage() {
       const error = analyticsQuery.error as any;
       return (
         <div className="flex flex-col gap-8 p-6 items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto">
-          <div className="p-8 bg-zinc-900/50 border border-white/5 rounded-[2.5rem] backdrop-blur-sm">
+          <div className="p-8 bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm">
              <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <BarChart3 className="w-8 h-8 text-rose-500 opacity-50" />
              </div>
@@ -207,7 +207,7 @@ function BusinessIntelligencePage() {
           </KPIGrid>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <Card className="lg:col-span-8 bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] backdrop-blur-sm overflow-hidden">
+            <Card className="lg:col-span-8 bg-[#0b0f17]/40 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden">
               <CardHeader className="p-8 pb-0">
                 <CardTitle className="text-lg font-black uppercase italic tracking-tighter text-white">Evolução do Faturamento</CardTitle>
                 <CardDescription className="text-zinc-500 font-medium">Receita diária no período selecionado</CardDescription>
@@ -257,7 +257,7 @@ function BusinessIntelligencePage() {
             </Card>
 
             <div className="lg:col-span-4 space-y-8">
-              <Card className="bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] backdrop-blur-sm p-8">
+              <Card className="bg-[#0b0f17]/40 border border-white/5 rounded-2xl backdrop-blur-sm p-8">
                 <h3 className="text-sm font-black uppercase italic tracking-widest text-white mb-6 flex items-center gap-2">
                   <Zap className="w-4 h-4 text-gold" /> Insights do Período
                 </h3>
@@ -273,7 +273,7 @@ function BusinessIntelligencePage() {
                 </div>
               </Card>
 
-              <Card className="bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] backdrop-blur-sm p-8">
+              <Card className="bg-[#0b0f17]/40 border border-white/5 rounded-2xl backdrop-blur-sm p-8">
                  <h3 className="text-sm font-black uppercase italic tracking-widest text-white mb-6">Metas de Faturamento</h3>
                  <div className="space-y-4">
                     <div className="space-y-2">
@@ -292,7 +292,7 @@ function BusinessIntelligencePage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="finance" className="p-12 text-center border border-dashed border-white/10 rounded-[3rem] bg-[#0b0f17]/20">
+        <TabsContent value="finance" className="p-12 text-center border border-dashed border-white/10 rounded-2xl bg-[#0b0f17]/20">
           <Wallet className="w-16 h-16 text-zinc-800 mx-auto mb-6" />
           <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">Relatórios Financeiros Avançados</h3>
           <p className="text-zinc-500 font-medium max-w-md mx-auto leading-relaxed">
@@ -300,7 +300,7 @@ function BusinessIntelligencePage() {
           </p>
         </TabsContent>
 
-        <TabsContent value="customers" className="p-12 text-center border border-dashed border-white/10 rounded-[3rem] bg-[#0b0f17]/20">
+        <TabsContent value="customers" className="p-12 text-center border border-dashed border-white/10 rounded-2xl bg-[#0b0f17]/20">
           <Users className="w-16 h-16 text-zinc-800 mx-auto mb-6" />
           <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">Inteligência de Clientes</h3>
           <p className="text-zinc-500 font-medium max-w-md mx-auto leading-relaxed">

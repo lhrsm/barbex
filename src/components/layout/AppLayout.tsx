@@ -95,7 +95,7 @@ const defaultNavItems: NavItem[] = [
   { label: "Produtos", icon: ShoppingBag, to: "/products", module: "products", permission: "settings:manage" },
   { label: "Automações", icon: MessageSquare, to: "/automations", module: "automations", permission: "marketing:manage" },
   { label: "Campanhas", icon: Megaphone, to: "/campaigns", module: "campaigns", permission: "marketing:manage" },
-  { label: "Integrações", icon: Share2, to: "/dashboard/integracoes", module: "integrations_center", permission: "integrations:manage" },
+  { label: "Central de Integrações", icon: Share2, to: "/dashboard/integracoes", module: "integrations_center", permission: "integrations:manage" },
   { label: "Segurança", icon: ShieldCheck, to: "/dashboard/settings/security" as any, permission: "security:manage" },
   { label: "Equipe", icon: Users, to: "/dashboard/usuarios", permission: "users:manage" },
 

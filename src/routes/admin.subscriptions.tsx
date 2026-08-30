@@ -100,7 +100,7 @@ function AdminSubscriptions() {
         </div>
       </div>
 
-      <Card className="glass border-white/5 rounded-[2.5rem] overflow-hidden">
+      <Card className="glass border-white/5 rounded-2xl overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-white/5">

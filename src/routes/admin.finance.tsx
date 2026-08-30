@@ -151,7 +151,7 @@ function AdminFinance() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-7">
-        <Card className="md:col-span-4 glass border-white/5 rounded-[2.5rem] overflow-hidden shadow-none">
+        <Card className="md:col-span-4 glass border-white/5 rounded-2xl overflow-hidden shadow-none">
           <CardHeader className="bg-white/5 px-8 py-6">
             <CardTitle className="text-xl font-bold">Distribuição por Plano</CardTitle>
             <CardDescription className="text-gray-500 font-medium">Volume de assinantes por nível tecnológico.</CardDescription>
@@ -184,7 +184,7 @@ function AdminFinance() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-3 glass border-white/5 rounded-[2.5rem] overflow-hidden shadow-none">
+        <Card className="md:col-span-3 glass border-white/5 rounded-2xl overflow-hidden shadow-none">
           <CardHeader className="bg-white/5 px-8 py-6">
             <CardTitle className="text-xl font-bold">Ledger de Transações</CardTitle>
             <CardDescription className="text-gray-500 font-medium">Logs recentes do gateway de pagamento.</CardDescription>

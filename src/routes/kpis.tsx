@@ -143,7 +143,7 @@ function KpisCentralPage() {
         </header>
 
         {/* Global Filters */}
-        <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40 backdrop-blur-md p-2">
+        <Card className="rounded-2xl border-hairline bg-surface-sunken/40 backdrop-blur-md p-2">
           <div className="flex flex-wrap items-center gap-2">
             {PERIODS.map((p) => (
               <Button
@@ -226,7 +226,7 @@ function KpisCentralPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-               <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40">
+               <Card className="rounded-2xl border-hairline bg-surface-sunken/40">
                  <CardHeader>
                    <CardTitle className="flex items-center gap-2">
                      <BarChart3 className="h-5 w-5 text-gold" />
@@ -241,7 +241,7 @@ function KpisCentralPage() {
                  </CardContent>
                </Card>
 
-               <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40">
+               <Card className="rounded-2xl border-hairline bg-surface-sunken/40">
                  <CardHeader>
                    <CardTitle className="flex items-center gap-2">
                      <Target className="h-5 w-5 text-gold" />
@@ -273,7 +273,7 @@ function KpisCentralPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40 lg:col-span-2">
+              <Card className="rounded-2xl border-hairline bg-surface-sunken/40 lg:col-span-2">
                 <CardHeader>
                   <CardTitle>DRE Simplificada</CardTitle>
                   <CardDescription>Demonstrativo de Resultados do Exercício ({range.label})</CardDescription>
@@ -313,7 +313,7 @@ function KpisCentralPage() {
           {/* Placeholder tabs for future deep integration if needed, currently showing "No Data" logic */}
           {["agenda", "customers", "barbers", "products", "loyalty", "subscriptions", "marketing"].map((tabId) => (
              <TabsContent key={tabId} value={tabId} className="animate-in fade-in duration-500">
-               <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40 p-12 text-center">
+               <Card className="rounded-2xl border-hairline bg-surface-sunken/40 p-12 text-center">
                   <div className="mx-auto w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                      <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
                   </div>

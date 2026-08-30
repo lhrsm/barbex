@@ -243,7 +243,7 @@ function CentroDeComando() {
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Timeline da Agenda */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-sm">
+            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-2xl p-8 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-gold/10 flex items-center justify-center text-gold border border-gold/20">
@@ -321,7 +321,7 @@ function CentroDeComando() {
           {/* Lateral Direita: Ações, Alertas e Equipe */}
           <div className="lg:col-span-4 space-y-8">
             {/* Ações Rápidas */}
-            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-sm">
+            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-2xl p-8 backdrop-blur-sm">
               <h3 className="text-sm font-black uppercase italic tracking-[0.15em] text-white mb-6">Ações Rápidas</h3>
               <div className="grid gap-3">
                 <Button 
@@ -342,7 +342,7 @@ function CentroDeComando() {
             </div>
 
             {/* Atenção Necessária */}
-            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-sm">
+            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-2xl p-8 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-black uppercase italic tracking-[0.15em] text-white">Atenção Necessária</h3>
                 {operationalAlerts.length > 0 && <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />}
@@ -385,7 +385,7 @@ function CentroDeComando() {
             </div>
 
             {/* Equipe Agora */}
-            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-sm">
+            <div className="bg-[#0b0f17]/40 border border-white/5 rounded-2xl p-8 backdrop-blur-sm">
               <h3 className="text-sm font-black uppercase italic tracking-[0.15em] text-white mb-6">Equipe Agora</h3>
               <div className="space-y-4">
                 {barbers.map(barber => {

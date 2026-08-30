@@ -64,7 +64,7 @@ function AdminAnalytics() {
           </div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="lg:col-span-4 glass border-white/5 rounded-[2.5rem] overflow-hidden shadow-none">
+            <Card className="lg:col-span-4 glass border-white/5 rounded-2xl overflow-hidden shadow-none">
               <CardHeader className="bg-white/5 px-8 py-6">
                 <CardTitle className="text-xl font-bold">Atividade por Módulo</CardTitle>
                 <CardDescription className="text-gray-500 font-medium">Distribuição de acessos globais na plataforma.</CardDescription>
@@ -91,7 +91,7 @@ function AdminAnalytics() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-3 glass border-white/5 rounded-[2.5rem] overflow-hidden shadow-none">
+            <Card className="lg:col-span-3 glass border-white/5 rounded-2xl overflow-hidden shadow-none">
               <CardHeader className="bg-white/5 px-8 py-6">
                 <CardTitle className="text-xl font-bold">Insights Estratégicos</CardTitle>
                 <CardDescription className="text-gray-500 font-medium">Alertas e oportunidades do mês.</CardDescription>
@@ -121,7 +121,7 @@ function AdminAnalytics() {
         </TabsContent>
 
         <TabsContent value="charts" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-1 glass rounded-[2.5rem] border-white/5">
+          <div className="p-1 glass rounded-2xl border-white/5">
             <AdminChartsTab />
           </div>
         </TabsContent>

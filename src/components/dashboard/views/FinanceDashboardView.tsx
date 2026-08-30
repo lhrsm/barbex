@@ -73,7 +73,7 @@ export function FinanceDashboardView({
 
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-8">
-          <div className="glass p-6 rounded-[2.5rem] border border-white/5 space-y-6">
+          <div className="glass p-6 rounded-2xl border border-white/5 space-y-6">
             <h2 className="text-xl font-bold text-white flex items-center gap-2 italic uppercase">
               <PieChart className="h-5 w-5 text-gold" /> Consolidado Mensal
             </h2>
@@ -118,7 +118,7 @@ export function FinanceDashboardView({
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-          <div className="glass p-6 rounded-[2.5rem] border border-white/5 space-y-4">
+          <div className="glass p-6 rounded-2xl border border-white/5 space-y-4">
             <h3 className="text-lg font-bold text-white italic uppercase">Saúde do Mês</h3>
             <div className="space-y-4">
               <div>

@@ -87,7 +87,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "group relative flex h-full min-h-[140px] flex-col justify-between overflow-hidden rounded-3xl border bg-[#0b0f17]/40 p-6 backdrop-blur-sm",
+        "group relative flex h-full min-h-[140px] flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b0f17]/40 p-6 backdrop-blur-sm",
         "transition-all duration-300 hover:-translate-y-1 hover:bg-[#0b0f17]/60 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]",
         t.ring,
         className,

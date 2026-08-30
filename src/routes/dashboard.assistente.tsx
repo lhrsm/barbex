@@ -111,7 +111,7 @@ function AIAssistantPage() {
 
       <div className="flex flex-1 gap-6 overflow-hidden">
         {/* Chat Area */}
-        <Card className="flex-1 bg-[#0b0f17]/40 border-white/5 rounded-[2.5rem] flex flex-col overflow-hidden backdrop-blur-sm">
+        <Card className="flex-1 bg-[#0b0f17]/40 border-white/5 rounded-2xl flex flex-col overflow-hidden backdrop-blur-sm">
           <div 
             ref={scrollRef}
             className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
@@ -174,7 +174,7 @@ function AIAssistantPage() {
 
         {/* Sidebar Info */}
         <div className="hidden lg:flex flex-col gap-6 w-80 shrink-0">
-          <Card className="bg-[#0b0f17]/40 border-white/5 rounded-[2.5rem] p-6 backdrop-blur-sm">
+          <Card className="bg-[#0b0f17]/40 border-white/5 rounded-2xl p-6 backdrop-blur-sm">
             <h3 className="text-xs font-black text-gold uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
               <HelpCircle size={14} /> Sugestões
             </h3>
@@ -201,7 +201,7 @@ function AIAssistantPage() {
             </div>
           </Card>
 
-          <Card className="bg-[#0b0f17]/40 border-white/5 rounded-[2.5rem] p-6 backdrop-blur-sm flex-1">
+          <Card className="bg-[#0b0f17]/40 border-white/5 rounded-2xl p-6 backdrop-blur-sm flex-1">
             <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
               <Database size={14} /> Integração
             </h3>

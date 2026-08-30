@@ -186,12 +186,12 @@ const CustomerCard = memo(({
   const birthdaySoon = isBirthdaySoon(customer);
 
   const insights: string[] = [];
-  if (birthdaySoon) insights.push("🎂 Aniversário próximo");
-  if (days !== null && days >= 45) insights.push(`⏱ ${days}d sem retornar`);
-  if (Number(customer.cashback_balance) > 20) insights.push("💰 Cashback acumulado");
+  if (birthdaySoon) insights.push("Aniversário próximo");
+  if (days !== null && days >= 45) insights.push(`${days}d sem retornar`);
+  if (Number(customer.cashback_balance) > 20) insights.push("Cashback acumulado");
   if (isSub && subscription?.next_billing_at) {
     const dRenew = differenceInDays(new Date(subscription.next_billing_at), new Date());
-    if (dRenew >= 0 && dRenew <= 7) insights.push(`🔄 Renova em ${dRenew}d`);
+    if (dRenew >= 0 && dRenew <= 7) insights.push(`Renova em ${dRenew}d`);
   }
 
   return (
@@ -598,14 +598,14 @@ const CustomersComponent = memo(() => {
           <div className="flex flex-wrap gap-2">
             {[
               { k: "all", label: "Todos" },
-              { k: "subscribers", label: "👑 Assinantes" },
+              { k: "subscribers", label: "Assinantes" },
               { k: "common", label: "Clientes Comuns" },
               { k: "vip", label: "VIP" },
               { k: "cashback", label: "Com Cashback" },
               { k: "credits", label: "Com Créditos" },
               { k: "recurring", label: "Recorrentes" },
               { k: "new", label: "Novos (30d)" },
-              { k: "birthday", label: "🎂 Aniversariantes" },
+              { k: "birthday", label: "Aniversariantes" },
               { k: "inactive", label: "Inativos" },
               { k: "d30", label: "Sem visita 30d" },
               { k: "d60", label: "Sem visita 60d" },

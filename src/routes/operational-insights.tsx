@@ -110,7 +110,7 @@ function OperationalIntelligencePage() {
 
         {/* Radar Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40 overflow-hidden relative group">
+          <Card className="rounded-2xl border-hairline bg-surface-sunken/40 overflow-hidden relative group">
             <CardContent className="p-6">
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1">Alertas Críticos</p>
               <h3 className={cn("text-4xl font-black tracking-tighter", criticalCount > 0 ? "text-rose-500" : "text-white")}>
@@ -121,7 +121,7 @@ function OperationalIntelligencePage() {
             {criticalCount > 0 && <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/10 blur-3xl rounded-full animate-pulse" />}
           </Card>
           
-          <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40">
+          <Card className="rounded-2xl border-hairline bg-surface-sunken/40">
             <CardContent className="p-6">
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1">Prioridade Alta</p>
               <h3 className="text-4xl font-black text-white tracking-tighter">{highCount}</h3>
@@ -129,7 +129,7 @@ function OperationalIntelligencePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/40">
+          <Card className="rounded-2xl border-hairline bg-surface-sunken/40">
             <CardContent className="p-6">
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1">Saúde Operacional</p>
               <div className="flex items-center gap-3">
@@ -174,7 +174,7 @@ function OperationalIntelligencePage() {
                 <Skeleton key={i} className="h-40 w-full rounded-[2rem]" />
               ))
             ) : filteredInsights.length === 0 ? (
-              <Card className="rounded-[2.5rem] border-hairline bg-surface-sunken/20 p-20 text-center">
+              <Card className="rounded-2xl border-hairline bg-surface-sunken/20 p-20 text-center">
                 <div className="mx-auto w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                   <CheckCircle2 className="h-8 w-8 text-emerald-500/50" />
                 </div>
