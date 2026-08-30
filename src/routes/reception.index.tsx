@@ -64,17 +64,17 @@ function KpiCard({
   badgeBg?: string;
 }) {
   return (
-    <Card className="bg-[#0b0f17] border-zinc-800/80 p-4 shadow-sm hover:border-gold/30 transition-all">
-      <div className="flex items-center gap-3">
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${badgeBg} ${accentColor}`}>
-          <Icon className="h-5 w-5" aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-zinc-400 truncate">{label}</p>
-          <p className="text-2xl font-black text-white tabular-nums tracking-tight mt-0.5">{value}</p>
-          {subtext && <p className="text-[10px] text-zinc-500 truncate mt-0.5">{subtext}</p>}
+    <Card className="bg-[#0b0f17] border-zinc-800/80 p-4 shadow-sm hover:border-gold/30 transition-all flex flex-col justify-between min-h-[96px]">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-zinc-300 leading-snug">{label}</p>
+          <p className="text-2xl font-black text-white tabular-nums tracking-tight mt-1">{value}</p>
         </div>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${badgeBg} ${accentColor}`}>
+          <Icon className="h-4.5 w-4.5" aria-hidden />
+        </span>
       </div>
+      {subtext && <p className="text-[11px] text-zinc-500 leading-tight mt-2">{subtext}</p>}
     </Card>
   );
 }
@@ -140,30 +140,35 @@ function ReceptionHome() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-7">
       {/* Banner de Completude de Perfil */}
       <ProfileCompletionBanner />
 
       {/* Header Principal da Recepção */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-zinc-800/80">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Central de Atendimento</h1>
-            <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-semibold">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-5 border-b border-zinc-800/80">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+              Central de Atendimento
+            </h1>
+            <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Operação Ativa
             </Badge>
           </div>
-          <p className="text-sm text-zinc-400">
-            {getGreeting()}, <strong className="text-white font-semibold">{userGreetingName}</strong> ·{" "}
-            <span className="capitalize">{formattedDate}</span> · <span className="text-gold">{barbershopName}</span>
+          <p className="text-base sm:text-lg font-medium text-zinc-100 pt-1">
+            {getGreeting()}, <strong className="text-white font-bold">{userGreetingName}!</strong>
+          </p>
+          <p className="text-xs sm:text-sm text-zinc-400">
+            <span className="capitalize">{formattedDate}</span> <span className="text-zinc-600">·</span> <span className="text-gold font-medium">{barbershopName}</span>
           </p>
         </div>
 
         {/* Primary CTA destacada no Header */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center sm:self-start pt-1">
           <Button
             onClick={() => setApptOpen(true)}
-            className="bg-gold hover:bg-gold/90 text-black font-bold text-sm shadow-lg shadow-gold/20"
+            className="h-11 px-5 rounded-xl bg-gold hover:bg-gold/90 text-black font-bold text-sm shadow-lg shadow-gold/20 transition-all flex items-center shrink-0"
           >
             <CalendarPlus className="mr-2 h-4 w-4" aria-hidden /> Novo agendamento
           </Button>
@@ -171,46 +176,46 @@ function ReceptionHome() {
       </header>
 
       {/* Atalhos Operacionais Secundários */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setWalkinOpen(true)}
-          className="border-zinc-800 bg-[#0b0f17] text-zinc-200 hover:text-white hover:border-gold/40 text-xs font-medium"
+          className="h-10 px-4 rounded-xl border-zinc-800/90 bg-[#0b0f17] text-zinc-200 hover:text-white hover:border-gold/40 hover:bg-zinc-900/60 text-xs sm:text-sm font-medium transition-all shadow-sm flex items-center"
         >
-          <Footprints className="mr-2 h-3.5 w-3.5 text-gold" aria-hidden /> Atendimento presencial (Walk-in)
+          <Footprints className="mr-2 h-4 w-4 text-gold shrink-0" aria-hidden /> Atendimento presencial (Walk-in)
         </Button>
         <Button
           variant="outline"
           size="sm"
           asChild
-          className="border-zinc-800 bg-[#0b0f17] text-zinc-200 hover:text-white hover:border-gold/40 text-xs font-medium"
+          className="h-10 px-4 rounded-xl border-zinc-800/90 bg-[#0b0f17] text-zinc-200 hover:text-white hover:border-gold/40 hover:bg-zinc-900/60 text-xs sm:text-sm font-medium transition-all shadow-sm flex items-center"
         >
           <a href="/reception/waiting-list">
-            <ListChecks className="mr-2 h-3.5 w-3.5 text-gold" aria-hidden /> Lista de espera
+            <ListChecks className="mr-2 h-4 w-4 text-gold shrink-0" aria-hidden /> Lista de espera
           </a>
         </Button>
         <Button
           variant="outline"
           size="sm"
           asChild
-          className="border-zinc-800 bg-[#0b0f17] text-zinc-200 hover:text-white hover:border-gold/40 text-xs font-medium"
+          className="h-10 px-4 rounded-xl border-zinc-800/90 bg-[#0b0f17] text-zinc-200 hover:text-white hover:border-gold/40 hover:bg-zinc-900/60 text-xs sm:text-sm font-medium transition-all shadow-sm flex items-center"
         >
           <a href="/reception/customers">
-            <UserPlus className="mr-2 h-3.5 w-3.5 text-gold" aria-hidden /> Clientes
+            <UserPlus className="mr-2 h-4 w-4 text-gold shrink-0" aria-hidden /> Clientes
           </a>
         </Button>
       </div>
 
       {/* KPI Cards Operacionais */}
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-6">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-20 rounded-xl bg-zinc-900" />
+            <Skeleton key={i} className="h-24 rounded-xl bg-zinc-900" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-6">
           <KpiCard
             label="Atendimentos hoje"
             value={stats?.today ?? 0}
