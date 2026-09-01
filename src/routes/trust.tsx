@@ -7,12 +7,13 @@ import { ManageCookiesLink } from "@/components/CookieBanner";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
+    title: "Central de Confiança | Barbex",
     meta: [
-      { title: "Central de Confiança — Barbex" },
-      { name: "description", content: "Transparência, segurança e privacidade fazem parte do Barbex. Tudo sobre LGPD, segurança, acessibilidade, cookies, status e subprocessadores." },
-      { property: "og:title", content: "Central de Confiança — Barbex" },
-      { property: "og:description", content: "Privacidade, segurança e acessibilidade em primeiro lugar." },
+      { name: "description", content: "Transparência, segurança e privacidade fazem parte do Barbex. Tudo sobre LGPD, segurança, acessibilidade, cookies, status e suboperadores." },
+      { property: "og:title", content: "Central de Confiança | Barbex" },
+      { property: "og:description", content: "Privacidade, segurança e acessibilidade em primeiro lugar na plataforma Barbex." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/trust" }],
   }),
   component: TrustCenter,
 });

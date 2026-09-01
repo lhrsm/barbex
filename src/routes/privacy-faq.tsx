@@ -4,10 +4,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 export const Route = createFileRoute("/privacy-faq")({
   head: () => ({
+    title: "FAQ de Privacidade & LGPD | Barbex",
     meta: [
-      { title: "FAQ de Privacidade — Barbex" },
-      { name: "description", content: "Perguntas e respostas sobre privacidade, dados e LGPD no Barbex." },
+      { name: "description", content: "Perguntas e respostas sobre privacidade, direitos dos titulares e conformidade com a LGPD no Barbex." },
+      { property: "og:title", content: "FAQ de Privacidade & LGPD | Barbex" },
+      { property: "og:description", content: "Perguntas e respostas sobre privacidade, direitos dos titulares e conformidade com a LGPD no Barbex." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/privacy-faq" }],
   }),
   component: PrivacyFaq,
 });

@@ -7,6 +7,12 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    title: "Dashboard | Barbex",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: DashboardLayout,
 });
 

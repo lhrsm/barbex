@@ -74,19 +74,53 @@ export const Route = createFileRoute("/")({
   },
   component: LandingPage,
   head: () => ({
-    title: "Barbex — A plataforma completa para barbearias de alta performance",
+    title: "Barbex | Gestão e Agendamento para Barbearias",
     meta: [
       {
         name: "description",
-        content: "Centralize agenda, clientes, equipe, financeiro, loja, assinaturas, marketing e inteligência em uma única plataforma Enterprise."
+        content: "Plataforma completa de gestão, agendamento online, clube de assinaturas e controle financeiro para barbearias.",
       },
-      { property: "og:title", content: "Barbex — Gestão Premium de Barbearias" },
+      { property: "og:title", content: "Barbex | Gestão e Agendamento para Barbearias" },
       {
         property: "og:description",
-        content: "Aumente seu faturamento e fidelize clientes com a melhor plataforma de gestão para barbearias de alto nível."
+        content: "Plataforma completa de gestão, agendamento online, clube de assinaturas e controle financeiro para barbearias.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://barbex.shop/" },
+      { property: "og:site_name", content: "Barbex" },
+      { property: "og:locale", content: "pt_BR" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Barbex | Gestão e Agendamento para Barbearias" },
+      {
+        name: "twitter:description",
+        content: "Plataforma completa de gestão, agendamento online, clube de assinaturas e controle financeiro para barbearias.",
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Barbex",
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web, iOS, Android",
+          url: "https://barbex.shop/",
+          description: "Plataforma completa de gestão, agendamento online, clube de assinaturas e controle financeiro para barbearias.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "BRL",
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "Barbex",
+            url: "https://barbex.shop/",
+            logo: "https://barbex.shop/icon-512.png",
+          },
+        }),
+      },
     ],
   }),
 });

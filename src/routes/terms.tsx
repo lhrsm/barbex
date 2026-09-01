@@ -3,12 +3,13 @@ import { FileText, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
+    title: "Termos de Uso | Barbex",
     meta: [
-      { title: "Termos de Uso — Barbex" },
       { name: "description", content: "Termos e condições de uso da plataforma Barbex." },
-      { property: "og:title", content: "Termos de Uso — Barbex" },
+      { property: "og:title", content: "Termos de Uso | Barbex" },
       { property: "og:description", content: "Termos e condições de uso da plataforma Barbex." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/terms" }],
   }),
   component: TermsPage,
 });

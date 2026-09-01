@@ -1,0 +1,10 @@
+# robots.txt for Barbex (https://barbex.shop)
+User-agent: *
+Allow: /
+
+# Disallow internal API routes and payment callbacks
+Disallow: /api/
+Disallow: /checkout/return
+
+# Sitemaps
+Sitemap: https://barbex.shop/sitemap.xml

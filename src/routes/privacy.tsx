@@ -3,12 +3,13 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
+    title: "Política de Privacidade | Barbex",
     meta: [
-      { title: "Política de Privacidade — Barbex" },
       { name: "description", content: "Saiba como o Barbex coleta, utiliza e protege seus dados pessoais em conformidade com a LGPD." },
-      { property: "og:title", content: "Política de Privacidade — Barbex" },
+      { property: "og:title", content: "Política de Privacidade | Barbex" },
       { property: "og:description", content: "Saiba como o Barbex coleta, utiliza e protege seus dados pessoais em conformidade com a LGPD." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/privacy" }],
   }),
   component: PrivacyPage,
 });

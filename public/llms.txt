@@ -1,0 +1,33 @@
+# Barbex — Plataforma SaaS para Barbearias
+
+> Plataforma completa de gestão, agendamento online, clube de assinaturas e CRM para barbearias de alto nível.
+
+## Visão Geral
+
+O Barbex é uma plataforma SaaS multi-tenant desenvolvida para modernizar a operação de barbearias. O sistema centraliza agendamentos em tempo real, gestão financeira com controle de comissões, clube de membros/assinaturas, programas de fidelidade com cashback e portal de autoatendimento para clientes e profissionais.
+
+## Recursos Principais
+
+- **Agendamento Online 24/7:** Agendamento rápido e intuitivo com seleção de serviços, profissionais e horários disponíveis em tempo real.
+- **Portais Públicos por Estabelecimento:** Cada barbearia possui seu próprio endereço público dedicado (`https://barbex.shop/{slug}`) para agendamento direto e apresentação de serviços.
+- **Gestão Operacional & Financeira:** Controle de fluxo de caixa, DRE gerencial, divisão de comissões por profissional e relatórios de ocupação de cadeiras.
+- **Clube de Membros (Club Barbex):** Planos recorrentes com benefícios exclusivos, controle de cortes mensais e regras de elegibilidade automatizadas.
+- **Fidelidade & Gamificação:** Cashback automático, cupons promocionais e sistema de recompensas.
+
+## Páginas Públicas Institucionais
+
+- Página Inicial: https://barbex.shop/
+- Política de Privacidade: https://barbex.shop/privacy
+- Termos de Serviço: https://barbex.shop/terms
+- Política de Cookies: https://barbex.shop/cookies
+- Suboperadores de Dados: https://barbex.shop/subprocessors
+- Central de Segurança & Confiança: https://barbex.shop/trust
+- Status da Plataforma: https://barbex.shop/status
+- Sitemap: https://barbex.shop/sitemap.xml
+
+## Estabelecimentos Públicos
+
+Os clientes podem agendar serviços diretamente nas páginas dos estabelecimentos parceiros:
+- Barbearia LM: https://barbex.shop/lm
+- Carlos Barber Shop: https://barbex.shop/carlos-barber-shop
+- Carlos Barber: https://barbex.shop/carlos-barber

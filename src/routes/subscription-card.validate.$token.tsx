@@ -8,6 +8,12 @@ import { CheckCircle2, XCircle, AlertTriangle, Pause, Crown, Scissors, Clock, Lo
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/subscription-card/validate/$token")({
+  head: () => ({
+    title: "Validar Cartão de Assinatura | Barbex",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: ValidatePage,
 });
 

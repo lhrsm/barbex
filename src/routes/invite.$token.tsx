@@ -12,6 +12,12 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck, Mail, AlertCircle, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/invite/$token")({
+  head: () => ({
+    title: "Aceitar Convite de Equipe | Barbex",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AcceptInvitationPage,
 });
 

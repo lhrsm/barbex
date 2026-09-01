@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Outlet, useNavigate, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, Link, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,12 @@ import { AdminAiAssistant } from "@/components/admin/AdminAiAssistant";
 import { DefaultRouteError, DefaultRouteNotFound } from "@/components/route-boundaries";
 
 export const Route = createFileRoute("/admin")({
+  head: () => ({
+    title: "Admin Console | Barbex",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminLayout,
   errorComponent: DefaultRouteError,
   notFoundComponent: DefaultRouteNotFound,

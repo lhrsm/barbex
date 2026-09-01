@@ -27,9 +27,10 @@ type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export const Route = createFileRoute("/auth/reset-password")({
   component: ResetPasswordPage,
   head: () => ({
-    title: "Redefinir Senha — Barbex Premium",
+    title: "Redefinir Senha | Barbex",
     meta: [
       { name: "description", content: "Crie uma nova senha para sua conta Barbex Enterprise." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
 });

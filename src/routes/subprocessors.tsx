@@ -5,10 +5,13 @@ import { listSubprocessors } from "@/lib/trust.functions";
 
 export const Route = createFileRoute("/subprocessors")({
   head: () => ({
+    title: "Suboperadores de Dados | Barbex",
     meta: [
-      { title: "Subprocessadores — Barbex" },
-      { name: "description", content: "Serviços terceiros utilizados pelo Barbex para operar a plataforma." },
+      { name: "description", content: "Serviços terceiros utilizados pelo Barbex para operar a plataforma com conformidade e segurança." },
+      { property: "og:title", content: "Suboperadores de Dados | Barbex" },
+      { property: "og:description", content: "Serviços terceiros utilizados pelo Barbex para operar a plataforma com conformidade e segurança." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/subprocessors" }],
   }),
   component: SubprocessorsPage,
 });

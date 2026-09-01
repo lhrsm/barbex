@@ -42,6 +42,12 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/$slug/portal")({
+  head: () => ({
+    title: "Portal do Cliente | Barbex",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: CustomerPortalPage,
 });
 

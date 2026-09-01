@@ -13,7 +13,7 @@ export const Route = createFileRoute("/$slug/checkin")({
     meta: [
       { title: "Check-in — Barbex" },
       { name: "description", content: "Faça seu check-in ao chegar na barbearia." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
 });

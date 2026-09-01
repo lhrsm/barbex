@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Outlet, useLocation, Link, RouteApi } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate, Outlet, useLocation, Link, RouteApi } from "@tanstack/react-router";
 import { TrialExpiredBlock } from "@/components/subscription/TrialExpiredBlock";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -51,7 +51,34 @@ import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 
 
+function ShopNotFoundComponent() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-black text-white">
+      <meta name="robots" content="noindex, nofollow" />
+      <h1 className="text-4xl font-bold mb-2">404</h1>
+      <p className="text-muted-foreground mb-4">Barbearia não encontrada.</p>
+      <Button asChild>
+        <a href="/">Voltar para o início</a>
+      </Button>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/$slug")({
+  loader: async ({ params }) => {
+    const normalizedSlug = params.slug.trim().toLowerCase();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id, status")
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+
+    if (error || !profile || profile.status === "blocked" || profile.status === "inactive" || profile.status === "suspended") {
+      throw notFound();
+    }
+    return { valid: true };
+  },
+  notFoundComponent: ShopNotFoundComponent,
   component: ShopPageComponent,
   head: ({ params }) => {
     // O componente atualiza o document.title com o nome real da barbearia ao carregar.
@@ -61,25 +88,25 @@ export const Route = createFileRoute("/$slug")({
       .join(" ");
     return {
       meta: [
-        { title: `${pretty} — Agende seu horário online` },
+        { title: `${pretty} | Agendamento Online` },
         {
           name: "description",
-          content: `Agende cortes, barba e serviços na ${pretty} em poucos cliques. Horários em tempo real e confirmação pelo WhatsApp.`,
+          content: `Agende seu horário online na ${pretty}. Consulte serviços, profissionais e horários disponíveis em tempo real.`,
         },
-        { property: "og:title", content: `${pretty} — Agendamento online` },
+        { property: "og:title", content: `${pretty} | Agendamento Online` },
         {
           property: "og:description",
-          content: `Escolha profissional, serviço e horário na ${pretty}. Agendamento rápido, sem ligações.`,
+          content: `Agende seu horário online na ${pretty}. Consulte serviços, profissionais e horários disponíveis em tempo real.`,
         },
         { property: "og:type", content: "website" },
         { property: "og:url", content: `https://barbex.shop/${params.slug}` },
         { property: "og:site_name", content: pretty },
         { property: "og:locale", content: "pt_BR" },
         { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: `${pretty} — Agendamento online` },
+        { name: "twitter:title", content: `${pretty} | Agendamento Online` },
         {
           name: "twitter:description",
-          content: `Escolha profissional, serviço e horário na ${pretty}. Agendamento rápido, sem ligações.`,
+          content: `Agende seu horário online na ${pretty}. Consulte serviços, profissionais e horários disponíveis em tempo real.`,
         },
       ],
       links: [{ rel: "canonical", href: `https://barbex.shop/${params.slug}` }],
@@ -2106,6 +2133,7 @@ function ShopPageComponent() {
   if (!shop) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-black text-white">
+        <meta name="robots" content="noindex, nofollow" />
         <h1 className="text-4xl font-bold mb-2">404</h1>
         <p className="text-muted-foreground mb-4">Barbearia não encontrada.</p>
         <Button asChild>

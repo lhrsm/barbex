@@ -10,7 +10,7 @@ export const Route = createFileRoute("/reception")({
     meta: [
       { title: "Central de Atendimento | Barbex" },
       { name: "description", content: "Portal operacional da recepção: agenda do dia, fila de atendimento, check-in, walk-in e clientes." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Central de Atendimento | Barbex" },
       { property: "og:description", content: "Portal operacional da recepção da barbearia." },
       { property: "og:type", content: "website" },

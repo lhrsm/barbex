@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/checkout/return")({
+  head: () => ({
+    title: "Retorno do Pagamento | Barbex",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): { session_id?: string } => ({
     session_id: typeof search.session_id === "string" ? search.session_id : undefined,
   }),

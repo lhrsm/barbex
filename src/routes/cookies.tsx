@@ -4,10 +4,13 @@ import { ManageCookiesLink } from "@/components/CookieBanner";
 
 export const Route = createFileRoute("/cookies")({
   head: () => ({
+    title: "Política de Cookies | Barbex",
     meta: [
-      { title: "Cookies — Barbex" },
       { name: "description", content: "Como o Barbex utiliza cookies e como você pode gerenciar suas preferências." },
+      { property: "og:title", content: "Política de Cookies | Barbex" },
+      { property: "og:description", content: "Como o Barbex utiliza cookies e como você pode gerenciar suas preferências." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/cookies" }],
   }),
   component: CookiesPage,
 });

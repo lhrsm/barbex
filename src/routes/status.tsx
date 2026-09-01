@@ -9,12 +9,13 @@ import {
 
 export const Route = createFileRoute("/status")({
   head: () => ({
+    title: "Status da Plataforma | Barbex",
     meta: [
-      { title: "Status da Plataforma — Barbex" },
-      { name: "description", content: "Acompanhe em tempo real a disponibilidade dos serviços e integrações do Barbex." },
-      { property: "og:title", content: "Status da Plataforma Barbex" },
-      { property: "og:description", content: "Disponibilidade, incidentes e manutenções em tempo real." },
+      { name: "description", content: "Acompanhe em tempo real a disponibilidade dos serviços, APIs e integrações do Barbex." },
+      { property: "og:title", content: "Status da Plataforma | Barbex" },
+      { property: "og:description", content: "Disponibilidade, status de serviços e manutenções em tempo real." },
     ],
+    links: [{ rel: "canonical", href: "https://barbex.shop/status" }],
   }),
   component: StatusPage,
 });
