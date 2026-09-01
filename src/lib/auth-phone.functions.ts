@@ -71,11 +71,18 @@ export const signInWithPhone = createServerFn({ method: "POST" })
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      // 2. Lookup no banco: busca apenas registros que satisfaçam as roles permitidas
+      // 2. Lookup no banco: busca em profiles tolerando variações legadas de prefixo nacional
+      const phoneCandidates = [cleanPhone];
+      if (cleanPhone.startsWith("55") && cleanPhone.length >= 12) {
+        phoneCandidates.push(cleanPhone.slice(2));
+      }
+
+      let targetUserId: string | null = null;
+
       const { data: matchedProfiles, error: lookupError } = await supabaseAdmin
         .from("profiles")
         .select("id, role")
-        .eq("phone", cleanPhone)
+        .in("phone", phoneCandidates)
         .not("phone", "is", null)
         .neq("phone", "")
         .in("role", AUTHENTICABLE_STAFF_ROLES as unknown as string[]);
@@ -84,23 +91,51 @@ export const signInWithPhone = createServerFn({ method: "POST" })
         return { ok: false, code: "SERVICE_UNAVAILABLE" };
       }
 
-      // Fail-closed contra ausência ou ambiguidade
-      if (!matchedProfiles || matchedProfiles.length === 0) {
+      if (matchedProfiles && matchedProfiles.length === 1 && matchedProfiles[0]?.id) {
+        targetUserId = matchedProfiles[0].id;
+      } else if (matchedProfiles && matchedProfiles.length > 1) {
+        // Ambiguidade detectada em profiles: encerra por segurança
         return { ok: false, code: "INVALID_CREDENTIALS" };
+      } else {
+        // Fallback para tabela barbers (onde telefones de profissionais residem historicamente)
+        const { data: matchedBarbers, error: barberLookupError } = await supabaseAdmin
+          .from("barbers")
+          .select("id, user_id, active")
+          .in("phone", phoneCandidates)
+          .eq("active", true)
+          .not("user_id", "is", null);
+
+        if (barberLookupError) {
+          return { ok: false, code: "SERVICE_UNAVAILABLE" };
+        }
+
+        if (matchedBarbers && matchedBarbers.length === 1 && matchedBarbers[0]?.user_id) {
+          const barberUserId = matchedBarbers[0].user_id;
+
+          // Valida que o perfil do usuário possui papel de staff autenticável
+          const { data: barberProfile, error: bProfError } = await supabaseAdmin
+            .from("profiles")
+            .select("id, role")
+            .eq("id", barberUserId)
+            .in("role", AUTHENTICABLE_STAFF_ROLES as unknown as string[])
+            .maybeSingle();
+
+          if (bProfError || !barberProfile?.id) {
+            return { ok: false, code: "INVALID_CREDENTIALS" };
+          }
+
+          targetUserId = barberProfile.id;
+        } else {
+          return { ok: false, code: "INVALID_CREDENTIALS" };
+        }
       }
 
-      if (matchedProfiles.length > 1) {
-        // Ambiguidade detectada: não seleciona nenhum e encerra
-        return { ok: false, code: "INVALID_CREDENTIALS" };
-      }
-
-      const targetProfile = matchedProfiles[0];
-      if (!targetProfile?.id) {
+      if (!targetUserId) {
         return { ok: false, code: "INVALID_CREDENTIALS" };
       }
 
       // 3. Resolução pontual O(1) do Auth User oficial via Admin API
-      const { data: authUserData, error: userError } = await supabaseAdmin.auth.admin.getUserById(targetProfile.id);
+      const { data: authUserData, error: userError } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
 
       if (userError || !authUserData?.user?.email) {
         return { ok: false, code: "INVALID_CREDENTIALS" };
