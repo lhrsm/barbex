@@ -398,6 +398,7 @@ function DashboardIndexComponent() {
             barbers={barbers}
             birthdayCustomers={birthdayCustomers}
             tenantId={tenantId || null}
+            tenantProfile={tenantProfile}
             navigate={navigate}
             setIsWalkinOpen={setIsWalkinOpen}
             dashboardTab={dashboardTab}
@@ -413,6 +414,7 @@ function DashboardIndexComponent() {
             barbers={barbers}
             birthdaysCount={birthdayCustomers.length}
             tenantId={tenantId || ""}
+            tenantProfile={tenantProfile}
             navigate={navigate}
             name={authProfile?.responsible_name || authProfile?.full_name || user?.user_metadata?.responsible_name || user?.user_metadata?.full_name || user?.email?.split('@')[0]}
           />
@@ -423,6 +425,7 @@ function DashboardIndexComponent() {
           <FinanceDashboardView
             stats={stats}
             tenantId={tenantId || ""}
+            tenantProfile={tenantProfile}
             navigate={navigate}
           />
         );

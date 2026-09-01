@@ -10,16 +10,19 @@ import {
   CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 
 interface FinanceDashboardViewProps {
   stats: any;
   tenantId: string;
+  tenantProfile?: any;
   navigate: (to: { to: string }) => void;
 }
 
 export function FinanceDashboardView({
   stats,
   tenantId,
+  tenantProfile,
   navigate
 }: FinanceDashboardViewProps) {
   return (
@@ -28,6 +31,8 @@ export function FinanceDashboardView({
         <DashboardHeader 
           title="Centro Financeiro" 
           subtitle="Visão estratégica do fluxo de caixa e rentabilidade."
+          brandLogo={tenantId ? <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" /> : undefined}
+          tenantName={tenantProfile?.business_name || undefined}
           actions={
             <Button 
               size="sm" 

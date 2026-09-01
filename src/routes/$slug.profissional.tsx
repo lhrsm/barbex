@@ -192,12 +192,12 @@ function ProfessionalDashboard() {
       console.log("[PROFISSIONAL_BARBER_DATA]", bData);
       setBarber(bData);
 
-      // Tenant profile (business name, permissions, phone) via tenant_id canônico
+      // Tenant profile (business name, permissions, phone, logo) via tenant_id canônico
       const tenantIdToQuery = bData?.tenant_id || session.tenant_id;
       if (tenantIdToQuery) {
         const { data: tData } = await supabase
           .from("profiles")
-          .select("business_name, slug, phone, barber_can_cancel, barber_can_reschedule")
+          .select("id, business_name, slug, phone, barber_can_cancel, barber_can_reschedule, barbershop_logo_url, logo_url")
           .eq("id", tenantIdToQuery)
           .maybeSingle();
         setTenant(tData);
@@ -415,6 +415,7 @@ function ProfessionalDashboard() {
         <ProfessionalHero
           name={session.name}
           barber={barber}
+          tenant={tenant}
           today={todaySummary}
           goal={monthlyGoal}
           productionMonth={productionMonth}

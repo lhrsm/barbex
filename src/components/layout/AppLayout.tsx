@@ -66,6 +66,7 @@ import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { getDefaultRouteForRole } from "@/lib/permissions.matrix";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { ProfileCompletionBanner } from "@/components/profile/ProfileCompletionBanner";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 
 interface NavItem {
   label: string;
@@ -359,17 +360,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
       {/* Mobile Top Header */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gold/10 bg-[#0b0f17] sticky top-0 z-40">
         <div className="flex items-center gap-3 overflow-hidden">
-          {tenantProfile?.logo_url || tenantProfile?.barbershop_logo_url ? (
-            <div className="h-10 w-10 flex items-center justify-center overflow-hidden shrink-0 rounded-full border border-gold/20 bg-black/20">
-              <img 
-                src={tenantProfile.logo_url || tenantProfile.barbershop_logo_url} 
-                alt={businessName}
-                className="h-full w-full object-cover rounded-full" 
-              />
-            </div>
-          ) : (
-            <BarbexLogo size="sm" showText={false} className="shrink-0" />
-          )}
+          <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="sm" shape="circle" className="shrink-0 border border-gold/20" />
           <p className="text-xl font-black text-white truncate tracking-tight">{businessName}</p>
         </div>
         <div className="flex items-center gap-1">
@@ -387,17 +378,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
         <div className="fixed inset-0 z-50 bg-[#05070d] md:hidden overflow-auto">
           <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#0b0f17]">
             <div className="flex items-center gap-3 overflow-hidden">
-              {tenantProfile?.logo_url || tenantProfile?.barbershop_logo_url ? (
-                <div className="h-10 w-10 flex items-center justify-center overflow-hidden shrink-0 rounded-full border border-gold/20 bg-black/20">
-                  <img 
-                    src={tenantProfile.logo_url || tenantProfile.barbershop_logo_url} 
-                    alt={businessName}
-                    className="h-full w-full object-cover rounded-full" 
-                  />
-                </div>
-              ) : (
-                <BarbexLogo size="sm" showText={false} className="shrink-0" />
-              )}
+              <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="sm" shape="circle" className="shrink-0 border border-gold/20" />
               <p className="text-xl font-black text-white truncate">{businessName}</p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} className="text-white">
@@ -469,17 +450,13 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
         {/* Sidebar for desktop */}
         <aside className="hidden md:flex flex-col w-64 border-r border-gold/10 bg-[#0b0f17] shrink-0">
           <div className="p-6 flex flex-col items-center gap-4 border-b border-white/5 mb-2">
-            <div className="h-20 w-20 flex items-center justify-center mb-2 overflow-hidden rounded-full border-2 border-gold/20 bg-black/40 shadow-[0_0_20px_rgba(212,175,55,0.1)]">
-              {tenantProfile?.logo_url || tenantProfile?.barbershop_logo_url ? (
-                <img 
-                  src={tenantProfile.logo_url || tenantProfile.barbershop_logo_url} 
-                  alt={businessName}
-                  className="h-full w-full object-cover rounded-full" 
-                />
-              ) : (
-                <BarbexLogo size="xl" showText={false} />
-              )}
-            </div>
+            <TenantBrandLogo
+              tenantIdOrSlug={tenantId}
+              shop={tenantProfile}
+              size="xl"
+              shape="circle"
+              className="mb-2 border-2 border-gold/20 bg-black/40 shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+            />
             <div className="text-center space-y-1">
               <p className="text-xl font-bold text-white tracking-tight leading-none truncate max-w-[180px]">
                 {businessName}

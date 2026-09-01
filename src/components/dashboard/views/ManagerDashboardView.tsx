@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 
 interface ManagerDashboardViewProps {
   stats: any;
@@ -20,6 +21,7 @@ interface ManagerDashboardViewProps {
   barbers: any[];
   birthdaysCount: number;
   tenantId: string;
+  tenantProfile?: any;
   navigate: (to: { to: string }) => void;
   name?: string | null;
 }
@@ -30,6 +32,7 @@ export function ManagerDashboardView({
   barbers,
   birthdaysCount,
   tenantId,
+  tenantProfile,
   navigate,
   name
 }: ManagerDashboardViewProps) {
@@ -39,6 +42,8 @@ export function ManagerDashboardView({
         <DashboardHeader 
           title="Gestão Operacional" 
           subtitle="Acompanhamento em tempo real da equipe e produtividade."
+          brandLogo={tenantId ? <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" /> : undefined}
+          tenantName={tenantProfile?.business_name || undefined}
           actions={
             <Button 
               size="sm" 

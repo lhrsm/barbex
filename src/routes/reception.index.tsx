@@ -27,6 +27,7 @@ import { ReceptionQueue } from "@/components/reception/ReceptionQueue";
 import { useReception } from "@/hooks/use-reception";
 import { useTenant } from "@/hooks/use-tenant";
 import { ProfileCompletionBanner } from "@/components/profile/ProfileCompletionBanner";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 
 export const Route = createFileRoute("/reception/")({
   head: () => ({
@@ -146,22 +147,25 @@ function ReceptionHome() {
 
       {/* Header Principal da Recepção */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-5 border-b border-zinc-800/80">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
-              Central de Atendimento
-            </h1>
-            <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Operação Ativa
-            </Badge>
+        <div className="flex items-start gap-4">
+          <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" className="mt-0.5" />
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+                Central de Atendimento
+              </h1>
+              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Operação Ativa
+              </Badge>
+            </div>
+            <p className="text-base sm:text-lg font-medium text-zinc-100 pt-1">
+              {getGreeting()}, <strong className="text-white font-bold">{userGreetingName}!</strong>
+            </p>
+            <p className="text-xs sm:text-sm text-zinc-400">
+              <span className="capitalize">{formattedDate}</span> <span className="text-zinc-600">·</span> <span className="text-gold font-medium">{barbershopName}</span>
+            </p>
           </div>
-          <p className="text-base sm:text-lg font-medium text-zinc-100 pt-1">
-            {getGreeting()}, <strong className="text-white font-bold">{userGreetingName}!</strong>
-          </p>
-          <p className="text-xs sm:text-sm text-zinc-400">
-            <span className="capitalize">{formattedDate}</span> <span className="text-zinc-600">·</span> <span className="text-gold font-medium">{barbershopName}</span>
-          </p>
         </div>
 
         {/* Primary CTA destacada no Header */}

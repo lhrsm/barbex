@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link } from "@tanstack/react-router";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 
 interface AdminDashboardViewProps {
   stats: any;
@@ -28,6 +29,7 @@ interface AdminDashboardViewProps {
   barbers: any[];
   birthdayCustomers: any[];
   tenantId: string | null;
+  tenantProfile?: any;
   navigate: any;
   setIsWalkinOpen: (open: boolean) => void;
   dashboardTab: string;
@@ -41,6 +43,7 @@ export const AdminDashboardView = memo(({
   barbers,
   birthdayCustomers,
   tenantId,
+  tenantProfile,
   navigate,
   setIsWalkinOpen,
   dashboardTab,
@@ -53,6 +56,8 @@ export const AdminDashboardView = memo(({
         <DashboardHeader 
           title="Visão Executiva" 
           subtitle="Controle total da sua operação e saúde financeira."
+          brandLogo={tenantId ? <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" /> : undefined}
+          tenantName={tenantProfile?.business_name || undefined}
           actions={
             <div className="flex items-center gap-3">
               <Button 

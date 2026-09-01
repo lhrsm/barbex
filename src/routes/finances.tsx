@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { useEffect, useState, useMemo, Suspense, lazy } from "react";
+import { useTenant } from "@/hooks/use-tenant";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 const ErpCenter = lazy(() => import("@/components/finances/erp/ErpCenter").then((m) => ({ default: m.ErpCenter })));
 
 import { useFinancesFilters } from "@/hooks/use-finances-filters";
@@ -66,6 +68,7 @@ const financesHelpConfig = {
 function FinancesComponent() {
   const queryClient = useQueryClient();
   const { user: authUser, loading: authLoading, role: authRole } = useAuth();
+  const { tenantId, tenantProfile } = useTenant();
   const { session, loading: profLoading } = useProfessionalAuth();
   const navigate = useNavigate();
   const { plan } = usePlanLimits();
@@ -219,6 +222,8 @@ function FinancesComponent() {
           globalPeriod={globalPeriod}
           setGlobalPeriod={setGlobalPeriod}
           isExportingPdf={isExportingPdf}
+          brandLogo={tenantId ? <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" /> : undefined}
+          tenantName={tenantProfile?.business_name || undefined}
           onExportPdf={async () => {
             if (plan === 'free') {
               toast.error("Relatórios PDF estão disponíveis apenas no plano Pro.");

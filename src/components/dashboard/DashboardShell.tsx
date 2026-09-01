@@ -26,28 +26,38 @@ export function DashboardShell({ children, header, className }: DashboardShellPr
 export function DashboardHeader({ 
   title, 
   subtitle, 
-  actions 
+  actions,
+  brandLogo,
+  tenantName,
 }: { 
   title: string; 
   subtitle?: string; 
-  actions?: React.ReactNode 
+  actions?: React.ReactNode;
+  brandLogo?: React.ReactNode;
+  tenantName?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1 md:flex-row md:items-start md:justify-between w-full">
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between w-full">
+      <div className="flex items-center gap-4">
+        {brandLogo}
+        <div className="space-y-0.5">
+          {tenantName && (
+            <p className="text-[10px] font-black tracking-widest text-gold uppercase">
+              {tenantName}
+            </p>
+          )}
           <h1 className="text-xl md:text-2xl font-black tracking-tighter text-white italic uppercase">
             {title}
           </h1>
+          {subtitle && (
+            <p className="text-[13px] text-gray-500 font-medium max-w-lg">
+              {subtitle}
+            </p>
+          )}
         </div>
-        {subtitle && (
-          <p className="text-[13px] text-gray-500 font-medium max-w-lg mt-1">
-            {subtitle}
-          </p>
-        )}
       </div>
       {actions && (
-        <div className="flex items-center gap-3 mt-4 md:mt-0">
+        <div className="flex items-center gap-3 mt-2 md:mt-0">
           {actions}
         </div>
       )}

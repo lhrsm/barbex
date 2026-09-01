@@ -18,6 +18,8 @@ interface FinancesHeaderProps {
   onExportPdf: () => void;
   onSyncAll: () => void;
   onRecalculateBalances: () => void;
+  brandLogo?: ReactNode;
+  tenantName?: string;
   children?: ReactNode;
 }
 
@@ -29,14 +31,24 @@ export function FinancesHeader({
   onExportPdf,
   onSyncAll,
   onRecalculateBalances,
+  brandLogo,
+  tenantName,
   children,
 }: FinancesHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white">Financeiro</h2>
-          <p className="text-muted-foreground text-sm">Controle suas entradas e saídas.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-3.5">
+          {brandLogo}
+          <div className="space-y-0.5">
+            {tenantName && (
+              <p className="text-[10px] font-black tracking-widest text-gold uppercase">
+                {tenantName}
+              </p>
+            )}
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">Financeiro</h2>
+            <p className="text-muted-foreground text-xs md:text-sm">Controle suas entradas e saídas.</p>
+          </div>
         </div>
         {role !== "barber" && (
           <div className="flex items-center gap-2 bg-[#0A1020] border border-[rgba(255,184,0,0.25)] rounded-[14px] px-3 py-2 min-w-[240px]">

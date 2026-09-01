@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CalendarCheck, Clock, CircleDollarSign, Target, Sparkles } from "lucide-react";
 import { brl, type TodaySummary } from "./metrics";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 
 interface Props {
   name: string;
   barber: any;
+  tenant?: any;
   today: TodaySummary;
   goal: number;
   productionMonth: number;
@@ -25,6 +27,7 @@ function greeting() {
 export const ProfessionalHero = memo(function ProfessionalHero({
   name,
   barber,
+  tenant,
   today,
   goal,
   productionMonth,
@@ -45,13 +48,27 @@ export const ProfessionalHero = memo(function ProfessionalHero({
       <div className="relative flex flex-col gap-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="flex items-center gap-5">
-            <Avatar className="h-20 w-20 border-2 border-gold shadow-[0_0_24px_rgba(212,175,55,0.35)]">
+            <Avatar className="h-20 w-20 border-2 border-gold shadow-[0_0_24px_rgba(212,175,55,0.35)] shrink-0">
               <AvatarImage src={barber?.avatar_url} alt={`Foto de ${name}`} />
               <AvatarFallback className="bg-gold/10 text-gold text-2xl font-black">
                 {name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
+              {tenant && (
+                <div className="flex items-center gap-2 mb-1.5">
+                  <TenantBrandLogo
+                    shop={tenant}
+                    tenantIdOrSlug={tenant?.slug || tenant?.id}
+                    size="sm"
+                    shape="circle"
+                    className="h-6 w-6 text-[9px] border-gold/40"
+                  />
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gold/90 truncate">
+                    {tenant.business_name || "Barbearia"}
+                  </span>
+                </div>
+              )}
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gold">
                 {greeting()}, bom trabalho hoje
               </p>
