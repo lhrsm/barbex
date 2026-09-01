@@ -119,7 +119,17 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       }
     }
 
-    // 4. Generate token and insert invitation
+    // 4. Normalize phone if provided
+    let normalizedPhone: string | null = null;
+    if (phone && phone.trim()) {
+      const { normalizePhone, isValidBrazilianPhone } = await import("@/utils/phone");
+      normalizedPhone = normalizePhone(phone);
+      if (normalizedPhone && !isValidBrazilianPhone(normalizedPhone)) {
+        throw new Error("Telefone de convite inválido. Informe o DDD e o número com 10 ou 11 dígitos.");
+      }
+    }
+
+    // 5. Generate token and insert invitation
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 72); // 72 hours expiration
@@ -129,7 +139,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       .insert({
         tenant_id: tenantId,
         email: sanitizedEmail,
-        phone,
+        phone: normalizedPhone,
         role,
         professional_id: professionalId,
         token_hash: token,
@@ -889,12 +899,29 @@ export const acceptTeamInvitation = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString()
       };
       if (invite.phone && !currentProfile?.phone) {
-        profilePatch.phone = invite.phone;
+        const { normalizePhone } = await import("@/utils/phone");
+        const cleanPhone = normalizePhone(invite.phone);
+        if (cleanPhone) {
+          profilePatch.phone = cleanPhone;
+        }
       }
-      await supabaseAdmin
+      const { error: profileUpdateError } = await supabaseAdmin
         .from('profiles')
         .update(profilePatch as any)
         .eq('id', user.id);
+
+      if (profileUpdateError) {
+        if ((profileUpdateError as any).code === '23505' || (profileUpdateError.message && profileUpdateError.message.toLowerCase().includes('unique'))) {
+          // If phone conflicts with another profile, update profile without phone to allow member to accept invitation
+          delete profilePatch.phone;
+          await supabaseAdmin
+            .from('profiles')
+            .update(profilePatch as any)
+            .eq('id', user.id);
+        } else {
+          throw new Error("Erro ao atualizar o perfil do membro da equipe.");
+        }
+      }
     }
 
     // Se o convite for para recepção, sincroniza defensivamente reception_permissions e user_roles

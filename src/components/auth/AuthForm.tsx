@@ -13,74 +13,54 @@ import {
 } from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { Phone, Mail, Lock, Eye, EyeOff, Send, ArrowRight } from "lucide-react";
+import { UserCheck, Lock, Eye, EyeOff, Send, ArrowRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { resolveAuthenticatedIdentity } from "@/lib/auth-identity.resolver";
-import { StaffMigrationModal } from "./StaffMigrationModal";
+import { normalizeIdentifier } from "@/utils/auth-identifier";
+import { signInWithPhone } from "@/lib/auth-phone.functions";
 
 export function AuthForm() {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  const [migrationBarber, setMigrationBarber] = useState<{
-    id: string;
-    name: string;
-    phone: string;
-    tenant_id: string;
-    slug?: string;
-  } | null>(null);
-  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[AUTH_LOGIN_CLICK]", {
-      loginMethod,
-      hasEmail: !!email,
-      hasPhone: !!phone,
-      hasPassword: !!password,
-      isSubmitting: loading
-    });
 
     if (loading) return;
 
-    if (loginMethod === "email") {
-      if (!email) {
-        toast.error("Informe seu e-mail administrativo.");
-        return;
-      }
-      if (!password) {
-        toast.error("Informe sua senha.");
-        return;
-      }
-    } else {
-      if (!phone) {
-        toast.error("Informe seu telefone profissional.");
-        return;
-      }
+    const trimmedIdentifier = identifier.trim();
+    if (!trimmedIdentifier) {
+      toast.error("Informe seu e-mail ou telefone.");
+      return;
+    }
+
+    if (!password) {
+      toast.error("Informe sua senha de acesso.");
+      return;
     }
 
     setLoading(true);
     try {
-      if (loginMethod === "email") {
-        console.log("[AUTH_LOGIN_ATTEMPT] Direct Supabase sign-in for:", email);
+      const { type, value } = normalizeIdentifier(trimmedIdentifier);
+
+      if (type === "email") {
+        // Fluxo de e-mail 100% preservado: direto Browser -> GoTrue
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
+          email: value,
           password,
         });
 
         if (error) {
-          console.error("[AUTH_LOGIN_ERROR] Supabase error:", error);
-          if (error.message === "Invalid login credentials") {
-            throw new Error("E-mail ou senha incorretos.");
+          if (error.status === 429 || error.message?.toLowerCase().includes("rate limit")) {
+            throw new Error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
           }
-          throw error;
+          throw new Error("E-mail/telefone ou senha inválidos.");
         }
 
         if (!data?.user) {
@@ -89,7 +69,6 @@ export function AuthForm() {
 
         // Resolução Canônica de Identidade Unificada
         const identity = await resolveAuthenticatedIdentity(data.user.id);
-        console.log("[AUTH_IDENTITY_RESOLVED]", identity);
 
         if (!identity || identity.destination === "/auth") {
           throw new Error("Acesso não autorizado ou perfil não configurado.");
@@ -98,50 +77,52 @@ export function AuthForm() {
         toast.success("Login realizado com sucesso!");
         navigate({ to: identity.destination as any });
       } else {
-        const cleanPhone = phone.replace(/\D/g, '');
-        const { data: barber, error: barberError } = await supabase
-          .from("barbers")
-          .select("id, name, user_id, tenant_id, auth_migration_status, email")
-          .eq("phone", phone)
-          .maybeSingle();
-
-        let targetBarber = barber;
-
-        if (!targetBarber && cleanPhone) {
-          const { data: barberByCleanPhone } = await supabase
-            .from("barbers")
-            .select("id, name, user_id, tenant_id, auth_migration_status, email")
-            .ilike("phone", `%${cleanPhone}%`)
-            .maybeSingle();
-          targetBarber = barberByCleanPhone;
-        }
-
-        if (!targetBarber) {
-          toast.error("Telefone não encontrado entre os barbeiros cadastrados.");
-          setLoading(false);
-          return;
-        }
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("slug")
-          .eq("id", targetBarber.tenant_id || targetBarber.user_id)
-          .maybeSingle();
-
-        const slug = profile?.slug || "general";
-
-        // Disparar modal com as 5 etapas de migração por OTP para o barbeiro legado
-        setMigrationBarber({
-          id: targetBarber.id,
-          name: targetBarber.name,
-          phone: phone,
-          tenant_id: targetBarber.tenant_id || targetBarber.user_id,
-          slug,
+        // Fluxo de telefone: Server Function segura -> GoTrue -> setSession client-side
+        const result = await signInWithPhone({
+          data: {
+            phone: value,
+            password,
+          },
         });
-        setIsMigrationModalOpen(true);
+
+        if (!result.ok) {
+          if (result.code === "RATE_LIMITED") {
+            throw new Error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+          }
+          if (result.code === "SERVICE_UNAVAILABLE") {
+            throw new Error("Não foi possível entrar agora. Tente novamente em instantes.");
+          }
+          throw new Error("E-mail/telefone ou senha inválidos.");
+        }
+
+        // Hidratação da sessão no SDK do cliente Supabase
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
+
+        if (sessionError) {
+          throw new Error("Não foi possível concluir o login. Tente novamente.");
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+
+        if (!userId) {
+          throw new Error("Não foi possível autenticar o usuário.");
+        }
+
+        // Resolução Canônica de Identidade Unificada
+        const identity = await resolveAuthenticatedIdentity(userId);
+
+        if (!identity || identity.destination === "/auth") {
+          throw new Error("Acesso não autorizado ou perfil não configurado.");
+        }
+
+        toast.success("Login realizado com sucesso!");
+        navigate({ to: identity.destination as any });
       }
     } catch (error: any) {
-      console.error("[AUTH_LOGIN_CRITICAL] Exception:", error);
       toast.error(error.message || "Não foi possível realizar o acesso administrativo.");
     } finally {
       setLoading(false);
@@ -150,21 +131,27 @@ export function AuthForm() {
 
   const handleResetPasswordRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetEmail) {
-      toast.error("Por favor, insira seu e-mail.");
+    const cleanEmail = resetEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast.error("Por favor, insira seu e-mail cadastrado.");
       return;
     }
     
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
-      if (error) throw error;
-      toast.success("E-mail de recuperação enviado!");
+      if (error) {
+        if (error.status === 429) {
+          throw new Error("Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.");
+        }
+        throw error;
+      }
+      toast.success("Se o e-mail estiver cadastrado, as instruções de recuperação foram enviadas!");
       setIsResetModalOpen(false);
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || "Erro ao solicitar recuperação de senha.");
     } finally {
       setLoading(false);
     }
@@ -172,115 +159,64 @@ export function AuthForm() {
 
   return (
     <div className="w-full">
-      {/* Segmented control E-mail / Telefone */}
-      <div className="relative grid grid-cols-2 p-1 rounded-2xl bg-white/[0.04] border border-white/10 mb-6">
-        <div
-          className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-transform duration-300 ease-out shadow-lg"
-          style={{
-            background: "linear-gradient(135deg, #D4AF37, #B8860B)",
-            transform: loginMethod === "email" ? "translateX(0)" : "translateX(calc(100% + 4px))",
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => setLoginMethod("email")}
-          className={`relative z-10 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest inline-flex items-center justify-center gap-2 transition-colors ${
-            loginMethod === "email" ? "text-black" : "text-white/40 hover:text-white"
-          }`}
-        >
-          <Mail size={14} /> E-mail
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoginMethod("phone")}
-          className={`relative z-10 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest inline-flex items-center justify-center gap-2 transition-colors ${
-            loginMethod === "phone" ? "text-black" : "text-white/40 hover:text-white"
-          }`}
-        >
-          <Phone size={14} /> Telefone
-        </button>
-      </div>
-
       <form onSubmit={handleLogin} className="space-y-5" noValidate>
-        {loginMethod === "email" ? (
-          <div className="space-y-2">
-            <Label htmlFor="login-email" className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">
-              E-mail Administrativo
-            </Label>
-            <div className="relative group">
-              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/60 group-focus-within:text-gold transition-colors z-10" />
-              <Input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                className="pl-14 h-[58px] md:h-[62px] rounded-[18px] bg-[#15171B] border-white/10 text-white placeholder:text-zinc-600 placeholder:italic placeholder:font-medium placeholder:opacity-50 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+        {/* Identificador Unificado: E-mail ou Telefone */}
+        <div className="space-y-2">
+          <Label htmlFor="login-identifier" className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">
+            E-mail ou Telefone
+          </Label>
+          <div className="relative group">
+            <UserCheck className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/60 group-focus-within:text-gold transition-colors z-10" aria-hidden="true" />
+            <Input
+              id="login-identifier"
+              type="text"
+              autoComplete="username"
+              className="pl-14 h-[58px] md:h-[62px] rounded-[18px] bg-[#15171B] border-white/10 text-white text-base placeholder:text-zinc-600 placeholder:italic placeholder:font-medium placeholder:opacity-50 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
+              placeholder="seu@email.com ou (71) 99999-9999"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+            />
           </div>
-        ) : (
-          <div className="space-y-2">
-            <Label htmlFor="login-phone" className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">
-              Telefone do Profissional
-            </Label>
-            <div className="relative group">
-              <Phone className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/60 group-focus-within:text-gold transition-colors z-10" />
-              <Input
-                id="login-phone"
-                type="tel"
-                autoComplete="tel"
-                className="pl-14 h-[58px] md:h-[62px] rounded-[18px] bg-[#15171B] border-white/10 text-white placeholder:text-zinc-600 placeholder:italic placeholder:font-medium placeholder:opacity-50 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
-                placeholder="(00) 00000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-        )}
+        </div>
 
-
-        {loginMethod === "email" && (
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="login-password" className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">
-                Senha de Acesso
-              </Label>
-              <button
-                type="button"
-                onClick={() => setIsResetModalOpen(true)}
-                className="text-[9px] text-gold font-black uppercase tracking-[0.15em] hover:text-gold/80 transition-colors"
-              >
-                Esqueci minha senha
-              </button>
-            </div>
-            <div className="relative group">
-              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/60 group-focus-within:text-gold transition-colors z-10" />
-              <Input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                style={{ ["WebkitTextSecurity" as any]: showPassword ? "none" : "disc" }}
-                autoComplete="current-password"
-                className="pl-14 pr-14 h-[58px] md:h-[62px] rounded-[18px] bg-[#15171B] border-white/10 text-white placeholder:text-zinc-600 placeholder:italic placeholder:font-medium placeholder:opacity-50 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors p-1 z-20"
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+        {/* Senha de Acesso */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="login-password" className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 ml-1">
+              Senha de Acesso
+            </Label>
+            <button
+              type="button"
+              onClick={() => setIsResetModalOpen(true)}
+              className="text-[9px] text-gold font-black uppercase tracking-[0.15em] hover:text-gold/80 transition-colors"
+            >
+              Esqueci minha senha
+            </button>
           </div>
-        )}
+          <div className="relative group">
+            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gold/60 group-focus-within:text-gold transition-colors z-10" aria-hidden="true" />
+            <Input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              style={{ ["WebkitTextSecurity" as any]: showPassword ? "none" : "disc" }}
+              autoComplete="current-password"
+              className="pl-14 pr-14 h-[58px] md:h-[62px] rounded-[18px] bg-[#15171B] border-white/10 text-white text-base placeholder:text-zinc-600 placeholder:italic placeholder:font-medium placeholder:opacity-50 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors p-1 z-20"
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
 
         <Button
           type="submit"
@@ -322,11 +258,12 @@ export function AuthForm() {
                 Seu e-mail cadastrado
               </Label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-gold transition-colors z-10" />
+                <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-gold transition-colors z-10" aria-hidden="true" />
                 <Input
                   id="reset-email"
                   type="email"
-                  className="pl-12 h-[56px] rounded-[16px] bg-[#15171B] border-white/10 text-white placeholder:text-zinc-600 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
+                  autoComplete="email"
+                  className="pl-12 h-[56px] rounded-[16px] bg-[#15171B] border-white/10 text-white text-base placeholder:text-zinc-600 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
                   placeholder="exemplo@barbex.shop"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
@@ -362,14 +299,6 @@ export function AuthForm() {
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* Staff / Barber OTP Migration Modal */}
-      <StaffMigrationModal
-        open={isMigrationModalOpen}
-        onOpenChange={setIsMigrationModalOpen}
-        barber={migrationBarber}
-        onSuccess={(targetRoute) => navigate({ to: targetRoute as any })}
-      />
     </div>
   );
 }

@@ -315,6 +315,9 @@ export const finalizeStaffAuthSetup = createServerFn({ method: "POST" })
     let userId: string;
     let newlyCreatedAuthUserId: string | null = null;
 
+    const { normalizePhone } = await import("@/utils/phone");
+    const canonicalPhone = data.phone ? normalizePhone(data.phone) : null;
+
     if (!existingUser) {
       if (!data.password || data.password.length < 6) {
         throw new Error("A senha deve ter no mínimo 6 caracteres para novas contas.");
@@ -322,12 +325,11 @@ export const finalizeStaffAuthSetup = createServerFn({ method: "POST" })
       // Criar novo usuário no Supabase Auth
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
-        phone: data.phone,
         password: data.password,
         email_confirm: true,
         user_metadata: {
           full_name: data.name,
-          phone: data.phone,
+          phone: canonicalPhone,
           role: "barber",
           barber_id: data.barberId,
           tenant_id: data.tenantId,
@@ -346,7 +348,7 @@ export const finalizeStaffAuthSetup = createServerFn({ method: "POST" })
         user_metadata: {
           ...existingUser.user_metadata,
           full_name: data.name,
-          phone: data.phone,
+          phone: canonicalPhone || existingUser.user_metadata?.phone,
           barber_id: data.barberId,
           tenant_id: data.tenantId,
         },
@@ -355,13 +357,18 @@ export const finalizeStaffAuthSetup = createServerFn({ method: "POST" })
 
     try {
       // 4. Atualizar tabela BARBERS (PRESERVANDO integralmente o barber.id)
+      const barberPatch: Record<string, any> = {
+        user_id: userId,
+        email: cleanEmail,
+        auth_migration_status: "completed",
+      };
+      if (canonicalPhone) {
+        barberPatch.phone = canonicalPhone;
+      }
+
       const { error: barberUpdateError } = await supabaseAdmin
         .from("barbers")
-        .update({
-          user_id: userId,
-          email: cleanEmail,
-          auth_migration_status: "completed",
-        } as any)
+        .update(barberPatch as any)
         .eq("id", data.barberId);
 
       if (barberUpdateError) {
@@ -372,23 +379,28 @@ export const finalizeStaffAuthSetup = createServerFn({ method: "POST" })
       // 5. Criar/Atualizar PROFILES
       const { data: existingProfile } = await supabaseAdmin
         .from("profiles")
-        .select("id, role")
+        .select("id, role, phone")
         .eq("id", userId)
         .maybeSingle();
 
       if (existingProfile) {
         // Se o perfil existente já for client, preservamos o papel base e garantimos o vínculo de membership
         const newRole = existingProfile.role === 'client' ? 'client' : 'barber';
+        const profileUpdatePatch: Record<string, any> = {
+          responsible_name: data.name,
+          display_name: data.name,
+          email: cleanEmail,
+          role: newRole,
+          identity_status: "completed",
+          tenant_id: data.tenantId,
+        };
+        if (canonicalPhone && !existingProfile.phone) {
+          profileUpdatePatch.phone = canonicalPhone;
+        }
+
         await supabaseAdmin
           .from("profiles")
-          .update({
-            responsible_name: data.name,
-            display_name: data.name,
-            email: cleanEmail,
-            role: newRole,
-            identity_status: "completed",
-            tenant_id: data.tenantId,
-          })
+          .update(profileUpdatePatch as any)
           .eq("id", userId);
       } else {
         await supabaseAdmin
@@ -398,6 +410,7 @@ export const finalizeStaffAuthSetup = createServerFn({ method: "POST" })
             responsible_name: data.name,
             display_name: data.name,
             email: cleanEmail,
+            phone: canonicalPhone,
             role: "barber",
             identity_status: "completed",
             tenant_id: data.tenantId,

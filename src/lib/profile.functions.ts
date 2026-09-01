@@ -46,7 +46,16 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       patch.responsible_name = data.responsibleName || null;
     }
     if (data.phone !== undefined) {
-      patch.phone = data.phone || null;
+      if (!data.phone || data.phone.trim() === "") {
+        patch.phone = null;
+      } else {
+        const { normalizePhone, isValidBrazilianPhone } = await import("@/utils/phone");
+        const cleanPhone = normalizePhone(data.phone);
+        if (cleanPhone && !isValidBrazilianPhone(cleanPhone)) {
+          throw new Error("Telefone inválido. Informe o DDD e o número com 10 ou 11 dígitos.");
+        }
+        patch.phone = cleanPhone || null;
+      }
     }
     if (data.avatarUrl !== undefined) {
       patch.avatar_url = data.avatarUrl || null;
@@ -67,7 +76,10 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Erro ao atualizar perfil: ${error.message}`);
+      if ((error as any).code === '23505' || (error.message && error.message.toLowerCase().includes('unique'))) {
+        throw new Error("Não foi possível atualizar o perfil: este número de telefone já está associado a outra conta.");
+      }
+      throw new Error("Erro ao atualizar perfil. Verifique os dados informados.");
     }
 
     return { success: true, profile: updated };

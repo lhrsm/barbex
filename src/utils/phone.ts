@@ -1,39 +1,40 @@
 
 /**
- * Normalizes a phone number to E.164 format (digits only, including country code)
- * Example: "+55 (71) 99999-9999" -> "5571999999999"
+ * Normalizes a phone number to canonical E.164 format (digits only, with Brazilian country code 55)
+ * Example: "+55 (71) 98274-7130" -> "5571982747130"
+ * Example: "(71) 98274-7130" -> "5571982747130"
+ * Example: "71982747130" -> "5571982747130"
+ * Example: "5571982747130" -> "5571982747130"
  */
-export const normalizePhone = (phone: string): string => {
+export const normalizePhone = (phone?: string | null): string => {
   if (!phone) return "";
   
   // Remove all non-digits
-  let digits = phone.replace(/\D/g, "");
+  const digits = String(phone).replace(/\D/g, "");
+  if (!digits) return "";
   
-  // If user included + (which is removed by \D), or already has 55
-  if (digits.startsWith("55") && digits.length >= 12) {
+  // If already prefixed with Brazilian DDI 55 and has valid length (55 + 2 DDD + 8 or 9 digits = 12 or 13 digits)
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
     return digits;
   }
 
-  // Handle Brazilian numbers (10 or 11 digits without 55)
+  // If provided as 10 or 11 digits (2 DDD + 8 or 9 digits), prepend Brazilian DDI 55
   if (digits.length === 10 || digits.length === 11) {
-    digits = "55" + digits;
+    return `55${digits}`;
   }
   
-  // Apply 9th digit repair for Brazil if missing
-  if (digits.startsWith('55')) {
-    const country = digits.slice(0, 2); // 55
-    const ddd = digits.slice(2, 4);     // DDD
-    let number = digits.slice(4);       // The number part
-    
-    // If it has only 8 digits after DDD, it's missing the prefix 9
-    if (number.length === 8) {
-      number = "9" + number;
-    }
-    
-    return `${country}${ddd}${number}`;
-  }
-  
+  // Return digits as-is for international or other formats without heuristic distortion
   return digits;
+};
+
+/**
+ * Validates if a normalized phone number matches the canonical Brazilian mobile or landline format
+ * Format: 55 + DDD (11-99) + 8 or 9 digits (total 12 or 13 digits)
+ */
+export const isValidBrazilianPhone = (phone?: string | null): boolean => {
+  if (!phone) return false;
+  const digits = normalizePhone(phone);
+  return /^55[1-9][0-9]{9,10}$/.test(digits);
 };
 
 /**
@@ -62,4 +63,3 @@ export const formatPhoneMask = (value: string): string => {
     return `(${truncated.slice(0, 2)}) ${truncated.slice(2, 7)}-${truncated.slice(7)}`;
   }
 };
-
