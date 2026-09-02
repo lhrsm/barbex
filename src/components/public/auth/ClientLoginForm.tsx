@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { requestPasswordReset } from "@/lib/auth-client.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { signInCustomerWithPhone, requestCustomerPasswordResetByPhone } from "@/lib/auth-customer.functions";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeIdentifier } from "@/utils/auth-identifier";
@@ -36,9 +35,6 @@ export function ClientLoginForm({ onMigrationRequired, barbershopSlug }: ClientL
   const [view, setView] = useState<'login' | 'forgot-password' | 'success' | 'mfa'>('login');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  
-  // Removido loginFn (serverFn) para simplificação
-  const resetFn = useServerFn(requestPasswordReset);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,46 +44,59 @@ export function ClientLoginForm({ onMigrationRequired, barbershopSlug }: ClientL
       remember: true,
     },
   });
-  
-  // Trace form state for debugging
-  useEffect(() => {
-    console.log("[ClientLoginForm] Form state updated:", {
-      values: form.getValues(),
-      errors: form.formState.errors,
-      isSubmitting: form.formState.isSubmitting
-    });
-  }, [form.watch(), form.formState.isSubmitting]);
 
   const onSubmit = async (values: LoginFormValues) => {
-    console.log("[ClientLoginForm] onSubmit (Direct Supabase Auth) called for:", values.identifier);
     setLoading(true);
     try {
       const { type, value } = normalizeIdentifier(values.identifier);
-      
-      console.log(`[ClientLoginForm] Direct login attempt via Supabase: ${value} (${type})`);
-      
-      let authResult;
+
       if (type === 'email') {
-        authResult = await supabase.auth.signInWithPassword({
+        const { error: authError } = await supabase.auth.signInWithPassword({
           email: value,
           password: values.password,
         });
+
+        if (authError) {
+          throw new Error("E-mail/telefone ou senha inválidos.");
+        }
       } else {
-        // Telefone desabilitado temporariamente conforme PRD (Task 14)
-        toast.error("Login por telefone temporariamente indisponível. Utilize seu e-mail.");
-        setLoading(false);
-        return;
+        const currentSlug = barbershopSlug || (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : "");
+        if (!currentSlug) {
+          toast.error("Estabelecimento não identificado. Acesse pelo link da sua barbearia.");
+          setLoading(false);
+          return;
+        }
+
+        const phoneResult = await signInCustomerWithPhone({
+          data: {
+            tenantSlug: currentSlug,
+            phone: value,
+            password: values.password,
+          },
+        });
+
+        if (!phoneResult.ok) {
+          if (phoneResult.code === "RATE_LIMITED") {
+            throw new Error("Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.");
+          }
+          if (phoneResult.code === "SERVICE_UNAVAILABLE") {
+            throw new Error("Serviço temporariamente indisponível. Tente novamente em instantes.");
+          }
+          throw new Error("E-mail/telefone ou senha inválidos.");
+        }
+
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: phoneResult.session.access_token,
+          refresh_token: phoneResult.session.refresh_token,
+        });
+
+        if (sessionError) {
+          throw new Error("Não foi possível inicializar sua sessão segura.");
+        }
       }
 
-      if (authResult.error) {
-        console.error("[ClientLoginForm] Supabase Auth error:", authResult.error);
-        throw new Error(authResult.error.message);
-      }
-
-      console.log("[ClientLoginForm] Auth success, resolving identity...");
-      const { data: { user } } = authResult;
-      
-      if (!user) throw new Error("Usuário não encontrado após login");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não encontrado após login.");
 
       // Resolve profile/identity AFTER successful auth
       const { data: profile, error: profileError } = await supabase
@@ -97,15 +106,13 @@ export function ClientLoginForm({ onMigrationRequired, barbershopSlug }: ClientL
         .maybeSingle();
 
       if (profileError || !profile) {
-        console.error("[ClientLoginForm] Identity resolution failed:", profileError);
-        throw new Error("Perfil não encontrado. Sua conta pode estar em migração.");
+        throw new Error("Perfil não encontrado.");
       }
 
       handleSuccess({ status: 'success', user: { ...user, slug: profile.slug } });
     } catch (error: any) {
-      console.error("[ClientLoginForm] Login workflow error:", error);
-      const message = error.message === "Invalid login credentials" 
-        ? "E-mail ou senha inválidos." 
+      const message = error.message === "Invalid login credentials"
+        ? "E-mail/telefone ou senha inválidos."
         : error.message || "Credenciais inválidas.";
       toast.error(message);
     } finally {
@@ -139,23 +146,50 @@ export function ClientLoginForm({ onMigrationRequired, barbershopSlug }: ClientL
 
 
   const handleForgotPassword = async () => {
-    const identifier = form.getValues("identifier");
-    if (!identifier) {
-      toast.error("Informe seu e-mail ou telefone para recuperar a senha");
+    const rawIdentifier = form.getValues("identifier");
+    const trimmed = rawIdentifier ? rawIdentifier.trim() : "";
+    if (!trimmed) {
+      toast.error("Informe seu e-mail ou telefone para recuperar a senha.");
       return;
     }
 
     setLoading(true);
     try {
-      await resetFn({
-        data: {
-          identifier,
-          redirectTo: `${window.location.origin}/auth/reset-password`
+      const { type, value } = normalizeIdentifier(trimmed);
+
+      if (type === 'email') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(value, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+
+        if (resetError) {
+          if (resetError.status === 429 || (resetError.message && resetError.message.toLowerCase().includes("rate limit"))) {
+            throw new Error("Muitas solicitações. Aguarde alguns minutos antes de tentar novamente.");
+          }
         }
-      });
+      } else {
+        const currentSlug = barbershopSlug || (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : "");
+        if (!currentSlug) {
+          toast.error("Estabelecimento não identificado. Acesse pelo link da sua barbearia.");
+          setLoading(false);
+          return;
+        }
+
+        const phoneResult = await requestCustomerPasswordResetByPhone({
+          data: {
+            tenantSlug: currentSlug,
+            phone: value,
+          },
+        });
+
+        if (!phoneResult.ok && phoneResult.code === "RATE_LIMITED") {
+          throw new Error("Muitas solicitações. Aguarde alguns minutos antes de tentar novamente.");
+        }
+      }
+
       setView('success');
     } catch (error: any) {
-      toast.error(error.message || "Erro ao solicitar recuperação");
+      toast.error(error.message || "Não foi possível solicitar a recuperação.");
     } finally {
       setLoading(false);
     }
@@ -275,14 +309,14 @@ export function ClientLoginForm({ onMigrationRequired, barbershopSlug }: ClientL
                 <ArrowRight className="rotate-180" size={12} /> Voltar ao login
               </button>
               <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase italic">Recuperar acesso</h2>
-              <p className="text-zinc-400 text-sm font-medium">Enviaremos instruções para o seu e-mail.</p>
+              <p className="text-zinc-400 text-sm font-medium">Insira seu e-mail ou telefone e enviaremos as instruções para criar uma nova senha.</p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Telefone ou E-mail</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">E-mail ou Telefone</Label>
                 <Input
-                  placeholder="+55 (71) 99999-9999 ou e-mail"
+                  placeholder="seu@email.com ou (71) 99999-9999"
                   value={form.watch("identifier")}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -342,14 +376,14 @@ export function ClientLoginForm({ onMigrationRequired, barbershopSlug }: ClientL
             </div>
             
             <div className="space-y-3 mb-8 px-4">
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase italic leading-none">E-mail Enviado</h2>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase italic leading-none">Instruções Enviadas</h2>
               <div className="space-y-2">
                 <p className="text-gold text-xs font-bold uppercase tracking-widest">
-                  Instruções encaminhadas com sucesso
+                  Solicitação processada com sucesso
                 </p>
                 <div className="h-px w-12 bg-gold/30 mx-auto" />
                 <p className="text-zinc-400 text-xs font-medium leading-relaxed max-w-[280px] mx-auto">
-                  Enviamos o link de recuperação para o seu e-mail cadastrado. Por favor, verifique também sua pasta de spam.
+                  Se houver uma conta associada ao e-mail ou telefone informado, enviaremos as instruções de recuperação.
                 </p>
               </div>
             </div>
