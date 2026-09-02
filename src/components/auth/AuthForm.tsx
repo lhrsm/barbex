@@ -17,7 +17,7 @@ import { UserCheck, Lock, Eye, EyeOff, Send, ArrowRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { resolveAuthenticatedIdentity } from "@/lib/auth-identity.resolver";
 import { normalizeIdentifier } from "@/utils/auth-identifier";
-import { signInWithPhone } from "@/lib/auth-phone.functions";
+import { signInWithPhone, requestPasswordResetByPhone } from "@/lib/auth-phone.functions";
 
 export function AuthForm() {
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export function AuthForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
+  const [resetIdentifier, setResetIdentifier] = useState("");
   
   const navigate = useNavigate();
 
@@ -131,27 +131,39 @@ export function AuthForm() {
 
   const handleResetPasswordRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanEmail = resetEmail.trim().toLowerCase();
-    if (!cleanEmail) {
-      toast.error("Por favor, insira seu e-mail cadastrado.");
+    const trimmed = resetIdentifier.trim();
+    if (!trimmed) {
+      toast.error("Por favor, insira seu e-mail ou telefone cadastrado.");
       return;
     }
     
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-      if (error) {
-        if (error.status === 429) {
-          throw new Error("Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.");
+      const { type, value } = normalizeIdentifier(trimmed);
+
+      if (type === "email") {
+        const { error } = await supabase.auth.resetPasswordForEmail(value, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+        if (error) {
+          if (error.status === 429 || (error.message && error.message.toLowerCase().includes("rate limit"))) {
+            throw new Error("Muitas solicitações. Aguarde alguns minutos antes de tentar novamente.");
+          }
         }
-        throw error;
+      } else {
+        const result = await requestPasswordResetByPhone({
+          data: { phone: value },
+        });
+        if (!result.ok && result.code === "RATE_LIMITED") {
+          throw new Error("Muitas solicitações. Aguarde alguns minutos antes de tentar novamente.");
+        }
       }
-      toast.success("Se o e-mail estiver cadastrado, as instruções de recuperação foram enviadas!");
+
+      toast.success("Se houver uma conta associada ao e-mail ou telefone informado, enviaremos as instruções de recuperação.");
       setIsResetModalOpen(false);
+      setResetIdentifier("");
     } catch (error: any) {
-      toast.error(error.message || "Erro ao solicitar recuperação de senha.");
+      toast.error(error.message || "Não foi possível solicitar a recuperação de senha.");
     } finally {
       setLoading(false);
     }
@@ -248,25 +260,25 @@ export function AuthForm() {
               Recuperar <span className="text-gold">Acesso</span>
             </DialogTitle>
             <DialogDescription className="text-zinc-500 font-medium text-sm leading-relaxed">
-              Insira o e-mail cadastrado e enviaremos as instruções para criar uma nova senha.
+              Insira seu e-mail ou telefone e enviaremos as instruções para criar uma nova senha.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleResetPasswordRequest} className="space-y-6 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email" className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
-                Seu e-mail cadastrado
+              <Label htmlFor="reset-identifier" className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">
+                E-mail ou telefone
               </Label>
               <div className="relative group">
                 <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-gold transition-colors z-10" aria-hidden="true" />
                 <Input
-                  id="reset-email"
-                  type="email"
-                  autoComplete="email"
+                  id="reset-identifier"
+                  type="text"
+                  autoComplete="username"
                   className="pl-12 h-[56px] rounded-[16px] bg-[#15171B] border-white/10 text-white text-base placeholder:text-zinc-600 focus:bg-[#151D2C] focus:text-white focus-visible:bg-[#151D2C] focus-visible:border-gold focus-visible:ring-1 focus-visible:ring-gold/20 transition-all autofill:[-webkit-text-fill-color:#ffffff] autofill:[box-shadow:0_0_0_1000px_#15171B_inset]"
-                  placeholder="exemplo@barbex.shop"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="seu@email.com ou (71) 99999-9999"
+                  value={resetIdentifier}
+                  onChange={(e) => setResetIdentifier(e.target.value)}
                   required
                 />
               </div>
