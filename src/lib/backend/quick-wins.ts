@@ -249,13 +249,30 @@ export async function getSystemHealthClient() {
 }
 
 /**
- * 7. getScalabilityMetricsClient
- * Leitura direta de métricas de background jobs com agregação client-side
+ * 8. getScalabilityMetricsClient
+ * Leitura de métricas agregadas de escalabilidade via RPC PostgreSQL com fallback seguro
  */
 export async function getScalabilityMetricsClient() {
-  const { data: jobStats } = await (supabase as any)
+  try {
+    const { data, error } = await (supabase as any).rpc("get_scalability_aggregates");
+    if (!error && data) {
+      return data;
+    }
+    if (error && (error.code === '42501' || error.message?.includes('Acesso negado') || error.message?.includes('permission'))) {
+      throw error;
+    }
+  } catch (err: any) {
+    if (err?.code === '42501' || err?.message?.includes('Acesso negado') || err?.message?.includes('permission')) {
+      throw err;
+    }
+    // Fallback gracioso apenas para rollout compatibility / RPC ainda não materializada
+  }
+
+  const { data: jobStats, error: qErr } = await (supabase as any)
     .from("background_jobs")
     .select("status");
+
+  if (qErr) throw qErr;
 
   const counts = (jobStats || []).reduce((acc: any, job: any) => {
     acc[job.status] = (acc[job.status] || 0) + 1;
