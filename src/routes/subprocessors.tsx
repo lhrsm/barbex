@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, ArrowLeft, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { listSubprocessors } from "@/lib/trust.functions";
+import { listSubprocessorsClient } from "@/lib/backend/quick-wins";
 
 export const Route = createFileRoute("/subprocessors")({
   head: () => ({
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/subprocessors")({
 function SubprocessorsPage() {
   const { data } = useQuery({
     queryKey: ["subprocessors"],
-    queryFn: () => listSubprocessors(),
+    queryFn: () => listSubprocessorsClient(),
   });
   const items = data?.items ?? [];
 

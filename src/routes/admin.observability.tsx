@@ -27,7 +27,7 @@ import {
   PremiumTabsBody, 
   PremiumTabsContent 
 } from "@/components/ui/premium-tabs";
-import { getSystemHealth, getScalabilityMetrics } from "@/lib/scalability.functions";
+import { getSystemHealthClient, getScalabilityMetricsClient } from "@/lib/backend/quick-wins";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/observability")({
@@ -37,13 +37,13 @@ export const Route = createFileRoute("/admin/observability")({
 function ObservabilityCenterPage() {
   const { data: health, isLoading: loadingHealth, refetch: refetchHealth } = useQuery({
     queryKey: ['system-health'],
-    queryFn: () => getSystemHealth(),
+    queryFn: () => getSystemHealthClient(),
     refetchInterval: 30000 // 30s
   });
 
   const { data: metrics, isLoading: loadingMetrics } = useQuery({
     queryKey: ['scalability-metrics'],
-    queryFn: () => getScalabilityMetrics()
+    queryFn: () => getScalabilityMetricsClient()
   });
 
   return (

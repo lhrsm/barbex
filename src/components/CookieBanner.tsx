@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
 import { Cookie, X, ShieldCheck, Settings as SettingsIcon, BarChart3, Megaphone } from "lucide-react";
-import { submitCookieConsent } from "@/lib/trust.functions";
+import { submitCookieConsentClient } from "@/lib/backend/quick-wins";
 import { COOKIES_VERSION } from "@/lib/legal-versions";
 
 const STORAGE_KEY = "barbex_cookie_consent_v2";
@@ -76,14 +76,12 @@ export function CookieBanner() {
       setVisible(false);
       setShowCustomize(false);
       try {
-        await submitCookieConsent({
-          data: {
-            preferences: prefs.preferences,
-            statistics: prefs.statistics,
-            marketing: prefs.marketing,
-            policy_version: COOKIES_VERSION,
-            source: typeof window !== "undefined" ? window.location.pathname : "web",
-          },
+        await submitCookieConsentClient({
+          preferences: prefs.preferences,
+          statistics: prefs.statistics,
+          marketing: prefs.marketing,
+          policy_version: COOKIES_VERSION,
+          source: typeof window !== "undefined" ? window.location.pathname : "web",
         });
       } catch (e) {
         // soft fail — preferences still saved locally

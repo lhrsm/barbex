@@ -30,7 +30,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { getTimeOff, createTimeOff, updateTimeOff, deleteTimeOff, checkConflicts, TimeOff } from "@/lib/time-off.functions";
+import { updateTimeOff, deleteTimeOff, checkConflicts, TimeOff } from "@/lib/time-off.functions";
+import { getTimeOffClient, createTimeOffClient } from "@/lib/backend/quick-wins";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -88,7 +89,7 @@ export function ProfessionalTimeOffDialog({ professional, open, onOpenChange }: 
   async function loadTimeOffs() {
     setIsLoading(true);
     try {
-      const data = await getTimeOff({ data: { professionalId: professional.id } });
+      const data = await getTimeOffClient({ professionalId: professional.id });
       setTimeOffs(data);
     } catch (error) {
       console.error("Error loading time off:", error);
@@ -136,16 +137,14 @@ export function ProfessionalTimeOffDialog({ professional, open, onOpenChange }: 
     }
 
     try {
-      await createTimeOff({
-        data: {
-          professional_id: professional.id,
-          type: formData.type as any,
-          title: formData.title,
-          description: formData.description,
-          starts_at: new Date(formData.starts_at).toISOString(),
-          ends_at: new Date(formData.ends_at).toISOString(),
-          all_day: formData.all_day
-        }
+      await createTimeOffClient({
+        professional_id: professional.id,
+        type: formData.type as any,
+        title: formData.title,
+        description: formData.description,
+        starts_at: new Date(formData.starts_at).toISOString(),
+        ends_at: new Date(formData.ends_at).toISOString(),
+        all_day: formData.all_day
       });
 
       toast.success("Ausência registrada com sucesso");
