@@ -197,7 +197,34 @@ export async function createTimeOffClient(params: {
 }
 
 /**
- * 6. getSystemHealthClient
+ * 6. deleteTimeOffClient
+ * Exclusão de ausência via Supabase Client autenticado com validação de RLS
+ */
+export async function deleteTimeOffClient(id: string): Promise<{ success: boolean }> {
+  try {
+    const { data, error } = await (supabase as any)
+      .from("professional_time_off")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    if (error) {
+      console.error("[deleteTimeOffClient] Error deleting time off:", error.message);
+      throw new Error("Não foi possível excluir esta ausência.");
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error("Não foi possível excluir esta ausência.");
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    throw new Error(err.message || "Não foi possível excluir esta ausência.");
+  }
+}
+
+/**
+ * 7. getSystemHealthClient
  * Medição direta de latência e disponibilidade via Supabase Client
  */
 export async function getSystemHealthClient() {

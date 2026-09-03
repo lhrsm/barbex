@@ -30,8 +30,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { updateTimeOff, deleteTimeOff, checkConflicts, TimeOff } from "@/lib/time-off.functions";
-import { getTimeOffClient, createTimeOffClient } from "@/lib/backend/quick-wins";
+import { updateTimeOff, checkConflicts, TimeOff } from "@/lib/time-off.functions";
+import { getTimeOffClient, createTimeOffClient, deleteTimeOffClient } from "@/lib/backend/quick-wins";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -168,12 +168,12 @@ export function ProfessionalTimeOffDialog({ professional, open, onOpenChange }: 
     if (!confirm("Tem certeza que deseja excluir esta ausência?")) return;
     
     try {
-      await deleteTimeOff({ data: { id } });
+      await deleteTimeOffClient(id);
       toast.success("Ausência excluída");
       loadTimeOffs();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting time off:", error);
-      toast.error("Erro ao excluir ausência");
+      toast.error(error.message || "Erro ao excluir ausência");
     }
   }
 
