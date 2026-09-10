@@ -7,15 +7,24 @@ import { createClient } from "@supabase/supabase-js";
 export const Route = createFileRoute("/api/public/hooks/status-check")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: async ({ request }): Promise<Response> => {
+        // TEMPORARY BARBEX MIGRATION FREEZE — WP-16
+        // Remove/revert only after Target cutover has been completed and Source resume is explicitly authorized.
+        return Response.json({
+          ok: true,
+          paused: true,
+          status: "migration_maintenance",
+          checks: 0,
+        }, { status: 200 });
+
         const denied = await assertCronOrSuperAdmin(request);
-        if (denied) return denied;
+        if (denied) return denied!;
 
         const url = process.env.SUPABASE_URL;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         if (!url || !serviceKey) return new Response("Missing env", { status: 500 });
         
-        const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+        const admin = createClient(url!, serviceKey!, { auth: { persistSession: false } });
 
         const { data: services } = await admin.from("status_services").select("id, slug").eq("enabled", true);
         if (!services) return Response.json({ ok: false, error: "no services" });
@@ -44,7 +53,7 @@ export const Route = createFileRoute("/api/public/hooks/status-check")({
           } catch (e: any) { return { ok: false, latency: Date.now() - t0, msg: e?.message }; }
         };
 
-        for (const svc of services) {
+        for (const svc of services ?? []) {
           let r: { ok: boolean; latency: number; msg?: string };
           switch (svc.slug) {
             case "frontend": r = await checkUrl(baseUrl); break;
