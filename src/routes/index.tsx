@@ -382,7 +382,7 @@ function LandingPage() {
       {/* 4. Features Grid */}
       <section id="recursos" className="py-16 md:py-24 lg:py-32 bg-gradient-to-b from-[#05070d] via-[#090d16] to-[#05070d] relative overflow-hidden px-4 sm:px-6 lg:px-8">
         <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">
-          <img src="https://images.unsplash.com/photo-1599351431202-180f0b485ff8?q=80&w=1000&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1000&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-l from-[#05070d] via-[#05070d]/80 to-[#05070d]" />
         </div>
 
@@ -518,7 +518,7 @@ function LandingPage() {
           <div className="grid md:grid-cols-2 gap-12 md:gap-16 lg:gap-24 items-center">
             <div className="relative group">
               <LandingImage
-                src="https://images.unsplash.com/photo-1599351431202-180f0b485ff8?q=80&w=2000&auto=format&fit=crop"
+                src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=2000&auto=format&fit=crop"
                 alt="Equipe de uma barbearia moderna trabalhando com apoio de tecnologia."
                 className="border-gold/10 shadow-[0_20px_50px_-15px_rgba(212,175,55,0.15)]"
               />
@@ -617,7 +617,7 @@ function LandingPage() {
         <div className="mt-16 md:mt-24 w-full rounded-[2.5rem] overflow-hidden relative border border-white/10 shadow-2xl max-w-6xl mx-auto min-h-[380px] md:min-h-[440px] flex items-center justify-center">
           <div className="absolute inset-0 z-0">
             <img
-              src="https://images.unsplash.com/photo-1593702275677-f916c8c96045?q=80&w=2000&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2000&auto=format&fit=crop"
               alt="Instrumentos tradicionais de barbearia integrados a dispositivos digitais."
               className="w-full h-full object-cover opacity-35 mix-blend-luminosity"
             />
@@ -704,7 +704,7 @@ function LandingPage() {
       <CTASection
         title="Experiência Multi-Perfil"
         description="Gestão sob medida para cada papel: Administrador, Recepção, Profissional e Cliente."
-        backgroundImage="https://images.unsplash.com/photo-1599351431202-180f0b485ff8?q=80&w=2000&auto=format&fit=crop"
+        backgroundImage="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=2000&auto=format&fit=crop"
         align="left"
       >
         <div className="flex flex-wrap gap-3">
@@ -806,7 +806,7 @@ function LandingPage() {
       <CTASection
         title="Loja Virtual & Automações WhatsApp"
         description="Venda produtos 24h por dia e deixe que o Barbex lembre seus clientes de agendar através de lembretes automáticos."
-        backgroundImage="https://images.unsplash.com/photo-1512690196236-d44d3204003d?q=80&w=2000&auto=format&fit=crop"
+        backgroundImage="https://images.unsplash.com/photo-1517832606299-7ae9b720a186?q=80&w=2000&auto=format&fit=crop"
       >
         <Button className="h-14 px-8 rounded-2xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90" onClick={() => setShowRegisterWizard(true)}>
           Automatizar minha barbearia

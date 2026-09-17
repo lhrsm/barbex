@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import logoData from "@/assets/logo-barbex.png.asset.json";
+import logoSrc from "@/assets/logo-barbex.png";
 
 export type BarbexLogoSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 
@@ -41,7 +41,7 @@ export function BarbexLogo({
   return (
     <div className={cn("inline-flex items-center", s.gap, className)}>
       <img
-        src={logoData.url}
+        src={logoSrc}
         alt="Barbex Logo"
         className={cn("w-auto h-auto object-contain", s.box, markClassName)}
       />

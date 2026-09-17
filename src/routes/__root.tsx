@@ -52,8 +52,8 @@ export const Route = createRootRoute({
       { name: "twitter:site", content: "@Barbex" },
       { name: "twitter:title", content: "Barbex" },
       { name: "twitter:description", content: "Barbex é a plataforma SaaS definitiva para barbearias gerenciarem agendamentos, clientes, serviços e finanças." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0ce0d0ed-5497-443c-a203-78d6752261b7/id-preview-67ef2cc9--8e95dc9e-ab64-44cf-956c-ecec6fefeb51.lovable.app-1777896732289.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0ce0d0ed-5497-443c-a203-78d6752261b7/id-preview-67ef2cc9--8e95dc9e-ab64-44cf-956c-ecec6fefeb51.lovable.app-1777896732289.png" },
+      { property: "og:image", content: "https://barbex.shop/icon-512.png" },
+      { name: "twitter:image", content: "https://barbex.shop/icon-512.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
