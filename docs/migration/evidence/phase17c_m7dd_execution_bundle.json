@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7D-D",
+    "generated_at": "2026-09-10T10:42:36.836Z",
+    "bundle_sha256": "779cf81db2229385f558c3859999a823b5224e7e7a080d5fb32a908a69841126"
+  },
+  "bundle": {
+    "canonical_schema_release": "BARBEX-CANONICAL-20260909-02b6e234",
+    "auth_users_secure_file_sha256": "ded2ae546348ca71c5806f5665de39c2af1d0f71d21a9dfac0b6a02ab5ef05e8",
+    "auth_identities_secure_file_sha256": "681e74382b174e2866fe1a2bfc675420d5116c57a7b773f1a50df136fc3004f7",
+    "files": {
+      "supabase/baseline/20260907_barbex_canonical_source_baseline.sql": "02b6e23486ab691f84895f4afc875d1a6e55359b1fd312b263cc179bdc8b3cc6",
+      "docs/migration/evidence/phase17c_m7dd_auth_topology_manifest.json": "5df2b96f0f3ee9fcbb0aa0fb2d3fa4c10c68d020d30c01db464cf7906295056d",
+      "docs/migration/evidence/phase17c_m7dd_auth_string_semantics.json": "5a2f1b78566c444983f33f0b1ee2de315e44925971a823b166bc15cd28986036",
+      "docs/migration/evidence/phase17c_m7dc_final_insert_columns.json": "bf588ad2c7c0e3e4ce7e735d86d1c4296999a4b9dea8b173570f776c1118673e",
+      "docs/migration/evidence/phase17c_m7db_auth_execution_spec.json": "38b8ce02c211b5b90596b797e62d81b69198483f1f26f7b75e4fb23bd04fb5a1",
+      "docs/migration/auth_runner/phase17c_m7d_auth_importer.ts": "114f2688efd5d9c2ec4af4a495b0494298ede43363a51592d5ab9c2f683a1717",
+      "docs/migration/sql/phase17c_m7dd_verify_post_commit_auth.sql": "0ad984f593d836908c888e3be15900c828f95f0cd8d03c2fb7a0e1e20810df73"
+    }
+  }
+}

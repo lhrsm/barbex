@@ -1,0 +1,25 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Lovable Rollback Authority & Baseline Snapshot",
+  "evaluated_at": "2026-09-16T09:48:00.000Z",
+  "lovable_deployment": {
+    "project_id": "8e95dc9e-ab64-44cf-956c-ecec6fefeb51",
+    "edge_provider": "Cloudflare",
+    "apex_a_record": "185.158.133.1",
+    "www_cname_record": "barbex.shop",
+    "status": "SERVING_PRODUCTION",
+    "paused": false,
+    "deleted": false
+  },
+  "rollback_parameters": {
+    "apex_restore_ip": "185.158.133.1",
+    "www_restore_cname": "barbex.shop",
+    "estimated_recovery_time_seconds": 60,
+    "data_loss_risk": 0
+  },
+  "verdict": {
+    "LOVABLE_ROLLBACK_RETAINED": "YES",
+    "F161R_ROLLBACK_TRIGGERED": "NO",
+    "ROLLBACK_READINESS_PASS": "YES"
+  }
+}

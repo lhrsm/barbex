@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-E1.1",
+    "title": "Cutover Execution Inputs Closure Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-13T11:05:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_e_operational_readiness_bundle_sha256": "f5f9f5c05cfc8b09ac9060e3a73b2220bc048c20c8048c39793ae2798d1f81de",
+    "m7h_e1_cutover_dependency_bundle_sha256": "2c15bb08688556980e971c42dd2dfbe16d5c96c7204d60fbc117b2c1a548111c"
+  },
+  "evidence_artifacts": {
+    "secret_names_sha256": "9d757ee34110f641c51ecf880eb5e16e7ea62c5b47fd2a81e6426acf1b470bc4",
+    "webhook_closure_sha256": "e8b4d69361a9946e05cdffef611cbd47264dbc3699ac77bcad7de7c031f15d14",
+    "gateway_closure_sha256": "bf6c527bb0674f913cc07de31438490cffd6de7a9558d3dcb1c25ccf7fd3dda9",
+    "env_closure_sha256": "8af9fe2865c576548f0db3530701c5d2ef364bd18fa2528557276c7666d36114",
+    "f1_draft_sha256": "503ea71d5cfb01a977dc2b23f4d598614a5d7897806eb251a96d7311059babad"
+  },
+  "metrics": {
+    "edge_secret_names_total": 10,
+    "target_edge_secrets_required_total": 10,
+    "target_edge_secrets_currently_configured": 0,
+    "target_edge_secrets_to_configure": 10,
+    "edge_secret_references_unaccounted": 0,
+    "webhook_switch_count": 4,
+    "gateway_webhook_classification": "EXTERNAL_PROVIDER_WEBHOOK",
+    "p1_03_corrected_scope": "Stripe, Z-API, Resend, Gateway",
+    "p1_03_webhook_count": 4,
+    "zapi_target_callback_template_valid": true,
+    "env_switch_variable_count": 7,
+    "vite_publishable_and_anon_both_required": false,
+    "edge_functions_total": 38,
+    "edge_functions_safe_to_deploy_passively": 38,
+    "edge_functions_unsafe_to_invoke_precutover": 23,
+    "edge_functions_requiring_secrets_before_deploy": 0,
+    "edge_functions_requiring_secrets_before_invoke": 38,
+    "f1_target_secret_configuration_required": true,
+    "f1_target_auth_configuration_required": false,
+    "f1_secret_action_count": 10,
+    "f1_auth_action_count": 0,
+    "f1_total_mutation_actions": 10,
+    "f5_webhook_count": 4,
+    "f5_webhooks_exact": [
+      "Resend",
+      "Gateway",
+      "Z-API",
+      "Stripe"
+    ],
+    "dual_delivery_safe_count": 4
+  },
+  "bundle_hash": "c285dda351dd8ffbd55dd3e80c89f80d9b3d1ab8ba255b4969001d96f7ca040a"
+}

@@ -1,0 +1,17 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "GitHub to Vercel Pipeline Authority",
+  "evaluated_at": "2026-09-16T11:45:50.000Z",
+  "pipeline": {
+    "repository": "lhrsm/barbex",
+    "provider": "GitHub",
+    "production_branch": "main",
+    "vercel_project": "barbex-staging"
+  },
+  "metrics": {
+    "F17_GITHUB_BOUND": "YES",
+    "F17_GITHUB_REPOSITORY": "lhrsm/barbex",
+    "F17_PRODUCTION_BRANCH": "main",
+    "F17_GITHUB_VERCEL_PIPELINE_PASS": "YES"
+  }
+}

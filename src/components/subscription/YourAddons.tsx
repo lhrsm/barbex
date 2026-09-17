@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/use-tenant";
 import { getStripeEnvironment } from "@/lib/stripe";
-import { cancelAddon, reactivateAddon, updateAddonQuantity } from "@/utils/addons.functions";
+import { cancelAddon, reactivateAddon, updateAddonQuantity } from "@/lib/backend/edge/stripe";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@tanstack/react-router";

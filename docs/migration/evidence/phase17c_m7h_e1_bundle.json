@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-E1",
+    "title": "Cutover Dependency Closure Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-13T10:55:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_e_operational_readiness_bundle_sha256": "f5f9f5c05cfc8b09ac9060e3a73b2220bc048c20c8048c39793ae2798d1f81de"
+  },
+  "evidence_artifacts": {
+    "blocker_register_sha256": "5f0ddebb723da8e5e154d28504679a082f41f5cb072c61872682eb700eabdc6c",
+    "rpc_closure_sha256": "8d89ef404251da1e09306122f0bb3bd7c74af8b26db787a4f105961aa584659d",
+    "edge_runtime_plan_sha256": "4a79f4e5924d3904be44c646d66cdf162a328e0efd79a7e2ac446ba1a3e29b69",
+    "secret_inventory_sha256": "1b9c200cb59cf3844424e3109162177b5d9b861b10efc1abca03897b8c90a9e3",
+    "webhook_switch_plan_sha256": "9da93597b3a0b68c3189020e4c978a3fdfdc4e39c8c6be0cec348ac9fb66c681",
+    "cutover_dag_sha256": "5f8475971839a407fe316641d153ebb487a8cbbe179460d5b2cb229fccbd88cd"
+  },
+  "metrics": {
+    "p1_blocker_count": 3,
+    "p2_item_count": 2,
+    "final_p0_blockers": 0,
+    "final_p1_blockers": 3,
+    "final_p2_items": 2,
+    "missing_rpc_name": "get_automation_queue_stats",
+    "missing_rpc_classification": "OPTIONAL_FEATURE",
+    "edge_secret_names_total": 10,
+    "target_edge_secrets_required_total": 10,
+    "target_edge_secrets_currently_configured": 0,
+    "target_edge_secrets_to_configure": 10,
+    "edge_functions_total": 38,
+    "edge_function_group_counts": {
+      "group_a_passive_utilities": 7,
+      "group_b_webhook_receivers": 7,
+      "group_c_scheduled_writers": 7,
+      "group_d_internal_service": 8,
+      "group_e_application_callable": 9
+    },
+    "env_switch_variable_count": 7,
+    "webhook_switch_count": 4,
+    "stripe_required_action_count": 3,
+    "zapi_required_action_count": 2,
+    "resend_required_action_count": 3,
+    "scheduled_producers_total": 6,
+    "safe_action_breakdown": {
+      "prepare_now_safe_count": 5,
+      "cutover_boundary_only_count": 5,
+      "post_publish_before_writers_count": 3,
+      "post_validation_activation_count": 3,
+      "post_cutover_followup_count": 4
+    },
+    "cutover_dag_node_count": 20,
+    "cutover_dag_cycle_count": 0,
+    "recommended_execution_phases": 10
+  },
+  "bundle_hash": "2c15bb08688556980e971c42dd2dfbe16d5c96c7204d60fbc117b2c1a548111c"
+}

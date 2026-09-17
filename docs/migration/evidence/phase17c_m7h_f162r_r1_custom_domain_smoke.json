@@ -1,0 +1,19 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R1",
+  "topic": "Minimal Custom Domain Application Check",
+  "evaluated_at": "2026-09-16T10:28:45.000Z",
+  "status": "HELD_PENDING_APEX_TLS_PROVISIONING",
+  "rationale": "Section 7 requires testing directly through https://barbex.shop ONLY after apex TLS is valid and authority = VERCEL. Because port 443 TLS certificate deployment is currently in progress across Vercel edge nodes, HTTPS requests cannot yet complete TLS handshake. Port 80 HTTP requests to barbex.shop return 200 OK from Vercel.",
+  "routes_targeted": [
+    "/",
+    "/auth",
+    "/dashboard",
+    "/status"
+  ],
+  "metrics": {
+    "R1_CUSTOM_DOMAIN_ROUTES_TESTED": 0,
+    "R1_CUSTOM_DOMAIN_HTTP_5XX": 0,
+    "R1_CUSTOM_DOMAIN_FATAL_JS_ERRORS": 0,
+    "R1_CUSTOM_DOMAIN_SSR_ERRORS": 0
+  }
+}

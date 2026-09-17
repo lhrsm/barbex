@@ -1,0 +1,88 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "Vercel Domain Forensics",
+  "evaluated_at": "2026-09-16T11:18:40.000Z",
+  "vercel_project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+  "vercel_project_name": "barbex-staging",
+  "team": "startup-dc20",
+  "domain_diagnostics": {
+    "barbex.shop": {
+      "status": "ok",
+      "reason": "dns_change_recommended",
+      "message": "barbex.shop has a valid configuration, but Vercel recommends updating its DNS records.",
+      "domain": "barbex.shop",
+      "domainStatus": "dns-change-recommended",
+      "configurationStatus": "dns-change-recommended",
+      "ok": true,
+      "misconfigured": false,
+      "configuredBy": "A",
+      "serviceType": "external",
+      "ipStatus": "optional-change",
+      "dnssecEnabled": null,
+      "acceptedChallenges": [
+        "http-01"
+      ],
+      "current": {
+        "nameservers": [
+          "cosmos.dns-parking.com",
+          "nova.dns-parking.com"
+        ],
+        "cnames": [],
+        "aValues": [
+          "76.76.21.21"
+        ]
+      },
+      "conflicts": [],
+      "project": {
+        "idOrName": "barbex-staging",
+        "attached": true,
+        "verified": true,
+        "verification": [],
+        "verificationError": null
+      }
+    },
+    "www.barbex.shop": {
+      "status": "ok",
+      "reason": "dns_change_recommended",
+      "message": "www.barbex.shop has a valid configuration, but Vercel recommends updating its DNS records.",
+      "domain": "www.barbex.shop",
+      "domainStatus": "dns-change-recommended",
+      "configurationStatus": "dns-change-recommended",
+      "ok": true,
+      "misconfigured": false,
+      "configuredBy": "A",
+      "serviceType": "external",
+      "ipStatus": "optional-change",
+      "dnssecEnabled": null,
+      "acceptedChallenges": [
+        "http-01"
+      ],
+      "current": {
+        "nameservers": [
+          "cosmos.dns-parking.com",
+          "nova.dns-parking.com"
+        ],
+        "cnames": [
+          "barbex.shop."
+        ],
+        "aValues": [
+          "76.76.21.21"
+        ]
+      },
+      "conflicts": [],
+      "project": {
+        "idOrName": "barbex-staging",
+        "attached": true,
+        "verified": true,
+        "verification": [],
+        "verificationError": null
+      }
+    }
+  },
+  "metrics": {
+    "D1_APEX_DOMAIN_VALID": "YES",
+    "D1_WWW_DOMAIN_VALID": "YES",
+    "D1_VERCEL_DOMAIN_DIAGNOSTIC_APEX": "VALID_ATTACHED_ACCEPTED_HTTP01",
+    "D1_VERCEL_DOMAIN_DIAGNOSTIC_WWW": "VALID_ATTACHED_ACCEPTED_HTTP01"
+  }
+}

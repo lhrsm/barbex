@@ -1,0 +1,21 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R2",
+  "topic": "Custom-Domain Production Smoke Recheck",
+  "evaluated_at": "2026-09-16T10:59:30.000Z",
+  "execution_status": "GATED_BY_TLS_PASS",
+  "rationale": "Section 5 explicitly specifies: 'ONLY when R2_APEX_TLS_PASS = YES. Physically test through https://barbex.shop'. Because port 443 TLS handshake on Vercel edge IP 76.76.21.21 is pending certificate deployment, custom-domain HTTPS smoke is deferred.",
+  "http_port_80_verification": {
+    "status": 200,
+    "server": "Vercel",
+    "x_vercel_id": "gru1::iad1::s7pc9-1789554514533-c324d225ff89",
+    "authority": "VERCEL"
+  },
+  "metrics": {
+    "R2_CUSTOM_DOMAIN_ROUTES_TESTED": 0,
+    "R2_CUSTOM_DOMAIN_HTTP_5XX": 0,
+    "R2_CUSTOM_DOMAIN_FATAL_JS_ERRORS": 0,
+    "R2_CUSTOM_DOMAIN_SSR_ERRORS": 0,
+    "R2_CUSTOM_DOMAIN_HYDRATION_FATAL_ERRORS": 0,
+    "R2_CUSTOM_DOMAIN_HOSTING_AUTHORITY": "VERCEL (PROVEN_ON_HTTP_PORT_80)"
+  }
+}

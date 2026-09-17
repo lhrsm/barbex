@@ -1,0 +1,18 @@
+SELECT
+  current_database() AS current_database,
+  current_user AS current_user,
+  version() AS postgres_version,
+  (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE') AS public_tables,
+  (SELECT count(*) FROM information_schema.views WHERE table_schema = 'public') AS public_views,
+  (SELECT count(*) FROM information_schema.columns WHERE table_schema = 'public') AS public_columns,
+  (SELECT count(DISTINCT t.typname) FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typtype = 'e') AS public_enums,
+  (SELECT count(*) FROM information_schema.table_constraints WHERE table_schema = 'public' AND constraint_type = 'PRIMARY KEY') AS primary_keys,
+  (SELECT count(*) FROM information_schema.table_constraints WHERE table_schema = 'public' AND constraint_type = 'FOREIGN KEY') AS foreign_keys,
+  (SELECT count(*) FROM pg_indexes WHERE schemaname = 'public') AS public_indexes,
+  (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public') AS public_functions,
+  (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND NOT t.tgisinternal) AS public_triggers,
+  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relrowsecurity = true) AS rls_enabled_tables,
+  (SELECT count(*) FROM pg_policy pol JOIN pg_class c ON c.oid = pol.polrelid JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') AS public_policies,
+  (SELECT count(*) FROM auth.users) AS auth_users,
+  (SELECT count(*) FROM storage.buckets) AS storage_buckets,
+  (SELECT count(*) FROM storage.objects) AS storage_objects;

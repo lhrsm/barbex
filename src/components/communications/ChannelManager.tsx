@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getChannels, updateChannelStatus } from "@/lib/communications.functions";
+import { getChannelsClient, updateChannelStatusClient } from "@/lib/backend/client/communications";
 import { MessageSquare, Mail, Smartphone, Bell, Send, Settings2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,11 +14,11 @@ export function ChannelManager({ tenantId }: Props) {
   const queryClient = useQueryClient();
   const { data: channels, isLoading } = useQuery({
     queryKey: ['communication-channels', tenantId],
-    queryFn: () => getChannels({ data: { tenantId } })
+    queryFn: () => getChannelsClient(tenantId)
   });
 
   const updateMutation = useMutation({
-    mutationFn: (vars: { id: string, status: string, isActive: boolean }) => updateChannelStatus({ data: vars }),
+    mutationFn: (vars: { id: string, status: string, isActive: boolean }) => updateChannelStatusClient(vars.id, vars.status, vars.isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communication-channels', tenantId] });
       toast.success("Canal atualizado com sucesso!");

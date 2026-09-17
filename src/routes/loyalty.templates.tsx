@@ -10,8 +10,7 @@ import { toast } from "sonner";
 import { Sparkles, Search, Layers, Loader2, ArrowLeft, LayoutDashboard, ListChecks } from "lucide-react";
 import { TemplateCard } from "@/components/loyalty/TemplateCard";
 import { TemplatePreviewModal } from "@/components/loyalty/TemplatePreviewModal";
-import { useServerFn } from "@tanstack/react-start";
-import { suggestLoyaltyCampaigns } from "@/lib/loyalty-premium.functions";
+import { suggestLoyaltyCampaignsClient } from "@/lib/backend/edge/ai";
 
 export const Route = createFileRoute("/loyalty/templates")({
   component: withModule("loyalty", "Templates de Fidelidade", TemplatesPage),
@@ -87,7 +86,6 @@ function TemplatesPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [premiumEnabled, setPremiumEnabled] = useState<boolean | null>(null);
-  const suggestFn = useServerFn(suggestLoyaltyCampaigns);
 
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -163,7 +161,7 @@ function TemplatesPage() {
     setAiOpen(true);
     setAiLoading(true);
     try {
-      const res: any = await (suggestFn as any)();
+      const res: any = await suggestLoyaltyCampaignsClient();
       setAiSuggestions(res?.suggestions || []);
     } catch (e: any) {
       toast.error("Erro IA: " + (e?.message || e));

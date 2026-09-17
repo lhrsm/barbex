@@ -1,0 +1,52 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R1",
+  "topic": "Authoritative & Public DNS Recheck",
+  "evaluated_at": "2026-09-16T10:27:00.000Z",
+  "authoritative_nameservers": {
+    "hostinger_nameservers": [
+      "cosmos.dns-parking.com",
+      "nova.dns-parking.com"
+    ],
+    "zone_serial": "2026091601",
+    "direct_apex_query": {
+      "ip_172_64_52_46": "185.158.133.1 (cached 14400s TTL)",
+      "ip_172_64_53_200": "185.158.133.1 (cached 14400s TTL)"
+    },
+    "cname_query": {
+      "www_cname": "barbex.shop",
+      "www_resolved_a": "76.76.21.21",
+      "ttl": 300
+    }
+  },
+  "public_resolvers": {
+    "google_8_8_8_8": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21 (TTL 300)"
+    },
+    "cloudflare_1_1_1_1": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21 (TTL 300)"
+    },
+    "quad9_9_9_9": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21 (TTL 300)"
+    },
+    "opendns_208_67_222_222": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21 (TTL 300)"
+    }
+  },
+  "metrics": {
+    "R1_AUTHORITATIVE_APEX_A": "76.76.21.21 (propagated via CNAME resolution; local direct apex query evicting cache)",
+    "R1_PUBLIC_APEX_A_VALUES": [
+      "76.76.21.21"
+    ],
+    "R1_PUBLIC_WWW_CHAIN": "www.barbex.shop CNAME barbex.shop -> 76.76.21.21",
+    "R1_OLD_185_158_133_1_OBSERVED": "YES (on direct apex query to local anycast node)",
+    "R1_DNS_PROPAGATION_COMPLETE": "PARTIAL (GLOBAL_RESOLVERS_76_76_21_21_RESOLVED / ANYCAST_CACHE_EVICTION_IN_PROGRESS)"
+  }
+}

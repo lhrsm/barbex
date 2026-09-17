@@ -1,0 +1,18 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Source Supabase Retirement Precheck",
+  "evaluated_at": "2026-09-16T11:53:00.000Z",
+  "inventory": {
+    "active_dependencies": 0,
+    "rollback_dependencies": 1,
+    "archive_dependencies": 5,
+    "unknown_dependencies": 0
+  },
+  "metrics": {
+    "F18_SOURCE_ACTIVE_DEPENDENCIES": 0,
+    "F18_SOURCE_ROLLBACK_ONLY_DEPENDENCIES": 1,
+    "F18_SOURCE_ARCHIVE_DEPENDENCIES": 5,
+    "F18_SOURCE_UNKNOWN_DEPENDENCIES": 0,
+    "F18_SOURCE_RETIREMENT_TECHNICALLY_ELIGIBLE": "YES"
+  }
+}

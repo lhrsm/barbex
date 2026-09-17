@@ -4,8 +4,12 @@ import { Shield, Key, Loader2, ArrowRight, AlertCircle, RefreshCw } from 'lucide
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { getMFAChallenge, verifyMFAChallenge, verifyBackupCode } from '@/lib/auth-mfa.functions';
-import { listFactors } from '@/lib/auth-security.functions';
+import {
+  listFactorsClient,
+  getMfaChallengeClient,
+  verifyMfaChallengeClient,
+  verifyMfaBackupCodeClient,
+} from '@/lib/backend/rpc/security';
 
 interface MFAVerificationGuardProps {
   onSuccess: () => void;
@@ -30,7 +34,7 @@ export const MFAVerificationGuard: React.FC<MFAVerificationGuardProps> = ({
   useEffect(() => {
     const init = async () => {
       try {
-        const factorsData = await listFactors();
+        const factorsData = await listFactorsClient();
         const activeFactors = factorsData.all?.filter((f: any) => f.status === 'verified') || [];
         setFactors(activeFactors);
         
@@ -51,7 +55,7 @@ export const MFAVerificationGuard: React.FC<MFAVerificationGuardProps> = ({
   }, []);
 
   const challengeMutation = useMutation({
-    mutationFn: (factorId: string) => getMFAChallenge({ data: { factorId } }),
+    mutationFn: (factorId: string) => getMfaChallengeClient(factorId),
     onSuccess: (challenge) => {
       setChallengeId(challenge.id);
     },
@@ -59,13 +63,11 @@ export const MFAVerificationGuard: React.FC<MFAVerificationGuardProps> = ({
   });
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyMFAChallenge({ 
-      data: { 
-        factorId: selectedFactor.id, 
-        challengeId: challengeId!, 
-        code 
-      } 
-    }),
+    mutationFn: () => verifyMfaChallengeClient(
+      selectedFactor.id,
+      challengeId!,
+      code
+    ),
     onSuccess: () => {
       toast.success("Verificado com sucesso!");
       onSuccess();
@@ -74,7 +76,11 @@ export const MFAVerificationGuard: React.FC<MFAVerificationGuardProps> = ({
   });
 
   const backupMutation = useMutation({
-    mutationFn: (backupCode: string) => verifyBackupCode({ data: { code: backupCode } }),
+    mutationFn: async (backupCode: string) => {
+      const valid = await verifyMfaBackupCodeClient(backupCode);
+      if (!valid) throw new Error("Código de recuperação inválido ou já utilizado.");
+      return { success: true };
+    },
     onSuccess: () => {
       toast.success("Recuperado com sucesso!");
       onSuccess();

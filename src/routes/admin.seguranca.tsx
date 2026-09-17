@@ -32,14 +32,14 @@ import {
   PremiumTabsContent 
 } from "@/components/ui/premium-tabs";
 import { useQuery } from "@tanstack/react-query";
-import { getSecurityOverview } from "@/lib/security-enterprise.functions";
+import { getSecurityOverviewClient } from "@/lib/backend/client/security";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
 function SecurityCenterPage() {
   const { data: overview, isLoading } = useQuery({
     queryKey: ['security-overview'],
-    queryFn: () => getSecurityOverview({ data: {} })
+    queryFn: () => getSecurityOverviewClient()
   });
 
   const securityScore = overview?.score || 100; // 100% após Fase 5 (Infra & APIs)

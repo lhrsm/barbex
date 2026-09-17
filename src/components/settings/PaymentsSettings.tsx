@@ -437,8 +437,8 @@ export function PaymentsSettings() {
     if (!tenantId) return;
     toast.loading("Testando conexão...", { id: `test-${gw.id}` });
     try {
-      const { testGatewayConnection } = await import("@/lib/payments/subscriptions.functions");
-      const result = await testGatewayConnection({ data: { gatewayId: gw.id } });
+      const { testGatewayConnectionClient } = await import("@/lib/backend/edge/gateway");
+      const result = await testGatewayConnectionClient({ gatewayId: gw.id });
       if (result.ok) {
         toast.success(`✓ ${result.message}`, { id: `test-${gw.id}` });
       } else {

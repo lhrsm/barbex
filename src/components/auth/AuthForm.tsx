@@ -17,7 +17,7 @@ import { UserCheck, Lock, Eye, EyeOff, Send, ArrowRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { resolveAuthenticatedIdentity } from "@/lib/auth-identity.resolver";
 import { normalizeIdentifier } from "@/utils/auth-identifier";
-import { signInWithPhone, requestPasswordResetByPhone } from "@/lib/auth-phone.functions";
+import { signInWithPhone, requestPasswordResetByPhone } from "@/lib/backend/edge/auth";
 
 export function AuthForm() {
   const [loading, setLoading] = useState(false);

@@ -1,0 +1,26 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "Post-Issuance Certificate Inventory",
+  "evaluated_at": "2026-09-16T11:30:30.000Z",
+  "inventory": {
+    "team": "startup-dc20",
+    "id": "cert_6F9pwDjZfakCxaFGywGlgmED",
+    "cns": [
+      "barbex.shop",
+      "www.barbex.shop"
+    ],
+    "expiration": "in 90d",
+    "renew": "yes",
+    "age": "19s"
+  },
+  "metrics": {
+    "D2_POST_CERT_APEX_FOUND": "YES",
+    "D2_POST_CERT_WWW_FOUND": "YES",
+    "D2_POST_CERT_ID": "cert_6F9pwDjZfakCxaFGywGlgmED",
+    "D2_POST_CERT_NAMES": [
+      "barbex.shop",
+      "www.barbex.shop"
+    ],
+    "D2_POST_CERT_VALID": "YES"
+  }
+}

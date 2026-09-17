@@ -1,0 +1,18 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Provider and Background Producer Invariants",
+  "evaluated_at": "2026-09-16T09:35:00.000Z",
+  "providers": {
+    "f16_provider_callback_mutations": 0,
+    "f16_provider_authority_target": "YES",
+    "stripe_webhook": "https://ywdwrstxvsdqiryhieiz.supabase.co/functions/v1/stripe-webhook",
+    "zapi_webhook": "https://ywdwrstxvsdqiryhieiz.supabase.co/functions/v1/zapi-webhook",
+    "resend_webhook": "https://ywdwrstxvsdqiryhieiz.supabase.co/functions/v1/resend-webhook",
+    "gateway_webhook": "https://ywdwrstxvsdqiryhieiz.supabase.co/functions/v1/gateway-webhook"
+  },
+  "background": {
+    "f16_target_producers_active": 6,
+    "f16_vercel_duplicate_schedulers": 0,
+    "f16_vercel_duplicate_background_workers": 0
+  }
+}

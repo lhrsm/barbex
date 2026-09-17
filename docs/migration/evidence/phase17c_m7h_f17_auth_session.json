@@ -1,0 +1,22 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Auth & Session Stability",
+  "evaluated_at": "2026-09-16T11:44:50.000Z",
+  "auth_status": {
+    "auth_route_status": 200,
+    "auth_authority": "TARGET",
+    "target_ref": "ywdwrstxvsdqiryhieiz",
+    "site_url": "https://barbex.shop",
+    "hsts_active": true,
+    "redirect_loops": 0,
+    "mixed_content_errors": 0
+  },
+  "metrics": {
+    "F17_AUTH_AUTHORITY": "TARGET",
+    "F17_AUTH_ROUTES_PASS": "YES",
+    "F17_AUTH_REDIRECT_PASS": "YES",
+    "F17_COOKIE_CONFIGURATION_PASS": "YES",
+    "F17_AUTH_MIXED_CONTENT_ERRORS": 0,
+    "F17_AUTH_REDIRECT_LOOPS": 0
+  }
+}

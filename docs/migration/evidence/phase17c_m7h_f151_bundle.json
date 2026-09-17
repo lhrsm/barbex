@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F15.1",
+    "title": "Vercel Remote Staging Closure Authority Bundle",
+    "target_supabase_project_ref": "ywdwrstxvsdqiryhieiz",
+    "source_supabase_project_ref": "wdxhjwodyctgzqtogkgv",
+    "github_repository": "lhrsm/barbex",
+    "production_domain": "barbex.shop",
+    "generated_at": "2026-09-15T15:05:00.000Z"
+  },
+  "prior_authorities": {
+    "f13_bundle_sha256": "ead1d90bb1e4bfaeda64d0d43bc1dfdefdde3e8f99a9a10f9cebeab213da443d",
+    "f14_bundle_sha256": "f3f8df4b55370e70d53cb58073f914efe9b5971f3cf306fd43d559ea61e7c785",
+    "f15_bundle_sha256": "8ec49261762c1aff669369d15e2715a974dd5890d826f3c6cb7655e90722c930"
+  },
+  "evidence_artifacts": {
+    "authority_sha256": "e79bb189c3d9d55df13fb59c856a93917240fa2982e1c3ffd683cdc9627bcf45",
+    "vercel_project_sha256": "898f0869d7777f78de68061097bce4f3b4f122bbda5e0a12a55832c608b0d84c",
+    "env_parity_sha256": "515d577aa84032bad5a7222ac20a0daf75abcdedf5710a2fee9426ad5618f43d",
+    "remote_deployment_sha256": "8871579133c3df2740a2e27098047d2d145e91bec0ac4002278a4842b54fc93d",
+    "remote_smoke_sha256": "a319e40ad5b74bcaad803c198c245251d719cd4f111d71bc2346f02db76ac6bc",
+    "target_bindings_sha256": "35b983ed7c65884b8c631e293ad1460258ec4dd05b0e51f7b85f85bdf97f21dd",
+    "auth_redirect_sha256": "6813664ff7da97e77c296aaaf24353d02af1ae1dd8324287a3ac61ba1b8b6456",
+    "pwa_security_sha256": "51949f040afa7fb32e2b3b6e5a10d3affbd2057ff062bf83233b765d30666697",
+    "production_isolation_sha256": "4e3ea5785abc111d665c53c28c439a765c36ffadbbe476d29e787a8e43acb51f",
+    "source_invariant_sha256": "0174d5ac70368ee063f7dd7f3c2e4e99849b8c934942284b42ec244c5ea14d98",
+    "f16_dns_plan_sha256": "de9a08eb57fa64cd1f6f40df52c1043f543f91b1609716a6ae573923efc8feb7"
+  },
+  "metrics": {
+    "authorized_phase": "PHASE 17C.M7H-F15.1",
+    "f13_hash_match": true,
+    "f14_hash_match": true,
+    "f15_hash_match": true,
+    "f15_local_build_validated": true,
+    "f15_local_preview_validated": true,
+    "f15_remote_vercel_project_created": false,
+    "f15_remote_vercel_preview_deployed": false,
+    "f15_remote_closure_required": true,
+    "f151_vercel_access_available": false,
+    "f151_reached": false,
+    "ready_for_f16": false,
+    "final_decision": "F151_VERCEL_ACCESS_REQUIRED",
+    "preexisting_worktree_changes_preserved": true,
+    "f15_config_diff_isolated": true
+  },
+  "bundle_hash": "3831358f30af63fa719b1bf58fc38a40e0ee81ea7035ec6b66a4adbabc6edfb1"
+}

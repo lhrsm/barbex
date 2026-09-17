@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { getPredictiveRecommendations, getRevenueProjections } from "../../lib/marketing-ai.functions";
+import { getPredictiveRecommendationsClient, getRevenueProjectionsClient } from "@/lib/backend/client/marketing";
 import { brl } from "../intelligence/engine";
 
 interface MarketingAIAdvisorProps {
@@ -27,13 +27,13 @@ interface MarketingAIAdvisorProps {
 export function MarketingAIAdvisor({ tenantId }: MarketingAIAdvisorProps) {
   const { data: recommendations, isLoading: loadingRecs } = useQuery({
     queryKey: ["predictive-recommendations", tenantId],
-    queryFn: () => getPredictiveRecommendations({ data: { tenantId } }),
+    queryFn: () => getPredictiveRecommendationsClient(tenantId),
     staleTime: 1000 * 60 * 15,
   });
 
   const { data: projections, isLoading: loadingProjections } = useQuery({
     queryKey: ["revenue-projections", tenantId],
-    queryFn: () => getRevenueProjections({ data: { tenantId } }),
+    queryFn: () => getRevenueProjectionsClient(tenantId),
     staleTime: 1000 * 60 * 30,
   });
 

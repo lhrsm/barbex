@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AcademyLayout } from "@/components/academy/AcademyLayout";
 import { AcademyPathCard } from "@/components/academy/AcademyComponents";
 import { useQuery } from "@tanstack/react-query";
-import { getAcademyPaths, getRecommendedPaths } from "@/lib/academy.functions";
+import { getAcademyPathsClient, getRecommendedPathsClient } from "@/lib/backend/client/academy";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GraduationCap, Sparkles, Trophy, BookOpen } from "lucide-react";
 
@@ -13,12 +13,12 @@ export const Route = createFileRoute("/academy")({
 function AcademyDashboard() {
   const paths = useQuery({
     queryKey: ["academy-paths"],
-    queryFn: () => getAcademyPaths({ data: {} as any })
+    queryFn: () => getAcademyPathsClient()
   });
 
   const recommendations = useQuery({
     queryKey: ["academy-recommended"],
-    queryFn: () => getRecommendedPaths({ data: undefined as any })
+    queryFn: () => getRecommendedPathsClient()
   });
 
   return (

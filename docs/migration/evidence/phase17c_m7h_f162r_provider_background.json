@@ -1,0 +1,34 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Provider Callbacks & Background Producers Invariants",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "provider_callbacks": {
+    "stripe_webhook": "Target Supabase Edge Function (Unchanged)",
+    "zapi_webhook": "Target Supabase Edge Function (Unchanged)",
+    "resend_webhook": "Target Supabase Edge Function (Unchanged)",
+    "gateway_webhook": "Target Supabase Edge Function (Unchanged)",
+    "mutations_recorded": 0
+  },
+  "background_producers": {
+    "engine": "pg_cron (Target Supabase)",
+    "active_jobs": [
+      { "id": 1, "name": "stage1_status_check", "status": "ACTIVE" },
+      { "id": 2, "name": "stage2_addons_check", "status": "ACTIVE" },
+      { "id": 3, "name": "stage3_admin_daily_digest", "status": "ACTIVE" },
+      { "id": 4, "name": "stage4_anniversary_check", "status": "ACTIVE" },
+      { "id": 5, "name": "stage5_reviews_check", "status": "ACTIVE" },
+      { "id": 6, "name": "stage6_automation_worker", "status": "ACTIVE" }
+    ],
+    "count": 6
+  },
+  "vercel_workers": {
+    "duplicate_schedulers": 0,
+    "duplicate_background_workers": 0
+  },
+  "verdict": {
+    "F162R_PROVIDER_CALLBACK_MUTATIONS": 0,
+    "F162R_TARGET_PRODUCERS_ACTIVE": 6,
+    "F162R_VERCEL_DUPLICATE_SCHEDULERS": 0,
+    "F162R_VERCEL_DUPLICATE_BACKGROUND_WORKERS": 0
+  }
+}

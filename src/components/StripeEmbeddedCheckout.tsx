@@ -1,6 +1,6 @@
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
-import { createCheckoutSession } from "@/utils/payments.functions";
+import { createCheckoutSession } from "@/lib/backend/edge/stripe";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -44,25 +44,22 @@ export function StripeEmbeddedCheckout({
 
       console.log("[StripeEmbeddedCheckout] 📡 Invocando server function com token");
       
-      const sessionPromise = createCheckoutSession({
-        data: {
-          priceId,
-          quantity,
-          customerEmail,
-          userId,
-          returnUrl: returnUrl || `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
-          environment: getStripeEnvironment(),
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await createCheckoutSession({
+        priceId,
+        quantity,
+        customerEmail,
+        userId,
+        returnUrl: returnUrl || `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+        environment: getStripeEnvironment(),
+      }, {
+        authToken: token,
       });
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("A requisição ao servidor expirou (timeout de 60s).")), 60000)
-      );
+      if (!res.ok) {
+        throw new Error(res.error || "Não foi possível gerar a sessão de pagamento.");
+      }
 
-      const secret = await Promise.race([sessionPromise, timeoutPromise]) as string;
+      const secret = res.clientSecret;
       
       if (!secret) {
         console.error("[StripeEmbeddedCheckout] ❌ Erro: client_secret retornado é vazio/null");

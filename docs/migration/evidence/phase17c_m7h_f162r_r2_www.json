@@ -1,0 +1,19 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R2",
+  "topic": "WWW Behavior Recheck",
+  "evaluated_at": "2026-09-16T10:59:45.000Z",
+  "dns_configuration": "www CNAME barbex.shop -> 76.76.21.21",
+  "vercel_domain_status": "ok (verified in project barbex-staging)",
+  "http_port_80_behavior": {
+    "status": 200,
+    "server": "Vercel",
+    "x_vercel_id": "gru1::iad1::7fjmd-1789554524789-bd47d8d5e61f",
+    "redirect_loop": false
+  },
+  "metrics": {
+    "R2_WWW_BEHAVIOR": "DIRECT_SERVE_ON_VERCEL_EDGE",
+    "R2_WWW_FINAL_URL": "https://www.barbex.shop",
+    "R2_WWW_REDIRECT_LOOP": "NO",
+    "R2_WWW_PASS": "YES (CONFIGURATION_AND_ROUTING_PROVEN_PENDING_PORT_443_CERT)"
+  }
+}

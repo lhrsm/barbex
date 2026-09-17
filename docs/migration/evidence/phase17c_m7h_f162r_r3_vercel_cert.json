@@ -1,0 +1,42 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R3",
+  "topic": "Vercel Certificate & Domain State Evaluation",
+  "evaluated_at": "2026-09-16T11:07:00.000Z",
+  "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+  "project_name": "barbex-staging",
+  "domain_status": {
+    "apex": {
+      "domain": "barbex.shop",
+      "status": "ok",
+      "misconfigured": false,
+      "configuredBy": "A",
+      "current_aValues": ["76.76.21.21"],
+      "acceptedChallenges": ["http-01"],
+      "cert_in_certs_ls": false,
+      "explicit_error": null
+    },
+    "www": {
+      "domain": "www.barbex.shop",
+      "status": "ok",
+      "misconfigured": false,
+      "configuredBy": "A",
+      "current_cnames": ["barbex.shop."],
+      "current_aValues": ["76.76.21.21"],
+      "acceptedChallenges": ["http-01"],
+      "cert_in_certs_ls": false,
+      "explicit_error": null
+    }
+  },
+  "metrics": {
+    "R3_VERCEL_APEX_DOMAIN_OK": "YES",
+    "R3_VERCEL_WWW_DOMAIN_OK": "YES",
+    "R3_VERCEL_APEX_CERT_STATUS": "UNKNOWN",
+    "R3_VERCEL_WWW_CERT_STATUS": "UNKNOWN",
+    "R3_VERCEL_CERTIFICATE_EXISTS_APEX": "NO",
+    "R3_VERCEL_CERTIFICATE_EXISTS_WWW": "NO",
+    "R3_VERCEL_CERTIFICATE_ERROR_APEX": "NONE",
+    "R3_VERCEL_CERTIFICATE_ERROR_WWW": "NONE",
+    "R3_VERCEL_CHALLENGE_STATUS_APEX": "ACCEPTED (http-01)",
+    "R3_VERCEL_CHALLENGE_STATUS_WWW": "ACCEPTED (http-01)"
+  }
+}

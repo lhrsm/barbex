@@ -1,0 +1,21 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "Root Cause Classification Forensics",
+  "evaluated_at": "2026-09-16T11:18:40.000Z",
+  "classification_analysis": {
+    "DNS_BLOCKER": false,
+    "AAAA_CONFLICT": false,
+    "CAA_BLOCKER": false,
+    "ACME_CONFLICT": false,
+    "DOMAIN_CONFIGURATION_ERROR": false,
+    "CERTIFICATE_NOT_ISSUED": true,
+    "CERTIFICATE_ISSUED_NOT_EDGE_DEPLOYED": false,
+    "LOCAL_CACHE_ONLY": false,
+    "VERCEL_TLS_PROVISIONING_STUCK": false,
+    "UNKNOWN": false
+  },
+  "metrics": {
+    "D1_ROOT_CAUSE_CLASSIFICATION": "CERTIFICATE_NOT_ISSUED",
+    "D1_ROOT_CAUSE_EVIDENCE": "vercel certs ls physically returned 0 certificates for barbex.shop or www.barbex.shop under team startup-dc20 despite DNS being authoritative and Port 80 responding from Vercel edge for over 2 hours. No ACME certificate has been created or bound."
+  }
+}

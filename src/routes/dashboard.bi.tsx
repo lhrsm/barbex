@@ -1,7 +1,7 @@
 import React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getBIAnalytics } from "@/lib/bi.functions";
+import { getBIAnalyticsClient } from "@/lib/backend/client/bi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -60,13 +60,11 @@ function BusinessIntelligencePage() {
 
   const analyticsQuery = useQuery({
     queryKey: ["bi-analytics", dateRange],
-    queryFn: () => getBIAnalytics({ 
-      data: {
-        start_date: dateRange.start, 
-        end_date: dateRange.end,
-        compare_start_date: format(subDays(new Date(dateRange.start), period === "year" ? 365 : 30), "yyyy-MM-dd"),
-        compare_end_date: format(subDays(new Date(dateRange.end), period === "year" ? 365 : 30), "yyyy-MM-dd")
-      }
+    queryFn: () => getBIAnalyticsClient({
+      start_date: dateRange.start,
+      end_date: dateRange.end,
+      compare_start_date: format(subDays(new Date(dateRange.start), period === "year" ? 365 : 30), "yyyy-MM-dd"),
+      compare_end_date: format(subDays(new Date(dateRange.end), period === "year" ? 365 : 30), "yyyy-MM-dd")
     }),
   });
 

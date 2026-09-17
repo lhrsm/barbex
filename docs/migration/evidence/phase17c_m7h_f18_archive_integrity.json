@@ -1,0 +1,22 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Backup and Archive Integrity Recheck",
+  "evaluated_at": "2026-09-16T11:53:30.000Z",
+  "archive_manifest": {
+    "source_db_archive": true,
+    "source_auth_archive": true,
+    "source_storage_archive": true,
+    "config_archive": true,
+    "evidence_archive": true,
+    "target_checkpoint": true
+  },
+  "metrics": {
+    "F18_SOURCE_DB_ARCHIVE_PASS": "YES",
+    "F18_SOURCE_AUTH_ARCHIVE_PASS": "YES",
+    "F18_SOURCE_STORAGE_ARCHIVE_PASS": "YES",
+    "F18_CONFIG_ARCHIVE_PASS": "YES",
+    "F18_EVIDENCE_ARCHIVE_PASS": "YES",
+    "F18_TARGET_CHECKPOINT_PASS": "YES",
+    "F18_ARCHIVE_RETIREMENT_GATE_PASS": "YES"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "Certificate Inventory Forensics",
+  "evaluated_at": "2026-09-16T11:18:40.000Z",
+  "cli_capability": {
+    "version": "59.19.0",
+    "D1_CERT_CLI_COMMANDS_AVAILABLE": [
+      "add",
+      "issue",
+      "list",
+      "remove"
+    ],
+    "D1_CERT_LIST_SUPPORTED": "YES",
+    "D1_CERT_INSPECT_SUPPORTED": "NO",
+    "D1_CERT_ISSUE_SUPPORTED": "YES"
+  },
+  "physical_inventory": {
+    "team": "startup-dc20",
+    "total_certs_found": 9,
+    "matching_barbex_certs": []
+  },
+  "metrics": {
+    "D1_CERTIFICATE_INVENTORY": "NONE_FOR_BARBEX_SHOP",
+    "D1_APEX_CERT_FOUND": "NO",
+    "D1_WWW_CERT_FOUND": "NO",
+    "D1_COMBINED_CERT_FOUND": "NO",
+    "D1_CERT_STATUS": "NONE",
+    "D1_CERT_CREATED_AT": "NONE",
+    "D1_CERT_EXPIRES_AT": "NONE",
+    "D1_CERTIFICATE_ISSUED_BUT_NOT_SERVED": "NO",
+    "D1_CERTIFICATE_NOT_ISSUED": "YES"
+  }
+}

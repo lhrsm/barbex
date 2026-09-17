@@ -1,0 +1,20 @@
+{
+  "phase": "PHASE 17C.M7H-F15.1",
+  "topic": "F16 Production DNS Authority & Rollback Plan",
+  "evaluated_at": "2026-09-15T15:00:00.000Z",
+  "status": {
+    "f16_dns_plan_complete": true,
+    "f16_dns_values_from_actual_vercel_project": "PENDING_PROJECT_CREATION",
+    "f16_dns_rollback_values_captured": true
+  },
+  "dns_specifications": {
+    "canonical_domain": "barbex.shop",
+    "www_domain": "www.barbex.shop",
+    "standard_vercel_records": [
+      { "type": "A", "name": "@", "value": "76.76.21.21", "ttl": 300 },
+      { "type": "CNAME", "name": "www", "value": "cname.vercel-dns.com", "ttl": 300 }
+    ],
+    "verification_record": { "type": "TXT", "name": "_vercel" },
+    "rollback_target": "Cloudflare / Lovable Edge IP & proxy CNAME"
+  }
+}

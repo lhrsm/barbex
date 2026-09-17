@@ -1,0 +1,21 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Source Supabase Isolation Stability",
+  "evaluated_at": "2026-09-16T11:45:10.000Z",
+  "source_project_ref": "wdxhjwodyctgzqtogkgv",
+  "isolation_state": {
+    "public_rows": 257691,
+    "status_checks": 256998,
+    "status_check_max_id": 256998,
+    "wp16_active": true,
+    "production_calls": 0
+  },
+  "metrics": {
+    "F17_SOURCE_PUBLIC_ROWS": 257691,
+    "F17_SOURCE_STATUS_CHECK_ROWS": 256998,
+    "F17_SOURCE_STATUS_CHECK_MAX_ID": 256998,
+    "F17_SOURCE_WP16_ACTIVE": "YES",
+    "F17_SOURCE_PRODUCTION_CALLS": 0,
+    "F17_SOURCE_ISOLATION_PASS": "YES"
+  }
+}

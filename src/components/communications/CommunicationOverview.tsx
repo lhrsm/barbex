@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, CheckCircle2, AlertCircle, Clock, Zap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getMessages, getChannels } from "@/lib/communications.functions";
+import { getMessagesClient, getChannelsClient } from "@/lib/backend/client/communications";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -12,12 +12,12 @@ interface Props {
 export function CommunicationOverview({ tenantId }: Props) {
   const { data: messages } = useQuery({
     queryKey: ['communication-messages-summary', tenantId],
-    queryFn: () => getMessages({ data: { tenantId, limit: 10 } })
+    queryFn: () => getMessagesClient({ tenantId, limit: 10 })
   });
 
   const { data: channels } = useQuery({
     queryKey: ['communication-channels', tenantId],
-    queryFn: () => getChannels({ data: { tenantId } })
+    queryFn: () => getChannelsClient(tenantId)
   });
 
 

@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-09-16T12:21:00.106Z",
+  "phase": "PHASE 17C.M7H-F19A",
+  "topic": "Release Candidate Local Build Verification",
+  "metrics": {
+    "F19A_TYPESCRIPT_PASS": "YES",
+    "F19A_LINT_PASS": "NOT_APPLICABLE_NON_DETERMINISTIC",
+    "F19A_BUILD_PASS": "YES",
+    "F19A_BUILD_OUTPUT_PATH": ".vercel/output",
+    "F19A_BUILD_OUTPUT_API_VERSION": "Build Output API v3",
+    "F19A_BUILD_RUNTIME": "nodejs24.x",
+    "F19A_TARGET_REF_IN_BUILD": "YES",
+    "F19A_SOURCE_REF_IN_BUILD": "NO",
+    "F19A_LOVABLE_RUNTIME_IN_BUILD": "NO",
+    "F19A_CLOUDFLARE_RUNTIME_IN_BUILD": "NO",
+    "F19A_SECRET_MATERIAL_IN_BUILD": 0
+  },
+  "details": {
+    "builder": "Vite v7.3.2 + Nitro (preset: vercel) + TanStack Start + React 19",
+    "static_assets_count": 287,
+    "server_function_modules_count": 434,
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "source_ref_detected": false,
+    "service_role_detected_in_browser_assets": false,
+    "secret_keys_detected": 0,
+    "lovable_executable_dependencies": 0,
+    "cloudflare_production_dependencies": 0
+  }
+}

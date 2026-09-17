@@ -1,0 +1,53 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "DNS Certificate Forensics",
+  "evaluated_at": "2026-09-16T11:18:40.000Z",
+  "authoritative_nameservers": [
+    "172.64.52.46 (nova.ns.cloudflare.com)",
+    "172.64.53.200 (cosmos.ns.cloudflare.com)"
+  ],
+  "queries": {
+    "apex": {
+      "name": "barbex.shop",
+      "A": [
+        "76.76.21.21"
+      ],
+      "AAAA": null,
+      "CAA": null,
+      "TXT_acme_challenge": null
+    },
+    "www": {
+      "name": "www.barbex.shop",
+      "A": [
+        "76.76.21.21"
+      ],
+      "AAAA": null,
+      "CNAME": [
+        "barbex.shop"
+      ],
+      "CAA": null,
+      "TXT_acme_challenge": null
+    }
+  },
+  "forensic_flags": {
+    "D1_APEX_A": [
+      "76.76.21.21"
+    ],
+    "D1_APEX_AAAA": "ENODATA",
+    "D1_WWW_A": [
+      "76.76.21.21"
+    ],
+    "D1_WWW_AAAA": "ENODATA",
+    "D1_WWW_CNAME": [
+      "barbex.shop"
+    ],
+    "D1_APEX_CAA": "ENODATA",
+    "D1_WWW_CAA": "ENODATA",
+    "D1_APEX_ACME_TXT": "ENOTFOUND",
+    "D1_WWW_ACME_TXT": "ENOTFOUND",
+    "D1_CONFLICTING_A": "NONE",
+    "D1_CONFLICTING_AAAA": "NONE",
+    "D1_STALE_ACME_RECORD": "NONE",
+    "D1_DNS_CERTIFICATE_BLOCKER": "NO"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "TLS Provisioning Observation",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "tls_status": {
+    "live_apex_domain_76_76_21_21": {
+      "ip": "76.76.21.21",
+      "port": 443,
+      "state": "PENDING_VERCEL_CERTIFICATE_ISSUANCE",
+      "detail": "Vercel edge drops connection prior to TLS establishment pending domain verification by its crawler"
+    },
+    "live_apex_domain_cached_185_158_133_1": {
+      "ip": "185.158.133.1",
+      "port": 443,
+      "state": "ACTIVE_VALID",
+      "cert_issuer": "Cloudflare Inc ECC CA-3 / Google Trust Services",
+      "tls_version": "TLSv1.3"
+    },
+    "vercel_production_deployment": {
+      "hostname": "barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+      "port": 443,
+      "state": "ACTIVE_VALID",
+      "cert_issuer": "Let's Encrypt / Google Trust Services",
+      "tls_version": "TLSv1.3"
+    }
+  },
+  "verdict": {
+    "F162R_APEX_TLS_PASS": "PENDING_PROVISIONING",
+    "F162R_WWW_TLS_PASS": "PENDING_PROVISIONING",
+    "F162R_TLS_ERRORS": "Awaiting Vercel automated certificate issuance post-verification"
+  }
+}

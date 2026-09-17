@@ -1,0 +1,29 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Pre-DNS Vercel Production Deployment Smoke Test Results",
+  "evaluated_at": "2026-09-16T09:32:00.000Z",
+  "target_url": "https://barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+  "summary": {
+    "f16_predns_routes_tested": 15,
+    "f16_predns_http_5xx": 0,
+    "f16_predns_fatal_js_errors": 0,
+    "f16_predns_ssr_errors": 0
+  },
+  "routes": [
+    { "route": "/", "status": 200, "ssr": true },
+    { "route": "/auth", "status": 200, "ssr": true },
+    { "route": "/dashboard", "status": 200, "ssr": true },
+    { "route": "/calendar", "status": 200, "ssr": true },
+    { "route": "/customers", "status": 200, "ssr": true },
+    { "route": "/barbers", "status": 200, "ssr": true },
+    { "route": "/services", "status": 200, "ssr": true },
+    { "route": "/products", "status": 200, "ssr": true },
+    { "route": "/finances", "status": 200, "ssr": true },
+    { "route": "/subscriptions", "status": 200, "ssr": true },
+    { "route": "/loyalty", "status": 200, "ssr": true },
+    { "route": "/tutorials", "status": 200, "ssr": true },
+    { "route": "/status", "status": 200, "ssr": true },
+    { "route": "/privacy", "status": 200, "ssr": true },
+    { "route": "/terms", "status": 200, "ssr": true }
+  ]
+}

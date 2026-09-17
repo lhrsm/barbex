@@ -1,0 +1,30 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Domain and DNS Legacy Record Precheck",
+  "evaluated_at": "2026-09-16T11:53:50.000Z",
+  "dns_inventory": {
+    "required_records": [
+      "A barbex.shop (76.76.21.21)",
+      "CNAME www.barbex.shop (barbex.shop)"
+    ],
+    "legacy_records": [
+      "_lovable.barbex.shop TXT lovable_verify=99374a072055b3baea78b81e3c4b0ed3cfe522636d93a5329c95a79f10c2f8f7",
+      "_lovable.www.barbex.shop TXT lovable_verify=ed7ff19c33fc871ef3c621ff5d775f2a018bebb219d1bdde162b35f8d8bf69e3"
+    ]
+  },
+  "metrics": {
+    "F18_DNS_LEGACY_RECORDS": [
+      "_lovable.barbex.shop",
+      "_lovable.www.barbex.shop"
+    ],
+    "F18_DNS_RECORDS_REQUIRED_CURRENTLY": [
+      "A barbex.shop (76.76.21.21)",
+      "CNAME www.barbex.shop (barbex.shop)"
+    ],
+    "F18_DNS_RECORDS_CANDIDATE_FOR_FUTURE_REMOVAL": [
+      "_lovable.barbex.shop",
+      "_lovable.www.barbex.shop"
+    ],
+    "F18_DNS_RECORDS_UNKNOWN": []
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Current Production Authority Reconfirmation",
+  "evaluated_at": "2026-09-16T11:51:50.000Z",
+  "dns_authority": "VERCEL (76.76.21.21)",
+  "hosting_authority": "VERCEL (prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB)",
+  "backend_authority": "TARGET_SUPABASE (ywdwrstxvsdqiryhieiz)",
+  "tls_status": "VALID (Let's Encrypt, 200 OK)",
+  "source_calls": 0,
+  "metrics": {
+    "F18_PRODUCTION_DNS_AUTHORITY": "VERCEL",
+    "F18_PRODUCTION_HOSTING_AUTHORITY": "VERCEL",
+    "F18_PRODUCTION_BACKEND_AUTHORITY": "TARGET_SUPABASE",
+    "F18_PRODUCTION_TLS_PASS": "YES",
+    "F18_SOURCE_PRODUCTION_CALLS": 0
+  }
+}

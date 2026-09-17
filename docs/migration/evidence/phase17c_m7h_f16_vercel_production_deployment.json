@@ -1,0 +1,17 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Vercel Production Deployment Materialization",
+  "evaluated_at": "2026-09-16T09:28:00.000Z",
+  "deployment": {
+    "vercel_production_deployment_created": "YES",
+    "vercel_production_deployment_id": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+    "vercel_production_deployment_url": "https://barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+    "vercel_production_aliased_url": "https://barbex-staging.vercel.app",
+    "vercel_production_build_status": "PASS",
+    "vercel_production_runtime_status": "PASS",
+    "vercel_production_node_runtime": "nodejs24.x",
+    "ready_state": "READY",
+    "target": "production",
+    "inspector_url": "https://vercel.com/startup-dc20/barbex-staging/9YX9oGXo9dNv2dJ9owUTzkqqC9h3"
+  }
+}

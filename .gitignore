@@ -34,3 +34,10 @@ dist-ssr
 # Recovery and scratch
 backups/
 scratch/
+.migration-secrets/
+.vercel
+.env*
+!.env.example
+supabase/.temp/
+scratch_last_prompt.json
+transcript_tail.txt

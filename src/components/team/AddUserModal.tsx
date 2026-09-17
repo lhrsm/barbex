@@ -22,8 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useServerFn } from "@tanstack/react-start";
-import { inviteTeamMember } from "@/lib/team.functions";
+import { inviteTeamMember } from "@/lib/backend/edge/team";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -42,7 +41,6 @@ interface AddUserModalProps {
 
 export function AddUserModal({ isOpen, onClose, tenantId }: AddUserModalProps) {
   const [loading, setLoading] = useState(false);
-  const inviteFn = useServerFn(inviteTeamMember);
 
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
@@ -56,11 +54,9 @@ export function AddUserModal({ isOpen, onClose, tenantId }: AddUserModalProps) {
   const onSubmit = async (values: z.infer<typeof inviteSchema>) => {
     setLoading(true);
     try {
-      await inviteFn({
-        data: {
-          ...values,
-          tenantId
-        }
+      await inviteTeamMember({
+        ...values,
+        tenantId
       });
       toast.success("Convite enviado com sucesso!");
       form.reset();

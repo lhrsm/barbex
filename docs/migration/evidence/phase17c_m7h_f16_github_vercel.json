@@ -1,0 +1,21 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "GitHub to Vercel Repository Binding Evaluation",
+  "evaluated_at": "2026-09-16T09:25:00.000Z",
+  "binding_attempt": {
+    "target_project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+    "target_project_name": "barbex-staging",
+    "target_team": "startup-dc20",
+    "target_repository": "lhrsm/barbex",
+    "production_branch": "main",
+    "cli_command": "vercel git connect",
+    "cli_error": "Failed to connect lhrsm/barbex to project. Make sure there aren't any typos and that you have access to the repository if it's private."
+  },
+  "root_cause": "The GitHub Vercel App integration lacks OAuth/access permissions for the private repository lhrsm/barbex under team startup-dc20.",
+  "required_action": "Operator must install/configure the Vercel GitHub App for repository lhrsm/barbex via GitHub Settings or Vercel Dashboard (Project Settings -> Git -> Connect Git Repository).",
+  "gate_verdict": {
+    "vercel_github_repository_bound": "NO",
+    "f16_github_binding_operator_action_required": "YES",
+    "hold_point_triggered": "STOP_BEFORE_DNS_CUTOVER"
+  }
+}

@@ -36,7 +36,7 @@ import {
   PremiumTabsContent 
 } from "@/components/ui/premium-tabs";
 import { useQuery } from "@tanstack/react-query";
-import { getIntegrationHealth } from "@/lib/integrations-center.functions";
+import { getIntegrationHealthClient } from "@/lib/backend/client/integrations";
 import { cn } from "@/lib/utils";
 
 function IntegrationsCenterPage() {
@@ -45,7 +45,7 @@ function IntegrationsCenterPage() {
 
   const { data: health, isLoading: healthLoading } = useQuery({
     queryKey: ['integrations-health', tenantId],
-    queryFn: () => getIntegrationHealth({ data: { tenantId: tenantId! } }),
+    queryFn: () => getIntegrationHealthClient(tenantId!),
     enabled: !!tenantId,
     refetchInterval: 30000 // 30s
   });

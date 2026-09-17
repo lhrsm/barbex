@@ -9,7 +9,7 @@ import {
   Clock,
   Zap
 } from "lucide-react";
-import { getServiceTrends } from "../../lib/marketing-ai.functions";
+import { getServiceTrendsClient } from "@/lib/backend/client/marketing";
 import { cn } from "@/lib/utils";
 
 interface PredictiveTrendsProps {
@@ -19,7 +19,7 @@ interface PredictiveTrendsProps {
 export function PredictiveTrends({ tenantId }: PredictiveTrendsProps) {
   const { data: trends, isLoading } = useQuery({
     queryKey: ["service-predictive-trends", tenantId],
-    queryFn: () => getServiceTrends({ data: { tenantId } }),
+    queryFn: () => getServiceTrendsClient(tenantId),
     staleTime: 1000 * 60 * 60, // 1 hora
   });
 

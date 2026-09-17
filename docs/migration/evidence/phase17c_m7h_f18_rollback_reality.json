@@ -1,0 +1,20 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Rollback Reality Check (Frontend vs Backend)",
+  "evaluated_at": "2026-09-16T11:53:10.000Z",
+  "frontend_rollback": {
+    "available": true,
+    "mechanism": "DNS_A_RECORD_TO_185_158_133_1"
+  },
+  "backend_rollback": {
+    "direct_data_rollback_safe": false,
+    "forward_reconciliation_required": true,
+    "reason": "Target has accumulated post-cutover live writes. Direct revert to Source causes split-brain data loss."
+  },
+  "metrics": {
+    "F18_FRONTEND_ROLLBACK_AVAILABLE": "YES",
+    "F18_FRONTEND_ROLLBACK_MECHANISM": "DNS_A_RECORD_TO_185_158_133_1",
+    "F18_SOURCE_DIRECT_DATA_ROLLBACK_SAFE": "NO",
+    "F18_SOURCE_ROLLBACK_REQUIRES_FORWARD_RECONCILIATION": "YES"
+  }
+}

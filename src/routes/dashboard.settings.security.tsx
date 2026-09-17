@@ -3,7 +3,7 @@ import { SecurityCentral } from '@/components/security/SecurityCentral';
 import { MFAVerificationGuard } from '@/components/security/MFAVerificationGuard';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { listFactors } from '@/lib/auth-security.functions';
+import { listFactorsClient } from '@/lib/backend/rpc/security';
 
 export const Route = createFileRoute('/dashboard/settings/security')({
   component: SecuritySettingsRoute,
@@ -26,7 +26,7 @@ function SecuritySettingsRoute() {
       }
 
       try {
-        const factors = await listFactors();
+        const factors = await listFactorsClient();
         const hasVerifiedFactor = factors.all?.some((f: any) => f.status === 'verified');
         
         if (hasVerifiedFactor) {

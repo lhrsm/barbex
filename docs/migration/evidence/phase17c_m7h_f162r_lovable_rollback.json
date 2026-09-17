@@ -1,0 +1,22 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Lovable Rollback Authority & Policy Compliance",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "lovable_deployment": {
+    "project_id": "8e95dc9e-ab64-44cf-956c-ecec6fefeb51",
+    "status": "ACTIVE_SERVING_CACHED_TRAFFIC",
+    "paused": false,
+    "deleted": false
+  },
+  "rollback_parameters": {
+    "apex_a_record": "185.158.133.1",
+    "www_cname_record": "barbex.shop",
+    "rollback_mechanism": "Operator updates Hostinger DNS panel to 185.158.133.1"
+  },
+  "rollback_disposition": {
+    "F162R_LOVABLE_ROLLBACK_RETAINED": "YES",
+    "F162R_ROLLBACK_DNS_VALUES_VALID": "YES",
+    "F162R_ROLLBACK_REQUIRED": "NO",
+    "F162R_ROLLBACK_REASON": "None. Normal DNS propagation delay is observed without application failure. Lovable continues to serve cached clients cleanly."
+  }
+}

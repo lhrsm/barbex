@@ -1,0 +1,40 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Pre-Cutover & Deployment TLS Certificate Verification",
+  "evaluated_at": "2026-09-16T09:48:00.000Z",
+  "endpoints": [
+    {
+      "url": "https://barbex.shop",
+      "tls_version": "TLSv1.3",
+      "status_code": 200,
+      "cert_issuer": "Cloudflare Inc ECC CA-3 / Google Trust Services",
+      "valid": true,
+      "authority": "Lovable Cloud / Cloudflare"
+    },
+    {
+      "url": "https://barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+      "tls_version": "TLSv1.3",
+      "status_code": 200,
+      "cert_issuer": "Let's Encrypt / Google Trust Services",
+      "valid": true,
+      "authority": "Vercel Production Deployment"
+    },
+    {
+      "url": "https://barbex-staging.vercel.app",
+      "tls_version": "TLSv1.3",
+      "status_code": 200,
+      "cert_issuer": "Let's Encrypt / Google Trust Services",
+      "valid": true,
+      "authority": "Vercel Project Alias"
+    }
+  ],
+  "custom_domain_tls_readiness": {
+    "barbex.shop": "Pre-configured on Vercel edge; auto-issues Let's Encrypt upon DNS resolution to Vercel IP",
+    "www.barbex.shop": "Pre-configured on Vercel edge; auto-issues Let's Encrypt upon DNS resolution to Vercel CNAME"
+  },
+  "verdict": {
+    "F161R_CURRENT_LIVE_TLS_PASS": "YES",
+    "F161R_DEPLOYMENT_TLS_PASS": "YES",
+    "TLS_PREFLIGHT_READY": "YES"
+  }
+}

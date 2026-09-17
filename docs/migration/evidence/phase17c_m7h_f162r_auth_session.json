@@ -1,0 +1,27 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Auth, Session & Origin Sensitivity Evaluation",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "supabase_configuration": {
+    "target_ref": "ywdwrstxvsdqiryhieiz",
+    "site_url": "https://barbex.shop",
+    "auth_origin": "https://barbex.shop",
+    "redirect_urls": ["https://barbex.shop/**", "https://barbex-staging.vercel.app/**"]
+  },
+  "auth_flow_evaluation": {
+    "login_route": "/auth",
+    "status": 200,
+    "login_form_render": true,
+    "secure_cookies_configured": true,
+    "http_only_cookie_strategy": true,
+    "session_restoration_readiness": true,
+    "logout_routing_semantics": "valid",
+    "new_users_created": 0
+  },
+  "verdict": {
+    "F162R_AUTH_PASS": "YES",
+    "F162R_SESSION_PASS": "YES",
+    "F162R_COOKIE_SECURITY_PASS": "YES",
+    "F162R_AUTH_REDIRECT_ERRORS": 0
+  }
+}

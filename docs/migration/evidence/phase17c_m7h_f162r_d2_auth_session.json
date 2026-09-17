@@ -1,0 +1,20 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "Auth & Session Minimal Verification",
+  "evaluated_at": "2026-09-16T11:31:30.000Z",
+  "auth_verification": {
+    "auth_route_reachable": true,
+    "http_status": 200,
+    "target_supabase_bound": true,
+    "target_ref": "ywdwrstxvsdqiryhieiz",
+    "source_ref_detected": false,
+    "redirect_loop": false,
+    "source_supabase_calls": 0
+  },
+  "metrics": {
+    "D2_AUTH_PASS": "YES",
+    "D2_SESSION_CONFIGURATION_PASS": "YES",
+    "D2_AUTH_REDIRECT_ERRORS": 0,
+    "D2_SOURCE_SUPABASE_CALLS": 0
+  }
+}

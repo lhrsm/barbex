@@ -1,0 +1,34 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R1",
+  "topic": "Vercel Domain Verification Recheck",
+  "evaluated_at": "2026-09-16T10:27:30.000Z",
+  "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+  "project_name": "barbex-staging",
+  "apex_domain": {
+    "domain": "barbex.shop",
+    "status": "ok",
+    "ok": true,
+    "misconfigured": false,
+    "configuredBy": "A",
+    "current_aValues": ["76.76.21.21"],
+    "acceptedChallenges": ["http-01"],
+    "serviceType": "external"
+  },
+  "www_domain": {
+    "domain": "www.barbex.shop",
+    "status": "ok",
+    "ok": true,
+    "misconfigured": false,
+    "configuredBy": "A",
+    "current_cnames": ["barbex.shop."],
+    "current_aValues": ["76.76.21.21"],
+    "acceptedChallenges": ["http-01"],
+    "serviceType": "external"
+  },
+  "metrics": {
+    "R1_VERCEL_APEX_CONFIGURATION_VALID": "YES",
+    "R1_VERCEL_APEX_DOMAIN_ACTIVE": "YES",
+    "R1_VERCEL_WWW_CONFIGURATION_VALID": "YES",
+    "R1_VERCEL_WWW_DOMAIN_ACTIVE": "YES"
+  }
+}

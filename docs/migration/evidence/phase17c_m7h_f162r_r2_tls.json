@@ -1,0 +1,48 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R2",
+  "topic": "TLS Primary Closure Gate Evaluation",
+  "evaluated_at": "2026-09-16T10:59:00.000Z",
+  "apex_evaluation": {
+    "hostname": "barbex.shop",
+    "https_reachable_direct_ip": false,
+    "http_status_direct_ip": null,
+    "https_reachable_os_dns": true,
+    "http_status_os_dns": 421,
+    "os_dns_server": "cloudflare",
+    "os_dns_cert_subject": "CN=barbex.shop",
+    "os_dns_cert_issuer": "Google Trust Services WE1",
+    "os_dns_cert_not_before": "Jul 19 16:40:01 2026 GMT",
+    "os_dns_cert_not_after": "Oct 17 17:39:56 2026 GMT",
+    "os_dns_cert_san": "DNS:barbex.shop",
+    "edge_ip_status": "Vercel edge socket reset on 76.76.21.21:443 (certificate deployment in progress)"
+  },
+  "www_evaluation": {
+    "hostname": "www.barbex.shop",
+    "https_reachable_direct_ip": false,
+    "http_status_direct_ip": null,
+    "https_reachable_os_dns": true,
+    "http_status_os_dns": 421,
+    "os_dns_server": "cloudflare",
+    "os_dns_cert_subject": "CN=www.barbex.shop",
+    "os_dns_cert_san": "DNS:www.barbex.shop",
+    "edge_ip_status": "Vercel edge socket reset on 76.76.21.21:443 (certificate deployment in progress)"
+  },
+  "metrics": {
+    "R2_APEX_HTTPS_REACHABLE": "NO (ON_VERCEL_EDGE_76_76_21_21)",
+    "R2_APEX_HTTP_STATUS": "421 (CACHED_CLOUDFLARE) / PENDING_TLS (VERCEL_EDGE)",
+    "R2_APEX_CERTIFICATE_PRESENT": "NO (ON_VERCEL_EDGE)",
+    "R2_APEX_CERTIFICATE_SUBJECT": "PENDING_VERCEL_EDGE_ISSUANCE",
+    "R2_APEX_CERTIFICATE_SAN_MATCH": "PENDING",
+    "R2_APEX_CERTIFICATE_ISSUER": "PENDING_VERCEL_EDGE_ISSUANCE",
+    "R2_APEX_CERTIFICATE_NOT_BEFORE": "PENDING",
+    "R2_APEX_CERTIFICATE_NOT_AFTER": "PENDING",
+    "R2_APEX_CERTIFICATE_CHAIN_VALID": "PENDING",
+    "R2_APEX_TLS_PASS": "NO",
+    "R2_WWW_HTTPS_REACHABLE": "NO (ON_VERCEL_EDGE_76_76_21_21)",
+    "R2_WWW_HTTP_STATUS": "421 (CACHED_CLOUDFLARE) / PENDING_TLS (VERCEL_EDGE)",
+    "R2_WWW_CERTIFICATE_PRESENT": "NO (ON_VERCEL_EDGE)",
+    "R2_WWW_CERTIFICATE_SAN_MATCH": "PENDING",
+    "R2_WWW_CERTIFICATE_CHAIN_VALID": "PENDING",
+    "R2_WWW_TLS_PASS": "NO"
+  }
+}

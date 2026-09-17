@@ -29,8 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getTeamMembers, getPendingInvitations, resendTeamInvitation, revokeTeamInvitation, UnifiedTeamMember } from "@/lib/team.functions";
+import { getTeamMembers, getPendingInvitations, resendTeamInvitation, revokeTeamInvitation, UnifiedTeamMember } from "@/lib/backend/edge/team";
 import { useTenant } from "@/hooks/use-tenant";
 import { AddUserModal } from "@/components/team/AddUserModal";
 import { PermissionMatrix } from "@/components/security/PermissionMatrix";
@@ -101,20 +100,15 @@ function TeamManagementPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  const fetchMembers = useServerFn(getTeamMembers);
-  const fetchInvites = useServerFn(getPendingInvitations);
-  const resendInviteFn = useServerFn(resendTeamInvitation);
-  const revokeInviteFn = useServerFn(revokeTeamInvitation);
-
   const { data: members = [], isLoading: loadingMembers, refetch: refetchMembers } = useQuery<UnifiedTeamMember[]>({
     queryKey: ["team-members", tenantId],
-    queryFn: () => fetchMembers({ data: { tenantId: tenantId! } }) as Promise<UnifiedTeamMember[]>,
+    queryFn: () => getTeamMembers({ tenantId: tenantId! }),
     enabled: !!tenantId,
   });
 
   const { data: invites = [], isLoading: loadingInvites, refetch: refetchInvites } = useQuery({
     queryKey: ["team-invites", tenantId],
-    queryFn: () => fetchInvites({ data: { tenantId: tenantId! } }),
+    queryFn: () => getPendingInvitations({ tenantId: tenantId! }),
     enabled: !!tenantId,
   });
 
@@ -122,7 +116,7 @@ function TeamManagementPage() {
     if (!tenantId) return;
     setActionInProgressId(invitationId);
     try {
-      await resendInviteFn({ data: { invitationId, tenantId } });
+      await resendTeamInvitation({ invitationId, tenantId });
       toast.success("Convite reenviado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["team-invites", tenantId] });
     } catch (err: any) {
@@ -136,7 +130,7 @@ function TeamManagementPage() {
     if (!tenantId) return;
     setActionInProgressId(invitationId);
     try {
-      await revokeInviteFn({ data: { invitationId, tenantId } });
+      await revokeTeamInvitation({ invitationId, tenantId });
       toast.success("Convite revogado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["team-invites", tenantId] });
     } catch (err: any) {

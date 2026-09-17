@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { askAdminAssistant } from "@/lib/admin-assistant.functions";
+import { askAdminAssistantClient } from "@/lib/backend/edge/ai";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,10 +30,9 @@ export function AdminAiAssistant() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const ask = useServerFn(askAdminAssistant);
   const mutation = useMutation({
     mutationFn: (question: string) =>
-      ask({ data: { question, history: messages } }),
+      askAdminAssistantClient({ question, history: messages }),
     onSuccess: (res: any) => {
       if (res?.error) {
         setMessages((m) => [...m, { role: "assistant", content: `❌ ${res.error}` }]);

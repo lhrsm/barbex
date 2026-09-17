@@ -1,0 +1,25 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Production Routes Stability",
+  "evaluated_at": "2026-09-16T11:44:30.000Z",
+  "routes": [
+    { "path": "/", "statusCode": 200, "server": "Vercel" },
+    { "path": "/auth", "statusCode": 200, "server": "Vercel" },
+    { "path": "/login", "statusCode": 404, "server": "Vercel" },
+    { "path": "/dashboard", "statusCode": 200, "server": "Vercel" },
+    { "path": "/status", "statusCode": 200, "server": "Vercel" },
+    { "path": "/privacy", "statusCode": 200, "server": "Vercel" },
+    { "path": "/terms", "statusCode": 200, "server": "Vercel" },
+    { "path": "/cookies", "statusCode": 200, "server": "Vercel" },
+    { "path": "/trust", "statusCode": 200, "server": "Vercel" }
+  ],
+  "metrics": {
+    "F17_ROUTES_TESTED": 9,
+    "F17_HTTP_5XX": 0,
+    "F17_FATAL_JS_ERRORS": 0,
+    "F17_SSR_ERRORS": 0,
+    "F17_HYDRATION_ERRORS": 0,
+    "F17_ASSET_FAILURES": 0,
+    "F17_HOSTING_AUTHORITY": "VERCEL"
+  }
+}

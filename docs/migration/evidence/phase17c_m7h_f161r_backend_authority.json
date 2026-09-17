@@ -1,0 +1,46 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Target Backend Authority & Producer Invariants",
+  "evaluated_at": "2026-09-16T09:48:00.000Z",
+  "target_supabase": {
+    "project_ref": "ywdwrstxvsdqiryhieiz",
+    "status": "ACTIVE_PRIMARY",
+    "authorities": {
+      "database": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "auth": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "storage": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "realtime": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "edge_functions": "Target Supabase (ywdwrstxvsdqiryhieiz)"
+    },
+    "background_producers": [
+      { "jobid": 1, "jobname": "stage1_status_check", "status": "ACTIVE" },
+      { "jobid": 2, "jobname": "stage2_addons_check", "status": "ACTIVE" },
+      { "jobid": 3, "jobname": "stage3_admin_daily_digest", "status": "ACTIVE" },
+      { "jobid": 4, "jobname": "stage4_anniversary_check", "status": "ACTIVE" },
+      { "jobid": 5, "jobname": "stage5_reviews_check", "status": "ACTIVE" },
+      { "jobid": 6, "jobname": "stage6_automation_worker", "status": "ACTIVE" }
+    ],
+    "producer_count": 6
+  },
+  "vercel_worker_isolation": {
+    "cron_jobs_configured": 0,
+    "background_workers_configured": 0,
+    "duplicate_workers": 0
+  },
+  "provider_callbacks": {
+    "stripe_webhook": "Points to Target Edge Function",
+    "zapi_webhook": "Points to Target Edge Function",
+    "resend_webhook": "Points to Target Edge Function",
+    "mutations_applied": 0
+  },
+  "verdict": {
+    "F161R_DATABASE_AUTHORITY_TARGET": "YES",
+    "F161R_AUTH_AUTHORITY_TARGET": "YES",
+    "F161R_STORAGE_AUTHORITY_TARGET": "YES",
+    "F161R_REALTIME_AUTHORITY_TARGET": "YES",
+    "F161R_EDGE_AUTHORITY_TARGET": "YES",
+    "F161R_TARGET_PRODUCERS_ACTIVE": 6,
+    "F161R_VERCEL_DUPLICATE_WORKERS": 0,
+    "F161R_PROVIDER_CALLBACK_MUTATIONS": 0
+  }
+}

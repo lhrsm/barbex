@@ -1,0 +1,40 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Production Environment Variables Recheck on Vercel",
+  "evaluated_at": "2026-09-16T09:44:00.000Z",
+  "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+  "environment_scope": "Production",
+  "inventory_summary": {
+    "PRODUCTION_ENV_REQUIRED_TOTAL": 17,
+    "PRODUCTION_ENV_PRESENT_TOTAL": 17,
+    "PRODUCTION_ENV_MISSING_TOTAL": 0,
+    "PRODUCTION_ENV_UNRESOLVED_TOTAL": 0
+  },
+  "identities_verified": [
+    { "key": "VITE_SUPABASE_URL", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "VITE_SUPABASE_PUBLISHABLE_KEY", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "VITE_SUPABASE_ANON_KEY", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "VITE_SUPABASE_PROJECT_ID", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "VITE_APP_URL", "scope": "Production", "canonical_value": "https://barbex.shop", "valid": true },
+    { "key": "VITE_PAYMENTS_CLIENT_TOKEN", "scope": "Production", "configured": true },
+    { "key": "VITE_PAYMENTS_SANDBOX_CLIENT_TOKEN", "scope": "Production", "configured": true },
+    { "key": "SUPABASE_URL", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "SUPABASE_ANON_KEY", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "SUPABASE_PUBLISHABLE_KEY", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "SUPABASE_SERVICE_ROLE_KEY", "scope": "Production", "target_bound": true, "matches_target": true },
+    { "key": "APP_URL", "scope": "Production", "canonical_value": "https://barbex.shop", "valid": true },
+    { "key": "PUBLIC_APP_URL", "scope": "Production", "canonical_value": "https://barbex.shop", "valid": true },
+    { "key": "CRON_SECRET", "scope": "Production", "disabled_on_vercel": true },
+    { "key": "PUSH_INTERNAL_SECRET", "scope": "Production", "disabled_on_vercel": true },
+    { "key": "VAPID_PUBLIC_KEY", "scope": "Production", "configured": true },
+    { "key": "VAPID_PRIVATE_KEY", "scope": "Production", "configured": true }
+  ],
+  "target_supabase_project_ref": "ywdwrstxvsdqiryhieiz",
+  "canonical_urls": "https://barbex.shop",
+  "secrets_exposed": 0,
+  "verdict": {
+    "ENV_PARITY_VERIFIED": "YES",
+    "TARGET_SUPABASE_EXCLUSIVE": "YES",
+    "SOURCE_CALLS_PREVENTED": "YES"
+  }
+}

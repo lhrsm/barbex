@@ -1,0 +1,20 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Source Supabase Invariant & Isolation Proof",
+  "evaluated_at": "2026-09-16T09:48:00.000Z",
+  "source_supabase": {
+    "project_ref": "wdxhjwodyctgzqtogkgv",
+    "status": "FROZEN_ARCHIVAL",
+    "public_row_count": 257691,
+    "status_checks_count": 256998,
+    "status_check_max_id": 256998,
+    "wp16_protection_active": true,
+    "production_traffic_calls": 0,
+    "secrets_rotated": false
+  },
+  "invariants_verified": {
+    "SOURCE_WP16_STILL_ACTIVE": "YES",
+    "F161R_SOURCE_SUPABASE_CALLS": 0,
+    "SOURCE_ZERO_MUTATION": "YES"
+  }
+}

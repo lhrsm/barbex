@@ -1,0 +1,16 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R3",
+  "topic": "CAA DNS Records Evaluation",
+  "evaluated_at": "2026-09-16T11:07:30.000Z",
+  "domain": "barbex.shop",
+  "queries": {
+    "google_8_8_8_8": "ENODATA",
+    "cloudflare_1_1_1_1": "ENODATA",
+    "authoritative_hostinger": "ENODATA"
+  },
+  "metrics": {
+    "R3_CAA_RECORDS": [],
+    "R3_CAA_RESTRICTIVE": "NO",
+    "R3_CAA_POTENTIAL_CERT_BLOCK": "NO"
+  }
+}

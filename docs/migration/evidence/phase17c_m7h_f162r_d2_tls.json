@@ -1,0 +1,63 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "TLS Edge Activation Observation",
+  "evaluated_at": "2026-09-16T11:31:00.000Z",
+  "tls_verification": {
+    "apex": {
+      "host": "barbex.shop",
+      "ip": "76.76.21.21",
+      "port": 443,
+      "reachable": true,
+      "http_status": 200,
+      "certificate_present": true,
+      "subject": "CN=barbex.shop",
+      "san": "DNS:barbex.shop, DNS:www.barbex.shop",
+      "issuer": "C=US, O=Let's Encrypt, CN=YR1",
+      "not_before": "Sep 16 10:31:40 2026 GMT",
+      "not_after": "Dec 15 10:31:39 2026 GMT",
+      "chain_valid": true,
+      "hostname_valid": true,
+      "tls_pass": true
+    },
+    "www": {
+      "host": "www.barbex.shop",
+      "ip": "76.76.21.21",
+      "port": 443,
+      "reachable": true,
+      "http_status": 200,
+      "certificate_present": true,
+      "subject": "CN=barbex.shop",
+      "san": "DNS:barbex.shop, DNS:www.barbex.shop",
+      "issuer": "C=US, O=Let's Encrypt, CN=YR1",
+      "not_before": "Sep 16 10:31:40 2026 GMT",
+      "not_after": "Dec 15 10:31:39 2026 GMT",
+      "chain_valid": true,
+      "hostname_valid": true,
+      "tls_pass": true
+    }
+  },
+  "metrics": {
+    "D2_APEX_HTTPS_REACHABLE": "YES",
+    "D2_APEX_HTTP_STATUS": 200,
+    "D2_APEX_CERTIFICATE_PRESENT": "YES",
+    "D2_APEX_CERTIFICATE_SUBJECT": "CN=barbex.shop",
+    "D2_APEX_CERTIFICATE_SAN": "DNS:barbex.shop, DNS:www.barbex.shop",
+    "D2_APEX_CERTIFICATE_ISSUER": "C=US, O=Let's Encrypt, CN=YR1",
+    "D2_APEX_CERTIFICATE_NOT_BEFORE": "Sep 16 10:31:40 2026 GMT",
+    "D2_APEX_CERTIFICATE_NOT_AFTER": "Dec 15 10:31:39 2026 GMT",
+    "D2_APEX_CERTIFICATE_CHAIN_VALID": "YES",
+    "D2_APEX_CERTIFICATE_HOSTNAME_VALID": "YES",
+    "D2_APEX_TLS_PASS": "YES",
+    "D2_WWW_HTTPS_REACHABLE": "YES",
+    "D2_WWW_HTTP_STATUS": 200,
+    "D2_WWW_CERTIFICATE_PRESENT": "YES",
+    "D2_WWW_CERTIFICATE_SUBJECT": "CN=barbex.shop",
+    "D2_WWW_CERTIFICATE_SAN": "DNS:barbex.shop, DNS:www.barbex.shop",
+    "D2_WWW_CERTIFICATE_ISSUER": "C=US, O=Let's Encrypt, CN=YR1",
+    "D2_WWW_CERTIFICATE_NOT_BEFORE": "Sep 16 10:31:40 2026 GMT",
+    "D2_WWW_CERTIFICATE_NOT_AFTER": "Dec 15 10:31:39 2026 GMT",
+    "D2_WWW_CERTIFICATE_CHAIN_VALID": "YES",
+    "D2_WWW_CERTIFICATE_HOSTNAME_VALID": "YES",
+    "D2_WWW_TLS_PASS": "YES"
+  }
+}

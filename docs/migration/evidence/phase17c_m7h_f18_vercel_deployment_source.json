@@ -1,0 +1,20 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Vercel Deployment Source Forensics",
+  "evaluated_at": "2026-09-16T11:52:30.000Z",
+  "deployment_data": {
+    "deployment_id": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+    "deployment_url": "https://barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+    "target": "production",
+    "status": "Ready",
+    "created_at": "2026-09-16T09:23:43.000Z",
+    "source": "VERCEL_CLI_PREBUILT",
+    "git_sha": null
+  },
+  "metrics": {
+    "F18_CURRENT_PRODUCTION_DEPLOYMENT_ID": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+    "F18_CURRENT_PRODUCTION_DEPLOYMENT_SOURCE": "VERCEL_CLI_PREBUILT",
+    "F18_CURRENT_PRODUCTION_GIT_SHA": "NONE",
+    "F18_PRODUCTION_MATCHES_GITHUB_MAIN": "NO"
+  }
+}

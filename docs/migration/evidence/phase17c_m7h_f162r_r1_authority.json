@@ -1,0 +1,24 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R1",
+  "topic": "Public Hosting Authority Recheck",
+  "evaluated_at": "2026-09-16T10:28:30.000Z",
+  "apex_authority": {
+    "domain": "barbex.shop",
+    "http_port_80_status": 200,
+    "http_port_80_server": "Vercel",
+    "http_port_80_x_vercel_id": "gru1::iad1::s7pc9-1789554514533-c324d225ff89",
+    "serving_authority": "VERCEL"
+  },
+  "www_authority": {
+    "domain": "www.barbex.shop",
+    "http_port_80_status": 200,
+    "http_port_80_server": "Vercel",
+    "http_port_80_x_vercel_id": "gru1::iad1::7fjmd-1789554524789-bd47d8d5e61f",
+    "serving_authority": "VERCEL"
+  },
+  "metrics": {
+    "R1_PUBLIC_APEX_AUTHORITY": "VERCEL",
+    "R1_PUBLIC_WWW_AUTHORITY": "VERCEL",
+    "R1_PUBLIC_LOVABLE_AUTHORITY_FOR_APEX": "NO (ACTIVE_ON_VERCEL_EDGE_HTTP)"
+  }
+}

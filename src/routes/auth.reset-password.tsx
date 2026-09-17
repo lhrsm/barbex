@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { updatePassword } from "@/lib/auth-client.functions";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 
 const resetPasswordSchema = z.object({
@@ -39,7 +37,6 @@ function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'initializing' | 'validating' | 'ready' | 'success' | 'expired'>('initializing');
-  const updatePasswordFn = useServerFn(updatePassword);
   const navigate = useNavigate();
 
   const form = useForm<ResetPasswordValues>({

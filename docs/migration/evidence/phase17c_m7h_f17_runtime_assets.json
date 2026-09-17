@@ -1,0 +1,19 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Runtime Static Assets Authority",
+  "evaluated_at": "2026-09-16T11:44:40.000Z",
+  "production_bundle": "/assets/index-Ck1AigH1.js",
+  "bundle_checks": {
+    "has_source_supabase_ref": false,
+    "has_lovable_runtime_dependency": false,
+    "has_cloudflare_runtime_dependency": false,
+    "has_target_supabase_ref": true
+  },
+  "metrics": {
+    "F17_SOURCE_REF_IN_RUNTIME": "NO",
+    "F17_LOVABLE_RUNTIME_DEPENDENCY": "NO",
+    "F17_CLOUDFLARE_RUNTIME_DEPENDENCY": "NO",
+    "F17_TARGET_REF_PRESENT": "YES",
+    "F17_STATIC_ASSET_PASS": "YES"
+  }
+}

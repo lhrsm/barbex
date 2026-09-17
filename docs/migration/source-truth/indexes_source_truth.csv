@@ -1,0 +1,443 @@
+index_definition;index_name;schema_name;table_name
+CREATE UNIQUE INDEX academy_lessons_pkey ON public.academy_lessons USING btree (id);academy_lessons_pkey;public;academy_lessons
+CREATE UNIQUE INDEX academy_modules_pkey ON public.academy_modules USING btree (id);academy_modules_pkey;public;academy_modules
+CREATE UNIQUE INDEX academy_paths_pkey ON public.academy_paths USING btree (id);academy_paths_pkey;public;academy_paths
+CREATE UNIQUE INDEX academy_progress_pkey ON public.academy_progress USING btree (id);academy_progress_pkey;public;academy_progress
+CREATE UNIQUE INDEX academy_progress_user_id_lesson_id_key ON public.academy_progress USING btree (user_id, lesson_id);academy_progress_user_id_lesson_id_key;public;academy_progress
+CREATE UNIQUE INDEX addon_upgrade_recommendations_pkey ON public.addon_upgrade_recommendations USING btree (id);addon_upgrade_recommendations_pkey;public;addon_upgrade_recommendations
+CREATE INDEX idx_addon_upgrade_rec_created ON public.addon_upgrade_recommendations USING btree (created_at DESC);idx_addon_upgrade_rec_created;public;addon_upgrade_recommendations
+CREATE INDEX idx_addon_upgrade_rec_tenant ON public.addon_upgrade_recommendations USING btree (tenant_id);idx_addon_upgrade_rec_tenant;public;addon_upgrade_recommendations
+CREATE UNIQUE INDEX admin_event_log_pkey ON public.admin_event_log USING btree (id);admin_event_log_pkey;public;admin_event_log
+CREATE INDEX idx_admin_event_log_event_key ON public.admin_event_log USING btree (event_key, created_at DESC);idx_admin_event_log_event_key;public;admin_event_log
+CREATE INDEX idx_admin_event_log_tenant ON public.admin_event_log USING btree (tenant_id, created_at DESC);idx_admin_event_log_tenant;public;admin_event_log
+CREATE UNIQUE INDEX admin_event_subscriptions_pkey ON public.admin_event_subscriptions USING btree (id);admin_event_subscriptions_pkey;public;admin_event_subscriptions
+CREATE UNIQUE INDEX admin_event_subscriptions_user_id_event_key_key ON public.admin_event_subscriptions USING btree (user_id, event_key);admin_event_subscriptions_user_id_event_key_key;public;admin_event_subscriptions
+CREATE UNIQUE INDEX admin_event_templates_pkey ON public.admin_event_templates USING btree (event_key);admin_event_templates_pkey;public;admin_event_templates
+CREATE UNIQUE INDEX admin_notifications_pkey ON public.admin_notifications USING btree (id);admin_notifications_pkey;public;admin_notifications
+CREATE INDEX idx_admin_notifications_created_at ON public.admin_notifications USING btree (created_at DESC);idx_admin_notifications_created_at;public;admin_notifications
+CREATE INDEX idx_admin_notifications_event_key ON public.admin_notifications USING btree (event_key, created_at DESC);idx_admin_notifications_event_key;public;admin_notifications
+CREATE INDEX idx_admin_notifications_priority ON public.admin_notifications USING btree (priority);idx_admin_notifications_priority;public;admin_notifications
+CREATE INDEX idx_admin_notifications_unread ON public.admin_notifications USING btree (is_read, created_at DESC);idx_admin_notifications_unread;public;admin_notifications
+CREATE UNIQUE INDEX ai_settings_pkey ON public.ai_settings USING btree (id);ai_settings_pkey;public;ai_settings
+CREATE UNIQUE INDEX ai_settings_tenant_id_key ON public.ai_settings USING btree (tenant_id);ai_settings_tenant_id_key;public;ai_settings
+CREATE UNIQUE INDEX appointment_checkins_appointment_id_key ON public.appointment_checkins USING btree (appointment_id);appointment_checkins_appointment_id_key;public;appointment_checkins
+CREATE UNIQUE INDEX appointment_checkins_pkey ON public.appointment_checkins USING btree (id);appointment_checkins_pkey;public;appointment_checkins
+CREATE UNIQUE INDEX appointment_groups_group_token_key ON public.appointment_groups USING btree (group_token);appointment_groups_group_token_key;public;appointment_groups
+CREATE UNIQUE INDEX appointment_groups_pkey ON public.appointment_groups USING btree (id);appointment_groups_pkey;public;appointment_groups
+CREATE UNIQUE INDEX appointment_reviews_appointment_id_key ON public.appointment_reviews USING btree (appointment_id);appointment_reviews_appointment_id_key;public;appointment_reviews
+CREATE UNIQUE INDEX appointment_reviews_pkey ON public.appointment_reviews USING btree (id);appointment_reviews_pkey;public;appointment_reviews
+CREATE UNIQUE INDEX appointment_reviews_review_token_key ON public.appointment_reviews USING btree (review_token);appointment_reviews_review_token_key;public;appointment_reviews
+CREATE INDEX idx_appointment_reviews_barber ON public.appointment_reviews USING btree (barber_id);idx_appointment_reviews_barber;public;appointment_reviews
+CREATE INDEX idx_appointment_reviews_status ON public.appointment_reviews USING btree (testimonial_status);idx_appointment_reviews_status;public;appointment_reviews
+CREATE INDEX idx_appointment_reviews_tenant ON public.appointment_reviews USING btree (tenant_id);idx_appointment_reviews_tenant;public;appointment_reviews
+CREATE INDEX idx_appointment_reviews_token ON public.appointment_reviews USING btree (review_token) WHERE (review_token IS NOT NULL);idx_appointment_reviews_token;public;appointment_reviews
+CREATE UNIQUE INDEX appointment_status_logs_pkey ON public.appointment_status_logs USING btree (id);appointment_status_logs_pkey;public;appointment_status_logs
+CREATE UNIQUE INDEX appointments_management_token_idx ON public.appointments USING btree (management_token);appointments_management_token_idx;public;appointments
+CREATE UNIQUE INDEX appointments_pkey ON public.appointments USING btree (id);appointments_pkey;public;appointments
+CREATE INDEX idx_appointments_confirmation_sent ON public.appointments USING btree (confirmation_sent);idx_appointments_confirmation_sent;public;appointments
+CREATE INDEX idx_appointments_confirmation_sent_at ON public.appointments USING btree (confirmation_sent_at);idx_appointments_confirmation_sent_at;public;appointments
+CREATE INDEX idx_appointments_customer_id ON public.appointments USING btree (customer_id);idx_appointments_customer_id;public;appointments
+CREATE INDEX idx_appointments_group_id ON public.appointments USING btree (appointment_group_id);idx_appointments_group_id;public;appointments
+CREATE INDEX idx_appointments_reminder_sent ON public.appointments USING btree (reminder_sent);idx_appointments_reminder_sent;public;appointments
+CREATE INDEX idx_appointments_reminder_sent_at ON public.appointments USING btree (reminder_sent_at);idx_appointments_reminder_sent_at;public;appointments
+CREATE INDEX idx_appointments_review_decision ON public.appointments USING btree (review_decision);idx_appointments_review_decision;public;appointments
+CREATE INDEX idx_appointments_tenant_id ON public.appointments USING btree (tenant_id);idx_appointments_tenant_id;public;appointments
+CREATE INDEX idx_appointments_tenant_status ON public.appointments USING btree (tenant_id, status);idx_appointments_tenant_status;public;appointments
+CREATE INDEX idx_appointments_type_tenant ON public.appointments USING btree (tenant_id, appointment_type, status);idx_appointments_type_tenant;public;appointments
+CREATE INDEX idx_appointments_walkin_barber_time ON public.appointments USING btree (barber_id, start_time) WHERE (appointment_type = 'walk_in'::text);idx_appointments_walkin_barber_time;public;appointments
+CREATE INDEX idx_appts_subscription ON public.appointments USING btree (subscription_id);idx_appts_subscription;public;appointments
+CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id);audit_logs_pkey;public;audit_logs
+CREATE UNIQUE INDEX automation_conversations_pkey ON public.automation_conversations USING btree (id);automation_conversations_pkey;public;automation_conversations
+CREATE INDEX idx_automation_conv_phone ON public.automation_conversations USING btree (phone);idx_automation_conv_phone;public;automation_conversations
+CREATE INDEX idx_automation_conv_tenant ON public.automation_conversations USING btree (tenant_id);idx_automation_conv_tenant;public;automation_conversations
+CREATE UNIQUE INDEX automation_cron_runs_pkey ON public.automation_cron_runs USING btree (id);automation_cron_runs_pkey;public;automation_cron_runs
+CREATE UNIQUE INDEX automation_dispatches_pkey ON public.automation_dispatches USING btree (id);automation_dispatches_pkey;public;automation_dispatches
+CREATE UNIQUE INDEX automation_dispatches_unique_key_key ON public.automation_dispatches USING btree (unique_key);automation_dispatches_unique_key_key;public;automation_dispatches
+CREATE INDEX idx_automation_disp_status ON public.automation_dispatches USING btree (status);idx_automation_disp_status;public;automation_dispatches
+CREATE INDEX idx_automation_disp_tenant ON public.automation_dispatches USING btree (tenant_id);idx_automation_disp_tenant;public;automation_dispatches
+CREATE UNIQUE INDEX automation_interaction_events_pkey ON public.automation_interaction_events USING btree (id);automation_interaction_events_pkey;public;automation_interaction_events
+CREATE INDEX idx_automation_interaction_events_dispatch ON public.automation_interaction_events USING btree (dispatch_id);idx_automation_interaction_events_dispatch;public;automation_interaction_events
+CREATE INDEX idx_automation_interaction_events_interaction ON public.automation_interaction_events USING btree (interaction_id);idx_automation_interaction_events_interaction;public;automation_interaction_events
+CREATE INDEX idx_automation_interaction_events_tenant ON public.automation_interaction_events USING btree (tenant_id, created_at DESC);idx_automation_interaction_events_tenant;public;automation_interaction_events
+CREATE INDEX idx_automation_interaction_events_workflow ON public.automation_interaction_events USING btree (workflow_key, created_at DESC);idx_automation_interaction_events_workflow;public;automation_interaction_events
+CREATE UNIQUE INDEX automation_interactions_pkey ON public.automation_interactions USING btree (id);automation_interactions_pkey;public;automation_interactions
+CREATE INDEX idx_automation_interactions_automation ON public.automation_interactions USING btree (automation_id) WHERE (automation_id IS NOT NULL);idx_automation_interactions_automation;public;automation_interactions
+CREATE INDEX idx_automation_interactions_template ON public.automation_interactions USING btree (automation_template_id) WHERE (automation_template_id IS NOT NULL);idx_automation_interactions_template;public;automation_interactions
+CREATE INDEX idx_automation_interactions_tenant ON public.automation_interactions USING btree (tenant_id);idx_automation_interactions_tenant;public;automation_interactions
+CREATE UNIQUE INDEX automation_logs_pkey ON public.automation_logs USING btree (id);automation_logs_pkey;public;automation_logs
+CREATE INDEX idx_automation_logs_conv ON public.automation_logs USING btree (conversation_id);idx_automation_logs_conv;public;automation_logs
+CREATE INDEX idx_automation_logs_created_at ON public.automation_logs USING btree (created_at DESC);idx_automation_logs_created_at;public;automation_logs
+CREATE UNIQUE INDEX idx_automation_logs_idempotency ON public.automation_logs USING btree (idempotency_key);idx_automation_logs_idempotency;public;automation_logs
+CREATE INDEX idx_automation_logs_provider_message_id ON public.automation_logs USING btree (provider_message_id);idx_automation_logs_provider_message_id;public;automation_logs
+CREATE INDEX idx_automation_logs_tenant ON public.automation_logs USING btree (tenant_id);idx_automation_logs_tenant;public;automation_logs
+CREATE INDEX idx_automation_logs_tenant_created ON public.automation_logs USING btree (tenant_id, created_at DESC);idx_automation_logs_tenant_created;public;automation_logs
+CREATE INDEX idx_automation_logs_tenant_id ON public.automation_logs USING btree (tenant_id);idx_automation_logs_tenant_id;public;automation_logs
+CREATE UNIQUE INDEX automation_queue_pkey ON public.automation_queue USING btree (id);automation_queue_pkey;public;automation_queue
+CREATE UNIQUE INDEX idx_automation_queue_idempotency ON public.automation_queue USING btree (idempotency_key) WHERE (status <> 'error'::text);idx_automation_queue_idempotency;public;automation_queue
+CREATE UNIQUE INDEX idx_automation_queue_reminders ON public.automation_queue USING btree (tenant_id, appointment_id, workflow_key, scheduled_for) WHERE (appointment_id IS NOT NULL);idx_automation_queue_reminders;public;automation_queue
+CREATE UNIQUE INDEX idx_automation_queue_unique_confirmation ON public.automation_queue USING btree (appointment_id, workflow_key) WHERE ((workflow_key = 'appointment_confirmation'::text) AND (status = ANY (ARRAY['pending'::text, 'processing'::text, 'success'::text])));idx_automation_queue_unique_confirmation;public;automation_queue
+CREATE UNIQUE INDEX idx_unique_birthday_per_year ON public.automation_queue USING btree (tenant_id, customer_id, reference_year) WHERE (workflow_key = 'customer_birthday'::text);idx_unique_birthday_per_year;public;automation_queue
+CREATE UNIQUE INDEX idx_unique_birthday_queue_per_year ON public.automation_queue USING btree (tenant_id, customer_id, workflow_key, reference_year) WHERE ((workflow_key = 'customer_birthday'::text) AND (reference_year IS NOT NULL) AND (customer_id IS NOT NULL));idx_unique_birthday_queue_per_year;public;automation_queue
+CREATE UNIQUE INDEX automation_reconciliation_settings_pkey ON public.automation_reconciliation_settings USING btree (id);automation_reconciliation_settings_pkey;public;automation_reconciliation_settings
+CREATE UNIQUE INDEX automation_send_history_pkey ON public.automation_send_history USING btree (id);automation_send_history_pkey;public;automation_send_history
+CREATE UNIQUE INDEX automation_status_pkey ON public.automation_status USING btree (id);automation_status_pkey;public;automation_status
+CREATE UNIQUE INDEX automation_templates_pkey ON public.automation_templates USING btree (id);automation_templates_pkey;public;automation_templates
+CREATE UNIQUE INDEX automation_templates_tenant_id_key_key ON public.automation_templates USING btree (tenant_id, key);automation_templates_tenant_id_key_key;public;automation_templates
+CREATE INDEX idx_automation_templates_tenant_event ON public.automation_templates USING btree (tenant_id, trigger_event) WHERE (active = true);idx_automation_templates_tenant_event;public;automation_templates
+CREATE UNIQUE INDEX automation_v2_dispatches_pkey ON public.automation_v2_dispatches USING btree (id);automation_v2_dispatches_pkey;public;automation_v2_dispatches
+CREATE UNIQUE INDEX idx_anniversary_uniqueness ON public.automation_v2_dispatches USING btree (tenant_id, customer_id, workflow_key, anniversary_year, anniversary_message_type) WHERE (workflow_key = 'barbershop_anniversary'::text);idx_anniversary_uniqueness;public;automation_v2_dispatches
+CREATE INDEX idx_auto_v2_disp_appt ON public.automation_v2_dispatches USING btree (appointment_id);idx_auto_v2_disp_appt;public;automation_v2_dispatches
+CREATE INDEX idx_auto_v2_disp_created ON public.automation_v2_dispatches USING btree (created_at);idx_auto_v2_disp_created;public;automation_v2_dispatches
+CREATE INDEX idx_auto_v2_disp_msg ON public.automation_v2_dispatches USING btree (message_id);idx_auto_v2_disp_msg;public;automation_v2_dispatches
+CREATE INDEX idx_auto_v2_disp_tenant ON public.automation_v2_dispatches USING btree (tenant_id);idx_auto_v2_disp_tenant;public;automation_v2_dispatches
+CREATE UNIQUE INDEX idx_unique_birthday_dispatch_per_year ON public.automation_v2_dispatches USING btree (tenant_id, customer_id, workflow_key, birthday_year) WHERE ((workflow_key = 'customer_birthday'::text) AND (birthday_year IS NOT NULL) AND (customer_id IS NOT NULL));idx_unique_birthday_dispatch_per_year;public;automation_v2_dispatches
+CREATE UNIQUE INDEX automation_v2_logs_pkey ON public.automation_v2_logs USING btree (id);automation_v2_logs_pkey;public;automation_v2_logs
+CREATE UNIQUE INDEX automation_v2_sessions_pkey ON public.automation_v2_sessions USING btree (id);automation_v2_sessions_pkey;public;automation_v2_sessions
+CREATE UNIQUE INDEX automation_webhook_logs_pkey ON public.automation_webhook_logs USING btree (id);automation_webhook_logs_pkey;public;automation_webhook_logs
+CREATE UNIQUE INDEX automations_pkey ON public.automations USING btree (id);automations_pkey;public;automations
+CREATE UNIQUE INDEX availability_conflict_logs_pkey ON public.availability_conflict_logs USING btree (id);availability_conflict_logs_pkey;public;availability_conflict_logs
+CREATE INDEX idx_avail_conflict_logs_tenant_created ON public.availability_conflict_logs USING btree (tenant_id, created_at DESC);idx_avail_conflict_logs_tenant_created;public;availability_conflict_logs
+CREATE UNIQUE INDEX background_jobs_pkey ON public.background_jobs USING btree (id);background_jobs_pkey;public;background_jobs
+CREATE INDEX idx_bg_jobs_status_next_run ON public.background_jobs USING btree (status, next_run_at) WHERE (status = ANY (ARRAY['pending'::text, 'retry'::text]));idx_bg_jobs_status_next_run;public;background_jobs
+CREATE INDEX idx_bg_jobs_tenant_id ON public.background_jobs USING btree (tenant_id);idx_bg_jobs_tenant_id;public;background_jobs
+CREATE UNIQUE INDEX barber_commissions_appointment_barber_key ON public.barber_commissions USING btree (appointment_id, barber_id);barber_commissions_appointment_barber_key;public;barber_commissions
+CREATE UNIQUE INDEX barber_commissions_pkey ON public.barber_commissions USING btree (id);barber_commissions_pkey;public;barber_commissions
+CREATE INDEX idx_barber_commissions_appointment ON public.barber_commissions USING btree (appointment_id);idx_barber_commissions_appointment;public;barber_commissions
+CREATE INDEX idx_barber_commissions_created_at ON public.barber_commissions USING btree (created_at);idx_barber_commissions_created_at;public;barber_commissions
+CREATE INDEX idx_barber_commissions_tenant_barber_status ON public.barber_commissions USING btree (tenant_id, barber_id, status);idx_barber_commissions_tenant_barber_status;public;barber_commissions
+CREATE UNIQUE INDEX barber_services_barber_id_service_id_key ON public.barber_services USING btree (barber_id, service_id);barber_services_barber_id_service_id_key;public;barber_services
+CREATE UNIQUE INDEX barber_services_pkey ON public.barber_services USING btree (id);barber_services_pkey;public;barber_services
+CREATE INDEX idx_barber_services_barber_id ON public.barber_services USING btree (barber_id);idx_barber_services_barber_id;public;barber_services
+CREATE INDEX idx_barber_services_service_id ON public.barber_services USING btree (service_id);idx_barber_services_service_id;public;barber_services
+CREATE INDEX idx_barber_services_tenant_id ON public.barber_services USING btree (tenant_id);idx_barber_services_tenant_id;public;barber_services
+CREATE INDEX idx_barber_services_user_id ON public.barber_services USING btree (user_id);idx_barber_services_user_id;public;barber_services
+CREATE INDEX barber_tips_barber_idx ON public.barber_tips USING btree (barber_id, created_at DESC);barber_tips_barber_idx;public;barber_tips
+CREATE UNIQUE INDEX barber_tips_pkey ON public.barber_tips USING btree (id);barber_tips_pkey;public;barber_tips
+CREATE INDEX barber_tips_tenant_idx ON public.barber_tips USING btree (tenant_id, created_at DESC);barber_tips_tenant_idx;public;barber_tips
+CREATE UNIQUE INDEX barbers_pkey ON public.barbers USING btree (id);barbers_pkey;public;barbers
+CREATE INDEX idx_barbers_tenant_id ON public.barbers USING btree (tenant_id);idx_barbers_tenant_id;public;barbers
+CREATE UNIQUE INDEX barbershop_module_logs_pkey ON public.barbershop_module_logs USING btree (id);barbershop_module_logs_pkey;public;barbershop_module_logs
+CREATE INDEX idx_barbershop_module_logs_tenant ON public.barbershop_module_logs USING btree (tenant_id);idx_barbershop_module_logs_tenant;public;barbershop_module_logs
+CREATE UNIQUE INDEX barbershop_modules_pkey ON public.barbershop_modules USING btree (id);barbershop_modules_pkey;public;barbershop_modules
+CREATE UNIQUE INDEX barbershop_modules_tenant_id_module_key_key ON public.barbershop_modules USING btree (tenant_id, module_key);barbershop_modules_tenant_id_module_key_key;public;barbershop_modules
+CREATE INDEX idx_barbershop_modules_tenant ON public.barbershop_modules USING btree (tenant_id);idx_barbershop_modules_tenant;public;barbershop_modules
+CREATE UNIQUE INDEX barbershop_settings_barber_id_key ON public.barbershop_settings USING btree (barber_id);barbershop_settings_barber_id_key;public;barbershop_settings
+CREATE UNIQUE INDEX barbershop_settings_pkey ON public.barbershop_settings USING btree (id);barbershop_settings_pkey;public;barbershop_settings
+CREATE UNIQUE INDEX barbershops_owner_id_key ON public.barbershops USING btree (owner_id);barbershops_owner_id_key;public;barbershops
+CREATE UNIQUE INDEX barbershops_pkey ON public.barbershops USING btree (id);barbershops_pkey;public;barbershops
+CREATE UNIQUE INDEX barbershops_slug_key ON public.barbershops USING btree (slug);barbershops_slug_key;public;barbershops
+CREATE UNIQUE INDEX campaign_logs_pkey ON public.campaign_logs USING btree (id);campaign_logs_pkey;public;campaign_logs
+CREATE UNIQUE INDEX campaigns_pkey ON public.campaigns USING btree (id);campaigns_pkey;public;campaigns
+CREATE UNIQUE INDEX cashback_transactions_pkey ON public.cashback_transactions USING btree (id);cashback_transactions_pkey;public;cashback_transactions
+CREATE UNIQUE INDEX unique_cashback_per_appointment ON public.cashback_transactions USING btree (appointment_id);unique_cashback_per_appointment;public;cashback_transactions
+CREATE UNIQUE INDEX client_auth_phone_key ON public.client_auth USING btree (phone);client_auth_phone_key;public;client_auth
+CREATE UNIQUE INDEX client_auth_phone_unique ON public.client_auth USING btree (phone);client_auth_phone_unique;public;client_auth
+CREATE UNIQUE INDEX client_auth_pkey ON public.client_auth USING btree (id);client_auth_pkey;public;client_auth
+CREATE INDEX idx_client_auth_customer_id ON public.client_auth USING btree (customer_id);idx_client_auth_customer_id;public;client_auth
+CREATE INDEX idx_client_auth_phone ON public.client_auth USING btree (phone);idx_client_auth_phone;public;client_auth
+CREATE UNIQUE INDEX commission_closings_pkey ON public.commission_closings USING btree (id);commission_closings_pkey;public;commission_closings
+CREATE INDEX idx_commission_closings_barber ON public.commission_closings USING btree (barber_id);idx_commission_closings_barber;public;commission_closings
+CREATE INDEX idx_commission_closings_tenant ON public.commission_closings USING btree (tenant_id);idx_commission_closings_tenant;public;commission_closings
+CREATE UNIQUE INDEX commission_entries_appointment_id_key ON public.commission_entries USING btree (appointment_id);commission_entries_appointment_id_key;public;commission_entries
+CREATE UNIQUE INDEX commission_entries_pkey ON public.commission_entries USING btree (id);commission_entries_pkey;public;commission_entries
+CREATE INDEX idx_commission_entries_barber ON public.commission_entries USING btree (barber_id);idx_commission_entries_barber;public;commission_entries
+CREATE INDEX idx_commission_entries_earned_at ON public.commission_entries USING btree (earned_at);idx_commission_entries_earned_at;public;commission_entries
+CREATE INDEX idx_commission_entries_status ON public.commission_entries USING btree (status);idx_commission_entries_status;public;commission_entries
+CREATE INDEX idx_commission_entries_tenant ON public.commission_entries USING btree (tenant_id);idx_commission_entries_tenant;public;commission_entries
+CREATE UNIQUE INDEX communication_channels_pkey ON public.communication_channels USING btree (id);communication_channels_pkey;public;communication_channels
+CREATE UNIQUE INDEX communication_channels_tenant_id_type_key ON public.communication_channels USING btree (tenant_id, type);communication_channels_tenant_id_type_key;public;communication_channels
+CREATE UNIQUE INDEX communication_messages_pkey ON public.communication_messages USING btree (id);communication_messages_pkey;public;communication_messages
+CREATE UNIQUE INDEX communication_templates_pkey ON public.communication_templates USING btree (id);communication_templates_pkey;public;communication_templates
+CREATE UNIQUE INDEX communication_templates_tenant_id_key_channel_type_key ON public.communication_templates USING btree (tenant_id, key, channel_type);communication_templates_tenant_id_key_channel_type_key;public;communication_templates
+CREATE UNIQUE INDEX cookie_consents_pkey ON public.cookie_consents USING btree (id);cookie_consents_pkey;public;cookie_consents
+CREATE INDEX idx_cookie_consents_created ON public.cookie_consents USING btree (created_at DESC);idx_cookie_consents_created;public;cookie_consents
+CREATE INDEX idx_cookie_consents_customer ON public.cookie_consents USING btree (customer_id);idx_cookie_consents_customer;public;cookie_consents
+CREATE INDEX idx_cookie_consents_tenant ON public.cookie_consents USING btree (tenant_id);idx_cookie_consents_tenant;public;cookie_consents
+CREATE UNIQUE INDEX coupons_pkey ON public.coupons USING btree (id);coupons_pkey;public;coupons
+CREATE UNIQUE INDEX coupons_tenant_id_code_key ON public.coupons USING btree (tenant_id, code);coupons_tenant_id_code_key;public;coupons
+CREATE INDEX idx_coupons_applies_to ON public.coupons USING btree (tenant_id, applies_to, active);idx_coupons_applies_to;public;coupons
+CREATE UNIQUE INDEX credit_transactions_pkey ON public.credit_transactions USING btree (id);credit_transactions_pkey;public;credit_transactions
+CREATE UNIQUE INDEX unique_credit_used_per_appointment ON public.credit_transactions USING btree (appointment_id) WHERE ((type = ANY (ARRAY['used'::text, 'credit_used'::text])) AND (appointment_id IS NOT NULL));unique_credit_used_per_appointment;public;credit_transactions
+CREATE UNIQUE INDEX customer_achievements_customer_id_achievement_id_key ON public.customer_achievements USING btree (customer_id, achievement_id);customer_achievements_customer_id_achievement_id_key;public;customer_achievements
+CREATE UNIQUE INDEX customer_achievements_pkey ON public.customer_achievements USING btree (id);customer_achievements_pkey;public;customer_achievements
+CREATE UNIQUE INDEX customer_credits_appointment_id_key ON public.customer_credits USING btree (appointment_id);customer_credits_appointment_id_key;public;customer_credits
+CREATE UNIQUE INDEX customer_credits_payment_id_idx ON public.customer_credits USING btree (payment_id) WHERE (payment_id IS NOT NULL);customer_credits_payment_id_idx;public;customer_credits
+CREATE UNIQUE INDEX customer_credits_pkey ON public.customer_credits USING btree (id);customer_credits_pkey;public;customer_credits
+CREATE UNIQUE INDEX customer_documents_pkey ON public.customer_documents USING btree (id);customer_documents_pkey;public;customer_documents
+CREATE UNIQUE INDEX customer_interactions_pkey ON public.customer_interactions USING btree (id);customer_interactions_pkey;public;customer_interactions
+CREATE UNIQUE INDEX customer_subscriptions_pkey ON public.customer_subscriptions USING btree (id);customer_subscriptions_pkey;public;customer_subscriptions
+CREATE INDEX idx_cust_subs_customer ON public.customer_subscriptions USING btree (customer_id);idx_cust_subs_customer;public;customer_subscriptions
+CREATE INDEX idx_cust_subs_provider_sub_id ON public.customer_subscriptions USING btree (provider_subscription_id) WHERE (provider_subscription_id IS NOT NULL);idx_cust_subs_provider_sub_id;public;customer_subscriptions
+CREATE INDEX idx_cust_subs_status ON public.customer_subscriptions USING btree (status);idx_cust_subs_status;public;customer_subscriptions
+CREATE INDEX idx_cust_subs_tenant ON public.customer_subscriptions USING btree (tenant_id);idx_cust_subs_tenant;public;customer_subscriptions
+CREATE UNIQUE INDEX uq_cust_one_active_sub ON public.customer_subscriptions USING btree (customer_id) WHERE (status = ANY (ARRAY['active'::text, 'pending_payment'::text, 'past_due'::text, 'paused'::text]));uq_cust_one_active_sub;public;customer_subscriptions
+CREATE UNIQUE INDEX uq_customer_subscriptions_card_token ON public.customer_subscriptions USING btree (card_token) WHERE (card_token IS NOT NULL);uq_customer_subscriptions_card_token;public;customer_subscriptions
+CREATE UNIQUE INDEX uq_customer_subscriptions_referral_code ON public.customer_subscriptions USING btree (referral_code) WHERE (referral_code IS NOT NULL);uq_customer_subscriptions_referral_code;public;customer_subscriptions
+CREATE UNIQUE INDEX customer_tasks_pkey ON public.customer_tasks USING btree (id);customer_tasks_pkey;public;customer_tasks
+CREATE UNIQUE INDEX customers_pkey ON public.customers USING btree (id);customers_pkey;public;customers
+CREATE INDEX idx_customers_auth_user_id ON public.customers USING btree (auth_user_id);idx_customers_auth_user_id;public;customers
+CREATE INDEX idx_customers_barber_id ON public.customers USING btree (barber_id);idx_customers_barber_id;public;customers
+CREATE INDEX idx_customers_birthday_sent ON public.customers USING btree (birthday_sent);idx_customers_birthday_sent;public;customers
+CREATE UNIQUE INDEX idx_customers_tenant_auth_user ON public.customers USING btree (tenant_id, auth_user_id) WHERE (auth_user_id IS NOT NULL);idx_customers_tenant_auth_user;public;customers
+CREATE INDEX idx_customers_tenant_id ON public.customers USING btree (tenant_id);idx_customers_tenant_id;public;customers
+CREATE UNIQUE INDEX email_logs_pkey ON public.email_logs USING btree (id);email_logs_pkey;public;email_logs
+CREATE UNIQUE INDEX email_logs_provider_event_id_key ON public.email_logs USING btree (provider_event_id);email_logs_provider_event_id_key;public;email_logs
+CREATE INDEX idx_email_logs_provider_message_id ON public.email_logs USING btree (provider_message_id);idx_email_logs_provider_message_id;public;email_logs
+CREATE UNIQUE INDEX email_settings_pkey ON public.email_settings USING btree (id);email_settings_pkey;public;email_settings
+CREATE UNIQUE INDEX email_settings_tenant_id_key ON public.email_settings USING btree (tenant_id);email_settings_tenant_id_key;public;email_settings
+CREATE UNIQUE INDEX financial_adjustment_logs_pkey ON public.financial_adjustment_logs USING btree (id);financial_adjustment_logs_pkey;public;financial_adjustment_logs
+CREATE INDEX idx_lgpd_requests_customer ON public.lgpd_requests USING btree (customer_id);idx_lgpd_requests_customer;public;lgpd_requests
+CREATE INDEX idx_lgpd_requests_status ON public.lgpd_requests USING btree (status);idx_lgpd_requests_status;public;lgpd_requests
+CREATE INDEX idx_lgpd_requests_tenant ON public.lgpd_requests USING btree (tenant_id);idx_lgpd_requests_tenant;public;lgpd_requests
+CREATE UNIQUE INDEX lgpd_requests_pkey ON public.lgpd_requests USING btree (id);lgpd_requests_pkey;public;lgpd_requests
+CREATE UNIQUE INDEX loyalty_achievements_pkey ON public.loyalty_achievements USING btree (id);loyalty_achievements_pkey;public;loyalty_achievements
+CREATE INDEX idx_loyalty_part_campaign ON public.loyalty_campaign_participations USING btree (campaign_id);idx_loyalty_part_campaign;public;loyalty_campaign_participations
+CREATE INDEX idx_loyalty_part_customer ON public.loyalty_campaign_participations USING btree (customer_id);idx_loyalty_part_customer;public;loyalty_campaign_participations
+CREATE INDEX idx_loyalty_part_tenant ON public.loyalty_campaign_participations USING btree (tenant_id);idx_loyalty_part_tenant;public;loyalty_campaign_participations
+CREATE UNIQUE INDEX loyalty_campaign_participations_campaign_id_customer_id_key ON public.loyalty_campaign_participations USING btree (campaign_id, customer_id);loyalty_campaign_participations_campaign_id_customer_id_key;public;loyalty_campaign_participations
+CREATE UNIQUE INDEX loyalty_campaign_participations_pkey ON public.loyalty_campaign_participations USING btree (id);loyalty_campaign_participations_pkey;public;loyalty_campaign_participations
+CREATE UNIQUE INDEX loyalty_campaign_templates_pkey ON public.loyalty_campaign_templates USING btree (id);loyalty_campaign_templates_pkey;public;loyalty_campaign_templates
+CREATE UNIQUE INDEX loyalty_campaign_templates_slug_key ON public.loyalty_campaign_templates USING btree (slug);loyalty_campaign_templates_slug_key;public;loyalty_campaign_templates
+CREATE INDEX idx_loyalty_campaigns_status ON public.loyalty_campaigns USING btree (tenant_id, status);idx_loyalty_campaigns_status;public;loyalty_campaigns
+CREATE INDEX idx_loyalty_campaigns_tenant ON public.loyalty_campaigns USING btree (tenant_id);idx_loyalty_campaigns_tenant;public;loyalty_campaigns
+CREATE UNIQUE INDEX loyalty_campaigns_pkey ON public.loyalty_campaigns USING btree (id);loyalty_campaigns_pkey;public;loyalty_campaigns
+CREATE UNIQUE INDEX loyalty_levels_pkey ON public.loyalty_levels USING btree (id);loyalty_levels_pkey;public;loyalty_levels
+CREATE INDEX idx_loyalty_rewards_customer ON public.loyalty_rewards USING btree (customer_id);idx_loyalty_rewards_customer;public;loyalty_rewards
+CREATE INDEX idx_loyalty_rewards_status ON public.loyalty_rewards USING btree (status);idx_loyalty_rewards_status;public;loyalty_rewards
+CREATE INDEX idx_loyalty_rewards_tenant ON public.loyalty_rewards USING btree (tenant_id);idx_loyalty_rewards_tenant;public;loyalty_rewards
+CREATE UNIQUE INDEX loyalty_rewards_pkey ON public.loyalty_rewards USING btree (id);loyalty_rewards_pkey;public;loyalty_rewards
+CREATE UNIQUE INDEX loyalty_settings_pkey ON public.loyalty_settings USING btree (id);loyalty_settings_pkey;public;loyalty_settings
+CREATE UNIQUE INDEX loyalty_settings_tenant_id_key ON public.loyalty_settings USING btree (tenant_id);loyalty_settings_tenant_id_key;public;loyalty_settings
+CREATE UNIQUE INDEX marketing_audiences_pkey ON public.marketing_audiences USING btree (id);marketing_audiences_pkey;public;marketing_audiences
+CREATE INDEX idx_notification_recipients_barber ON public.notification_recipients USING btree (barber_id) WHERE (barber_id IS NOT NULL);idx_notification_recipients_barber;public;notification_recipients
+CREATE INDEX idx_notification_recipients_tenant ON public.notification_recipients USING btree (tenant_id) WHERE is_active;idx_notification_recipients_tenant;public;notification_recipients
+CREATE UNIQUE INDEX notification_recipients_pkey ON public.notification_recipients USING btree (id);notification_recipients_pkey;public;notification_recipients
+CREATE UNIQUE INDEX notification_recipients_tenant_phone_barber_key ON public.notification_recipients USING btree (tenant_id, phone, COALESCE(barber_id, '00000000-0000-0000-0000-000000000000'::uuid));notification_recipients_tenant_phone_barber_key;public;notification_recipients
+CREATE INDEX idx_notifications_barber_id ON public.notifications USING btree (barber_id);idx_notifications_barber_id;public;notifications
+CREATE INDEX idx_notifications_customer_id ON public.notifications USING btree (customer_id);idx_notifications_customer_id;public;notifications
+CREATE INDEX idx_notifications_dedup ON public.notifications USING btree (tenant_id, type, unique_key);idx_notifications_dedup;public;notifications
+CREATE INDEX idx_notifications_read ON public.notifications USING btree (read);idx_notifications_read;public;notifications
+CREATE INDEX idx_notifications_tenant_id ON public.notifications USING btree (tenant_id);idx_notifications_tenant_id;public;notifications
+CREATE INDEX idx_notifications_user_id ON public.notifications USING btree (user_id);idx_notifications_user_id;public;notifications
+CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id);notifications_pkey;public;notifications
+CREATE UNIQUE INDEX notifications_tenant_type_unique_key_key ON public.notifications USING btree (tenant_id, type, unique_key);notifications_tenant_type_unique_key_key;public;notifications
+CREATE UNIQUE INDEX notifications_unique_idx ON public.notifications USING btree (tenant_id, type, unique_key) WHERE (unique_key IS NOT NULL);notifications_unique_idx;public;notifications
+CREATE INDEX idx_obs_logs_correlation_id ON public.observability_logs USING btree (correlation_id);idx_obs_logs_correlation_id;public;observability_logs
+CREATE INDEX idx_obs_logs_created_at ON public.observability_logs USING btree (created_at);idx_obs_logs_created_at;public;observability_logs
+CREATE INDEX idx_obs_logs_tenant_id ON public.observability_logs USING btree (tenant_id);idx_obs_logs_tenant_id;public;observability_logs
+CREATE UNIQUE INDEX observability_logs_pkey ON public.observability_logs USING btree (id);observability_logs_pkey;public;observability_logs
+CREATE UNIQUE INDEX onboarding_settings_pkey ON public.onboarding_settings USING btree (id);onboarding_settings_pkey;public;onboarding_settings
+CREATE INDEX idx_operation_locks_expires_at ON public.operation_locks USING btree (expires_at);idx_operation_locks_expires_at;public;operation_locks
+CREATE UNIQUE INDEX operation_locks_pkey ON public.operation_locks USING btree (key);operation_locks_pkey;public;operation_locks
+CREATE UNIQUE INDEX operational_insights_interactions_pkey ON public.operational_insights_interactions USING btree (id);operational_insights_interactions_pkey;public;operational_insights_interactions
+CREATE INDEX idx_payment_gateway_logs_gateway ON public.payment_gateway_logs USING btree (gateway_id, created_at DESC);idx_payment_gateway_logs_gateway;public;payment_gateway_logs
+CREATE INDEX idx_payment_gateway_logs_tenant ON public.payment_gateway_logs USING btree (tenant_id, created_at DESC);idx_payment_gateway_logs_tenant;public;payment_gateway_logs
+CREATE UNIQUE INDEX payment_gateway_logs_pkey ON public.payment_gateway_logs USING btree (id);payment_gateway_logs_pkey;public;payment_gateway_logs
+CREATE INDEX idx_payment_gateways_tenant ON public.payment_gateways USING btree (tenant_id);idx_payment_gateways_tenant;public;payment_gateways
+CREATE UNIQUE INDEX one_primary_gateway_per_tenant ON public.payment_gateways USING btree (tenant_id) WHERE (is_primary = true);one_primary_gateway_per_tenant;public;payment_gateways
+CREATE UNIQUE INDEX payment_gateways_pkey ON public.payment_gateways USING btree (id);payment_gateways_pkey;public;payment_gateways
+CREATE INDEX idx_payment_receipts_appointment ON public.payment_receipts USING btree (appointment_id);idx_payment_receipts_appointment;public;payment_receipts
+CREATE INDEX idx_payment_receipts_tenant ON public.payment_receipts USING btree (tenant_id);idx_payment_receipts_tenant;public;payment_receipts
+CREATE UNIQUE INDEX payment_receipts_pkey ON public.payment_receipts USING btree (id);payment_receipts_pkey;public;payment_receipts
+CREATE UNIQUE INDEX permissions_key_key ON public.permissions USING btree (key);permissions_key_key;public;permissions
+CREATE UNIQUE INDEX permissions_pkey ON public.permissions USING btree (id);permissions_pkey;public;permissions
+CREATE INDEX idx_plans_stripe_price_live ON public.plans USING btree (stripe_price_id_live) WHERE (stripe_price_id_live IS NOT NULL);idx_plans_stripe_price_live;public;plans
+CREATE INDEX idx_plans_stripe_price_test ON public.plans USING btree (stripe_price_id_test) WHERE (stripe_price_id_test IS NOT NULL);idx_plans_stripe_price_test;public;plans
+CREATE UNIQUE INDEX plans_name_key ON public.plans USING btree (name);plans_name_key;public;plans
+CREATE UNIQUE INDEX plans_pkey ON public.plans USING btree (id);plans_pkey;public;plans
+CREATE UNIQUE INDEX plans_slug_key ON public.plans USING btree (slug);plans_slug_key;public;plans
+CREATE INDEX idx_privacy_consents_customer ON public.privacy_consents USING btree (customer_id);idx_privacy_consents_customer;public;privacy_consents
+CREATE INDEX idx_privacy_consents_tenant ON public.privacy_consents USING btree (tenant_id);idx_privacy_consents_tenant;public;privacy_consents
+CREATE UNIQUE INDEX privacy_consents_pkey ON public.privacy_consents USING btree (id);privacy_consents_pkey;public;privacy_consents
+CREATE UNIQUE INDEX product_images_pkey ON public.product_images USING btree (id);product_images_pkey;public;product_images
+CREATE INDEX idx_product_sales_appointment_id ON public.product_sales USING btree (appointment_id);idx_product_sales_appointment_id;public;product_sales
+CREATE INDEX idx_product_sales_barber_id ON public.product_sales USING btree (barber_id);idx_product_sales_barber_id;public;product_sales
+CREATE UNIQUE INDEX product_sales_pkey ON public.product_sales USING btree (id);product_sales_pkey;public;product_sales
+CREATE INDEX idx_products_category ON public.products USING btree (category);idx_products_category;public;products
+CREATE INDEX idx_products_slug ON public.products USING btree (slug);idx_products_slug;public;products
+CREATE UNIQUE INDEX products_pkey ON public.products USING btree (id);products_pkey;public;products
+CREATE UNIQUE INDEX professional_time_off_pkey ON public.professional_time_off USING btree (id);professional_time_off_pkey;public;professional_time_off
+CREATE INDEX idx_profiles_email ON public.profiles USING btree (email);idx_profiles_email;public;profiles
+CREATE UNIQUE INDEX profiles_checkin_token_key ON public.profiles USING btree (checkin_token);profiles_checkin_token_key;public;profiles
+CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);profiles_pkey;public;profiles
+CREATE UNIQUE INDEX profiles_slug_key ON public.profiles USING btree (slug);profiles_slug_key;public;profiles
+CREATE INDEX idx_push_subs_phone ON public.push_subscriptions USING btree (customer_phone) WHERE active;idx_push_subs_phone;public;push_subscriptions
+CREATE INDEX idx_push_subs_tenant ON public.push_subscriptions USING btree (tenant_id) WHERE active;idx_push_subs_tenant;public;push_subscriptions
+CREATE INDEX idx_push_subs_user ON public.push_subscriptions USING btree (user_id) WHERE active;idx_push_subs_user;public;push_subscriptions
+CREATE UNIQUE INDEX push_subscriptions_endpoint_key ON public.push_subscriptions USING btree (endpoint);push_subscriptions_endpoint_key;public;push_subscriptions
+CREATE UNIQUE INDEX push_subscriptions_pkey ON public.push_subscriptions USING btree (id);push_subscriptions_pkey;public;push_subscriptions
+CREATE INDEX idx_rate_limit_bucket_key_time ON public.rate_limit_hits USING btree (bucket, key, hit_at DESC);idx_rate_limit_bucket_key_time;public;rate_limit_hits
+CREATE UNIQUE INDEX rate_limit_hits_pkey ON public.rate_limit_hits USING btree (id);rate_limit_hits_pkey;public;rate_limit_hits
+CREATE INDEX idx_reception_permissions_tenant ON public.reception_permissions USING btree (tenant_id);idx_reception_permissions_tenant;public;reception_permissions
+CREATE UNIQUE INDEX reception_permissions_pkey ON public.reception_permissions USING btree (id);reception_permissions_pkey;public;reception_permissions
+CREATE UNIQUE INDEX reception_permissions_user_id_key ON public.reception_permissions USING btree (user_id);reception_permissions_user_id_key;public;reception_permissions
+CREATE UNIQUE INDEX refund_audits_pkey ON public.refund_audits USING btree (id);refund_audits_pkey;public;refund_audits
+CREATE INDEX idx_refund_requests_appointment_id ON public.refund_requests USING btree (appointment_id);idx_refund_requests_appointment_id;public;refund_requests
+CREATE INDEX idx_refund_requests_created_at ON public.refund_requests USING btree (created_at);idx_refund_requests_created_at;public;refund_requests
+CREATE UNIQUE INDEX idx_refund_requests_single_active_per_appointment ON public.refund_requests USING btree (appointment_id) WHERE (status <> ALL (ARRAY['rejected'::text, 'cancelled'::text]));idx_refund_requests_single_active_per_appointment;public;refund_requests
+CREATE INDEX idx_refund_requests_status ON public.refund_requests USING btree (status);idx_refund_requests_status;public;refund_requests
+CREATE INDEX idx_refund_requests_tenant_id ON public.refund_requests USING btree (tenant_id);idx_refund_requests_tenant_id;public;refund_requests
+CREATE UNIQUE INDEX refund_requests_pkey ON public.refund_requests USING btree (id);refund_requests_pkey;public;refund_requests
+CREATE UNIQUE INDEX resend_settings_pkey ON public.resend_settings USING btree (id);resend_settings_pkey;public;resend_settings
+CREATE UNIQUE INDEX resend_settings_single_row ON public.resend_settings USING btree (((id IS NOT NULL)));resend_settings_single_row;public;resend_settings
+CREATE INDEX idx_review_logs_tenant ON public.review_automation_logs USING btree (tenant_id, created_at DESC);idx_review_logs_tenant;public;review_automation_logs
+CREATE UNIQUE INDEX review_automation_logs_pkey ON public.review_automation_logs USING btree (id);review_automation_logs_pkey;public;review_automation_logs
+CREATE UNIQUE INDEX uniq_review_log_per_appointment ON public.review_automation_logs USING btree (appointment_id) WHERE (status = ANY (ARRAY['sent'::text, 'skipped'::text]));uniq_review_log_per_appointment;public;review_automation_logs
+CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree (id);role_permissions_pkey;public;role_permissions
+CREATE UNIQUE INDEX role_permissions_role_permission_key_key ON public.role_permissions USING btree (role, permission_key);role_permissions_role_permission_key_key;public;role_permissions
+CREATE UNIQUE INDEX saas_addons_addon_key_key ON public.saas_addons USING btree (addon_key);saas_addons_addon_key_key;public;saas_addons
+CREATE UNIQUE INDEX saas_addons_pkey ON public.saas_addons USING btree (id);saas_addons_pkey;public;saas_addons
+CREATE INDEX idx_admin_voucher_audit_created ON public.saas_admin_voucher_audit_logs USING btree (created_at DESC);idx_admin_voucher_audit_created;public;saas_admin_voucher_audit_logs
+CREATE INDEX idx_admin_voucher_audit_tenant ON public.saas_admin_voucher_audit_logs USING btree (tenant_id);idx_admin_voucher_audit_tenant;public;saas_admin_voucher_audit_logs
+CREATE INDEX idx_admin_voucher_audit_voucher ON public.saas_admin_voucher_audit_logs USING btree (voucher_id);idx_admin_voucher_audit_voucher;public;saas_admin_voucher_audit_logs
+CREATE UNIQUE INDEX saas_admin_voucher_audit_logs_pkey ON public.saas_admin_voucher_audit_logs USING btree (id);saas_admin_voucher_audit_logs_pkey;public;saas_admin_voucher_audit_logs
+CREATE INDEX idx_redemption_status ON public.saas_admin_voucher_redemptions USING btree (status);idx_redemption_status;public;saas_admin_voucher_redemptions
+CREATE INDEX idx_redemption_tenant ON public.saas_admin_voucher_redemptions USING btree (tenant_id);idx_redemption_tenant;public;saas_admin_voucher_redemptions
+CREATE UNIQUE INDEX saas_admin_voucher_redemptions_pkey ON public.saas_admin_voucher_redemptions USING btree (id);saas_admin_voucher_redemptions_pkey;public;saas_admin_voucher_redemptions
+CREATE UNIQUE INDEX uq_redemption_voucher_active ON public.saas_admin_voucher_redemptions USING btree (voucher_id) WHERE (status = ANY (ARRAY['pending'::text, 'active'::text]));uq_redemption_voucher_active;public;saas_admin_voucher_redemptions
+CREATE INDEX idx_admin_voucher_status ON public.saas_admin_vouchers USING btree (status);idx_admin_voucher_status;public;saas_admin_vouchers
+CREATE INDEX idx_admin_voucher_tenant ON public.saas_admin_vouchers USING btree (specific_tenant_id);idx_admin_voucher_tenant;public;saas_admin_vouchers
+CREATE UNIQUE INDEX saas_admin_vouchers_pkey ON public.saas_admin_vouchers USING btree (id);saas_admin_vouchers_pkey;public;saas_admin_vouchers
+CREATE UNIQUE INDEX uq_admin_voucher_internal_tenant ON public.saas_admin_vouchers USING btree (specific_tenant_id) WHERE ((purpose = 'internal_testing'::text) AND (status = ANY (ARRAY['draft'::text, 'pending'::text, 'active'::text])));uq_admin_voucher_internal_tenant;public;saas_admin_vouchers
+CREATE UNIQUE INDEX saas_billing_settings_pkey ON public.saas_billing_settings USING btree (id);saas_billing_settings_pkey;public;saas_billing_settings
+CREATE UNIQUE INDEX saas_billing_settings_singleton_key ON public.saas_billing_settings USING btree (singleton);saas_billing_settings_singleton_key;public;saas_billing_settings
+CREATE INDEX idx_saas_checkout_session ON public.saas_checkout_sessions USING btree (stripe_checkout_session_id);idx_saas_checkout_session;public;saas_checkout_sessions
+CREATE INDEX idx_saas_checkout_tenant ON public.saas_checkout_sessions USING btree (tenant_id);idx_saas_checkout_tenant;public;saas_checkout_sessions
+CREATE UNIQUE INDEX saas_checkout_sessions_pkey ON public.saas_checkout_sessions USING btree (id);saas_checkout_sessions_pkey;public;saas_checkout_sessions
+CREATE UNIQUE INDEX security_activity_logs_pkey ON public.security_activity_logs USING btree (id);security_activity_logs_pkey;public;security_activity_logs
+CREATE UNIQUE INDEX service_ratings_appointment_id_key ON public.service_ratings USING btree (appointment_id);service_ratings_appointment_id_key;public;service_ratings
+CREATE UNIQUE INDEX service_ratings_pkey ON public.service_ratings USING btree (id);service_ratings_pkey;public;service_ratings
+CREATE INDEX idx_services_tenant_id ON public.services USING btree (tenant_id);idx_services_tenant_id;public;services
+CREATE UNIQUE INDEX services_pkey ON public.services USING btree (id);services_pkey;public;services
+CREATE INDEX idx_status_checks_service_time ON public.status_checks USING btree (service_id, checked_at DESC);idx_status_checks_service_time;public;status_checks
+CREATE UNIQUE INDEX status_checks_pkey ON public.status_checks USING btree (id);status_checks_pkey;public;status_checks
+CREATE UNIQUE INDEX status_incidents_pkey ON public.status_incidents USING btree (id);status_incidents_pkey;public;status_incidents
+CREATE UNIQUE INDEX status_maintenances_pkey ON public.status_maintenances USING btree (id);status_maintenances_pkey;public;status_maintenances
+CREATE UNIQUE INDEX status_services_pkey ON public.status_services USING btree (id);status_services_pkey;public;status_services
+CREATE UNIQUE INDEX status_services_slug_key ON public.status_services USING btree (slug);status_services_slug_key;public;status_services
+CREATE UNIQUE INDEX subprocessors_pkey ON public.subprocessors USING btree (id);subprocessors_pkey;public;subprocessors
+CREATE INDEX idx_card_scans_scanned_at ON public.subscription_card_scans USING btree (scanned_at DESC);idx_card_scans_scanned_at;public;subscription_card_scans
+CREATE INDEX idx_card_scans_subscription ON public.subscription_card_scans USING btree (subscription_id);idx_card_scans_subscription;public;subscription_card_scans
+CREATE INDEX idx_card_scans_tenant ON public.subscription_card_scans USING btree (tenant_id);idx_card_scans_tenant;public;subscription_card_scans
+CREATE UNIQUE INDEX subscription_card_scans_pkey ON public.subscription_card_scans USING btree (id);subscription_card_scans_pkey;public;subscription_card_scans
+CREATE INDEX idx_sub_inv_status ON public.subscription_invoices USING btree (status);idx_sub_inv_status;public;subscription_invoices
+CREATE INDEX idx_sub_inv_sub ON public.subscription_invoices USING btree (subscription_id);idx_sub_inv_sub;public;subscription_invoices
+CREATE INDEX idx_sub_inv_tenant ON public.subscription_invoices USING btree (tenant_id);idx_sub_inv_tenant;public;subscription_invoices
+CREATE UNIQUE INDEX subscription_invoices_pkey ON public.subscription_invoices USING btree (id);subscription_invoices_pkey;public;subscription_invoices
+CREATE INDEX idx_sub_loyalty_history_customer ON public.subscription_loyalty_history USING btree (customer_id);idx_sub_loyalty_history_customer;public;subscription_loyalty_history
+CREATE INDEX idx_sub_loyalty_history_subscription ON public.subscription_loyalty_history USING btree (subscription_id);idx_sub_loyalty_history_subscription;public;subscription_loyalty_history
+CREATE INDEX idx_sub_loyalty_history_tenant ON public.subscription_loyalty_history USING btree (tenant_id);idx_sub_loyalty_history_tenant;public;subscription_loyalty_history
+CREATE UNIQUE INDEX subscription_loyalty_history_pkey ON public.subscription_loyalty_history USING btree (id);subscription_loyalty_history_pkey;public;subscription_loyalty_history
+CREATE UNIQUE INDEX subscription_loyalty_history_unique_cycle ON public.subscription_loyalty_history USING btree (tenant_id, customer_id, subscription_id, reward_id, reward_cycle);subscription_loyalty_history_unique_cycle;public;subscription_loyalty_history
+CREATE INDEX idx_sub_loyalty_rewards_tenant ON public.subscription_loyalty_rewards USING btree (tenant_id);idx_sub_loyalty_rewards_tenant;public;subscription_loyalty_rewards
+CREATE UNIQUE INDEX subscription_loyalty_rewards_pkey ON public.subscription_loyalty_rewards USING btree (id);subscription_loyalty_rewards_pkey;public;subscription_loyalty_rewards
+CREATE UNIQUE INDEX subscription_loyalty_rewards_tenant_id_months_required_rewa_key ON public.subscription_loyalty_rewards USING btree (tenant_id, months_required, reward_type);subscription_loyalty_rewards_tenant_id_months_required_rewa_key;public;subscription_loyalty_rewards
+CREATE INDEX idx_sub_payments_provider_payment_id ON public.subscription_payments USING btree (provider_payment_id) WHERE (provider_payment_id IS NOT NULL);idx_sub_payments_provider_payment_id;public;subscription_payments
+CREATE INDEX idx_sub_payments_status ON public.subscription_payments USING btree (status);idx_sub_payments_status;public;subscription_payments
+CREATE INDEX idx_sub_payments_subscription ON public.subscription_payments USING btree (subscription_id);idx_sub_payments_subscription;public;subscription_payments
+CREATE INDEX idx_sub_payments_tenant ON public.subscription_payments USING btree (tenant_id);idx_sub_payments_tenant;public;subscription_payments
+CREATE UNIQUE INDEX subscription_payments_pkey ON public.subscription_payments USING btree (id);subscription_payments_pkey;public;subscription_payments
+CREATE INDEX idx_spbs_benefit ON public.subscription_plan_benefit_services USING btree (benefit_id);idx_spbs_benefit;public;subscription_plan_benefit_services
+CREATE INDEX idx_spbs_plan ON public.subscription_plan_benefit_services USING btree (plan_id);idx_spbs_plan;public;subscription_plan_benefit_services
+CREATE INDEX idx_spbs_service ON public.subscription_plan_benefit_services USING btree (service_id);idx_spbs_service;public;subscription_plan_benefit_services
+CREATE INDEX idx_spbs_tenant ON public.subscription_plan_benefit_services USING btree (tenant_id);idx_spbs_tenant;public;subscription_plan_benefit_services
+CREATE UNIQUE INDEX subscription_plan_benefit_services_benefit_id_service_id_key ON public.subscription_plan_benefit_services USING btree (benefit_id, service_id);subscription_plan_benefit_services_benefit_id_service_id_key;public;subscription_plan_benefit_services
+CREATE UNIQUE INDEX subscription_plan_benefit_services_pkey ON public.subscription_plan_benefit_services USING btree (id);subscription_plan_benefit_services_pkey;public;subscription_plan_benefit_services
+CREATE INDEX idx_spb_plan ON public.subscription_plan_benefits USING btree (plan_id);idx_spb_plan;public;subscription_plan_benefits
+CREATE INDEX idx_spb_tenant ON public.subscription_plan_benefits USING btree (tenant_id);idx_spb_tenant;public;subscription_plan_benefits
+CREATE UNIQUE INDEX subscription_plan_benefits_pkey ON public.subscription_plan_benefits USING btree (id);subscription_plan_benefits_pkey;public;subscription_plan_benefits
+CREATE UNIQUE INDEX subscription_plan_benefits_plan_id_benefit_key_key ON public.subscription_plan_benefits USING btree (plan_id, benefit_key);subscription_plan_benefits_plan_id_benefit_key_key;public;subscription_plan_benefits
+CREATE INDEX idx_spc_subscription ON public.subscription_plan_changes USING btree (subscription_id);idx_spc_subscription;public;subscription_plan_changes
+CREATE INDEX idx_spc_tenant ON public.subscription_plan_changes USING btree (tenant_id);idx_spc_tenant;public;subscription_plan_changes
+CREATE UNIQUE INDEX subscription_plan_changes_pkey ON public.subscription_plan_changes USING btree (id);subscription_plan_changes_pkey;public;subscription_plan_changes
+CREATE INDEX idx_sps_plan ON public.subscription_plan_services USING btree (plan_id);idx_sps_plan;public;subscription_plan_services
+CREATE INDEX idx_sps_tenant ON public.subscription_plan_services USING btree (tenant_id);idx_sps_tenant;public;subscription_plan_services
+CREATE UNIQUE INDEX subscription_plan_services_pkey ON public.subscription_plan_services USING btree (id);subscription_plan_services_pkey;public;subscription_plan_services
+CREATE UNIQUE INDEX subscription_plan_services_plan_id_service_id_key ON public.subscription_plan_services USING btree (plan_id, service_id);subscription_plan_services_plan_id_service_id_key;public;subscription_plan_services
+CREATE INDEX idx_subscription_plans_tenant ON public.subscription_plans USING btree (tenant_id);idx_subscription_plans_tenant;public;subscription_plans
+CREATE UNIQUE INDEX subscription_plans_pkey ON public.subscription_plans USING btree (id);subscription_plans_pkey;public;subscription_plans
+CREATE INDEX idx_sub_referrals_code ON public.subscription_referrals USING btree (referral_code);idx_sub_referrals_code;public;subscription_referrals
+CREATE INDEX idx_sub_referrals_referrer ON public.subscription_referrals USING btree (referrer_customer_id);idx_sub_referrals_referrer;public;subscription_referrals
+CREATE INDEX idx_sub_referrals_status ON public.subscription_referrals USING btree (status);idx_sub_referrals_status;public;subscription_referrals
+CREATE INDEX idx_sub_referrals_tenant ON public.subscription_referrals USING btree (tenant_id);idx_sub_referrals_tenant;public;subscription_referrals
+CREATE UNIQUE INDEX subscription_referrals_pkey ON public.subscription_referrals USING btree (id);subscription_referrals_pkey;public;subscription_referrals
+CREATE UNIQUE INDEX subscription_referrals_subscription_id_key ON public.subscription_referrals USING btree (subscription_id);subscription_referrals_subscription_id_key;public;subscription_referrals
+CREATE INDEX idx_subscription_status_logs_sub ON public.subscription_status_logs USING btree (subscription_id);idx_subscription_status_logs_sub;public;subscription_status_logs
+CREATE INDEX idx_subscription_status_logs_tenant ON public.subscription_status_logs USING btree (tenant_id);idx_subscription_status_logs_tenant;public;subscription_status_logs
+CREATE UNIQUE INDEX subscription_status_logs_pkey ON public.subscription_status_logs USING btree (id);subscription_status_logs_pkey;public;subscription_status_logs
+CREATE INDEX idx_sub_usage_appointment ON public.subscription_usage_logs USING btree (appointment_id);idx_sub_usage_appointment;public;subscription_usage_logs
+CREATE INDEX idx_sub_usage_status ON public.subscription_usage_logs USING btree (status);idx_sub_usage_status;public;subscription_usage_logs
+CREATE INDEX idx_sub_usage_sub ON public.subscription_usage_logs USING btree (subscription_id);idx_sub_usage_sub;public;subscription_usage_logs
+CREATE INDEX idx_sub_usage_tenant ON public.subscription_usage_logs USING btree (tenant_id);idx_sub_usage_tenant;public;subscription_usage_logs
+CREATE UNIQUE INDEX subscription_usage_logs_pkey ON public.subscription_usage_logs USING btree (id);subscription_usage_logs_pkey;public;subscription_usage_logs
+CREATE UNIQUE INDEX uq_subscription_usage_logs_appointment ON public.subscription_usage_logs USING btree (appointment_id) WHERE (appointment_id IS NOT NULL);uq_subscription_usage_logs_appointment;public;subscription_usage_logs
+CREATE INDEX idx_subscriptions_stripe_id ON public.subscriptions USING btree (stripe_subscription_id);idx_subscriptions_stripe_id;public;subscriptions
+CREATE INDEX idx_subscriptions_user_id ON public.subscriptions USING btree (user_id);idx_subscriptions_user_id;public;subscriptions
+CREATE UNIQUE INDEX subscriptions_pkey ON public.subscriptions USING btree (id);subscriptions_pkey;public;subscriptions
+CREATE UNIQUE INDEX subscriptions_stripe_subscription_id_key ON public.subscriptions USING btree (stripe_subscription_id);subscriptions_stripe_subscription_id_key;public;subscriptions
+CREATE UNIQUE INDEX support_messages_pkey ON public.support_messages USING btree (id);support_messages_pkey;public;support_messages
+CREATE UNIQUE INDEX support_tickets_pkey ON public.support_tickets USING btree (id);support_tickets_pkey;public;support_tickets
+CREATE UNIQUE INDEX system_health_settings_pkey ON public.system_health_settings USING btree (id);system_health_settings_pkey;public;system_health_settings
+CREATE UNIQUE INDEX system_settings_pkey ON public.system_settings USING btree (id);system_settings_pkey;public;system_settings
+CREATE UNIQUE INDEX team_audit_logs_pkey ON public.team_audit_logs USING btree (id);team_audit_logs_pkey;public;team_audit_logs
+CREATE INDEX idx_tenant_addons_payment_failed ON public.tenant_addons USING btree (tenant_id) WHERE (payment_failed_count > 0);idx_tenant_addons_payment_failed;public;tenant_addons
+CREATE INDEX idx_tenant_addons_status ON public.tenant_addons USING btree (status);idx_tenant_addons_status;public;tenant_addons
+CREATE INDEX idx_tenant_addons_tenant ON public.tenant_addons USING btree (tenant_id);idx_tenant_addons_tenant;public;tenant_addons
+CREATE UNIQUE INDEX tenant_addons_pkey ON public.tenant_addons USING btree (id);tenant_addons_pkey;public;tenant_addons
+CREATE UNIQUE INDEX tenant_addons_unique_single ON public.tenant_addons USING btree (tenant_id, addon_id) WHERE (quantity = 1);tenant_addons_unique_single;public;tenant_addons
+CREATE UNIQUE INDEX tenant_integrations_pkey ON public.tenant_integrations USING btree (id);tenant_integrations_pkey;public;tenant_integrations
+CREATE UNIQUE INDEX tenant_integrations_tenant_id_provider_key ON public.tenant_integrations USING btree (tenant_id, provider);tenant_integrations_tenant_id_provider_key;public;tenant_integrations
+CREATE UNIQUE INDEX tenant_memberships_pkey ON public.tenant_memberships USING btree (id);tenant_memberships_pkey;public;tenant_memberships
+CREATE UNIQUE INDEX tenant_memberships_tenant_id_user_id_key ON public.tenant_memberships USING btree (tenant_id, user_id);tenant_memberships_tenant_id_user_id_key;public;tenant_memberships
+CREATE INDEX idx_tenant_webhooks_tenant ON public.tenant_webhooks USING btree (tenant_id);idx_tenant_webhooks_tenant;public;tenant_webhooks
+CREATE UNIQUE INDEX tenant_webhooks_pkey ON public.tenant_webhooks USING btree (id);tenant_webhooks_pkey;public;tenant_webhooks
+CREATE UNIQUE INDEX ticket_messages_pkey ON public.ticket_messages USING btree (id);ticket_messages_pkey;public;ticket_messages
+CREATE INDEX idx_transactions_tenant_id ON public.transactions USING btree (tenant_id);idx_transactions_tenant_id;public;transactions
+CREATE UNIQUE INDEX idx_unique_income_per_appointment ON public.transactions USING btree (appointment_id) WHERE ((type = 'income'::text) AND (appointment_id IS NOT NULL));idx_unique_income_per_appointment;public;transactions
+CREATE UNIQUE INDEX transactions_pkey ON public.transactions USING btree (id);transactions_pkey;public;transactions
+CREATE UNIQUE INDEX tutorial_categories_name_key ON public.tutorial_categories USING btree (name);tutorial_categories_name_key;public;tutorial_categories
+CREATE UNIQUE INDEX tutorial_categories_pkey ON public.tutorial_categories USING btree (id);tutorial_categories_pkey;public;tutorial_categories
+CREATE UNIQUE INDEX tutorials_pkey ON public.tutorials USING btree (id);tutorials_pkey;public;tutorials
+CREATE UNIQUE INDEX tutorials_slug_key ON public.tutorials USING btree (slug);tutorials_slug_key;public;tutorials
+CREATE UNIQUE INDEX user_invitations_pkey ON public.user_invitations USING btree (id);user_invitations_pkey;public;user_invitations
+CREATE UNIQUE INDEX user_mfa_backup_codes_pkey ON public.user_mfa_backup_codes USING btree (id);user_mfa_backup_codes_pkey;public;user_mfa_backup_codes
+CREATE UNIQUE INDEX user_onboarding_preferences_pkey ON public.user_onboarding_preferences USING btree (user_id);user_onboarding_preferences_pkey;public;user_onboarding_preferences
+CREATE UNIQUE INDEX user_onboarding_progress_pkey ON public.user_onboarding_progress USING btree (id);user_onboarding_progress_pkey;public;user_onboarding_progress
+CREATE UNIQUE INDEX user_onboarding_progress_user_id_tenant_id_step_key_key ON public.user_onboarding_progress USING btree (user_id, tenant_id, step_key);user_onboarding_progress_user_id_tenant_id_step_key_key;public;user_onboarding_progress
+CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);user_roles_pkey;public;user_roles
+CREATE UNIQUE INDEX user_roles_user_id_key ON public.user_roles USING btree (user_id);user_roles_user_id_key;public;user_roles
+CREATE UNIQUE INDEX user_tour_states_pkey ON public.user_tour_states USING btree (id);user_tour_states_pkey;public;user_tour_states
+CREATE UNIQUE INDEX user_tour_states_user_id_tenant_id_tour_key_key ON public.user_tour_states USING btree (user_id, tenant_id, tour_key);user_tour_states_user_id_tenant_id_tour_key_key;public;user_tour_states
+CREATE INDEX verification_challenges_barber_id_idx ON public.verification_challenges USING btree (barber_id);verification_challenges_barber_id_idx;public;verification_challenges
+CREATE UNIQUE INDEX verification_challenges_one_active_staff_idx ON public.verification_challenges USING btree (barber_id) WHERE ((barber_id IS NOT NULL) AND (purpose = 'staff_email_verification'::text) AND (consumed_at IS NULL));verification_challenges_one_active_staff_idx;public;verification_challenges
+CREATE UNIQUE INDEX verification_challenges_pkey ON public.verification_challenges USING btree (id);verification_challenges_pkey;public;verification_challenges
+CREATE INDEX idx_waiting_list_tenant_status ON public.waiting_list USING btree (tenant_id, status);idx_waiting_list_tenant_status;public;waiting_list
+CREATE UNIQUE INDEX waiting_list_pkey ON public.waiting_list USING btree (id);waiting_list_pkey;public;waiting_list
+CREATE UNIQUE INDEX wallet_customer_id_key ON public.wallet USING btree (customer_id);wallet_customer_id_key;public;wallet
+CREATE UNIQUE INDEX wallet_pkey ON public.wallet USING btree (id);wallet_pkey;public;wallet
+CREATE UNIQUE INDEX wallet_transactions_pkey ON public.wallet_transactions USING btree (id);wallet_transactions_pkey;public;wallet_transactions
+CREATE INDEX idx_webhook_logs_barbershop_id ON public.webhook_logs USING btree (barbershop_id);idx_webhook_logs_barbershop_id;public;webhook_logs
+CREATE INDEX idx_webhook_logs_created_at ON public.webhook_logs USING btree (created_at DESC);idx_webhook_logs_created_at;public;webhook_logs
+CREATE UNIQUE INDEX webhook_logs_pkey ON public.webhook_logs USING btree (id);webhook_logs_pkey;public;webhook_logs
+CREATE INDEX idx_whatsapp_connections_user_id ON public.whatsapp_cloud_connections USING btree (user_id);idx_whatsapp_connections_user_id;public;whatsapp_cloud_connections
+CREATE UNIQUE INDEX whatsapp_connections_pkey ON public.whatsapp_cloud_connections USING btree (id);whatsapp_connections_pkey;public;whatsapp_cloud_connections
+CREATE INDEX idx_whatsapp_conversations_barber_id ON public.whatsapp_conversations USING btree (barber_id);idx_whatsapp_conversations_barber_id;public;whatsapp_conversations
+CREATE INDEX idx_whatsapp_conversations_group_id ON public.whatsapp_conversations USING btree (appointment_group_id);idx_whatsapp_conversations_group_id;public;whatsapp_conversations
+CREATE INDEX idx_whatsapp_conversations_phone_active ON public.whatsapp_conversations USING btree (phone, active);idx_whatsapp_conversations_phone_active;public;whatsapp_conversations
+CREATE INDEX idx_whatsapp_conversations_phone_fallback ON public.whatsapp_conversations USING btree (phone_fallback);idx_whatsapp_conversations_phone_fallback;public;whatsapp_conversations
+CREATE UNIQUE INDEX whatsapp_conversations_pkey ON public.whatsapp_conversations USING btree (id);whatsapp_conversations_pkey;public;whatsapp_conversations
+CREATE UNIQUE INDEX whatsapp_delivery_logs_pkey ON public.whatsapp_delivery_logs USING btree (id);whatsapp_delivery_logs_pkey;public;whatsapp_delivery_logs
+CREATE INDEX idx_whatsapp_connections_barbershop_id ON public.whatsapp_instances USING btree (tenant_id);idx_whatsapp_connections_barbershop_id;public;whatsapp_instances
+CREATE UNIQUE INDEX unique_barbershop_whatsapp ON public.whatsapp_instances USING btree (tenant_id);unique_barbershop_whatsapp;public;whatsapp_instances
+CREATE UNIQUE INDEX whatsapp_connections_pkey1 ON public.whatsapp_instances USING btree (id);whatsapp_connections_pkey1;public;whatsapp_instances
+CREATE INDEX whatsapp_instances_webhook_token_idx ON public.whatsapp_instances USING btree (webhook_token);whatsapp_instances_webhook_token_idx;public;whatsapp_instances
+CREATE INDEX idx_whatsapp_messages_status_scheduled ON public.whatsapp_messages USING btree (status, scheduled_for) WHERE (status = 'pending'::text);idx_whatsapp_messages_status_scheduled;public;whatsapp_messages
+CREATE INDEX idx_whatsapp_messages_user_id ON public.whatsapp_messages USING btree (user_id);idx_whatsapp_messages_user_id;public;whatsapp_messages
+CREATE INDEX idx_whatsapp_messages_wa_id ON public.whatsapp_messages USING btree (wa_id);idx_whatsapp_messages_wa_id;public;whatsapp_messages
+CREATE UNIQUE INDEX whatsapp_messages_pkey ON public.whatsapp_messages USING btree (id);whatsapp_messages_pkey;public;whatsapp_messages
+CREATE INDEX idx_whatsapp_templates_user_id ON public.whatsapp_templates USING btree (user_id);idx_whatsapp_templates_user_id;public;whatsapp_templates
+CREATE UNIQUE INDEX whatsapp_templates_pkey ON public.whatsapp_templates USING btree (id);whatsapp_templates_pkey;public;whatsapp_templates
+CREATE UNIQUE INDEX whatsapp_templates_user_id_event_type_key ON public.whatsapp_templates USING btree (user_id, event_type);whatsapp_templates_user_id_event_type_key;public;whatsapp_templates
+CREATE UNIQUE INDEX zapi_integration_logs_pkey ON public.zapi_integration_logs USING btree (id);zapi_integration_logs_pkey;public;zapi_integration_logs
+CREATE UNIQUE INDEX zapi_webhook_debug_pkey ON public.zapi_webhook_debug USING btree (id);zapi_webhook_debug_pkey;public;zapi_webhook_debug
+CREATE UNIQUE INDEX zapi_webhook_logs_pkey ON public.zapi_webhook_logs USING btree (id);zapi_webhook_logs_pkey;public;zapi_webhook_logs

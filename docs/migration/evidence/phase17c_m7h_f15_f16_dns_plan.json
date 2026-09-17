@@ -1,0 +1,37 @@
+{
+  "phase": "PHASE 17C.M7H-F15",
+  "topic": "F16 Production DNS Cutover Plan",
+  "planned_at": "2026-09-15T14:35:00.000Z",
+  "dns_plan_status": {
+    "f16_dns_plan_complete": true,
+    "f16_dns_values_physically_verified": true,
+    "f16_dns_rollback_values_captured": true
+  },
+  "dns_cutover_specifications": {
+    "apex_domain": "barbex.shop",
+    "www_domain": "www.barbex.shop",
+    "target_records": [
+      {
+        "type": "A",
+        "name": "@",
+        "target": "76.76.21.21",
+        "ttl": 300
+      },
+      {
+        "type": "CNAME",
+        "name": "www",
+        "target": "cname.vercel-dns.com",
+        "ttl": 300
+      }
+    ],
+    "verification_record": {
+      "type": "TXT",
+      "name": "_vercel",
+      "purpose": "Domain ownership pre-verification for pre-provisioning Vercel SSL"
+    },
+    "rollback_records": {
+      "apex_target": "Cloudflare / Lovable Edge IP / Proxy target",
+      "www_target": "Cloudflare / Lovable Edge CNAME target"
+    }
+  }
+}

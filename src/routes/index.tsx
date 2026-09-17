@@ -52,7 +52,7 @@ import { RegisterWizard } from "@/components/auth/RegisterWizard";
 import { SystemMockup } from "@/components/public/SystemMockup";
 import { LandingImage, CTASection } from "@/components/public/LandingUI";
 import { PlatformContactSection } from "@/components/public/PlatformContactSection";
-import { getPlatformPublicSettings } from "@/lib/platform-contact.functions";
+import { getPublicPlatformSettingsClient } from "@/lib/backend/rpc/platform";
 import { normalizePhone } from "@/utils/phone";
 import {
   Instagram,
@@ -66,7 +66,7 @@ import {
 export const Route = createFileRoute("/")({
   loader: async () => {
     try {
-      const settings = await getPlatformPublicSettings();
+      const settings = await getPublicPlatformSettingsClient();
       return { settings };
     } catch {
       return { settings: null };
@@ -164,7 +164,7 @@ function LandingPage() {
 
   const { data: settings } = useQuery({
     queryKey: ["platform-public-settings"],
-    queryFn: () => getPlatformPublicSettings(),
+    queryFn: () => getPublicPlatformSettingsClient(),
     initialData: loaderData?.settings ?? undefined,
     staleTime: 1000 * 60 * 5,
   });

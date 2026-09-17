@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { getMessages } from "@/lib/communications.functions";
+import { getMessagesClient } from "@/lib/backend/client/communications";
 import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ interface Props {
 export function DeliveryFailures({ tenantId }: Props) {
   const { data: messages, isLoading } = useQuery({
     queryKey: ['communication-messages-failures', tenantId],
-    queryFn: () => getMessages({ data: { tenantId, status: 'failed', limit: 50 } })
+    queryFn: () => getMessagesClient({ tenantId, status: 'failed', limit: 50 })
   });
 
   return (

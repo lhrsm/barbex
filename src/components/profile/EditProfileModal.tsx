@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { updateMyProfile } from "@/lib/profile.functions";
+import { updateMyProfileClient } from "@/lib/backend/client/profile";
 import { toast } from "sonner";
 import { User, Phone, Mail, Loader2, Sparkles, ShieldCheck } from "lucide-react";
 
@@ -32,7 +31,6 @@ export function EditProfileModal({
 }: EditProfileModalProps) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
-  const updateProfileFn = useServerFn(updateMyProfile);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -48,13 +46,11 @@ export function EditProfileModal({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      return await updateProfileFn({
-        data: {
-          displayName: name.trim(),
-          responsibleName: name.trim(),
-          phone: phone.trim(),
-          avatarUrl: avatarUrl.trim(),
-        },
+      return await updateMyProfileClient({
+        displayName: name.trim(),
+        responsibleName: name.trim(),
+        phone: phone.trim(),
+        avatarUrl: avatarUrl.trim(),
       });
     },
     onSuccess: () => {

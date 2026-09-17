@@ -93,14 +93,15 @@ function IntegrationsComponent() {
     setIsTesting(true);
     
     try {
-      const { sendTransactionalEmail } = await import("@/lib/resend.functions");
-      await sendTransactionalEmail({
-        data: {
-          recipient: testEmail,
-          templateKey: 'test_email',
-          tenantId
-        }
+      const { sendTransactionalEmail } = await import("@/lib/backend/edge/email");
+      const result = await sendTransactionalEmail({
+        recipient: testEmail,
+        templateKey: 'test_email',
+        tenantId
       });
+      if (!result.ok) {
+        throw new Error(result.message || "Falha ao enviar teste");
+      }
       toast.success("E-mail de teste enviado!");
       setIsTestModalOpen(false);
       fetchSettings();

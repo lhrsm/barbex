@@ -1,0 +1,25 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R3",
+  "topic": "Minimal Safety Invariants Recheck",
+  "evaluated_at": "2026-09-16T11:08:00.000Z",
+  "source_safety": {
+    "R3_SOURCE_SUPABASE_CALLS": 0,
+    "SOURCE_WP16_STILL_ACTIVE": "YES",
+    "public_rows": 257691,
+    "status_checks": 256998,
+    "status_max": 256998
+  },
+  "target_authority": {
+    "R3_DATABASE_AUTHORITY_TARGET": "YES",
+    "R3_AUTH_AUTHORITY_TARGET": "YES",
+    "R3_STORAGE_AUTHORITY_TARGET": "YES",
+    "R3_REALTIME_AUTHORITY_TARGET": "YES",
+    "R3_EDGE_AUTHORITY_TARGET": "YES",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "target_producers_active": 6
+  },
+  "workers_and_providers": {
+    "R3_PROVIDER_CALLBACK_MUTATIONS": 0,
+    "R3_VERCEL_DUPLICATE_WORKERS": 0
+  }
+}

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { signInCustomerWithPhone, requestCustomerPasswordResetByPhone } from "@/lib/auth-customer.functions";
+import { signInCustomerWithPhone, requestCustomerPasswordResetByPhone } from "@/lib/backend/edge/auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeIdentifier } from "@/utils/auth-identifier";

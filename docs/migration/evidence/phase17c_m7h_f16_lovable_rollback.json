@@ -1,0 +1,13 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Lovable Cloud Rollback Authority Preservation",
+  "evaluated_at": "2026-09-16T09:37:00.000Z",
+  "rollback_state": {
+    "lovable_rollback_deployment_retained": "YES",
+    "lovable_rollback_origin_reachable": "YES",
+    "lovable_project_mutated": "NO",
+    "lovable_project_id": "8e95dc9e-ab64-44cf-956c-ecec6fefeb51",
+    "lovable_current_ip": "185.158.133.1",
+    "lovable_current_server": "cloudflare"
+  }
+}

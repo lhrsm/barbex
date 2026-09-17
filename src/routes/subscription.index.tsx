@@ -14,7 +14,7 @@ import { getStripe } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import { createPortalSession } from "@/utils/payments.functions";
+import { createPortalSession } from "@/lib/backend/edge/stripe";
 import { YourAddons } from "@/components/subscription/YourAddons";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
@@ -184,17 +184,17 @@ function SubscriptionComponent() {
 
       if (!token) throw new Error("Você precisa estar logado.");
 
-      const url = await createPortalSession({
-        data: {
-          returnUrl: `${window.location.origin}/subscription`,
-          environment: getStripeEnvironment(),
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await createPortalSession({
+        returnUrl: `${window.location.origin}/subscription`,
+        environment: getStripeEnvironment(),
+      }, {
+        authToken: token,
       });
-      if (url) {
-        window.open(url, "_blank");
+      if (!res.ok) {
+        throw new Error(res.error || "Não foi possível abrir o portal.");
+      }
+      if (res.url) {
+        window.open(res.url, "_blank");
       }
     } catch (e: any) {
       console.error("[Subscription] manageSubscription error:", e);

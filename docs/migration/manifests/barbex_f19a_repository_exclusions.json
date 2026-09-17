@@ -1,0 +1,1855 @@
+{
+  "timestamp": "2026-09-16T12:24:04.673Z",
+  "phase": "PHASE 17C.M7H-F19A",
+  "total_files": 308,
+  "files": [
+    {
+      "path": ".env",
+      "reason": "Environment file must be untracked for secret hygiene; replaced by .env.example",
+      "classification": "LOCAL_ENVIRONMENT_SECRET_HYGIENE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_branch.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_check_ignore_env.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_check_ignore_migration_secrets.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_diff.patch",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_diff_name_status.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_diff_stat.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_log_head.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_ls_files_env.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_remote.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_status_short.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/git_untracked_files.txt",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/f19a-preconsolidation/pre_snapshot_manifest.json",
+      "reason": "Local pre-consolidation forensic snapshot",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2b_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2b_pre_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2d_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2d_pre_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2f_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2f_pre_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2h_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2h_pre_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2ir_column_diff_after.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2ir_column_diff_before.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2j_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2j_pre_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2jr_fk_diff_after.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2jr_fk_diff_before.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2k_constraints_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2k_enums_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2k_indexes_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2k_rls_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2k_triggers_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2k_views_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2kt_exact_columns_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2l_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2l_pre_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2mb_bundle_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2n_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2o_bundle_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2o_raise_census_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2p_post_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2q_bundle_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2q_catalog_census_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2q_preflight_role_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2q_target_clean_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2r_retry9_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2s_bundle_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2s_client_auth_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2s_index_catalog_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2s_unique_catalog_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m6i2t_retry10_evidence.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_auth_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_auth_public_relationships.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_constraint_data_compatibility.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_dependency_graph.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_fk_integrity.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_migration_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_storage_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7a_table_row_counts.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7b_auth_capabilities.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7b_execution_strategy.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7b_orphan_analysis.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7b_storage_topology.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7b_trigger_import_model.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_auth_bootstrap_spec.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_drift_guard_spec.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_remediation_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_sequence_reseed_spec.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_storage_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_storage_url_rewrite_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_table_import_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_trigger_policy.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7d_auth_execution.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7d_auth_postcommit_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7da_auth_execution_spec.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7da_auth_field_map.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7da_auth_method_matrix.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7da_auth_schema_compatibility.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7da_auth_uuid_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7db_auth_execution_spec.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7db_auth_snapshot_validation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dc_auth_field_policy.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dc_final_insert_columns.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dc_identity_cardinality.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dc_null_empty_compatibility.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dd_auth_string_semantics.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dd_auth_topology_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7e_dependency_graph.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7e_public_import_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7e_public_snapshot_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7f_public_secure_snapshot_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g1_freeze_order.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g1_freeze_state_verifier_spec.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g1_mutable_fingerprint_proof.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g1_storage_readiness.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g1_webhook_safety.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g1_write_path_freeze_matrix.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7g_cutover_checklist.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a1_final_candidate.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a1_final_delta_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a1_freeze_t0_t1.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a1_status_writer_incident.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a1_write_path_reconciliation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a4_hotfix_deployment.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a4_quiet_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a4b_final_candidate.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a4b_final_delta_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_a4b_quiet_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_b_storage_materialization.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_b_storage_source_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_b_storage_target_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_c_model_comparison.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_c_remediation_authority.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d1_forensic_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d1_forensic_verification.md",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d_final_fingerprints.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d_import_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d_stage_results.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d_target_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e11_env_closure.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e11_f1_draft.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e11_gateway_closure.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e11_secret_names.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e11_webhook_closure.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_blocker_register.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_cutover_dag.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_edge_runtime_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_rpc_closure.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_secret_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_webhook_switch_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e_cutover_draft.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e_env_switch_matrix.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e_integrations_matrix.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e_runtime_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e_smoke_test_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_activation_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_automation_queue.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_backlog_census.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_blast_radius.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_idempotency_concurrency.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_producer_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_scheduler_census.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_side_effect_matrix.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_final_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_preactivation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_provider_health.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_review_watermark.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_source_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_stage1_status_check.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_stage2_addons.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_stage3_admin_digest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_stage4_anniversary.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_stage5_reviews.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_stage6_automation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f111_temporal_attestation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_application_health.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_integrity.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_producer_execution.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_provider_health.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_retirement_gate.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_source_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_temporal_window.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_application_health.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_auth_realtime_storage.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_data_integrity.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_error_trend.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_financial_communication.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_producer_execution.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_provider_health.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_retirement_readiness.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_source_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_backup_requirements.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_hosting_domain.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_independence_verdict.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_lovable_dependencies.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_provider_legacy.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_retention_classification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_retirement_actions.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_retirement_dag.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_retirement_levels.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_rollback_model.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_secrets_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_source_reference_scan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_backup_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_backup_validation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_hosting_compatibility.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_hosting_dependency_closure.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_migration_evidence_archive.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_source_auth_archive.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_source_config_archive.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_source_database_archive.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_source_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_source_snapshot.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_source_storage_archive.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_target_checkpoint.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_build_model.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_cutover_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_domain_ssl.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_env_mapping.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_f13_contradiction_closure.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_lovable_build_coupling.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_preview_strategy.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_required_file_changes.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_rollback_model.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_runtime_impacts.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_vercel_compatibility.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_auth_redirect.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_authority.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_env_parity.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_production_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_pwa_security.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_remote_deployment.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_remote_smoke.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_source_invariant.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_target_bindings.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_vercel_project.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_env.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_production_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_project.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_pwa_ssr.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_remote_deployment.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_remote_security.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_remote_smoke.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_source_invariant.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_target_authority.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_vercel_access.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_artifact_scan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_build_decoupling.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_env_parity.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_local_build.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_package_classification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_prechange.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_preview_smoke.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_production_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_pwa_security.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_target_bindings.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_vercel_deployment.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f1_execution_plan.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f1_execution_results.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f1_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f1_secret_classification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f2_deployment_results.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f2_function_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f2_jwt_semantics.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f2_postdeployment.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f2_predeployment.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f31_control_plane_inventory.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f31_f3_disposition.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f31_f4_readiness.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f3_control_flow_proof.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f3_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f3_probe_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f3_probe_results.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f3_risk_classification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f4_env_control_plane.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f4_env_switch_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f4_isolation_gate.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f4_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f4_staged_build_verification.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f5_atomic_order.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f5_go_live_runbook.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f5_provider_boundary.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f5_rollback_windows.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f5_split_brain_matrix.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_env_switch.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_event_boundary.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_hybrid_window.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_postboundary.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_precutover_state.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_provider_switch.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_publish.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_stripe_preparation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_authenticated_reads.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_errors.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_provider_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_public_routes.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_realtime_storage.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_smoke_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_source_freeze.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_target_delta.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_tenant_resolution.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f81_canary_integrity.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f81_negative_test_review.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f81_physical_policies.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f81_service_role_trace.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f81_tenant_semantics.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_canary_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_cleanup.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_fanout.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_mutation_graph.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_prewrite_snapshot.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_source_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_write_path_map.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_write_results.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_gateway.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_idempotency.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_postcheck.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_provider_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_resend.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_source_isolation.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_stripe.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_target_deltas.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_zapi.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_final_candidate.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_final_delta_manifest.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_freeze_execution.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_freeze_t0_t1.json",
+      "reason": "Granular intermediate forensic evidence retained locally to prevent repository bloat",
+      "classification": "LOCAL_ONLY_FORENSIC_EVIDENCE",
+      "local_preservation_required": true
+    }
+  ]
+}

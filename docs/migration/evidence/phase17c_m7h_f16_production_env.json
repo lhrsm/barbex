@@ -1,0 +1,31 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Production Scope Environment Variable Parity",
+  "evaluated_at": "2026-09-16T09:27:00.000Z",
+  "summary": {
+    "production_env_required_total": 17,
+    "production_env_present_total": 17,
+    "production_env_missing_total": 0,
+    "production_env_unresolved_total": 0
+  },
+  "variables": [
+    { "name": "VITE_SUPABASE_URL", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "VITE_SUPABASE_PUBLISHABLE_KEY", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "VITE_SUPABASE_ANON_KEY", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "VITE_SUPABASE_PROJECT_ID", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "VITE_APP_URL", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "VITE_PAYMENTS_CLIENT_TOKEN", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "VITE_PAYMENTS_SANDBOX_CLIENT_TOKEN", "classification": "BUILD_PUBLIC", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "SUPABASE_URL", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "SUPABASE_ANON_KEY", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "SUPABASE_PUBLISHABLE_KEY", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "SUPABASE_SERVICE_ROLE_KEY", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "APP_URL", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "PUBLIC_APP_URL", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "PUBLIC" },
+    { "name": "CRON_SECRET", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "PUSH_INTERNAL_SECRET", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "VAPID_PUBLIC_KEY", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "VAPID_PRIVATE_KEY", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" },
+    { "name": "VAPID_SUBJECT", "classification": "SERVER_RUNTIME_SECRET", "production_scope_present": true, "target_identity_valid": true, "secret_or_public": "SECRET" }
+  ]
+}

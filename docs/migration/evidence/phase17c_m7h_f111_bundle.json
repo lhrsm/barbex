@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F11.1",
+    "title": "Stabilization Window Temporal Attestation Authority Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-14T09:45:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_f10b_background_activation_bundle_sha256": "3d919abc45d1c332c0a34c8826532b5665a538bfd34fd720115e023c0b249afa",
+    "m7h_f11_postcutover_stabilization_bundle_sha256": "c17ffcd47e19170fbd376092c3438d7a03d49f43c89e78d581c276a3334f39e2"
+  },
+  "evidence_artifacts": {
+    "temporal_attestation_sha256": "fb781fe6b1497634859a77458a9b97e154d14d9e73f8cdd72c36d3ac4cc30d13"
+  },
+  "metrics": {
+    "authorized_phase": "PHASE 17C.M7H-F11.1",
+    "m7h_f10b_bundle_hash_match": true,
+    "m7h_f11_bundle_hash_match": true,
+    "f11_canonical_started_at": "2026-09-14T09:35:00.000Z",
+    "f11_canonical_ended_at": "2026-09-14T09:40:00.000Z",
+    "f11_end_timestamp_evidence_source": "F11_EVIDENCE_BUNDLE_GENERATION_TIMESTAMP (docs/migration/evidence/phase17c_m7h_f11_bundle.json)",
+    "f11_observation_elapsed_seconds": 300,
+    "f11_observation_elapsed_hours": 0.0833,
+    "status_check_schedule_opportunity_proven": true,
+    "addons_schedule_opportunity_proven": false,
+    "admin_digest_schedule_opportunity_proven": false,
+    "anniversary_schedule_opportunity_proven": false,
+    "reviews_schedule_opportunity_proven": false,
+    "f11_producer_status_temporally_valid": false,
+    "app_authority_target": true,
+    "all_provider_authorities_target": true,
+    "target_background_producers_active_total": 6,
+    "source_state_unchanged": true,
+    "source_freeze_valid": true,
+    "wp16_hotfix_still_active": true,
+    "source_app_traffic": 0,
+    "source_provider_traffic": 0,
+    "source_background_traffic": 0,
+    "ready_for_f12_source_retirement_planning": false,
+    "final_decision": "F111_MINIMUM_STABILIZATION_WINDOW_NOT_YET_ELAPSED"
+  },
+  "bundle_hash": "659e8318686477905ceac8f2d35162f568a8871c6403d4d08fe16aeac9b89829"
+}

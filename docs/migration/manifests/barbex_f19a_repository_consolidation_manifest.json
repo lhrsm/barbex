@@ -1,0 +1,4183 @@
+{
+  "timestamp": "2026-09-16T13:05:33.416Z",
+  "phase": "PHASE 17C.M7H-F19A",
+  "total_files": 464,
+  "files": [
+    {
+      "path": ".env.example",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_VERCEL_BUILD",
+      "reason": "Canonical build and repository configuration",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": ".gitignore",
+      "status": "MODIFIED",
+      "category": "REQUIRED_VERCEL_BUILD",
+      "reason": "Canonical build and repository configuration",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/audit_mutable_fingerprints.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/auth_runner/phase17c_m7d_auth_importer.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/check_mismatches.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/compute_m7g_bundle.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/compute_m7g1_bundle.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/csv_parser_helper.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_artifact_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7d_auth_materialization_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7da_artifact_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7db_auth_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7dd_execution_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_b_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_d_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e1_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_e11_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f1_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10a_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f10b_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_baseline.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f11_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f111_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f112_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f12_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f13_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f14_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f15_f16_dns_plan.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151_f16_dns_plan.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f151r_f16_dns_plan.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_backend_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_dns_before_after.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_dns_propagation.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_github_vercel.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_lovable_rollback.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_pre_cutover.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_production_env.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_production_smoke.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_provider_background.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_pwa.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_rollback_matrix.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_source_invariant.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f16_vercel_production_deployment.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_backend_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_dns_cutover.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_dns_refresh.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_github_binding.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_lovable_rollback.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_observation.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_production_env.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_production_smoke.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_pwa.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_source_invariant.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f161r_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_auth_session.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_backend_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_certificate_inventory.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_dns_certificate_forensics.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_remediation_plan.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_root_cause.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_tls_network.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d1_vercel_domain.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_auth_session.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_certificate_inventory.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_certificate_issuance.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_custom_domain_smoke.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_invariants.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_preflight.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_d2_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_dns_observation.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_lovable_rollback.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_observation.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_production_smoke.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_provider_background.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_public_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_pwa.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_custom_domain_smoke.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_dns.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_invariants.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r1_vercel_domain.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_custom_domain_smoke.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_dns.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_invariants.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_vercel_domain.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r2_www.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r3_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r3_caa.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r3_invariants.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r3_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_r3_vercel_cert.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_source_invariant.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f162r_vercel_domain.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_auth_session.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_backend_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_dns.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_lovable_rollback.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_pipeline.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_producers.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_providers.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_pwa.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_repository_state.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_routes.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_runtime_assets.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_source_isolation.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_tls.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f17_vercel_domain.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_archive_integrity.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_dns_legacy.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_lovable_dependencies.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_production_authority.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_provider_refs.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_repository_parity.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_reproducibility.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_retirement_order.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_rollback_reality.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_secret_hygiene.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_source_dependencies.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_vercel_deployment_source.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_worktree_inventory.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f18_wp16.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f19a_build.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f19a_final_worktree.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f19a_preview.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f19a_production_immutability.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f19a_secret_scan.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f2_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f3_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f31_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f4_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f5_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f6_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f7_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f8_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f81_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7h_f9_bundle.json",
+      "status": "UNTRACKED",
+      "category": "SECURITY_SAFE_FORENSIC_EVIDENCE",
+      "reason": "Phase milestone evidence or bundle",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/freeze_state_verifier.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/functions_source_truth_202.csv.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/generate_m7e_dependency_graph.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/generate_m7e_import_plan.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/list_m7c_tables.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/manifests/barbex_canonical_manifest.json",
+      "status": "UNTRACKED",
+      "category": "RELEASE_MANIFEST",
+      "reason": "Canonical migration commit or exclusion manifest",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/manifests/barbex_f19a_repository_consolidation_manifest.json",
+      "status": "UNTRACKED",
+      "category": "RELEASE_MANIFEST",
+      "reason": "Canonical migration commit or exclusion manifest",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/manifests/barbex_f19a_repository_exclusions.json",
+      "status": "UNTRACKED",
+      "category": "RELEASE_MANIFEST",
+      "reason": "Canonical migration commit or exclusion manifest",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M2_BASELINE_MANIFEST.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M3_AUTH_MANIFEST.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M3_AUTH_STRATEGY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6_CUTOVER_DEPENDENCIES.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6_EDGE_MATRIX.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6_RUNTIME_INVENTORY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6_SECRET_INVENTORY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6B_EDGE_FOUNDATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6C_AUTH_EDGE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6C2_TARGET_DEPLOY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6D_TEAM_STAFF_EDGE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6E_STRIPE_EDGE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6F_ZAPI_EDGE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6G_WORKERS_EDGE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6H_FRONTEND_ADAPTERS.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6H9_CRON_CUTOVER.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6H9_CUTOVER_CHECKLIST.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6H9_ENV_SECRET_MATRIX.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6H9_RESIDUAL_BACKEND.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6H9_WEBHOOK_CUTOVER.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_CANONICAL_BASELINE_COMPLETION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_CANONICAL_BASELINE_REVIEW.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_DISPOSABLE_SUPABASE_PROVISION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_LOCAL_DRY_RUN_PLAN.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_LOCAL_DRY_RUN_RESULT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_PHYSICAL_POSTGRES_VALIDATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I_SOURCE_TRUTH_REPORT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I1_DATABASE_MATERIALIZATION.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2_ENTERPRISE_READINESS.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2_OPERATOR_RUNBOOK.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2B_TARGET_SCHEMA_MATERIALIZATION_RESULT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2C_BASELINE_SYNTAX_REMEDIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2D_PHYSICAL_RETRY_RESULT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2E_DOLLAR_QUOTE_REMEDIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2ER_FUNCTION_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2ES_SOURCE_FUNCTION_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2F_PHYSICAL_RETRY3_RESULT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2G_FK_ORDERING_REMEDIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2GR_POLICY_LINEAGE_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2GS_SOURCE_POLICY_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2H_PHYSICAL_RETRY4_RESULT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2I_COLUMN_TRUTH_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2IL_RELEASE_LINEAGE_FREEZE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2IR_COLUMN_TRUTH_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2J_PHYSICAL_RETRY5_RESULT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2JR_FK_SOURCE_TRUTH_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2K_FULL_PHYSICAL_CATALOG_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2KT_EXACT_COLUMN_TYPEMOD_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2L_PHYSICAL_TARGET_MATERIALIZATION_RETRY6.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2M_SEQUENCE_RELATION_DEPENDENCY_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2MA_SEQUENCE_ACL_PORTABILITY_GATE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2MB_IMMUTABLE_RELEASE_BUNDLE_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2N_PHYSICAL_TARGET_MATERIALIZATION_RETRY7.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2O_VERIFIER_COMPILATION_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2P_PHYSICAL_TARGET_MATERIALIZATION_RETRY8.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2Q_CATALOG_COMPATIBILITY_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2Q_ORCHESTRATION_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2Q_PG17_CATALOG_HARNESS_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2R_PHYSICAL_TARGET_MATERIALIZATION_RETRY9.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2S_UNIQUE_INDEX_PHYSICAL_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M6I2T_PHYSICAL_TARGET_MATERIALIZATION_RETRY10.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7A_AUTH_DATA_STORAGE_SOURCE_INVENTORY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7B_MIGRATION_BLOCKER_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7C_PREIMPORT_TRANSFORM_SPEC.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7D_AUTH_MATERIALIZATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7DA_AUTH_METHOD_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7DB_SECURE_AUTH_SNAPSHOT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7DC_AUTH_CARDINALITY_FIELD_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7DD_AUTH_EXECUTION_FINAL_PREFLIGHT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/phase17c_m7e_auditor.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/phase17c_m7f_capturer.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/phase17c_m7g_auditor.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7G_CUTOVER_RUNBOOK.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_A1_FREEZE_REPAIR.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_A4_WP16_HOTFIX_REFREEZE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_A4B_POSTPUBLISH_REFREEZE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_B_STORAGE_MATERIALIZATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_C_REMEDIATION_RECONCILIATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_D_PUBLIC_DATA_MATERIALIZATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_E_OPERATIONAL_READINESS.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_E1_CUTOVER_DEPENDENCY_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_E11_EXECUTION_INPUTS_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/phase17c_m7h_executor.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F1_TARGET_RUNTIME_SECRET_CONFIGURATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F10A_BACKGROUND_ACTIVATION_READINESS.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F10B_BACKGROUND_ACTIVATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F11_POSTCUTOVER_STABILIZATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F111_STABILIZATION_TEMPORAL_ATTESTATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F112_STABILIZATION_WINDOW_COMPLETION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F12_SOURCE_RETIREMENT_PLANNING.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F13_FINAL_BACKUP_ARCHIVAL_CHECKPOINT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F14_HOSTING_MIGRATION_READINESS.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F15_VERCEL_STAGING_VALIDATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F151_VERCEL_REMOTE_STAGING_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F151R_VERCEL_REMOTE_STAGING_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F16_PRODUCTION_HOSTING_CUTOVER.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F161R_GITHUB_BINDING_AND_HOSTING_CUTOVER.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F162R_D1_TLS_CERTIFICATE_FORENSIC_DIAGNOSTIC.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F162R_D2_CONTROLLED_CERTIFICATE_ISSUANCE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F162R_POST_DNS_CUTOVER_VERIFICATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F162R_R1_DNS_VERCEL_DOMAIN_TLS_RECHECK.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F162R_R2_FINAL_TLS_CUSTOM_DOMAIN_CLOSURE_RECHECK.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F162R_R3_TLS_OBSERVATION_ESCALATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F17_PRODUCTION_HOSTING_STABILIZATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F18_LEGACY_RETIREMENT_PRECHECK.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F2_EDGE_FUNCTION_PASSIVE_DEPLOYMENT.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F3_EDGE_RUNTIME_PASSIVE_VERIFICATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F31_ZERO_PROBE_RUNTIME_METADATA_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F4_APPLICATION_ENV_PRESTAGING.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F5_CUTOVER_BOUNDARY_SYNTHESIS.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F6_ATOMIC_PRODUCTION_CUTOVER.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F7_POSTCUTOVER_READONLY_SMOKE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F8_CONTROLLED_WRITE_SMOKE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F81_WRITE_ISOLATION_RLS_CLOSURE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_F9_CONTROLLED_PROVIDER_VALIDATION.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/PHASE17C_M7H_SOURCE_FREEZE_FINAL_DELTA.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/policies_source_truth_394.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/public_runner/phase17c_m7e_public_importer.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/public_runner/phase17c_m7f_public_importer.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/public_runner/phase17c_m7h_d_importer.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/columns_source_truth_2211.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/columns_source_truth_exact_2211.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/constraints_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/enums_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/foreign_keys_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/functions_source_truth_202.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/indexes_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/policies_source_truth_394.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/rls_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/triggers_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/source-truth/views_source_truth.csv",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_capture_pre_state.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_check_extensions.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_check_roles.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_checkpoints.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_postverify.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_preflight_select.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m6i2_target_preflight.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7c_verify_constraints.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7c_verify_fks.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7d_preflight.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7da_export_auth_identities.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7da_export_auth_users.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7db_check_source_auth_drift.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7db_diagnose_source_auth_drift.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7dd_verify_post_commit_auth.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7e_target_foundation_check.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7f_check_triggers.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/test_limit.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/test_tut_parse.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/migration/verify_m7f_parsed.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Migration milestone documentation / verification report",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/recovery/PRE_PHASE17B_ENVIRONMENT_INVENTORY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Pre-migration inventory and disaster recovery runbooks",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/recovery/PRE_PHASE17B_MIGRATION_BASELINE.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Pre-migration inventory and disaster recovery runbooks",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/recovery/PRE_PHASE17B_RECOVERY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Pre-migration inventory and disaster recovery runbooks",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/recovery/PRE_PHASE17C_ENVIRONMENT_INVENTORY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Pre-migration inventory and disaster recovery runbooks",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/recovery/PRE_PHASE17C_RECOVERY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Pre-migration inventory and disaster recovery runbooks",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "docs/recovery/PRE_PHASE17C_SERVER_FUNCTIONS_INVENTORY.md",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_REPOSITORY_DOCUMENTATION",
+      "reason": "Pre-migration inventory and disaster recovery runbooks",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "package-lock.json",
+      "status": "MODIFIED",
+      "category": "REQUIRED_VERCEL_BUILD",
+      "reason": "Canonical synchronized lockfile for reproducible deterministic builds",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "package.json",
+      "status": "MODIFIED",
+      "category": "REQUIRED_VERCEL_BUILD",
+      "reason": "Canonical dependency declarations without obsolete Lovable or Cloudflare packages",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/admin/AdminAiAssistant.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/admin/automations/AutomationTestModal.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/auth/AuthForm.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/auth/StaffMigrationModal.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/barbers/ProfessionalTimeOffDialog.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/communications/ChannelManager.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/communications/CommunicationOverview.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/communications/DeadLetterQueue.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/communications/DeliveryFailures.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/communications/TemplateManager.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/communications/UnifiedInbox.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/integrations/ResendSettingsCard.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/integrations/ZApiWhatsAppCard.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/marketing-hub/MarketingAIAdvisor.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/marketing-hub/PredictiveTrends.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/portal/SubscribePlanModal.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/profile/EditProfileModal.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/public/auth/ClientLoginForm.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/public/booking/BookingAuthStep.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/public/PublicContactSection.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/security/MFASettings.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/security/MFAVerificationGuard.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/security/SecurityCentral.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/settings/PaymentsSettings.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/StripeEmbeddedCheckout.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/subscription/AddonsCartDrawer.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/subscription/SubscribeAddonDialog.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/subscription/YourAddons.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/components/team/AddUserModal.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/academy.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/bi.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/communications.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/integrations.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/knowledge-base.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/marketing.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/profile.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/security.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/client/time-off.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge-client.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/ai.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/auth.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/contact.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/customer-auth.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/email.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/gateway.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/push.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/staff.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/stripe.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/team.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/edge/zapi.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/quick-wins.ts",
+      "status": "MODIFIED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/rpc/admin.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/rpc/jobs.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/rpc/platform.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/lib/backend/rpc/security.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase client/edge/rpc adapter",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/academy.$pathId.lessons.$lessonId.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/academy.$pathId.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/academy.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/admin.addons.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/admin.knowledge-base.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/admin.lgpd.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/admin.observability.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/admin.seguranca.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/admin.upgrade-recommendations.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/auth.reset-password.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/dashboard.bi.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/dashboard.integracoes.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/dashboard.settings.security.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/dashboard.usuarios.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/index.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/integrations.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/invite.$token.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/loyalty.templates.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/routes/subscription.index.tsx",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "src/utils/whatsapp.ts",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260903_barbex_storage_buckets.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260903_barbex_storage_policies.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260903_barbex_structural_seed.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260903_barbex_target_baseline.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260904120000_phase17c_m6c_auth_rate_limit.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260904140000_phase17c_m6d_team_staff_atomic.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260904160000_phase17c_m6e_stripe_idempotency.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260904180000_phase17c_m6f_zapi_idempotency.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260904200000_phase17c_m6g_workers.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/20260907_barbex_canonical_source_baseline.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/verify_20260907_canonical_baseline.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/verify_target_post_bootstrap.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/baseline/verify_target_pre_bootstrap.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/config.toml",
+      "status": "MODIFIED",
+      "category": "REQUIRED_CURRENT_PRODUCTION",
+      "reason": "Production runtime application code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/auth.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/cors.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/crypto.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/env.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/errors.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/logging.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/phone.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/push.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/rate-limit.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/resend.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/response.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/stripe.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/supabase-admin.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/types.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/validation.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/_shared/zapi.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/ai-assistant/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/auth-phone-reset/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/auth-phone/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/contact-public/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/cron-worker/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/customer-auth/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/gateway-manager/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/gateway-webhook/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/resend-webhook/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/send-email/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/send-push/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/staff-auth/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/stripe-addons/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/stripe-checkout/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/stripe-webhook/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/team-invitations/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/zapi-send/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/functions/zapi-webhook/index.ts",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase edge function runtime code",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/migrations/20260904120000_phase17c_m6c_auth_rate_limit.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/migrations/20260904140000_phase17c_m6d_team_staff_atomic.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/migrations/20260904160000_phase17c_m6e_stripe_idempotency.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/migrations/20260904180000_phase17c_m6f_zapi_idempotency.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/migrations/20260904200000_phase17c_m6g_workers.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/migrations/20260907080000_phase17c_m6h10_residual_rpcs.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260819125000_hotfix02_customer_portal_rls.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260820143000_hotfix09b_customer_own_reviews_rls.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260820180000_hotfix11_optional_review_cycle.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260821120000_hotfix13b_review_cycle_token_decoupling.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260825103000_hotfix15c_staff_verification_challenges.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260828100000_hotfix15j_legacy_profile_trigger_repair.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260828110000_hotfix15m_new_tenant_notification_semantics.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260901100000_phase17b1_staff_phone_identity_foundation.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260904120000_phase17c_m6c_auth_rate_limit.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260904140000_phase17c_m6d_team_staff_atomic.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260904160000_phase17c_m6e_stripe_idempotency.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260904180000_phase17c_m6f_zapi_idempotency.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "supabase/rollback/rollback_20260904200000_phase17c_m6g_workers.sql",
+      "status": "UNTRACKED",
+      "category": "REQUIRED_TARGET_BACKEND",
+      "reason": "Target Supabase migration baseline / post-baseline migration / rollback script",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    },
+    {
+      "path": "vite.config.ts",
+      "status": "MODIFIED",
+      "category": "REQUIRED_VERCEL_BUILD",
+      "reason": "Canonical build and repository configuration",
+      "secret_scan_pass": true,
+      "required_for_reproducibility": true,
+      "include_in_future_commit": true
+    }
+  ]
+}

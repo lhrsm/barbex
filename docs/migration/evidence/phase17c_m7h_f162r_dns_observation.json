@@ -1,0 +1,60 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Authoritative & Public DNS Observation Post-Cutover",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "operator_mutation": {
+    "provider": "Hostinger DNS Parking",
+    "record_type": "A",
+    "record_name": "@",
+    "before_value": "185.158.133.1",
+    "after_value": "76.76.21.21",
+    "requested_ttl": 300,
+    "www_record": "www CNAME barbex.shop (unmodified)"
+  },
+  "authoritative_dns": {
+    "nameservers": [
+      "cosmos.dns-parking.com",
+      "nova.dns-parking.com"
+    ],
+    "soa_serial": "2026091601",
+    "local_edge_query": {
+      "ip_172_64_52_46": "185.158.133.1 (cached 14400s TTL)",
+      "ip_172_64_53_200": "185.158.133.1 (cached 14400s TTL)"
+    }
+  },
+  "public_resolvers": {
+    "google_8_8_8_8": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "source_comment": "Response from 172.64.53.200",
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21"
+    },
+    "cloudflare_1_1_1_1": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21"
+    },
+    "opendns_208_67_222_222": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21"
+    },
+    "quad9_9_9_9": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21"
+    },
+    "level3_4_2_2_2": {
+      "apex_a": "76.76.21.21",
+      "ttl": 300,
+      "www_chain": "www.barbex.shop -> CNAME barbex.shop -> A 76.76.21.21"
+    }
+  },
+  "metrics": {
+    "F162R_AUTHORITATIVE_APEX_A": "76.76.21.21 (propagated to SOA 2026091601, anycast edge eviction in progress)",
+    "F162R_PUBLIC_APEX_A_VALUES": ["76.76.21.21"],
+    "F162R_PUBLIC_WWW_CHAIN": "www.barbex.shop CNAME barbex.shop -> 76.76.21.21",
+    "F162R_DNS_TTL_OBSERVED": 300,
+    "F162R_DNS_PROPAGATION_COMPLETE": "PARTIAL_GLOBAL_RESOLVERS_UPDATED"
+  }
+}

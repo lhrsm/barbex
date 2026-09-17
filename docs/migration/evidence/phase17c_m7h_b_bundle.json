@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-B",
+    "title": "Storage Materialization Execution Bundle",
+    "canonical_schema_release": "BARBEX-CANONICAL-20260909-02b6e234",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "created_at": "2026-09-11T10:17:29.901Z"
+  },
+  "authorities": {
+    "m7h_a4b_final_delta_manifest_sha256": "87e9979de3b2737d22dff88814d220d027c42a56b48963c1eefaec141475a00b",
+    "m7h_a4b_frozen_cutover_bundle_sha256": "62e10366e085591c1a370c002466f8d51ea021184b2a00572eb56bba532a23f6",
+    "source_storage_manifest_sha256": "6b036ecd4e225a091d61876e4cc9696120c68ec6f2c0a6bdfc62230b5c9d68d5",
+    "target_storage_verification_sha256": "138a0e605ed88a2659f7d8853a328936d613fcd5d135497634471e8be3497ab5",
+    "storage_materialization_evidence_sha256": "fe90e588a15e02b94a326c1cb26874fc5d4ef672796cd4213d7a072b62d72fca"
+  },
+  "bundle_hash": "5a719badc98f4c25e797ceedd4cd803c3560cb992ac9e43bd2908b9e7054b362"
+}

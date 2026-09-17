@@ -1,0 +1,17 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Rollback Trigger Matrix and Execution Protocol",
+  "evaluated_at": "2026-09-16T09:38:00.000Z",
+  "triggers": [
+    { "condition": "HTTP 5xx error rate > 0.5%", "action": "Immediate DNS rollback to Lovable A record 185.158.133.1" },
+    { "condition": "SSR boot or hydration fatal failure", "action": "Immediate DNS rollback to Lovable A record 185.158.133.1" },
+    { "condition": "Supabase Target auth session loss", "action": "Immediate DNS rollback to Lovable A record 185.158.133.1" },
+    { "condition": "Source Supabase traffic detected", "action": "Immediate DNS rollback and investigate routing breach" },
+    { "condition": "TLS provisioning failure on cutover", "action": "Immediate DNS rollback to Lovable A record 185.158.133.1" }
+  ],
+  "status": {
+    "f16_rollback_triggered": "NO",
+    "f16_rollback_reason": "NONE",
+    "f16_rollback_dns_restored": "NOT_APPLICABLE (DNS_NOT_MUTATED)"
+  }
+}

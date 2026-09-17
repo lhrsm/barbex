@@ -1,0 +1,39 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Production Smoke Test Evaluation",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "deployment_reference": {
+    "deployment_id": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+    "deployment_url": "https://barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+    "aliased_url": "https://barbex-staging.vercel.app",
+    "runtime": "nodejs24.x"
+  },
+  "routes_evaluated": [
+    { "path": "/", "status": 200, "ssr": true, "bytes": 122606, "error": null },
+    { "path": "/auth", "status": 200, "ssr": true, "bytes": 26915, "error": null },
+    { "path": "/dashboard", "status": 200, "ssr": true, "bytes": 20939, "error": null },
+    { "path": "/calendar", "status": 200, "ssr": true, "bytes": 20109, "error": null },
+    { "path": "/customers", "status": 200, "ssr": true, "bytes": 8942, "error": null },
+    { "path": "/barbers", "status": 200, "ssr": true, "bytes": 6042, "error": null },
+    { "path": "/services", "status": 200, "ssr": true, "bytes": 5391, "error": null },
+    { "path": "/products", "status": 200, "ssr": true, "bytes": 21424, "error": null },
+    { "path": "/finances", "status": 200, "ssr": true, "bytes": 9786, "error": null },
+    { "path": "/subscriptions", "status": 200, "ssr": true, "bytes": 22483, "error": null },
+    { "path": "/loyalty", "status": 200, "ssr": true, "bytes": 18583, "error": null },
+    { "path": "/tutorials", "status": 200, "ssr": true, "bytes": 30649, "error": null },
+    { "path": "/status", "status": 200, "ssr": true, "bytes": 9192, "error": null },
+    { "path": "/privacy", "status": 200, "ssr": true, "bytes": 10577, "error": null },
+    { "path": "/terms", "status": 200, "ssr": true, "bytes": 10097, "error": null }
+  ],
+  "metrics": {
+    "F162R_PRODUCTION_ROUTES_TESTED": 15,
+    "F162R_PRODUCTION_HTTP_5XX": 0,
+    "F162R_PRODUCTION_FATAL_JS_ERRORS": 0,
+    "F162R_PRODUCTION_SSR_ERRORS": 0,
+    "F162R_PRODUCTION_HYDRATION_FATAL_ERRORS": 0
+  },
+  "verdict": {
+    "PRODUCTION_DEPLOYMENT_HEALTH": "PASS",
+    "READ_ONLY_SMOKE_VERDICT": "PASS"
+  }
+}

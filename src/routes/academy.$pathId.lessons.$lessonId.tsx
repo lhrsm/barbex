@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AcademyLayout } from "@/components/academy/AcademyLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAcademyPathDetails, markLessonProgress } from "@/lib/academy.functions";
+import { getAcademyPathDetailsClient, markLessonProgressClient } from "@/lib/backend/client/academy";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, 
@@ -27,12 +27,12 @@ function LessonContentPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["academy-path", pathId],
-    queryFn: () => getAcademyPathDetails({ data: { pathId } })
+    queryFn: () => getAcademyPathDetailsClient({ pathId })
   });
 
   const progressMutation = useMutation({
     mutationFn: (status: "started" | "completed") => 
-      markLessonProgress({ data: { pathId, lessonId, status } }),
+      markLessonProgressClient({ pathId, lessonId, status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["academy-path", pathId] });
     }

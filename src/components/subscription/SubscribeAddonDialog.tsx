@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { previewAddon, subscribeToAddon } from "@/utils/addons.functions";
+import { previewAddon, subscribeToAddon } from "@/lib/backend/edge/stripe";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { Loader2, Check, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";

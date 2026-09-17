@@ -22,12 +22,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import {
   requestStaffEmailVerification,
   verifyStaffEmailCode,
   finalizeStaffAuthSetup,
-} from "@/lib/staff-auth.functions";
+} from "@/lib/backend/edge/staff";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
 
@@ -61,10 +60,6 @@ export function StaffMigrationModal({
   const submittingRef = useRef(false);
   const { login } = useProfessionalAuth();
 
-  const reqVerification = useServerFn(requestStaffEmailVerification);
-  const verifyCode = useServerFn(verifyStaffEmailCode);
-  const finalizeAuth = useServerFn(finalizeStaffAuthSetup);
-
   if (!barber) return null;
 
   // ETAPA 1 -> 2: Enviar OTP para o e-mail digitado
@@ -79,14 +74,12 @@ export function StaffMigrationModal({
     submittingRef.current = true;
     setLoading(true);
     try {
-      const res = await reqVerification({
-        data: {
-          email: email.trim().toLowerCase(),
-          phone: barber.phone,
-          barberId: barber.id,
-          tenantId: barber.tenant_id,
-          barberName: barber.name,
-        },
+      const res = await requestStaffEmailVerification({
+        email: email.trim().toLowerCase(),
+        phone: barber.phone,
+        barberId: barber.id,
+        tenantId: barber.tenant_id,
+        barberName: barber.name,
       });
       setEmailExists(!!res.emailExists);
       toast.success("Código de verificação enviado para seu e-mail!");
@@ -112,12 +105,10 @@ export function StaffMigrationModal({
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const res = await verifyCode({
-        data: {
-          email: cleanEmail,
-          code: otpCode,
-          barberId: barber.id,
-        },
+      const res = await verifyStaffEmailCode({
+        email: cleanEmail,
+        code: otpCode,
+        barberId: barber.id,
       });
 
       if (!res.success) {
@@ -128,14 +119,12 @@ export function StaffMigrationModal({
 
       if (emailExists) {
         // Se a conta já existe, finaliza o vínculo diretamente sem pedir criação de senha redundante
-        await finalizeAuth({
-          data: {
-            email: cleanEmail,
-            barberId: barber.id,
-            phone: barber.phone,
-            name: barber.name,
-            tenantId: barber.tenant_id,
-          },
+        await finalizeStaffAuthSetup({
+          email: cleanEmail,
+          barberId: barber.id,
+          phone: barber.phone,
+          name: barber.name,
+          tenantId: barber.tenant_id,
         });
 
         login({
@@ -176,15 +165,13 @@ export function StaffMigrationModal({
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      await finalizeAuth({
-        data: {
-          email: cleanEmail,
-          password,
-          barberId: barber.id,
-          phone: barber.phone,
-          name: barber.name,
-          tenantId: barber.tenant_id,
-        },
+      await finalizeStaffAuthSetup({
+        email: cleanEmail,
+        password,
+        barberId: barber.id,
+        phone: barber.phone,
+        name: barber.name,
+        tenantId: barber.tenant_id,
       });
 
       // Fazer login imediato com a nova credencial criada

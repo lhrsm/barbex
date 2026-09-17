@@ -1,0 +1,25 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Reproducibility Gate Precheck",
+  "evaluated_at": "2026-09-16T11:52:40.000Z",
+  "reproducibility_analysis": {
+    "github_main_has_vite_config": false,
+    "github_main_has_decoupled_backend_adapters": false,
+    "github_main_has_supabase_functions": false,
+    "uncommitted_tracked_files": 54,
+    "uncommitted_runtime_untracked_files": 35
+  },
+  "metrics": {
+    "F18_GITHUB_MAIN_CAN_REPRODUCE_CURRENT_PRODUCTION": "NO",
+    "F18_MISSING_FILES_FROM_GITHUB_MAIN": [
+      "src/lib/backend/client/*",
+      "src/lib/backend/edge/*",
+      "src/lib/backend/rpc/*",
+      "src/lib/backend/edge-client.ts",
+      "supabase/functions/*",
+      "modified vite.config.ts"
+    ],
+    "F18_PRODUCTION_ONLY_LOCAL_CHANGES": 89,
+    "F18_REPRODUCIBILITY_PASS": "NO"
+  }
+}

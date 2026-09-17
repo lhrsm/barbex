@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F1",
+    "title": "Target Runtime Secret Configuration Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-13T11:06:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_e_operational_readiness_bundle_sha256": "f5f9f5c05cfc8b09ac9060e3a73b2220bc048c20c8048c39793ae2798d1f81de",
+    "m7h_e1_cutover_dependency_bundle_sha256": "2c15bb08688556980e971c42dd2dfbe16d5c96c7204d60fbc117b2c1a548111c",
+    "m7h_e11_execution_inputs_bundle_sha256": "c285dda351dd8ffbd55dd3e80c89f80d9b3d1ab8ba255b4969001d96f7ca040a"
+  },
+  "evidence_artifacts": {
+    "secret_classification_sha256": "3bd747ada84cd44a4b17ebc41cec986edf4da201049b12028c50334ec2ef21ab",
+    "execution_plan_sha256": "6319ae2c93f31bd667b649e3e4e5a32db23d97c0675beadeff8837fcf5bf9439",
+    "execution_results_sha256": "e28d7a37ea74424d30b87228d3d23d4f834fdedbdac4e52a5da7da9e2cded00c",
+    "postcheck_sha256": "ca62deaa1126f47594a796db2c2a1931651a0f9a18701510b90537fffddcbc73"
+  },
+  "metrics": {
+    "canonical_secret_name_count": 10,
+    "f1_platform_provided_count": 2,
+    "f1_operator_set_action_count": 7,
+    "f1_deferred_secret_count": 1,
+    "f1_blocked_secret_count": 0,
+    "target_operator_secret_names_missing": 0,
+    "edge_functions_deployed_by_f1": 0,
+    "edge_functions_invoked_by_f1": 0,
+    "auth_config_mutations": 0,
+    "provider_config_mutations": 0,
+    "target_public_data_unchanged": true,
+    "target_auth_state_unchanged": true,
+    "target_storage_state_unchanged": true,
+    "target_sequence_state_unchanged": true,
+    "source_state_unchanged": true,
+    "source_freeze_still_valid": true,
+    "f1_rollback_plan_complete": true
+  },
+  "bundle_hash": "643e9b57a4448a0ce5073c04e9dac1cc877f0af45f601d41c2d0cb5631cf672a"
+}

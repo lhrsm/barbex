@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-D",
+    "generated_at": "2026-09-12T11:39:16.862Z",
+    "bundle_hash": "2e91796e4823d9245d5f5c1edfed0e017e19dfc87c4e013612e39909ef762682"
+  },
+  "authorities": {
+    "a4b_final_delta_manifest_sha256": "87e9979de3b2737d22dff88814d220d027c42a56b48963c1eefaec141475a00b",
+    "a4b_frozen_cutover_bundle_sha256": "62e10366e085591c1a370c002466f8d51ea021184b2a00572eb56bba532a23f6",
+    "storage_materialization_bundle_sha256": "5a719badc98f4c25e797ceedd4cd803c3560cb992ac9e43bd2908b9e7054b362",
+    "remediation_authority_sha256": "f32620c1984a0dc67b0729f5e92b90c6b731c08833f0f7c7803f64ac89068f78"
+  },
+  "artifacts": {
+    "import_plan": "docs/migration/evidence/phase17c_m7h_d_import_plan.json",
+    "stage_results": "docs/migration/evidence/phase17c_m7h_d_stage_results.json",
+    "target_verification": "docs/migration/evidence/phase17c_m7h_d_target_verification.json",
+    "final_fingerprints": "docs/migration/evidence/phase17c_m7h_d_final_fingerprints.json"
+  },
+  "metrics": {
+    "target_public_rows": 257687,
+    "table_count_mismatches": 0,
+    "matching_fingerprints": 159,
+    "sequences": {
+      "rate_limit_hits": 1,
+      "status_checks": 256999
+    },
+    "triggers_restored": 21,
+    "storage_urls_rewritten": 6,
+    "source_frozen_max_id": 256998
+  }
+}

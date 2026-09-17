@@ -1,0 +1,82 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "Vercel TLS Certificate Forensic Diagnostic Manifest",
+  "evaluated_at": "2026-09-16T11:20:00.000Z",
+  "prior_authorities": {
+    "R3_BUNDLE_SHA256": "d95069bf86bc496931bf892f23cb7c23299b407cd56cfb4c0b6b815531eb7bde"
+  },
+  "evidence_files": {
+    "phase17c_m7h_f162r_d1_certificate_inventory.json": "ae7c18d1e3648eb24ec6dbd4466ea4098831cd298f2265507cc1bc8397d65ef8",
+    "phase17c_m7h_f162r_d1_dns_certificate_forensics.json": "5db07bc13440f0713d6c2c51f1cce2152c1b7afa26bcdd0fc54f099999fd338c",
+    "phase17c_m7h_f162r_d1_remediation_plan.json": "4f081ec7119df730d17a432baf89e6244c4866719537b06c4003bb39c975ecdf",
+    "phase17c_m7h_f162r_d1_root_cause.json": "ac4b9f40c98f169a8dd8ba136350c2b793c63f253c805f52218174c546ae4b00",
+    "phase17c_m7h_f162r_d1_tls_network.json": "af3e0aa7100785abe2ce494b191770e660aa970309722be56e8252965624e52b",
+    "phase17c_m7h_f162r_d1_vercel_domain.json": "d46a1ab357b3e834bb3e8ac935a473f758a7e23521c6495cf56d6223c0e6bf4d"
+  },
+  "metrics_summary": {
+    "D1_R3_HASH_MATCH": "YES",
+    "D1_APEX_A": [
+      "76.76.21.21"
+    ],
+    "D1_APEX_AAAA": "ENODATA",
+    "D1_WWW_A": [
+      "76.76.21.21"
+    ],
+    "D1_WWW_AAAA": "ENODATA",
+    "D1_WWW_CNAME": [
+      "barbex.shop"
+    ],
+    "D1_APEX_CAA": "ENODATA",
+    "D1_WWW_CAA": "ENODATA",
+    "D1_APEX_ACME_TXT": "ENOTFOUND",
+    "D1_WWW_ACME_TXT": "ENOTFOUND",
+    "D1_CONFLICTING_A": "NONE",
+    "D1_CONFLICTING_AAAA": "NONE",
+    "D1_STALE_ACME_RECORD": "NONE",
+    "D1_DNS_CERTIFICATE_BLOCKER": "NO",
+    "D1_APEX_DOMAIN_VALID": "YES",
+    "D1_WWW_DOMAIN_VALID": "YES",
+    "D1_VERCEL_DOMAIN_DIAGNOSTIC_APEX": "VALID_ATTACHED_ACCEPTED_HTTP01",
+    "D1_VERCEL_DOMAIN_DIAGNOSTIC_WWW": "VALID_ATTACHED_ACCEPTED_HTTP01",
+    "D1_CERT_CLI_COMMANDS_AVAILABLE": [
+      "add",
+      "issue",
+      "list",
+      "remove"
+    ],
+    "D1_CERT_LIST_SUPPORTED": "YES",
+    "D1_CERT_INSPECT_SUPPORTED": "NO",
+    "D1_CERT_ISSUE_SUPPORTED": "YES",
+    "D1_CERTIFICATE_INVENTORY": "NONE_FOR_BARBEX_SHOP",
+    "D1_APEX_CERT_FOUND": "NO",
+    "D1_WWW_CERT_FOUND": "NO",
+    "D1_COMBINED_CERT_FOUND": "NO",
+    "D1_CERT_STATUS": "NONE",
+    "D1_CERT_CREATED_AT": "NONE",
+    "D1_CERT_EXPIRES_AT": "NONE",
+    "D1_CERTIFICATE_ISSUED_BUT_NOT_SERVED": "NO",
+    "D1_CERTIFICATE_NOT_ISSUED": "YES",
+    "D1_APEX_TLS_FAILURE_STAGE": "SERVER_HELLO_CERTIFICATE_EXCHANGE",
+    "D1_WWW_TLS_FAILURE_STAGE": "SERVER_HELLO_CERTIFICATE_EXCHANGE",
+    "D1_APEX_PEER_CERTIFICATE": "NONE_ON_VERCEL_EDGE",
+    "D1_WWW_PEER_CERTIFICATE": "NONE_ON_VERCEL_EDGE",
+    "D1_APEX_TLS_ERROR": "ECONNRESET_SOCKET_DISCONNECTED",
+    "D1_WWW_TLS_ERROR": "ECONNRESET_SOCKET_DISCONNECTED",
+    "D1_LOCAL_DNS_STALE": "YES",
+    "D1_PUBLIC_DNS_CURRENT": "YES",
+    "D1_FORCED_VERCEL_TLS_RESULT": "TCP_CONNECTED_TLS_ECONNRESET",
+    "D1_ROOT_CAUSE_CLASSIFICATION": "CERTIFICATE_NOT_ISSUED",
+    "D1_ROOT_CAUSE_EVIDENCE": "vercel certs ls physically returned 0 certificates for barbex.shop or www.barbex.shop under team startup-dc20 despite DNS being authoritative and Port 80 responding from Vercel edge for over 2 hours. No ACME certificate has been created or bound.",
+    "D1_MANUAL_CERT_ISSUANCE_ELIGIBLE": "YES",
+    "D1_PROPOSED_CERT_COMMAND": "vercel certs issue barbex.shop www.barbex.shop",
+    "D1_EXPECTED_SIDE_EFFECTS": "Triggers immediate ACME HTTP-01 challenge against Vercel edge IP 76.76.21.21. Generates dual-SAN SSL certificate for barbex.shop and www.barbex.shop and binds it to Vercel edge proxies.",
+    "D1_ROLLBACK_IMPLICATION": "Zero risk to backend, database, or repository. Completely reversible via vercel certs rm if necessary.",
+    "D1_CA_RATE_LIMIT_CONSIDERATION": "Let Encrypt / ZeroSSL allows 50 certificates per registered domain per week. Current count issued for barbex.shop on Vercel is 0. Rate limit risk is zero.",
+    "SOURCE_SUPABASE_CALLS": 0,
+    "SOURCE_WP16_STILL_ACTIVE": "YES",
+    "D1_TLS_RECOVERED_NATURALLY": "NO",
+    "D1_READY_TO_CLOSE_F16": "NO",
+    "D1_OPERATOR_AUTHORIZATION_REQUIRED": "YES",
+    "FINAL_DECISION": "D1_CERTIFICATE_REISSUANCE_RECOMMENDED_AWAITING_EXPLICIT_AUTHORIZATION"
+  }
+}

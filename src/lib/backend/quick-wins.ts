@@ -225,7 +225,7 @@ export async function deleteTimeOffClient(id: string): Promise<{ success: boolea
 
 /**
  * 7. getSystemHealthClient
- * Medição direta de latência e disponibilidade via Supabase Client
+ * Medição direta de latência e conectividade via Supabase Client
  */
 export async function getSystemHealthClient() {
   const start = Date.now();
@@ -236,13 +236,13 @@ export async function getSystemHealthClient() {
     status: dbError ? "degraded" : "healthy",
     services: {
       database: dbError ? "error" : "healthy",
-      auth: "healthy",
-      realtime: "healthy",
-      edge_functions: "healthy"
+      auth: "unmonitored",
+      realtime: "unmonitored",
+      edge_functions: "unmonitored"
     },
     metrics: {
       db_latency_ms: dbLatency,
-      uptime_seconds: 86400
+      uptime_status: dbError ? "degraded" : "operational"
     },
     timestamp: new Date().toISOString()
   };
@@ -250,7 +250,7 @@ export async function getSystemHealthClient() {
 
 /**
  * 8. getScalabilityMetricsClient
- * Leitura de métricas agregadas de escalabilidade via RPC PostgreSQL com fallback seguro
+ * Leitura de métricas agregadas reais de escalabilidade via RPC PostgreSQL ou consultas diretas
  */
 export async function getScalabilityMetricsClient() {
   try {
@@ -265,9 +265,20 @@ export async function getScalabilityMetricsClient() {
     if (err?.code === '42501' || err?.message?.includes('Acesso negado') || err?.message?.includes('permission')) {
       throw err;
     }
-    // Fallback gracioso apenas para rollout compatibility / RPC ainda não materializada
   }
 
+  // Consulta real de Tenants (barbearias ativas)
+  const { count: activeTenants } = await (supabase as any)
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "tenant_admin");
+
+  // Consulta real de Agendamentos cadastrados
+  const { count: totalAppointments } = await (supabase as any)
+    .from("appointments")
+    .select("id", { count: "exact", head: true });
+
+  // Consulta real de Background Jobs
   const { data: jobStats, error: qErr } = await (supabase as any)
     .from("background_jobs")
     .select("status");
@@ -280,10 +291,10 @@ export async function getScalabilityMetricsClient() {
   }, { pending: 0, processing: 0, failed: 0, retry: 0, completed: 0 });
 
   return {
-    active_tenants: 124,
-    total_appointments: 15420,
-    avg_request_duration: 145,
-    error_rate: 0.02,
+    active_tenants: activeTenants ?? 0,
+    total_appointments: totalAppointments ?? 0,
+    avg_request_duration: null,
+    error_rate: null,
     queue_status: {
       pending: counts.pending + counts.retry,
       failed: counts.failed,

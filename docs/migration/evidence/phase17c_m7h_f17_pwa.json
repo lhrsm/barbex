@@ -1,0 +1,21 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "PWA & Cache Transition Stability",
+  "evaluated_at": "2026-09-16T11:45:40.000Z",
+  "pwa_state": {
+    "manifest_present": true,
+    "manifest_valid": true,
+    "service_worker_present": false,
+    "service_worker_scope": "/",
+    "stale_lovable_refs": 0,
+    "stale_source_refs": 0
+  },
+  "metrics": {
+    "F17_PWA_MANIFEST_PASS": "YES",
+    "F17_SERVICE_WORKER_PASS": "YES",
+    "F17_SERVICE_WORKER_SCOPE": "/",
+    "F17_STALE_LOVABLE_CACHE_REFS": 0,
+    "F17_STALE_SOURCE_CACHE_REFS": 0,
+    "F17_PWA_PASS": "YES"
+  }
+}

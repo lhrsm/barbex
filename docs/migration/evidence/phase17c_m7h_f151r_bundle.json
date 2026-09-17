@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F15.1R",
+    "title": "Vercel Remote Staging Closure Cryptographic Authority Bundle",
+    "target_supabase_project_ref": "ywdwrstxvsdqiryhieiz",
+    "source_supabase_project_ref": "wdxhjwodyctgzqtogkgv",
+    "github_repository": "lhrsm/barbex",
+    "production_domain": "barbex.shop",
+    "generated_at": "2026-09-15T16:55:00.000Z"
+  },
+  "prior_authorities": {
+    "f13_bundle_sha256": "ead1d90bb1e4bfaeda64d0d43bc1dfdefdde3e8f99a9a10f9cebeab213da443d",
+    "f14_bundle_sha256": "f3f8df4b55370e70d53cb58073f914efe9b5971f3cf306fd43d559ea61e7c785",
+    "f15_bundle_sha256": "8ec49261762c1aff669369d15e2715a974dd5890d826f3c6cb7655e90722c930",
+    "f151_blocked_bundle_sha256": "3831358f30af63fa719b1bf58fc38a40e0ee81ea7035ec6b66a4adbabc6edfb1"
+  },
+  "evidence_artifacts": {
+    "vercel_access_sha256": "4d85a50be5953297f992173026913e7a79aec1387c7083ff992348517fac7326",
+    "project_sha256": "e3c09602ce25454d744b3170e54cbfce73c9651da3eafbad70f4a27885a54777",
+    "env_sha256": "559cb6712abd1059951f801e59d85f5b7ac06e1eae3e713e44af7c338094c76d",
+    "remote_deployment_sha256": "085fd3e4439f49b8d5070bdbdd4ccf6461ed96b16c67afa9f2261f003e8721cd",
+    "remote_smoke_sha256": "b93f459788235a0f71e35ae8189def4b0f9621ad34bff23fc66077b03f1a52d6",
+    "target_authority_sha256": "ff9dde6791215e102377a739b8df443b2af04909b8364c5656cdadc29b6fec69",
+    "remote_security_sha256": "29c3f5ef5fee4c3d93a461fbae2c67fb43fb8588c9644e032e1e44dae892b48b",
+    "pwa_ssr_sha256": "ff09478d733815675883b60169bb2a27ab1cdd78609f5b75965f4c9cc405a974",
+    "production_isolation_sha256": "48797d6425de9da1ca1eae10c42c76e41db7e1c3f31802aa3ddd843c818347d1",
+    "source_invariant_sha256": "87ab53076308d6de346501d4ea86593a76ad2d71379452553e84e6cf8a3d2f39",
+    "f16_dns_plan_sha256": "f1e14b401255c1833cc309cd2c627e5437109eea55d3446c7d553a17c3e1301e"
+  },
+  "metrics": {
+    "f151r_vercel_access_available": "YES",
+    "f151r_vercel_user": "analistalouis-6644",
+    "f151r_vercel_team": "startup-dc20",
+    "vercel_project_created_or_reused": "YES",
+    "vercel_project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+    "vercel_project_name": "barbex-staging",
+    "vercel_remote_preview_deployed": "YES",
+    "vercel_remote_preview_deployment_id": "dpl_7HrVsYsxPXkB5Pt1LWAE3XzYiB2z",
+    "vercel_remote_preview_url": "https://barbex-staging-8s6t1ofu6-startup-dc20.vercel.app",
+    "f151r_env_required_total": 17,
+    "f151r_env_present_preview": 17,
+    "f151r_env_missing_preview": 0,
+    "f151r_remote_routes_tested": 19,
+    "f151r_remote_http_5xx": 0,
+    "f151r_remote_fatal_js_errors": 0,
+    "f151r_remote_ssr_errors": 0,
+    "remote_database_authority_target": "YES",
+    "remote_auth_authority_target": "YES",
+    "remote_storage_authority_target": "YES",
+    "remote_realtime_authority_target": "YES",
+    "remote_source_supabase_calls": 0,
+    "remote_source_ref_count": 0,
+    "remote_lovable_runtime_ref_count": 0,
+    "remote_service_role_client_exposures": 0,
+    "remote_secret_exposures": 0,
+    "production_dns_changed": "NO",
+    "lovable_production_still_active": "YES",
+    "f16_dns_plan_complete": "YES",
+    "f151r_reached": "YES",
+    "ready_for_f16": "YES",
+    "final_decision": "F151R_VERCEL_REMOTE_STAGING_CLOSED_READY_FOR_F16"
+  }
+}

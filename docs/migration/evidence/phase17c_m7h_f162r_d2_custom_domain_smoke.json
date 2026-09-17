@@ -1,0 +1,66 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "Custom Domain Production Smoke & WWW Check",
+  "evaluated_at": "2026-09-16T11:31:15.000Z",
+  "smoke_results": [
+    {
+      "path": "/",
+      "statusCode": 200,
+      "server": "Vercel",
+      "xVercelId": "gru1::iad1::z2dnj-1789558271316-e80843a402b8",
+      "contentLength": 122606,
+      "hasFatalJs": false,
+      "hasSsrError": false,
+      "hasHydrationError": false
+    },
+    {
+      "path": "/auth",
+      "statusCode": 200,
+      "server": "Vercel",
+      "xVercelId": "gru1::iad1::zpl8j-1789558271339-db6622483ad3",
+      "contentLength": 26915,
+      "hasFatalJs": false,
+      "hasSsrError": false,
+      "hasHydrationError": false
+    },
+    {
+      "path": "/dashboard",
+      "statusCode": 200,
+      "server": "Vercel",
+      "xVercelId": "gru1::iad1::pbs6x-1789558271318-80f5a2409ce6",
+      "contentLength": 20939,
+      "hasFatalJs": false,
+      "hasSsrError": false,
+      "hasHydrationError": false
+    },
+    {
+      "path": "/status",
+      "statusCode": 200,
+      "server": "Vercel",
+      "xVercelId": "gru1::iad1::fbf98-1789558271306-8c612a4a1d67",
+      "contentLength": 9192,
+      "hasFatalJs": false,
+      "hasSsrError": false,
+      "hasHydrationError": false
+    }
+  ],
+  "www_check": {
+    "url": "https://www.barbex.shop/",
+    "statusCode": 200,
+    "finalUrl": "https://www.barbex.shop/",
+    "redirectLoop": false,
+    "pass": true
+  },
+  "metrics": {
+    "D2_CUSTOM_DOMAIN_ROUTES_TESTED": 4,
+    "D2_CUSTOM_DOMAIN_HTTP_5XX": 0,
+    "D2_CUSTOM_DOMAIN_FATAL_JS_ERRORS": 0,
+    "D2_CUSTOM_DOMAIN_SSR_ERRORS": 0,
+    "D2_CUSTOM_DOMAIN_HYDRATION_FATAL_ERRORS": 0,
+    "D2_CUSTOM_DOMAIN_HOSTING_AUTHORITY": "VERCEL",
+    "D2_WWW_HTTP_STATUS": 200,
+    "D2_WWW_FINAL_URL": "https://www.barbex.shop/",
+    "D2_WWW_REDIRECT_LOOP": "NO",
+    "D2_WWW_PASS": "YES"
+  }
+}

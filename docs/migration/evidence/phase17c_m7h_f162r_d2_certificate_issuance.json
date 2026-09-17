@@ -1,0 +1,35 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "Controlled Certificate Issuance",
+  "executed_at": "2026-09-16T11:29:48.000Z",
+  "command": "vercel certs issue barbex.shop www.barbex.shop --scope startup-dc20",
+  "attempts": 1,
+  "exit_code": 0,
+  "raw_output": "Success! Certificate entry for barbex.shop, www.barbex.shop created [16s]",
+  "certificate_metadata": {
+    "id": "cert_6F9pwDjZfakCxaFGywGlgmED",
+    "names": [
+      "barbex.shop",
+      "www.barbex.shop"
+    ],
+    "created_at": "2026-09-16T11:30:13.000Z",
+    "expires_at": "in 90d (Dec 15, 2026)",
+    "auto_renew": true,
+    "ca": "Let's Encrypt"
+  },
+  "metrics": {
+    "D2_CERT_ISSUANCE_EXECUTED": "YES",
+    "D2_CERT_ISSUANCE_ATTEMPTS": 1,
+    "D2_CERT_ISSUANCE_EXIT_CODE": 0,
+    "D2_CERT_ISSUANCE_RESULT": "SUCCESS",
+    "D2_CERT_ID": "cert_6F9pwDjZfakCxaFGywGlgmED",
+    "D2_CERT_NAMES": [
+      "barbex.shop",
+      "www.barbex.shop"
+    ],
+    "D2_CERT_CREATED_AT": "2026-09-16T11:30:13.000Z",
+    "D2_CERT_EXPIRES_AT": "2026-12-15T10:31:39.000Z",
+    "D2_CERT_AUTO_RENEW": "YES",
+    "D2_CERT_CA": "Let's Encrypt"
+  }
+}

@@ -36,7 +36,7 @@ import {
 import {
   previewAddonsBatch,
   subscribeToAddonsBatch,
-} from "@/utils/addons.functions";
+} from "@/lib/backend/edge/stripe";
 
 export type CartAddon = {
   id: string;

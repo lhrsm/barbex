@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Send, MessageSquare, Phone, CheckCircle2, Mail, MapPin } from "lucide-react";
-import { submitPublicContactMessage } from "@/lib/contact.functions";
+import { submitPublicContactMessageClient } from "@/lib/backend/edge/contact";
 import { normalizePhone } from "@/utils/phone";
 
 interface PublicContactSectionProps {
@@ -117,16 +117,13 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
 
     setIsSubmitting(true);
     try {
-      const res = await submitPublicContactMessage({
-        data: {
-          slug,
-          name: name.trim(),
-          email: email.trim() || undefined,
-          phone: phone.trim() || undefined,
-          subject,
-          message: message.trim(),
-          honeypot: honeypot || undefined,
-        }
+      const res = await submitPublicContactMessageClient({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        subject,
+        message: message.trim(),
+        honeypot: honeypot || undefined,
       });
 
       if (res?.success) {

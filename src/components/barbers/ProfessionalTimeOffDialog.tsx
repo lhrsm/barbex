@@ -30,7 +30,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { updateTimeOff, checkConflicts, TimeOff } from "@/lib/time-off.functions";
+import type { TimeOff } from "@/lib/time-off.functions";
+import { checkTimeOffConflictsClient } from "@/lib/backend/client/time-off";
 import { getTimeOffClient, createTimeOffClient, deleteTimeOffClient } from "@/lib/backend/quick-wins";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -104,12 +105,10 @@ export function ProfessionalTimeOffDialog({ professional, open, onOpenChange }: 
     
     setIsCheckingConflicts(true);
     try {
-      const data = await checkConflicts({
-        data: {
-          professionalId: professional.id,
-          startsAt: formData.starts_at,
-          endsAt: formData.ends_at
-        }
+      const data = await checkTimeOffConflictsClient({
+        professionalId: professional.id,
+        startsAt: formData.starts_at,
+        endsAt: formData.ends_at
       });
 
       setConflicts(data as any[]);

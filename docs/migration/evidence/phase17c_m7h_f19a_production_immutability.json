@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-09-16T12:23:27.774Z",
+  "phase": "PHASE 17C.M7H-F19A",
+  "topic": "Production Immutability Verification",
+  "production_domain": "https://barbex.shop",
+  "authoritative_ip": "76.76.21.21",
+  "production_deployment_id": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+  "metrics": {
+    "F19A_PRODUCTION_DEPLOYMENT_ID_BEFORE": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+    "F19A_PRODUCTION_DEPLOYMENT_ID_AFTER": "dpl_9YX9oGXo9dNv2dJ9owUTzkqqC9h3",
+    "F19A_PRODUCTION_DEPLOYMENT_UNCHANGED": "YES",
+    "F19A_PRODUCTION_TLS_PASS": "YES",
+    "F19A_TARGET_AUTHORITY_PASS": "YES",
+    "F19A_SOURCE_PRODUCTION_CALLS": 0
+  },
+  "tls_details": {
+    "authorized": true,
+    "subject": {
+      "CN": "barbex.shop"
+    },
+    "issuer": {
+      "C": "US",
+      "O": "Let's Encrypt",
+      "CN": "YR1"
+    },
+    "valid_to": "Dec 15 10:31:39 2026 GMT",
+    "san": "DNS:barbex.shop, DNS:www.barbex.shop"
+  },
+  "tested_routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "server": "Vercel",
+      "vercel_id": "gru1::iad1::9qm76-1789561405892-74e28a3aea90",
+      "len": 122606
+    },
+    {
+      "path": "/auth",
+      "status": 200,
+      "server": "Vercel",
+      "vercel_id": "gru1::iad1::jvqg7-1789561406782-57e12e0f80b3",
+      "len": 26915
+    },
+    {
+      "path": "/status",
+      "status": 200,
+      "server": "Vercel",
+      "vercel_id": "gru1::iad1::r9h8g-1789561407071-9f5730c61984",
+      "len": 9192
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "server": "Vercel",
+      "vercel_id": "gru1::iad1::qjrv6-1789561407320-cd482656104c",
+      "len": 10577
+    }
+  ]
+}

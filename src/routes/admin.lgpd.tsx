@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminListLgpdRequests, adminResolveLgpdRequest } from "@/lib/trust.functions";
+import { adminListLgpdRequestsClient, adminResolveLgpdRequestClient } from "@/lib/backend/rpc/admin";
 import { Scale, Download, Trash2, Edit3, UserCheck, CheckCircle2, XCircle, Clock, Filter } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,12 +30,12 @@ function AdminLgpd() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-lgpd-requests", statusFilter, typeFilter],
-    queryFn: () => adminListLgpdRequests({ data: { status: statusFilter || undefined, type: typeFilter || undefined } }),
+    queryFn: () => adminListLgpdRequestsClient({ status: statusFilter || undefined, type: typeFilter || undefined }),
   });
 
   const resolve = useMutation({
     mutationFn: (vars: { id: string; status: "done" | "rejected" | "in_progress"; response?: string }) =>
-      adminResolveLgpdRequest({ data: vars }),
+      adminResolveLgpdRequestClient(vars),
     onSuccess: () => {
       toast.success("Solicitação atualizada");
       qc.invalidateQueries({ queryKey: ["admin-lgpd-requests"] });

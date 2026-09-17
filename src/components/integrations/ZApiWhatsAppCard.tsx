@@ -29,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { sendZApiTestButton, checkZApiStatus, setZApiWebhook } from "@/lib/backend/edge/zapi";
 
 interface WhatsAppInstance {
   id: string;
@@ -147,58 +148,51 @@ export function ZApiWhatsAppCard({ tenantId }: { tenantId: string }) {
     setIsWaitingForCallback(true);
     setCallbackResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('zapi-api', {
-        body: { 
-          action: 'send-test-button', 
-          instanceId: instance.id,
-          data: { phone }
-        }
+      const res = await sendZApiTestButton({
+        phone,
+        instanceId: instance.id,
+        tenantId,
       });
-      if (error) throw error;
-      if (data.success) {
-        toast.success("Mensagem enviada! Clique no botão no seu WhatsApp.");
-        let secondsPassed = 0;
-        const maxSeconds = 30;
-        const startTime = new Date().toISOString();
-        const checkInterval = setInterval(async () => {
-          secondsPassed += 3;
-          await fetchIntegrationLogs();
-          const { data: webhookLogs } = await supabase
-            .from("zapi_webhook_debug")
-            .select("*")
-            .eq("tenant_id", tenantId)
-            .eq("source", "zapi_real")
-            .eq("option_id", "main_confirm")
-            .gte("received_at", startTime)
-            .order("received_at", { ascending: false })
-            .limit(1);
+      if (!res.ok) throw new Error(res.error);
+      toast.success("Mensagem enviada! Clique no botão no seu WhatsApp.");
+      let secondsPassed = 0;
+      const maxSeconds = 30;
+      const startTime = new Date().toISOString();
+      const checkInterval = setInterval(async () => {
+        secondsPassed += 3;
+        await fetchIntegrationLogs();
+        const { data: webhookLogs } = await supabase
+          .from("zapi_webhook_debug")
+          .select("*")
+          .eq("tenant_id", tenantId)
+          .eq("source", "zapi_real")
+          .eq("option_id", "main_confirm")
+          .gte("received_at", startTime)
+          .order("received_at", { ascending: false })
+          .limit(1);
 
-          if (webhookLogs && webhookLogs.length > 0) {
-            clearInterval(checkInterval);
-            setIsWaitingForCallback(false);
-            const log = webhookLogs[0];
-            setCallbackResult({
-              received: true,
-              time: log.received_at,
-              buttonId: log.option_id,
-              phone: log.phone_normalized,
-              payload: log.payload_raw
-            });
-            toast.success("Callback recebido com sucesso!");
-          } else if (secondsPassed >= maxSeconds) {
-            clearInterval(checkInterval);
-            setIsWaitingForCallback(false);
-            setCallbackResult({ 
-              received: false,
-              error: "Nenhum webhook recebido após 30 segundos."
-            });
-            toast.error("Tempo esgotado.");
-          }
-        }, 3000);
-      } else {
-        setIsWaitingForCallback(false);
-        toast.error("Erro ao enviar: " + (data.error || "Erro"));
-      }
+        if (webhookLogs && webhookLogs.length > 0) {
+          clearInterval(checkInterval);
+          setIsWaitingForCallback(false);
+          const log = webhookLogs[0];
+          setCallbackResult({
+            received: true,
+            time: log.received_at,
+            buttonId: log.option_id,
+            phone: log.phone_normalized,
+            payload: log.payload_raw
+          });
+          toast.success("Callback recebido com sucesso!");
+        } else if (secondsPassed >= maxSeconds) {
+          clearInterval(checkInterval);
+          setIsWaitingForCallback(false);
+          setCallbackResult({
+            received: false,
+            error: "Nenhum webhook recebido após 30 segundos."
+          });
+          toast.error("Tempo esgotado.");
+        }
+      }, 3000);
     } catch (err: any) {
       setIsWaitingForCallback(false);
       toast.error("Erro: " + err.message);
@@ -254,9 +248,7 @@ export function ZApiWhatsAppCard({ tenantId }: { tenantId: string }) {
       if (error) throw error;
       setInstance(saved as any);
       toast.success("Salvo!");
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-      const webhookUrl = `${supabaseUrl}/functions/v1/zapi-webhook-v2`;
-      await supabase.functions.invoke('zapi-api', { body: { action: 'set-webhook', instanceId: saved.id, data: { webhookUrl } } });
+      await setZApiWebhook({ instanceId: saved.id, tenantId });
       await fetchInstance();
     } catch (err: any) { toast.error("Erro ao salvar"); }
     finally { setIsSaving(false); }
@@ -266,11 +258,11 @@ export function ZApiWhatsAppCard({ tenantId }: { tenantId: string }) {
     if (!instance?.id) return;
     setIsTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('zapi-api', { body: { action: 'check-status', instanceId: instance.id } });
-      if (error) throw error;
+      const res = await checkZApiStatus({ instanceId: instance.id, tenantId });
+      if (!res.ok) throw new Error(res.error);
       toast.success("Sincronizado!");
       await fetchInstance();
-    } catch (err) { toast.error("Erro"); }
+    } catch (err: any) { toast.error(err?.message || "Erro"); }
     finally { setIsTesting(false); }
   }
 
@@ -278,17 +270,12 @@ export function ZApiWhatsAppCard({ tenantId }: { tenantId: string }) {
     if (!instance?.id) return;
     setIsConfiguring(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-      const webhookUrl = `${supabaseUrl}/functions/v1/zapi-webhook-v2`;
-      const { data, error } = await supabase.functions.invoke('zapi-api', { 
-        body: { action: 'update-webhook-received', instanceId: instance.id, data: { webhookUrl } } 
-      });
-      if (error) throw error;
-      setLastWebhookCall(data);
-      if (isZApiSuccess(data)) toast.success("Configurado com V2!");
-      else toast.error("Falha na configuração");
+      const res = await setZApiWebhook({ instanceId: instance.id, tenantId });
+      if (!res.ok) throw new Error(res.error);
+      setLastWebhookCall(res);
+      toast.success("Webhook configurado!");
       await fetchInstance();
-    } catch (err: any) { toast.error("Erro na reconfiguração"); }
+    } catch (err: any) { toast.error("Erro na reconfiguração: " + err.message); }
     finally { setIsConfiguring(false); }
   }
 
@@ -296,8 +283,8 @@ export function ZApiWhatsAppCard({ tenantId }: { tenantId: string }) {
     if (!instance?.id) return;
     setIsTestingEndpoint(true);
     try {
-      const { data, error } = await supabase.functions.invoke('zapi-api', {
-        body: { action: 'test-received-callback', instanceId: instance.id, data: { phone: formData.phone || "5571988939385", text: "1" } }
+      const { data, error } = await supabase.functions.invoke('zapi-webhook', {
+        body: { type: 'ReceivedCallback', phone: formData.phone || "5571988939385", text: "1" }
       });
       if (error) throw error;
       setLastEndpointTestResult(data);

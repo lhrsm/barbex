@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { sendZApiButton, sendZApiText } from "@/lib/backend/edge/zapi";
 
 interface WhatsAppParams {
   userId: string;
@@ -37,31 +38,32 @@ export const triggerWhatsAppMessage = async ({
     });
 
     // 3. Prepare Buttons for confirmation
-    const options: any = {};
-    if (eventType === 'appointment_confirmation') {
-      options.buttons = [
-        { id: "main_confirm", label: "Confirmar agendamento" }
-      ];
-    }
+    const hasButtons = eventType === 'appointment_confirmation';
+    const buttons = hasButtons ? [{ id: "main_confirm", label: "Confirmar agendamento" }] : undefined;
 
-    // 4. Send via Edge Function (functional version)
-    const { data, error } = await supabase.functions.invoke('whatsapp-cloud', {
-      body: {
-        user_id: userId,
+    // 4. Send via canonical Z-API Edge Adapter
+    let res;
+    if (hasButtons) {
+      res = await sendZApiButton({
         phone,
-        content,
-        options,
-        metadata: { eventType, appointmentId }
-      },
-      method: 'POST'
-    });
-
-    if (error) {
-      console.error('Error triggering WhatsApp message:', error);
-      return { success: false, error };
+        message: content,
+        buttons,
+        tenantId: userId,
+      });
+    } else {
+      res = await sendZApiText({
+        phone,
+        message: content,
+        tenantId: userId,
+      });
     }
 
-    return { success: true, data };
+    if (!res.ok) {
+      console.error('Error triggering WhatsApp message:', res.error);
+      return { success: false, error: res.error };
+    }
+
+    return { success: true, data: res };
   } catch (err) {
     console.error('Unexpected error triggering WhatsApp:', err);
     return { success: false, error: err };

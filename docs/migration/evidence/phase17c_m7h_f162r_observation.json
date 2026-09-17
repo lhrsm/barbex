@@ -1,0 +1,16 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Observation Window & Immediate Stabilization Metrics",
+  "evaluated_at": "2026-09-16T10:09:00.000Z",
+  "observation_window": {
+    "start_timestamp": "2026-09-16T10:02:00.000Z",
+    "end_timestamp": "2026-09-16T10:09:00.000Z",
+    "observation_seconds": 420
+  },
+  "metrics": {
+    "F162R_OBSERVATION_SECONDS": 420,
+    "F162R_DNS_PROPAGATION_COMPLETE": "PARTIAL (GLOBAL_RESOLVERS_76_76_21_21_RESOLVED / AUTHORITATIVE_ANYCAST_EDGE_EVICTION_IN_PROGRESS)",
+    "F162R_IMMEDIATE_STABILIZATION_PASS": "YES (NO_APPLICATION_FAILURES_NO_5XX_LOVABLE_SERVING_SAFELY_DURING_TRANSITION)"
+  },
+  "summary": "The apex DNS change from 185.158.133.1 to 76.76.21.21 has been propagated across all major global public DNS resolvers (Google 8.8.8.8, Cloudflare 1.1.1.1, OpenDNS, Quad9, Level3). Local authoritative edge cache on Cloudflare Anycast fronting Hostinger DNS parking is in progress of full TTL eviction. Vercel automated certificate issuance is pending nameserver cache eviction. Zero production crashes, zero 5xx errors, zero Source calls recorded."
+}

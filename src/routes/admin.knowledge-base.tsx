@@ -24,9 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { toast } from "sonner";
-import { adminSaveTutorial, adminSaveAcademyLesson } from "@/lib/knowledge-base.functions";
-import { adminSaveUpdate } from "@/lib/changelog.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { adminSaveTutorialClient, adminSaveAcademyLessonClient, adminSaveUpdateClient } from "@/lib/backend/client/knowledge-base";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -45,10 +43,6 @@ function KnowledgeBaseAdmin() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editingUpdate, setEditingUpdate] = useState<any>(null);
   const [contentType, setContentType] = useState<"tutorial" | "lesson">("tutorial");
-  
-  const saveTutorial = useServerFn(adminSaveTutorial);
-  const saveLesson = useServerFn(adminSaveAcademyLesson);
-  const saveUpdate = useServerFn(adminSaveUpdate);
 
 
   // Queries
@@ -308,13 +302,16 @@ function KnowledgeBaseAdmin() {
             
             try {
               if (contentType === 'tutorial') {
-                await saveTutorial({ 
-                  data: {
-                    id: editingItem?.id, 
-                    ...data,
-                    status: data.status || 'draft',
-                    is_featured: formData.get("is_featured") === "on"
-                  }
+                await adminSaveTutorialClient({
+                  id: editingItem?.id,
+                  ...data,
+                  status: data.status || 'draft',
+                  is_featured: formData.get("is_featured") === "on"
+                });
+              } else {
+                await adminSaveAcademyLessonClient({
+                  id: editingItem?.id,
+                  ...data,
                 });
               }
               toast.success("Conteúdo salvo com sucesso!");
@@ -410,13 +407,11 @@ function KnowledgeBaseAdmin() {
             const formData = new FormData(e.currentTarget);
             const data = Object.fromEntries(formData.entries());
             try {
-              await saveUpdate({ 
-                data: {
-                  id: editingUpdate?.id,
-                  ...data,
-                  is_beta: formData.get("is_beta") === "on",
-                  requires_action: formData.get("requires_action") === "on"
-                }
+              await adminSaveUpdateClient({
+                id: editingUpdate?.id,
+                ...data,
+                is_beta: formData.get("is_beta") === "on",
+                requires_action: formData.get("requires_action") === "on"
               });
               toast.success("Update salvo!");
               setIsUpdateEditorOpen(false);

@@ -7,7 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
-import { getSecurityLogs, updatePassword, requestEmailChange, listSessions } from '@/lib/auth-security.functions';
+import {
+  getSecurityLogsClient,
+  updatePasswordClient,
+  requestEmailChangeClient,
+  listSessionsClient,
+} from '@/lib/backend/rpc/security';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MFASettings } from './MFASettings';
@@ -24,16 +29,16 @@ export const SecurityCentral: React.FC = () => {
 
   const { data: logs, isLoading: loadingLogs } = useQuery({
     queryKey: ['security-logs'],
-    queryFn: () => getSecurityLogs()
+    queryFn: () => getSecurityLogsClient()
   });
 
   const { data: sessions } = useQuery({
     queryKey: ['user-sessions'],
-    queryFn: () => listSessions()
+    queryFn: () => listSessionsClient()
   });
 
   const passwordMutation = useMutation({
-    mutationFn: (pwd: string) => updatePassword({ data: { password: pwd } }),
+    mutationFn: (pwd: string) => updatePasswordClient(pwd),
     onSuccess: () => {
       toast.success('Senha atualizada com sucesso!');
       setNewPassword('');
@@ -44,7 +49,7 @@ export const SecurityCentral: React.FC = () => {
   });
 
   const emailMutation = useMutation({
-    mutationFn: (email: string) => requestEmailChange({ data: { newEmail: email } }),
+    mutationFn: (email: string) => requestEmailChangeClient(email),
     onSuccess: (res) => {
       toast.success(res.message);
       setNewEmail('');

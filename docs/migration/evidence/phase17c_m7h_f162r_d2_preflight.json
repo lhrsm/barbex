@@ -1,0 +1,33 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "Pre-Mutation Fail-Closed Gate",
+  "evaluated_at": "2026-09-16T11:29:30.000Z",
+  "dns_preflight": {
+    "a_apex": [
+      "76.76.21.21"
+    ],
+    "aaaa_apex": "ENODATA",
+    "a_www": [
+      "76.76.21.21"
+    ],
+    "aaaa_www": [],
+    "cname_www": [
+      "barbex.shop"
+    ],
+    "caa_apex": "ENODATA"
+  },
+  "domain_preflight": {
+    "apex_status": "ok",
+    "apex_misconfigured": false,
+    "www_status": "ok",
+    "www_misconfigured": false
+  },
+  "metrics": {
+    "D2_PREFLIGHT_DNS_PASS": "YES",
+    "D2_PREFLIGHT_DOMAIN_PASS": "YES",
+    "D2_PREFLIGHT_CAA_PASS": "YES",
+    "D2_PREFLIGHT_APEX_CERT_EXISTS": "NO",
+    "D2_PREFLIGHT_WWW_CERT_EXISTS": "NO",
+    "D2_CERT_RECOVERED_BEFORE_MUTATION": "NO"
+  }
+}

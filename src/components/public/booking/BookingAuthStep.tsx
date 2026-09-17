@@ -19,8 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
+import {
+  requestCustomerEmailVerificationClient,
+  verifyCustomerEmailCodeClient,
+  finalizeCustomerAuthSetupClient
+} from "@/lib/backend/edge/customer-auth";
 import { cn } from "@/lib/utils";
-import { requestEmailVerification, verifyEmailCode, finalizeAuthSetup } from "@/lib/auth-verification.functions";
 
 export type OnboardingStateMachine =
   | 'PHONE_IDENTIFICATION'
@@ -88,6 +92,7 @@ export function BookingAuthStep({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [timer, setTimer] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [challengeId, setChallengeId] = useState<string>("");
 
   // Transition trace logger
   const transitionTo = (nextState: OnboardingStateMachine, reason?: string) => {
@@ -116,16 +121,21 @@ export function BookingAuthStep({
     transitionTo('EMAIL_SUBMITTING', 'Sending verification code');
 
     try {
-      await requestEmailVerification({
-        data: {
-          email: trimmedEmail,
-          clientId: customerId || undefined,
-          userName: customerName
-        }
+      const res = await requestCustomerEmailVerificationClient({
+        tenantId,
+        phone: customerPhone,
+        name: customerName,
+        email: trimmedEmail,
       });
-      toast.success("Código enviado para o seu e-mail!");
-      setTimer(60);
-      transitionTo('OTP_REQUIRED', 'Code sent successfully');
+
+      if (res.success && res.challengeId) {
+        setChallengeId(res.challengeId);
+        toast.success("Código enviado para o seu e-mail!");
+        setTimer(60);
+        transitionTo('OTP_REQUIRED', 'Code sent successfully');
+      } else {
+        throw new Error(res.error || "Falha ao enviar código");
+      }
     } catch (error: any) {
       console.error('[BOOKING_ONBOARDING_TRACE] Send Code Error:', error);
       const rawMsg = error?.message || '';
@@ -151,11 +161,10 @@ export function BookingAuthStep({
     transitionTo('OTP_VERIFYING', 'Verifying OTP code');
 
     try {
-      const res = await verifyEmailCode({
-        data: {
-          email: email.trim().toLowerCase(),
-          code
-        }
+      const res = await verifyCustomerEmailCodeClient({
+        challengeId,
+        code,
+        email: email.trim().toLowerCase(),
       });
 
       if (res?.success) {
@@ -190,15 +199,9 @@ export function BookingAuthStep({
     transitionTo('PASSWORD_CREATING', 'Finalizing account setup');
 
     try {
-      const res = await finalizeAuthSetup({
-        data: {
-          email: email.trim().toLowerCase(),
-          password,
-          clientId: customerId || "",
-          phone: customerPhone,
-          name: customerName,
-          tenantId
-        }
+      const res = await finalizeCustomerAuthSetupClient({
+        challengeId,
+        password,
       });
 
       if (res?.success && res?.userId) {
@@ -206,10 +209,10 @@ export function BookingAuthStep({
         transitionTo('AUTH_COMPLETE', 'Account created and linked');
         setTimeout(() => {
           transitionTo('BOOKING_RESUME', 'Resuming booking flow');
-          onSuccess(res.userId as string, email.trim().toLowerCase());
+          onSuccess(res.userId as string, (res.email || email).trim().toLowerCase());
         }, 400);
       } else {
-        throw new Error("Não foi possível finalizar a configuração de acesso.");
+        throw new Error(res?.error || "Não foi possível finalizar a configuração de acesso.");
       }
     } catch (error: any) {
       console.error('[BOOKING_ONBOARDING_TRACE] Finalize Error:', error);

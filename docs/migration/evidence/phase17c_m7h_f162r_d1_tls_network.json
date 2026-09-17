@@ -1,0 +1,62 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "TLS Network Forensics",
+  "evaluated_at": "2026-09-16T11:18:40.000Z",
+  "probes": {
+    "forced_apex_vercel_edge": {
+      "host": "barbex.shop",
+      "ip": "76.76.21.21",
+      "port": 443,
+      "stages": [
+        "START",
+        "TCP_CONNECTED",
+        "TLS_ERROR"
+      ],
+      "error": {
+        "message": "Client network socket disconnected before secure TLS connection was established",
+        "code": "ECONNRESET"
+      }
+    },
+    "forced_www_vercel_edge": {
+      "host": "www.barbex.shop",
+      "ip": "76.76.21.21",
+      "port": 443,
+      "stages": [
+        "START",
+        "TCP_CONNECTED",
+        "TLS_ERROR"
+      ],
+      "error": {
+        "message": "Client network socket disconnected before secure TLS connection was established",
+        "code": "ECONNRESET"
+      }
+    },
+    "normal_resolver_apex": {
+      "host": "barbex.shop",
+      "resolved_ip": "185.158.133.1",
+      "port": 443,
+      "note": "Resolves via local OS resolver cache to legacy Cloudflare IP",
+      "tls_handshake": "SUCCESS_WITH_LEGACY_CF_CERT",
+      "http_status": 421
+    },
+    "normal_resolver_www": {
+      "host": "www.barbex.shop",
+      "resolved_ip": "185.158.133.1",
+      "port": 443,
+      "note": "Resolves via local OS resolver cache to legacy Cloudflare IP",
+      "tls_handshake": "SUCCESS_WITH_LEGACY_CF_CERT",
+      "http_status": 421
+    }
+  },
+  "metrics": {
+    "D1_APEX_TLS_FAILURE_STAGE": "SERVER_HELLO_CERTIFICATE_EXCHANGE",
+    "D1_WWW_TLS_FAILURE_STAGE": "SERVER_HELLO_CERTIFICATE_EXCHANGE",
+    "D1_APEX_PEER_CERTIFICATE": "NONE_ON_VERCEL_EDGE",
+    "D1_WWW_PEER_CERTIFICATE": "NONE_ON_VERCEL_EDGE",
+    "D1_APEX_TLS_ERROR": "ECONNRESET_SOCKET_DISCONNECTED",
+    "D1_WWW_TLS_ERROR": "ECONNRESET_SOCKET_DISCONNECTED",
+    "D1_LOCAL_DNS_STALE": "YES",
+    "D1_PUBLIC_DNS_CURRENT": "YES",
+    "D1_FORCED_VERCEL_TLS_RESULT": "TCP_CONNECTED_TLS_ECONNRESET"
+  }
+}

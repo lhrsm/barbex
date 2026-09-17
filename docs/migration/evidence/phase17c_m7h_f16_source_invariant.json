@@ -1,0 +1,14 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Source Supabase Invariants",
+  "evaluated_at": "2026-09-16T09:36:00.000Z",
+  "source_invariants": {
+    "source_public_rows": 257691,
+    "source_status_checks": 256998,
+    "source_status_max": 256998,
+    "source_wp16_active": "YES",
+    "source_app_traffic": 0,
+    "source_provider_traffic": 0,
+    "source_background_traffic": 0
+  }
+}

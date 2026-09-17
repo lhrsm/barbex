@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F2",
+    "title": "Target Edge Functions Passive Deployment Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-13T11:13:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_e_operational_readiness_bundle_sha256": "f5f9f5c05cfc8b09ac9060e3a73b2220bc048c20c8048c39793ae2798d1f81de",
+    "m7h_e1_cutover_dependency_bundle_sha256": "2c15bb08688556980e971c42dd2dfbe16d5c96c7204d60fbc117b2c1a548111c",
+    "m7h_e11_execution_inputs_bundle_sha256": "c285dda351dd8ffbd55dd3e80c89f80d9b3d1ab8ba255b4969001d96f7ca040a",
+    "m7h_f1_target_runtime_configuration_bundle_sha256": "643e9b57a4448a0ce5073c04e9dac1cc877f0af45f601d41c2d0cb5631cf672a"
+  },
+  "evidence_artifacts": {
+    "function_manifest_sha256": "e444f768514f517e91a2ea4fc13725fbd551365d6b31f48361827aa8a700d9c6",
+    "jwt_semantics_sha256": "414bfa4d78cf286051fde0be6bf534ffec003c598b45ee6ce80a618140e683ea",
+    "predeployment_sha256": "74c1148625486f850a68c0204258f31ee8dc979caf353709a744d88c444a5c7f",
+    "deployment_results_sha256": "62f4ae56a90144e62cf31003674ef7555e7eb8245936f08b2c0ad00db05c9cd7",
+    "postdeployment_sha256": "9414634948c0d8e1c3dbfc902e895825b2c19cbddaa719f1ddba0cc0e963bcff"
+  },
+  "metrics": {
+    "local_deployable_edge_functions_total": 38,
+    "passive_deployment_eligible_count": 38,
+    "verify_jwt_true_count": 18,
+    "verify_jwt_false_count": 20,
+    "verify_jwt_unresolved": 0,
+    "target_edge_functions_before": 0,
+    "functions_deployment_attempted": 38,
+    "functions_deployed_successfully": 38,
+    "functions_deployment_failed": 0,
+    "target_edge_functions_after": 38,
+    "target_canonical_functions_present": 38,
+    "target_canonical_functions_missing": 0,
+    "target_unexpected_functions": 0,
+    "edge_function_http_probes_sent": 0,
+    "edge_function_invocations_by_f2": 0,
+    "business_write_tests_executed": 0,
+    "provider_webhook_mutations": 0,
+    "stripe_webhook_secret_state": "DEFERRED_TO_F5",
+    "target_public_data_unchanged": true,
+    "target_auth_state_unchanged": true,
+    "target_storage_state_unchanged": true,
+    "target_sequence_state_unchanged": true,
+    "source_state_unchanged": true,
+    "source_freeze_still_valid": true,
+    "wp16_hotfix_still_active": true,
+    "app_env_mutations": 0,
+    "app_publish_operations": 0,
+    "auth_config_mutations": 0,
+    "target_cron_activations": 0,
+    "dns_mutations": 0,
+    "f2_rollback_plan_complete": true
+  },
+  "bundle_hash": "f0ce2ee4ff1daaff1fc3882285b9eabb479467de4c47c8385d72c832211175af"
+}

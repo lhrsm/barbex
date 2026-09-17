@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AcademyLayout } from "@/components/academy/AcademyLayout";
 import { AcademyLessonItem } from "@/components/academy/AcademyComponents";
 import { useQuery } from "@tanstack/react-query";
-import { getAcademyPathDetails } from "@/lib/academy.functions";
+import { getAcademyPathDetailsClient } from "@/lib/backend/client/academy";
 import { Progress } from "@/components/ui/progress";
 import { Clock, Signal, Trophy, CheckCircle2, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ function PathDetailsPage() {
   
   const { data, isLoading } = useQuery({
     queryKey: ["academy-path", pathId],
-    queryFn: () => getAcademyPathDetails({ data: { pathId } })
+    queryFn: () => getAcademyPathDetailsClient({ pathId })
   });
 
   if (isLoading || !data) {

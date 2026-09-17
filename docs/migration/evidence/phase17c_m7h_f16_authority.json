@@ -1,0 +1,24 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Authority Verification Gate",
+  "evaluated_at": "2026-09-16T09:20:00.000Z",
+  "prior_authorities": {
+    "f13_bundle_sha256": "ead1d90bb1e4bfaeda64d0d43bc1dfdefdde3e8f99a9a10f9cebeab213da443d",
+    "f14_bundle_sha256": "f3f8df4b55370e70d53cb58073f914efe9b5971f3cf306fd43d559ea61e7c785",
+    "f15_bundle_sha256": "8ec49261762c1aff669369d15e2715a974dd5890d826f3c6cb7655e90722c930",
+    "f151r_bundle_sha256": "a11b81bd4773c090caa13929b23ba0487a6c56b8727ebb1ded79601b8068b52b"
+  },
+  "verification": {
+    "f13_hash_match": "YES",
+    "f14_hash_match": "YES",
+    "f15_hash_match": "YES",
+    "f151r_hash_match": "YES"
+  },
+  "vercel_access": {
+    "user": "analistalouis-6644",
+    "team": "startup-dc20",
+    "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+    "project_name": "barbex-staging",
+    "access_verified": true
+  }
+}

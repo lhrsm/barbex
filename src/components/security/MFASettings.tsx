@@ -6,7 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { enrollMFA, verifyMFA, unenrollMFA, listFactors, getMFAStatus, generateBackupCodes, listBackupCodes } from '@/lib/auth-security.functions';
+import {
+  enrollMfaClient,
+  verifyMfaClient,
+  unenrollMfaClient,
+  listFactorsClient,
+  getMfaStatusClient,
+  generateMfaBackupCodesClient,
+  listMfaBackupCodesClient,
+} from '@/lib/backend/rpc/security';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Download, RefreshCw } from 'lucide-react';
 
@@ -20,16 +28,16 @@ export const MFASettings: React.FC = () => {
 
   const { data: factors, isLoading: loadingFactors } = useQuery({
     queryKey: ['mfa-factors'],
-    queryFn: () => listFactors()
+    queryFn: () => listFactorsClient()
   });
 
   const { data: mfaStatus } = useQuery({
     queryKey: ['mfa-status'],
-    queryFn: () => getMFAStatus()
+    queryFn: () => getMfaStatusClient()
   });
 
   const enrollMutation = useMutation({
-    mutationFn: () => enrollMFA(),
+    mutationFn: () => enrollMfaClient(),
     onSuccess: (data) => {
       setEnrollData(data);
       setShowEnrollModal(true);
@@ -38,7 +46,7 @@ export const MFASettings: React.FC = () => {
   });
 
   const verifyMutation = useMutation({
-    mutationFn: (code: string) => verifyMFA({ data: { factorId: enrollData.id, code } }),
+    mutationFn: (code: string) => verifyMfaClient(enrollData.id, code),
     onSuccess: () => {
       toast.success('Autenticação em duas etapas ativada com sucesso!');
       setShowEnrollModal(false);
@@ -55,7 +63,7 @@ export const MFASettings: React.FC = () => {
   });
 
   const unenrollMutation = useMutation({
-    mutationFn: (factorId: string) => unenrollMFA({ data: { factorId } }),
+    mutationFn: (factorId: string) => unenrollMfaClient(factorId),
     onSuccess: () => {
       toast.success('MFA desativado.');
       queryClient.invalidateQueries({ queryKey: ['mfa-factors'] });
@@ -255,11 +263,11 @@ const BackupCodesSection: React.FC = () => {
 
   const { data: backupCodes, isLoading } = useQuery({
     queryKey: ['mfa-backup-codes'],
-    queryFn: () => listBackupCodes()
+    queryFn: () => listMfaBackupCodesClient()
   });
 
   const generateMutation = useMutation({
-    mutationFn: () => generateBackupCodes(),
+    mutationFn: () => generateMfaBackupCodesClient(),
     onSuccess: (codes) => {
       setGeneratedCodes(codes);
       setShowCodesModal(true);

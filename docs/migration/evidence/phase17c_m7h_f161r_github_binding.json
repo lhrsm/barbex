@@ -1,0 +1,34 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Physical Verification of GitHub Repository Binding to Vercel",
+  "evaluated_at": "2026-09-16T09:44:00.000Z",
+  "vercel_project": {
+    "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+    "project_name": "barbex-staging",
+    "team_slug": "startup-dc20",
+    "team_name": "STARTUP",
+    "authenticated_user": "analistalouis-6644"
+  },
+  "github_binding": {
+    "expected_repository": "lhrsm/barbex",
+    "connected_repository": "lhrsm/barbex",
+    "expected_production_branch": "main",
+    "connected_production_branch": "main",
+    "git_provider": "github",
+    "bound_status": true,
+    "physical_proof_command": "vercel git connect",
+    "physical_proof_output": "Connecting GitHub repository: https://github.com/lhrsm/barbex\n> lhrsm/barbex is already connected to your project.",
+    "autodeploy_configuration_valid": true,
+    "preview_deployments_configured": true,
+    "production_deployments_from_main_configured": true
+  },
+  "verdict": {
+    "VERCEL_GITHUB_REPOSITORY_BOUND": "YES",
+    "VERCEL_GITHUB_REPOSITORY": "lhrsm/barbex",
+    "VERCEL_PRODUCTION_BRANCH": "main",
+    "VERCEL_GIT_PROVIDER": "github",
+    "VERCEL_AUTODEPLOY_CONFIGURATION_VALID": "YES",
+    "VERCEL_PREVIEW_DEPLOYMENTS_FROM_NON_PRODUCTION_BRANCHES_CONFIGURED": "YES",
+    "VERCEL_PRODUCTION_DEPLOYMENTS_FROM_MAIN_CONFIGURED": "YES"
+  }
+}

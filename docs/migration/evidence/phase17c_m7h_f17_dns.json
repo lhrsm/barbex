@@ -1,0 +1,31 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "DNS Stability Post-Cutover",
+  "evaluated_at": "2026-09-16T11:44:00.000Z",
+  "nameservers_tested": [
+    "172.64.52.46 (nova.ns.cloudflare.com)",
+    "172.64.53.200 (cosmos.ns.cloudflare.com)",
+    "8.8.8.8 (Google Public DNS)",
+    "1.1.1.1 (Cloudflare Public DNS)"
+  ],
+  "apex_a": [
+    "76.76.21.21"
+  ],
+  "apex_aaaa": "ENODATA",
+  "apex_caa": "ENODATA",
+  "www_cname": "barbex.shop",
+  "www_a": [
+    "76.76.21.21"
+  ],
+  "metrics": {
+    "F17_DNS_APEX_VALUES": [
+      "76.76.21.21"
+    ],
+    "F17_DNS_WWW_CHAIN": [
+      "www.barbex.shop -> barbex.shop -> 76.76.21.21"
+    ],
+    "F17_OLD_LOVABLE_IP_OBSERVED": "NO",
+    "F17_DNS_CONFLICTS": 0,
+    "F17_DNS_PASS": "YES"
+  }
+}

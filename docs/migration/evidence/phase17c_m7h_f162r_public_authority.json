@@ -1,0 +1,30 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Public Hosting Authority Analysis Post-DNS Cutover",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "endpoints": {
+    "live_apex_domain": {
+      "url": "https://barbex.shop",
+      "global_dns_resolution": "76.76.21.21 (Google, Cloudflare, OpenDNS, Quad9, Level3)",
+      "edge_tls_status": "Vercel edge awaiting certificate issuance post-verification",
+      "cached_clients_status": "200 OK (served by Cloudflare / Lovable for clients with remaining 185.158.133.1 TTL)"
+    },
+    "live_www_domain": {
+      "url": "https://www.barbex.shop",
+      "global_dns_resolution": "CNAME barbex.shop -> 76.76.21.21",
+      "cached_clients_status": "200 OK (served by Cloudflare / Lovable for cached clients)"
+    },
+    "vercel_production_deployment": {
+      "url": "https://barbex-staging-lkrncpkx7-startup-dc20.vercel.app",
+      "status_code": 200,
+      "server_header": "Vercel",
+      "x_vercel_id": "gru1::iad1::rl2lb-1789552100277-19c686fc9fea",
+      "authority": "Vercel Target Hosting"
+    }
+  },
+  "verdict": {
+    "PUBLIC_APEX_AUTHORITY_VERCEL": "PENDING_TLS_PROVISIONING",
+    "PUBLIC_WWW_AUTHORITY_VERCEL": "PENDING_TLS_PROVISIONING",
+    "PUBLIC_LOVABLE_AUTHORITY_FOR_APEX": "RETAINED_DURING_PROPAGATION"
+  }
+}

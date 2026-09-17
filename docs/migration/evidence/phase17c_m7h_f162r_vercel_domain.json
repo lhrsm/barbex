@@ -1,0 +1,33 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Vercel Project Domain Configuration & Verification Status",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+  "project_name": "barbex-staging",
+  "team_slug": "startup-dc20",
+  "domains": {
+    "apex": {
+      "domain": "barbex.shop",
+      "attached": true,
+      "verified_in_project": true,
+      "domainOwnership": "current-scope",
+      "configuration_status": "invalid-configuration (awaiting anycast authoritative eviction to 76.76.21.21)",
+      "recommended_a": "76.76.21.21"
+    },
+    "subdomain_www": {
+      "domain": "www.barbex.shop",
+      "attached": true,
+      "verified_in_project": true,
+      "domainOwnership": "current-scope",
+      "configuration_status": "invalid-configuration (CNAME barbex.shop chain resolves to 76.76.21.21 globally)",
+      "current_cname": "barbex.shop."
+    }
+  },
+  "verdict": {
+    "VERCEL_APEX_CONFIGURATION_VALID": "PENDING_NAMESERVER_CACHE_EVICTION",
+    "VERCEL_WWW_CONFIGURATION_VALID": "PENDING_APEX_CLOSURE",
+    "VERCEL_APEX_DOMAIN_ACTIVE": "ATTACHED_PENDING_VERIFICATION",
+    "VERCEL_WWW_DOMAIN_ACTIVE": "ATTACHED_PENDING_VERIFICATION",
+    "WWW_MUTATION_EXECUTED": "NO"
+  }
+}

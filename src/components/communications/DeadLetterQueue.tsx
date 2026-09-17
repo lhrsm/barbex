@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { getMessages } from "@/lib/communications.functions";
+import { getMessagesClient } from "@/lib/backend/client/communications";
 import { Ghost, RefreshCw, XCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ interface Props {
 export function DeadLetterQueue({ tenantId }: Props) {
   const { data: messages, isLoading } = useQuery({
     queryKey: ['communication-messages-dead-letter', tenantId],
-    queryFn: () => getMessages({ data: { tenantId, status: 'failed', limit: 20 } })
+    queryFn: () => getMessagesClient({ tenantId, status: 'failed', limit: 20 })
   });
 
   return (

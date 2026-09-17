@@ -1,0 +1,64 @@
+{
+  "phase": "PHASE 17C.M7H-F16.1R",
+  "topic": "Live Vercel DNS Freshness Recheck & Domain State",
+  "evaluated_at": "2026-09-16T09:47:00.000Z",
+  "domains": {
+    "apex": {
+      "name": "barbex.shop",
+      "project_attached": "barbex-staging",
+      "ownership": "current-scope",
+      "current_nameservers": [
+        "cosmos.dns-parking.com",
+        "nova.dns-parking.com"
+      ],
+      "current_public_a_values": [
+        "185.158.133.1"
+      ],
+      "current_public_authority": "cloudflare / lovable",
+      "fresh_vercel_instructions": {
+        "recommended_ipv4": [
+          { "rank": 1, "value": ["216.198.79.1", "64.29.17.1"] },
+          { "rank": 2, "value": ["76.76.21.21"] }
+        ],
+        "recommended_records": [
+          { "type": "A", "name": "@", "value": "216.198.79.1" },
+          { "type": "A", "name": "@", "value": "64.29.17.1" }
+        ],
+        "recommended_nameservers": [
+          "ns1.vercel-dns.com",
+          "ns2.vercel-dns.com"
+        ]
+      }
+    },
+    "subdomain_www": {
+      "name": "www.barbex.shop",
+      "project_attached": "barbex-staging",
+      "ownership": "current-scope",
+      "current_public_cnames": [
+        "barbex.shop."
+      ],
+      "current_public_a_values": [
+        "185.158.133.1"
+      ],
+      "fresh_vercel_instructions": {
+        "recommended_cname": [
+          { "rank": 1, "value": "e34acb8ae207b7cf.vercel-dns-017.com." },
+          { "rank": 2, "value": "cname.vercel-dns.com." }
+        ],
+        "recommended_records": [
+          { "type": "CNAME", "name": "www", "value": "e34acb8ae207b7cf.vercel-dns-017.com." }
+        ]
+      }
+    }
+  },
+  "rollback_targets": {
+    "apex_a_record": "185.158.133.1",
+    "www_cname_record": "barbex.shop",
+    "lovable_project_id": "8e95dc9e-ab64-44cf-956c-ecec6fefeb51"
+  },
+  "pre_mutation_checks": {
+    "PUBLIC_LOVABLE_AUTHORITY_FOR_APEX": "YES",
+    "PUBLIC_APEX_AUTHORITY_VERCEL": "NO",
+    "ROLLBACK_VALUES_CAPTURED": "YES"
+  }
+}

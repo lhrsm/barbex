@@ -1,8 +1,6 @@
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { validateInvitationToken, acceptTeamInvitation } from "@/lib/team.functions";
+import { validateInvitationToken, acceptTeamInvitation } from "@/lib/backend/edge/team";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,9 +50,6 @@ function AcceptInvitationPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const validateFn = useServerFn(validateInvitationToken);
-  const acceptFn = useServerFn(acceptTeamInvitation);
-
   useEffect(() => {
     let isMounted = true;
 
@@ -70,7 +65,7 @@ function AcceptInvitationPage() {
       setPageState("VALIDATING");
 
       try {
-        const result = await validateFn({ data: { token: token.trim() } });
+        const result = await validateInvitationToken({ token: token.trim() });
         if (!isMounted) return;
 
         if (!result || !result.valid) {
@@ -86,7 +81,7 @@ function AcceptInvitationPage() {
           expiresAt: result.expiresAt || ""
         });
         setPageState("VALID");
-      } catch (err) {
+      } catch {
         if (!isMounted) return;
         setErrorMessage("Convite inválido ou já utilizado.");
         setPageState("INVALID");
@@ -113,7 +108,7 @@ function AcceptInvitationPage() {
 
     setPageState("SUBMITTING");
     try {
-      await acceptFn({ data: { token: token.trim(), password } });
+      await acceptTeamInvitation({ token: token.trim(), password });
       setPageState("SUCCESS");
       toast.success("Acesso criado com sucesso! Faça seu login.");
       navigate({ to: "/auth" });
@@ -181,73 +176,76 @@ function AcceptInvitationPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-white">Você foi convidado!</CardTitle>
-          <CardDescription className="text-zinc-400 text-sm mt-1">
-            <strong className="text-zinc-200">{invitation?.barbershopName}</strong> convidou você para atuar como <strong className="text-gold">{formattedRole}</strong>.
+          <CardDescription className="text-zinc-400 text-base mt-2">
+            Você foi convidado para fazer parte da equipe de <strong className="text-gold">{invitation?.barbershopName}</strong> como <strong className="text-white">{formattedRole}</strong>.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAccept} className="space-y-4">
+
+        <form onSubmit={handleAccept}>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-zinc-400 text-xs uppercase tracking-wider">Seu E-mail de Acesso</Label>
-              <div className="flex items-center gap-2 p-3 bg-white/5 rounded-lg border border-white/10 text-zinc-300 text-sm">
-                <Mail size={16} className="text-gold" />
-                <span className="font-mono">{invitation?.email}</span>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-300 text-sm">Crie sua senha</Label>
+              <Label className="text-zinc-400 text-xs">E-mail associado ao convite</Label>
               <div className="relative">
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                 <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-black/40 border-white/10 focus:border-gold/50 text-white pl-10"
-                  placeholder="Mínimo 6 caracteres"
-                  minLength={6}
-                  required
+                  value={invitation?.email || ""}
+                  disabled
+                  className="bg-black/40 border-zinc-800 text-zinc-400 pl-9 font-mono text-sm cursor-not-allowed"
                 />
-                <Lock size={16} className="absolute left-3 top-3 text-zinc-500" />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-zinc-300 text-sm">Confirme sua senha</Label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="bg-black/40 border-white/10 focus:border-gold/50 text-white pl-10"
-                  placeholder="Repita sua senha"
-                  minLength={6}
-                  required
-                />
-                <Lock size={16} className="absolute left-3 top-3 text-zinc-500" />
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-zinc-300 text-xs font-medium">Defina sua senha de acesso</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  className="bg-black/20 border-zinc-800 text-white pl-9 focus:border-gold/50"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-300 text-xs font-medium">Confirme sua senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita sua senha"
+                  required
+                  className="bg-black/20 border-zinc-800 text-white pl-9 focus:border-gold/50"
+                />
+              </div>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-3 pt-2">
             <Button 
               type="submit" 
-              className="w-full bg-gold hover:bg-gold/90 text-black font-bold h-12 mt-4 shadow-lg shadow-gold/10"
               disabled={pageState === "SUBMITTING"}
+              className="w-full bg-gold text-black font-bold hover:bg-gold/90 h-11"
             >
               {pageState === "SUBMITTING" ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Criando seu acesso...
-                </span>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Ativando sua conta...
+                </>
               ) : (
-                "ATIVAR MEU ACESSO"
+                "Concluir Cadastro e Ativar Acesso"
               )}
             </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center text-xs text-zinc-500 text-center">
-          Ao ativar, você confirma seu vínculo com este estabelecimento.
-        </CardFooter>
+            <p className="text-[11px] text-zinc-500 text-center">
+              Ao continuar, você concorda com as diretrizes de acesso e políticas do estabelecimento.
+            </p>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );

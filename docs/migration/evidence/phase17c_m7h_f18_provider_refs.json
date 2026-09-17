@@ -1,0 +1,16 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Provider Rollback Reference Precheck",
+  "evaluated_at": "2026-09-16T11:53:40.000Z",
+  "provider_analysis": {
+    "resend": { "active_target": true, "source_rollback_refs": true },
+    "zapi": { "active_target": true, "source_rollback_refs": true },
+    "gateway": { "active_target": true, "source_rollback_refs": true },
+    "stripe": { "active_target": true, "source_rollback_refs": true }
+  },
+  "metrics": {
+    "F18_PROVIDER_SOURCE_ACTIVE_REFS": 0,
+    "F18_PROVIDER_SOURCE_ROLLBACK_REFS": 4,
+    "F18_PROVIDER_UNKNOWN_REFS": 0
+  }
+}

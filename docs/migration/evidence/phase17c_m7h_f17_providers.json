@@ -1,0 +1,19 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Provider Authority Stability",
+  "evaluated_at": "2026-09-16T11:45:30.000Z",
+  "providers": {
+    "resend": "TARGET_BOUND",
+    "zapi": "TARGET_BOUND",
+    "gateway": "TARGET_BOUND",
+    "stripe": "TARGET_BOUND"
+  },
+  "metrics": {
+    "F17_RESEND_TARGET_BOUND": "YES",
+    "F17_ZAPI_TARGET_BOUND": "YES",
+    "F17_GATEWAY_TARGET_BOUND": "YES",
+    "F17_STRIPE_TARGET_BOUND": "YES",
+    "F17_PROVIDER_MUTATIONS": 0,
+    "F17_PROVIDER_AUTHORITY_PASS": "YES"
+  }
+}

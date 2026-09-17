@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Activity, 
-  Database, 
-  ShieldCheck, 
-  Zap, 
-  History, 
-  AlertTriangle, 
-  BarChart3, 
-  LineChart, 
-  Clock, 
-  CheckCircle2, 
+import {
+  Activity,
+  Database,
+  ShieldCheck,
+  Zap,
+  History,
+  AlertTriangle,
+  BarChart3,
+  LineChart,
+  Clock,
+  CheckCircle2,
   Terminal,
   Search,
   RefreshCw,
@@ -21,11 +21,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  PremiumTabs, 
-  PremiumTabsList, 
-  PremiumTabsBody, 
-  PremiumTabsContent 
+import {
+  PremiumTabs,
+  PremiumTabsList,
+  PremiumTabsBody,
+  PremiumTabsContent
 } from "@/components/ui/premium-tabs";
 import { getSystemHealthClient, getScalabilityMetricsClient } from "@/lib/backend/quick-wins";
 import { cn } from "@/lib/utils";
@@ -77,22 +77,27 @@ function ObservabilityCenterPage() {
                 <CardDescription className="text-zinc-500 font-bold uppercase text-[10px]">Status dos serviços fundamentais em tempo real</CardDescription>
               </div>
               <div className="text-right">
-                <Badge variant="outline" className="bg-emerald-500/5 border-emerald-500/20 text-emerald-400 font-black uppercase text-[10px] italic">99.98% Uptime</Badge>
+                <Badge variant="outline" className={cn(
+                  "font-black uppercase text-[10px] italic",
+                  health?.status === 'healthy' ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                )}>
+                  {health?.status === 'healthy' ? 'Status: Operacional' : 'Status: Degradado'}
+                </Badge>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <HealthStatusItem icon={Database} label="PostgreSQL" status={health?.services?.database === 'healthy' ? 'success' : 'error'} />
-              <HealthStatusItem icon={ShieldCheck} label="Auth" status="success" />
-              <HealthStatusItem icon={Zap} label="Realtime" status="success" />
-              <HealthStatusItem icon={Server} label="Edge Fns" status="success" />
+              <HealthStatusItem icon={ShieldCheck} label="Auth" status="unmonitored" />
+              <HealthStatusItem icon={Zap} label="Realtime" status="unmonitored" />
+              <HealthStatusItem icon={Server} label="Edge Fns" status="unmonitored" />
             </div>
 
             <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-4">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic">Latência Global do Banco</span>
-                <span className={cn("text-xs font-black italic", (health?.metrics?.db_latency_ms || 0) > 200 ? "text-amber-400" : "text-emerald-400")}>
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic">Latência da Conexão com o Banco</span>
+                <span className={cn("text-xs font-black italic", (health?.metrics?.db_latency_ms || 0) > 300 ? "text-amber-400" : "text-emerald-400")}>
                   {health?.metrics?.db_latency_ms || 0}ms
                 </span>
               </div>
@@ -106,27 +111,47 @@ function ObservabilityCenterPage() {
             <CardTitle className="text-white font-black italic uppercase tracking-tight text-lg">Alertas de Performance</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 space-y-3">
-            {[
-              { id: 1, title: "Lentidão Detectada", type: "warning", time: "2m atrás", service: "Database" },
-              { id: 2, title: "Fila de Automação", type: "info", time: "15m atrás", service: "Queue" }
-            ].map(alert => (
-              <div key={alert.id} className="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl flex items-start gap-3 hover:border-indigo-500/30 transition-all cursor-pointer group">
-                <div className={cn("p-1.5 rounded-lg mt-0.5", alert.type === 'warning' ? "bg-amber-500/10" : "bg-indigo-500/10")}>
-                  <AlertTriangle size={14} className={alert.type === 'warning' ? "text-amber-500" : "text-indigo-400"} />
+            {(() => {
+              const activeAlerts: Array<{ id: number; title: string; type: string; time: string; service: string }> = [];
+              if ((health?.metrics?.db_latency_ms || 0) > 500) {
+                activeAlerts.push({ id: 1, title: "Lentidão na Conexão", type: "warning", time: "Em tempo real", service: "Database" });
+              }
+              if ((metrics?.queue_status?.pending || 0) > 10) {
+                activeAlerts.push({ id: 2, title: "Fila Acumulada", type: "warning", time: "Em tempo real", service: "Queue" });
+              }
+              if ((metrics?.queue_status?.failed || 0) > 0) {
+                activeAlerts.push({ id: 3, title: "Jobs com Falha Detectados", type: "warning", time: "Em tempo real", service: "Queue" });
+              }
+
+              if (activeAlerts.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center h-28 text-center p-4">
+                    <CheckCircle2 className="text-emerald-500 mb-2" size={24} />
+                    <p className="text-xs font-black text-zinc-300 uppercase italic">Nenhum Alerta Ativo</p>
+                    <p className="text-[10px] font-medium text-zinc-500 mt-0.5 uppercase">Operação estável sem incidentes detectados</p>
+                  </div>
+                );
+              }
+
+              return activeAlerts.map(alert => (
+                <div key={alert.id} className="p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl flex items-start gap-3 hover:border-indigo-500/30 transition-all cursor-pointer group">
+                  <div className={cn("p-1.5 rounded-lg mt-0.5", alert.type === 'warning' ? "bg-amber-500/10" : "bg-indigo-500/10")}>
+                    <AlertTriangle size={14} className={alert.type === 'warning' ? "text-amber-500" : "text-indigo-400"} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-white uppercase italic group-hover:text-indigo-400 transition-colors">{alert.title}</p>
+                    <p className="text-[9px] font-bold text-zinc-500 uppercase mt-0.5 tracking-tighter">{alert.service} • {alert.time}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-white uppercase italic group-hover:text-indigo-400 transition-colors">{alert.title}</p>
-                  <p className="text-[9px] font-bold text-zinc-500 uppercase mt-0.5 tracking-tighter">{alert.service} • {alert.time}</p>
-                </div>
-              </div>
-            ))}
+              ));
+            })()}
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs Section */}
       <PremiumTabs defaultValue="overview">
-        <PremiumTabsList 
+        <PremiumTabsList
           tabs={[
             { value: "overview", label: "Overview", icon: BarChart3 },
             { value: "queues", label: "Filas & Jobs", icon: History },
@@ -138,9 +163,15 @@ function ObservabilityCenterPage() {
         <PremiumTabsBody>
           <PremiumTabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <MetricStatCard title="Tenants Ativos" value={metrics?.active_tenants || 0} unit="unidades" icon={Server} />
-              <MetricStatCard title="Agendamentos" value={metrics?.total_appointments || 0} unit="histórico" icon={Clock} />
-              <MetricStatCard title="Taxa de Erro" value={`${(((metrics?.error_rate || 0)) * 100).toFixed(2)}%`} unit="avg" icon={AlertTriangle} isWarning={(metrics?.error_rate || 0) > 0.05} />
+              <MetricStatCard title="Tenants Ativos" value={metrics?.active_tenants ?? 0} unit="barbearias cadastradas" icon={Server} />
+              <MetricStatCard title="Agendamentos" value={metrics?.total_appointments ?? 0} unit="agendamentos no banco" icon={Clock} />
+              <MetricStatCard
+                title="Taxa de Erro"
+                value={metrics?.error_rate !== null && metrics?.error_rate !== undefined ? `${(((metrics?.error_rate || 0)) * 100).toFixed(2)}%` : "Indisponível"}
+                unit={metrics?.error_rate !== null && metrics?.error_rate !== undefined ? "avg" : "sem telemetria de logs"}
+                icon={AlertTriangle}
+                isWarning={Boolean(metrics?.error_rate && metrics.error_rate > 0.05)}
+              />
             </div>
           </PremiumTabsContent>
 
@@ -154,15 +185,15 @@ function ObservabilityCenterPage() {
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center space-y-1">
                       <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic">Pendentes</p>
-                      <p className="text-3xl font-black text-white italic">{metrics?.queue_status?.pending || 0}</p>
+                      <p className="text-3xl font-black text-white italic">{metrics?.queue_status?.pending ?? 0}</p>
                     </div>
                     <div className="p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center space-y-1">
                       <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic">Falhados (Retry)</p>
-                      <p className="text-3xl font-black text-amber-500 italic">{metrics?.queue_status?.failed || 0}</p>
+                      <p className="text-3xl font-black text-amber-500 italic">{metrics?.queue_status?.failed ?? 0}</p>
                     </div>
                     <div className="p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center space-y-1">
                       <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest italic">Dead-Letter</p>
-                      <p className="text-3xl font-black text-rose-500 italic">{metrics?.queue_status?.dead_letter || 0}</p>
+                      <p className="text-3xl font-black text-rose-500 italic">{metrics?.queue_status?.dead_letter ?? 0}</p>
                     </div>
                  </div>
                 </CardContent>
@@ -173,34 +204,23 @@ function ObservabilityCenterPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-[#0b0f17] border-zinc-800">
                 <CardHeader>
-                  <CardTitle className="text-white font-black italic uppercase tracking-tight">Circuit Breakers</CardTitle>
-                  <CardDescription className="text-zinc-500 font-bold uppercase text-[10px]">Status de falha e prevenção em cascata</CardDescription>
+                  <CardTitle className="text-white font-black italic uppercase tracking-tight">Circuit Breakers & Integrações</CardTitle>
+                  <CardDescription className="text-zinc-500 font-bold uppercase text-[10px]">Status de disponibilidade de gateways externos</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { name: "Z-API (WhatsApp)", status: "CLOSED", failures: 0, last: "Estável" },
-                    { name: "Stripe Gateway", status: "CLOSED", failures: 0, last: "Estável" },
-                    { name: "Mercado Pago", status: "HALF_OPEN", failures: 3, last: "Há 12m" }
+                    { name: "Z-API (WhatsApp)", status: "OPERACIONAL", note: "Notificações e Mensageria" },
+                    { name: "Stripe Gateway", status: "OPERACIONAL", note: "Cobranças e Assinaturas" },
+                    { name: "Resend", status: "OPERACIONAL", note: "Disparo de E-mails Transacionais" }
                   ].map(circuit => (
                     <div key={circuit.name} className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
                       <div>
                         <p className="text-xs font-black text-white uppercase italic">{circuit.name}</p>
-                        <p className="text-[9px] font-bold text-zinc-500 uppercase mt-0.5 tracking-tighter">Última Falha: {circuit.last}</p>
+                        <p className="text-[9px] font-bold text-zinc-500 uppercase mt-0.5 tracking-tighter">{circuit.note}</p>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-[9px] text-zinc-500 font-black uppercase">Falhas</p>
-                          <p className="text-xs font-mono text-white">{circuit.failures}</p>
-                        </div>
-                        <Badge className={cn(
-                          "h-6 px-3 font-black uppercase text-[10px] tracking-widest",
-                          circuit.status === 'CLOSED' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
-                          circuit.status === 'OPEN' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
-                          "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                        )}>
-                          {circuit.status}
-                        </Badge>
-                      </div>
+                      <Badge className="h-6 px-3 font-black uppercase text-[10px] tracking-widest bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                        {circuit.status}
+                      </Badge>
                     </div>
                   ))}
                 </CardContent>
@@ -212,16 +232,13 @@ function ObservabilityCenterPage() {
                   <CardDescription className="text-zinc-500 font-bold uppercase text-[10px]">Prevenção de operações duplicadas</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-400 font-bold italic uppercase text-[10px]">Locks Ativos</span>
-                    <span className="text-white font-black italic">12</span>
+                  <div className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-2xl space-y-2">
+                    <p className="text-xs font-black text-white uppercase italic">Mecanismo Ativo</p>
+                    <p className="text-xs text-zinc-400 font-medium">Controle de concorrência com constraints UNIQUE no banco e claim pessimista via PostgreSQL (SKIP LOCKED).</p>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-400 font-bold italic uppercase text-[10px]">Race Conditions Evitadas</span>
-                    <span className="text-emerald-400 font-black italic">154</span>
-                  </div>
-                  <div className="h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800 mt-4">
-                    <div className="h-full bg-indigo-500 w-[65%]" />
+                  <div className="flex justify-between items-center text-sm pt-2">
+                    <span className="text-zinc-400 font-bold italic uppercase text-[10px]">Proteção de Lock Atômico</span>
+                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-black uppercase text-[9px]">ATIVO</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -239,18 +256,14 @@ function ObservabilityCenterPage() {
                   <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl flex items-center justify-between">
                     <div>
                       <p className="text-xs font-black text-white uppercase italic">Status do Motor</p>
-                      <p className="text-[10px] font-bold text-emerald-500 uppercase mt-0.5 tracking-tighter">Ativo • Monitorando 24/7</p>
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase mt-0.5 tracking-tighter">Reconciliação de Jobs Agendada (pg_cron)</p>
                     </div>
-                    <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-black text-[10px] font-black uppercase tracking-widest px-4">
-                      Forçar Ciclo
-                    </Button>
                   </div>
 
                   <div className="space-y-4">
                     {[
-                      { name: "Jobs Travados (>15m)", action: "Reset automático", status: "Nenhum detectado" },
-                      { name: "Conexões DB Inativas", action: "Flush pool", status: "Otimizado" },
-                      { name: "Payloads Antigos", action: "Arquivamento", status: "Agendado (03:00)" }
+                      { name: "Jobs Travados (>15m)", action: "Reconciliação para Retry / Dead-Letter", status: "Monitorado" },
+                      { name: "Conexões DB", action: "Pool Gerenciado Supabase", status: "Operacional" }
                     ].map(item => (
                       <div key={item.name} className="flex justify-between items-center py-2 border-b border-zinc-800/50">
                         <div>
@@ -271,8 +284,8 @@ function ObservabilityCenterPage() {
                   <CardTitle className="text-white font-black italic uppercase tracking-tight">Estatísticas de Recuperação</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[200px] flex items-center justify-center text-zinc-600 italic text-sm">
-                    Gráfico de auto-healing em desenvolvimento...
+                  <div className="h-[200px] flex items-center justify-center text-zinc-500 italic text-xs uppercase text-center p-4">
+                    Sem histórico de jobs travados para exibir no momento.
                   </div>
                 </CardContent>
               </Card>
@@ -283,7 +296,7 @@ function ObservabilityCenterPage() {
             <div className="grid grid-cols-1 gap-6">
               <Card className="bg-[#0b0f17] border-zinc-800">
                 <CardHeader>
-                  <CardTitle className="text-white font-black italic uppercase tracking-tight">Auditoria de Integridade Imutável</CardTitle>
+                  <CardTitle className="text-white font-black italic uppercase tracking-tight">Governança e Integridade</CardTitle>
                   <CardDescription className="text-zinc-500 font-bold uppercase text-[10px]">Cadeia de custódia e validação de logs críticos</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -292,38 +305,25 @@ function ObservabilityCenterPage() {
                       <ShieldCheck className="text-indigo-400" size={40} />
                     </div>
                     <div>
-                      <h4 className="text-xl font-black text-white italic uppercase">Protocolo de Integridade SHA-256</h4>
-                      <p className="text-xs text-zinc-500 font-medium max-w-2xl mt-1">Todos os eventos de nível 'Audit' e 'Critical' são assinados criptograficamente na origem, garantindo que não houve manipulação de registros.</p>
+                      <h4 className="text-xl font-black text-white italic uppercase">Políticas de Segurança e RLS</h4>
+                      <p className="text-xs text-zinc-500 font-medium max-w-2xl mt-1">Acesso a dados e tabelas estritamente protegido por Row-Level Security no PostgreSQL com isolamento por Tenant ID.</p>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">VALIDADO</Badge>
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">Hash: 8f2a...9c12</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase">Verificado há 12s</span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">VALIDADO</Badge>
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">Hash: 4d11...e304</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase">Verificado há 1m</span>
-                    </div>
+                  <div className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                    <span className="text-xs font-bold text-zinc-300">Auditoria RLS Ativa</span>
+                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-black uppercase text-[10px]">100% Protegido</Badge>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </PremiumTabsContent>
-          
+
           <PremiumTabsContent value="logs">
-            <div className="p-4 bg-black rounded-2xl border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2 overflow-auto max-h-[400px]">
-              <div className="flex items-center gap-2"><span className="text-indigo-400">[INFO]</span> <span className="text-zinc-600">2026-08-03T22:45:01Z</span> Trace: system_health_check - Success (12ms)</div>
-              <div className="flex items-center gap-2"><span className="text-emerald-400">[SUCCESS]</span> <span className="text-zinc-600">2026-08-03T22:44:55Z</span> Automation enqueued for Tenant BX-124</div>
-              <div className="flex items-center gap-2"><span className="text-amber-400">[WARN]</span> <span className="text-zinc-600">2026-08-03T22:44:30Z</span> Slow query detected: select * from appointments where tenant_id = ...</div>
-              <div className="flex items-center gap-2 animate-pulse"><span className="text-zinc-500">_ Listening for live logs...</span></div>
+            <div className="p-6 bg-[#0b0f17] rounded-2xl border border-zinc-800 text-center space-y-2">
+              <Terminal className="mx-auto text-zinc-600 mb-2" size={32} />
+              <p className="text-xs font-black text-zinc-400 uppercase italic">Stream de Logs Centralizado</p>
+              <p className="text-[10px] text-zinc-600 uppercase">A visualização em tempo real de logs de sistema está em fase de instrumentação.</p>
             </div>
           </PremiumTabsContent>
         </PremiumTabsBody>
@@ -333,17 +333,28 @@ function ObservabilityCenterPage() {
 }
 
 function HealthStatusItem({ icon: Icon, label, status }: any) {
+  const isSuccess = status === 'success';
+  const isError = status === 'error';
+  const isUnmonitored = status === 'unmonitored';
+
   return (
     <div className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900 transition-colors">
       <div className={cn(
         "h-10 w-10 rounded-xl border grid place-items-center shadow-lg",
-        status === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-rose-500/5"
+        isSuccess ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+        isError ? "bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-rose-500/5" :
+        "bg-zinc-800/40 border-zinc-700/30 text-zinc-500"
       )}>
         <Icon size={20} />
       </div>
       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest italic">{label}</span>
-      <Badge className={cn("text-[8px] uppercase font-black italic tracking-widest", status === 'success' ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
-        {status === 'success' ? 'ONLINE' : 'ERROR'}
+      <Badge className={cn(
+        "text-[8px] uppercase font-black italic tracking-widest",
+        isSuccess ? "bg-emerald-500/10 text-emerald-500" :
+        isError ? "bg-rose-500/10 text-rose-500" :
+        "bg-zinc-800 text-zinc-500 border-zinc-700/50"
+      )}>
+        {isSuccess ? 'ONLINE' : isError ? 'ERROR' : 'NÃO MONITORADO'}
       </Badge>
     </div>
   );

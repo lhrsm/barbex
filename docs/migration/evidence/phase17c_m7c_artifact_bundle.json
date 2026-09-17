@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "release_id": "BARBEX-CANONICAL-20260909-02b6e234",
+    "phase": "PHASE 17C.M7C",
+    "bundle_name": "M7C_MIGRATION_ARTIFACT_BUNDLE",
+    "generated_at": "2026-09-09T16:34:36.545Z"
+  },
+  "artifacts": [
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_remediation_manifest.json",
+      "sha256": "1bc85fb7f7caef2156c22671f853bb9c4e0f709ed6eb324425bb6619e6c7f975",
+      "purpose": "Deterministic 9-row transformation rules",
+      "target_phase": "M7F"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_table_import_manifest.json",
+      "sha256": "4313a96dc0a2d568e5ec128a711aeb0609449a41eca19379f9ce7347716ccdf6",
+      "purpose": "25-table topological import specification and column lists",
+      "target_phase": "M7F"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_auth_bootstrap_spec.json",
+      "sha256": "35bf585ffafe3dd5c43108916bfbaca0de17940c34483ec19fd30ed06254c12c",
+      "purpose": "10-user Auth precondition and identity definitions",
+      "target_phase": "M7D"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_storage_manifest.json",
+      "sha256": "fcc7eb0b7e4f386af4daf0596b48827ea9d031120dc92042252a43750cc968f5",
+      "purpose": "5-bucket and 30-object sync topology",
+      "target_phase": "M7E"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_storage_url_rewrite_manifest.json",
+      "sha256": "fdad2ac476e267f125b938161ba013831e800dc15de353a8d0b9ac3401535fa3",
+      "purpose": "6-row storage URL host rewrite specification",
+      "target_phase": "M7G"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_sequence_reseed_spec.json",
+      "sha256": "eab743182ae3d44a3ae851f44934fc0544e0a4224a001f91b532d3f7df33c76a",
+      "purpose": "Post-load sequence setval formulas",
+      "target_phase": "M7G"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_trigger_policy.json",
+      "sha256": "a323cca47b92bc6e7d7fba619d08a1bae0366f63e9945a73c22c3dbb19a7d555",
+      "purpose": "Controlled trigger suppression and restoration rules",
+      "target_phase": "M7F"
+    },
+    {
+      "path": "docs/migration/evidence/phase17c_m7c_drift_guard_spec.json",
+      "sha256": "2e1f9312ed3b2ff7e342669bdb2805f443d90a9e7e73779f3569a22b47d5297b",
+      "purpose": "Pre-cutover Source freeze drift assertions",
+      "target_phase": "M7F"
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7c_verify_fks.sql",
+      "sha256": "3b35357e8899e7642f114801d810100d0756b9a7724ae8aad4b60755cb7298f0",
+      "purpose": "279 physical anti-join foreign key verification SQL",
+      "target_phase": "M7G"
+    },
+    {
+      "path": "docs/migration/sql/phase17c_m7c_verify_constraints.sql",
+      "sha256": "26cd612c168919e2c540a4b6c50484aa3be451d8a176d868c139f526a6741804",
+      "purpose": "58 unique constraints verification SQL",
+      "target_phase": "M7G"
+    }
+  ]
+}

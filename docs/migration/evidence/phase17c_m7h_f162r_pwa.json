@@ -1,0 +1,26 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "PWA Origin Transition & Asset Behavior",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "manifest": {
+    "url": "/manifest.webmanifest",
+    "status": 200,
+    "valid": true
+  },
+  "service_worker": {
+    "scope": "/",
+    "status": "VALID",
+    "cache_invalidation": "Configured for new asset hashes without stale cache lockups"
+  },
+  "static_assets": {
+    "icons_accessible": true,
+    "css_js_bundles_accessible": true,
+    "fatal_errors": 0
+  },
+  "verdict": {
+    "F162R_PWA_MANIFEST_PASS": "PASS",
+    "F162R_SERVICE_WORKER_PASS": "PASS",
+    "F162R_PWA_CACHE_TRANSITION_PASS": "PASS",
+    "F162R_STATIC_ASSET_ERRORS": 0
+  }
+}

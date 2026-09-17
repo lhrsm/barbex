@@ -367,10 +367,11 @@ export function AutomationTestModal({
     }
     const loadingToastId = toast.loading(`Simulando resposta "${text}"...`);
     try {
-      const { data: zapiData, error: zapiError } = await supabase.functions.invoke('zapi-api', {
+      const { data: zapiData, error: zapiError } = await supabase.functions.invoke('zapi-webhook', {
         body: {
-          action: 'test-received-callback',
-          data: { phone: targetPhone, text }
+          type: 'ReceivedCallback',
+          phone: targetPhone,
+          buttonsResponseMessage: { buttonId: text === "1" ? "main_confirm" : text }
         }
       });
       if (zapiError || !zapiData?.success) throw new Error(zapiError?.message || zapiData?.error || "Erro ao simular webhook");

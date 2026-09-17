@@ -1,0 +1,53 @@
+{
+  "phase": "PHASE 17C.M7H-F15.1R",
+  "topic": "Actual F16 Domain and DNS Transition Plan",
+  "evaluated_at": "2026-09-15T16:50:00.000Z",
+  "plan_status": {
+    "f16_dns_plan_complete": "YES",
+    "f16_dns_values_from_actual_vercel_project": "YES",
+    "f16_dns_rollback_values_captured": "YES"
+  },
+  "domains": {
+    "apex": {
+      "domain": "barbex.shop",
+      "current_dns": {
+        "type": "A",
+        "value": "185.158.133.1",
+        "ttl": 14400,
+        "provider": "Cloudflare / Lovable"
+      },
+      "vercel_target": {
+        "type": "A",
+        "value": "76.76.21.21",
+        "ttl_recommended": 300
+      },
+      "verification_record": {
+        "type": "TXT",
+        "name": "_vercel",
+        "purpose": "SSL pre-issuance verification"
+      },
+      "rollback": {
+        "type": "A",
+        "value": "185.158.133.1",
+        "target": "Cloudflare / Lovable Cloud"
+      }
+    },
+    "subdomain_www": {
+      "domain": "www.barbex.shop",
+      "current_dns": {
+        "type": "CNAME",
+        "value": "barbex.shop",
+        "ttl": 300
+      },
+      "vercel_target": {
+        "type": "CNAME",
+        "value": "cname.vercel-dns.com",
+        "ttl_recommended": 300
+      },
+      "rollback": {
+        "type": "CNAME",
+        "value": "barbex.shop"
+      }
+    }
+  }
+}

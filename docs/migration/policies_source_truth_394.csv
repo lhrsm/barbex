@@ -1,0 +1,593 @@
+command;permissive;policy_name;roles;schema_name;table_name;using_expression;with_check_expression
+SELECT;PERMISSIVE;Lessons viewable by authenticated if path is viewable;{authenticated};public;academy_lessons;"(EXISTS ( SELECT 1
+   FROM (academy_modules m
+     JOIN academy_paths p ON ((p.id = m.path_id)))
+  WHERE ((m.id = academy_lessons.module_id) AND ((p.status = 'published'::text) OR (p.tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role)))))";
+SELECT;PERMISSIVE;Modules viewable by authenticated if path is viewable;{authenticated};public;academy_modules;"(EXISTS ( SELECT 1
+   FROM academy_paths p
+  WHERE ((p.id = academy_modules.path_id) AND ((p.status = 'published'::text) OR (p.tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role)))))";
+SELECT;PERMISSIVE;Public paths are viewable by all authenticated;{authenticated};public;academy_paths;((status = 'published'::text) OR (tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));
+ALL;PERMISSIVE;Users can manage their own progress;{authenticated};public;academy_progress;(user_id = auth.uid());(user_id = auth.uid())
+ALL;PERMISSIVE;super admin manages recommendations;{authenticated};public;addon_upgrade_recommendations;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+INSERT;PERMISSIVE;tenant inserts own recommendations;{authenticated};public;addon_upgrade_recommendations;;(tenant_id = auth.uid())
+SELECT;PERMISSIVE;tenant reads own recommendations;{authenticated};public;addon_upgrade_recommendations;((tenant_id = auth.uid()) OR has_role(auth.uid(), 'admin'::app_role));
+UPDATE;PERMISSIVE;tenant updates own recommendations;{authenticated};public;addon_upgrade_recommendations;(tenant_id = auth.uid());(tenant_id = auth.uid())
+SELECT;PERMISSIVE;Super admin can read event log;{authenticated};public;admin_event_log;"(( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'super_admin'::text)";
+ALL;PERMISSIVE;Super admin manages own event subscriptions;{authenticated};public;admin_event_subscriptions;"((user_id = auth.uid()) AND (( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'super_admin'::text))";"((user_id = auth.uid()) AND (( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'super_admin'::text))"
+ALL;PERMISSIVE;service role full access templates;{service_role};public;admin_event_templates;true;true
+ALL;PERMISSIVE;super admins manage event templates;{authenticated};public;admin_event_templates;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+INSERT;PERMISSIVE;Authenticated users can create admin notifications;{authenticated};public;admin_notifications;;true
+SELECT;PERMISSIVE;Notificações visíveis apenas para super admin;{public};public;admin_notifications;"(( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'super_admin'::text)";
+UPDATE;PERMISSIVE;Super admin pode atualizar notificações (marcar como lido);{public};public;admin_notifications;"(( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'super_admin'::text)";
+DELETE;PERMISSIVE;Super admin pode excluir notificações;{public};public;admin_notifications;"(( SELECT profiles.role
+   FROM profiles
+  WHERE (profiles.id = auth.uid())) = 'super_admin'::text)";
+ALL;PERMISSIVE;Tenants can manage their own ai settings;{public};public;ai_settings;(auth.uid() = tenant_id);
+INSERT;PERMISSIVE;tenant_insert_checkins;{authenticated};public;appointment_checkins;;(tenant_id = auth.uid())
+SELECT;PERMISSIVE;tenant_read_checkins;{authenticated};public;appointment_checkins;(tenant_id = auth.uid());
+INSERT;PERMISSIVE;Public can create appointment groups;{anon,authenticated};public;appointment_groups;;(tenant_id IS NOT NULL)
+ALL;PERMISSIVE;Tenant can manage their appointment groups;{public};public;appointment_groups;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+SELECT;PERMISSIVE;Tenant can view own appointment groups;{authenticated};public;appointment_groups;"(tenant_id = ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;Public can read approved testimonials;{anon,authenticated};public;appointment_reviews;((testimonial_status = 'approved'::text) AND (show_on_frontend = true));
+INSERT;PERMISSIVE;Public can submit reviews for real appointments;{anon,authenticated};public;appointment_reviews;;"((appointment_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM appointments a
+  WHERE ((a.id = appointment_reviews.appointment_id) AND (a.tenant_id = appointment_reviews.tenant_id)))) AND ((barbershop_rating IS NULL) OR ((barbershop_rating >= 1) AND (barbershop_rating <= 5))) AND ((barber_rating IS NULL) OR ((barber_rating >= 1) AND (barber_rating <= 5))) AND ((service_rating IS NULL) OR ((service_rating >= 1) AND (service_rating <= 5))) AND (COALESCE(show_on_frontend, false) = false) AND (approved_at IS NULL) AND (approved_by IS NULL) AND (reply IS NULL))"
+DELETE;PERMISSIVE;Tenant owner can delete reviews;{authenticated};public;appointment_reviews;(tenant_id = auth.uid());
+SELECT;PERMISSIVE;Tenant owner can read all reviews;{authenticated};public;appointment_reviews;(tenant_id = auth.uid());
+UPDATE;PERMISSIVE;Tenant owner can update reviews;{authenticated};public;appointment_reviews;(tenant_id = auth.uid());(tenant_id = auth.uid())
+INSERT;PERMISSIVE;Authenticated users can insert logs;{public};public;appointment_status_logs;;(auth.role() = 'authenticated'::text)
+SELECT;PERMISSIVE;Users can view logs of their own appointments;{public};public;appointment_status_logs;"(EXISTS ( SELECT 1
+   FROM appointments a
+  WHERE ((a.id = appointment_status_logs.appointment_id) AND ((a.tenant_id = auth.uid()) OR (a.customer_id = auth.uid())))))";
+SELECT;PERMISSIVE;Users can view their tenant's status logs;{public};public;appointment_status_logs;"(appointment_id IN ( SELECT appointments.id
+   FROM appointments
+  WHERE ((appointments.tenant_id = auth.uid()) OR (appointments.tenant_id IN ( SELECT profiles.tenant_id
+           FROM profiles
+          WHERE (profiles.id = auth.uid()))))))";
+SELECT;PERMISSIVE;Barbers can view their own appointments;{authenticated};public;appointments;"(EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = appointments.barber_id) AND (barbers.user_id = auth.uid()))))";
+SELECT;PERMISSIVE;Customers can view own appointments;{authenticated};public;appointments;"(customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.auth_user_id = ( SELECT auth.uid() AS uid))))";
+SELECT;PERMISSIVE;Public access for availability;{anon,authenticated};public;appointments;(status = ANY (ARRAY['scheduled'::text, 'confirmed'::text, 'completed'::text, 'cancelled'::text, 'no_show'::text]));
+INSERT;PERMISSIVE;Public can create appointments;{public};public;appointments;;true
+UPDATE;PERMISSIVE;Staff can update appointments;{authenticated};public;appointments;"((tenant_id = auth.uid()) OR (barber_id IN ( SELECT barbers.id
+   FROM barbers
+  WHERE (barbers.user_id = auth.uid()))) OR (tenant_id IN ( SELECT reception_permissions.tenant_id
+   FROM reception_permissions
+  WHERE ((reception_permissions.user_id = auth.uid()) AND (reception_permissions.is_active = true)))) OR is_super_admin_user())";"((tenant_id = auth.uid()) OR (barber_id IN ( SELECT barbers.id
+   FROM barbers
+  WHERE (barbers.user_id = auth.uid()))) OR (tenant_id IN ( SELECT reception_permissions.tenant_id
+   FROM reception_permissions
+  WHERE ((reception_permissions.user_id = auth.uid()) AND (reception_permissions.is_active = true)))) OR is_super_admin_user())"
+ALL;PERMISSIVE;Super admins can manage all appointments;{public};public;appointments;is_super_admin_user();is_super_admin_user()
+SELECT;PERMISSIVE;Tenant can view own appointments;{authenticated};public;appointments;"((tenant_id = auth.uid()) OR (tenant_id IN ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::text, 'tenant_admin'::text, 'manager'::text]))))) OR (tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid()))) OR is_super_admin_user())";
+ALL;PERMISSIVE;Users can manage their own appointments;{public};public;appointments;(auth.uid() = user_id);(auth.uid() = user_id)
+SELECT;PERMISSIVE;Users can view their own appointments;{authenticated};public;appointments;"((auth.uid() = user_id) OR (customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.user_id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text)))))";
+INSERT;PERMISSIVE;Audit logs insertable by super_admin;{public};public;audit_logs;;is_super_admin_user()
+SELECT;PERMISSIVE;Audit logs viewable by super_admin;{public};public;audit_logs;is_super_admin_user();
+SELECT;PERMISSIVE;Tenants can view their own conversations;{public};public;automation_conversations;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;Super admins can view all cron runs;{public};public;automation_cron_runs;"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text))))";
+SELECT;PERMISSIVE;Tenants can view their own cron runs;{public};public;automation_cron_runs;(auth.uid() = tenant_id);
+SELECT;PERMISSIVE;Users can view their own cron logs;{public};public;automation_cron_runs;(auth.uid() = tenant_id);
+SELECT;PERMISSIVE;Tenants can view their own dispatches;{public};public;automation_dispatches;"(tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid())))";
+ALL;PERMISSIVE;Admins manage all interaction events;{public};public;automation_interaction_events;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+INSERT;PERMISSIVE;Tenants insert their own interaction events;{public};public;automation_interaction_events;;(auth.uid() = tenant_id)
+SELECT;PERMISSIVE;Tenants view their own interaction events;{public};public;automation_interaction_events;(auth.uid() = tenant_id);
+ALL;PERMISSIVE;Admins can manage all automation interactions;{public};public;automation_interactions;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+ALL;PERMISSIVE;Tenants manage their own automation interactions;{public};public;automation_interactions;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+ALL;PERMISSIVE;Service role manages automation logs;{service_role};public;automation_logs;true;true
+SELECT;PERMISSIVE;Tenants can view their own automation logs;{public};public;automation_logs;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+ALL;PERMISSIVE;Users can manage their own automation_queue;{public};public;automation_queue;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+ALL;PERMISSIVE;Users can manage their own settings;{public};public;automation_reconciliation_settings;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+INSERT;PERMISSIVE;Tenants can insert their own send history;{public};public;automation_send_history;;(tenant_id = auth.uid())
+SELECT;PERMISSIVE;Tenants can view their own send history;{public};public;automation_send_history;(tenant_id = auth.uid());
+ALL;PERMISSIVE;Allow all for service_role;{service_role};public;automation_status;true;true
+SELECT;PERMISSIVE;Allow read for authenticated;{authenticated};public;automation_status;true;
+ALL;PERMISSIVE;Service role manages automation status;{service_role};public;automation_status;true;true
+ALL;PERMISSIVE;Users can manage their own automation_templates;{public};public;automation_templates;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+ALL;PERMISSIVE;Tenants can manage their own v2 dispatches;{public};public;automation_v2_dispatches;"(tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid())))";
+SELECT;PERMISSIVE;Tenants can view their own v2 logs;{authenticated};public;automation_v2_logs;"(tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid())))";
+ALL;PERMISSIVE;Tenants can manage their own v2 sessions;{authenticated};public;automation_v2_sessions;"(tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid())))";
+ALL;PERMISSIVE;Service role manages automation webhook logs;{service_role};public;automation_webhook_logs;true;true
+SELECT;PERMISSIVE;Tenants can view their automation webhook logs;{authenticated};public;automation_webhook_logs;(tenant_id = auth.uid());
+ALL;PERMISSIVE;Barbers can manage their own automations;{public};public;automations;(auth.uid() = barber_id);
+ALL;PERMISSIVE;Tenants can manage their own automations;{public};public;automations;(auth.uid() = tenant_id);
+ALL;PERMISSIVE;Users can view their own tenant data;{public};public;automations;"(tenant_id = ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;Tenant reads own availability conflict logs;{authenticated};public;availability_conflict_logs;((tenant_id = auth.uid()) OR is_super_admin_user());
+SELECT;PERMISSIVE;Public can read commissions through scoped RPC only;{anon};public;barber_commissions;false;
+ALL;PERMISSIVE;Tenant admins can manage barber commissions;{authenticated};public;barber_commissions;(tenant_id = auth.uid());(tenant_id = auth.uid())
+DELETE;RESTRICTIVE;require_module_commissions_delete;{authenticated};public;barber_commissions;has_module_access(auth.uid(), 'commissions'::text);
+INSERT;RESTRICTIVE;require_module_commissions_insert;{authenticated};public;barber_commissions;;has_module_access(auth.uid(), 'commissions'::text)
+UPDATE;RESTRICTIVE;require_module_commissions_update;{authenticated};public;barber_commissions;has_module_access(auth.uid(), 'commissions'::text);has_module_access(auth.uid(), 'commissions'::text)
+SELECT;PERMISSIVE;Vínculos de serviços são públicos;{public};public;barber_services;true;
+ALL;PERMISSIVE;authenticated_manage_barber_services;{authenticated};public;barber_services;((auth.uid() = user_id) OR (auth.uid() = tenant_id));((auth.uid() = user_id) OR (auth.uid() = tenant_id))
+SELECT;PERMISSIVE;public_view_barber_services;{public};public;barber_services;true;
+SELECT;PERMISSIVE;Barber sees own tips;{authenticated};public;barber_tips;"(EXISTS ( SELECT 1
+   FROM barbers b
+  WHERE ((b.id = barber_tips.barber_id) AND (b.user_id = auth.uid()))))";
+SELECT;PERMISSIVE;Shop owner sees own tips;{authenticated};public;barber_tips;(tenant_id = auth.uid());
+UPDATE;PERMISSIVE;Shop owner updates tips;{authenticated};public;barber_tips;(tenant_id = auth.uid());(tenant_id = auth.uid())
+ALL;PERMISSIVE;Barbers can manage their own profile;{authenticated};public;barbers;(auth.uid() = user_id);(auth.uid() = user_id)
+SELECT;PERMISSIVE;Public select for active barbers;{public};public;barbers;"((active = true) OR (tenant_id = auth.uid()) OR (tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid()))) OR has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'super_admin'::app_role))";
+ALL;PERMISSIVE;Super admins can manage all barbers;{public};public;barbers;is_super_admin_user();is_super_admin_user()
+SELECT;PERMISSIVE;Tenants read their own module logs;{authenticated};public;barbershop_module_logs;((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));
+INSERT;PERMISSIVE;Users write module logs for own tenant;{authenticated};public;barbershop_module_logs;;((tenant_id = get_my_tenant_id()) OR is_super_admin_user())
+SELECT;PERMISSIVE;Public can read tenant modules;{anon};public;barbershop_modules;true;
+SELECT;PERMISSIVE;Tenant staff can read their tenant modules;{authenticated};public;barbershop_modules;"(tenant_id IN ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+ALL;PERMISSIVE;Tenants manage their own modules;{authenticated};public;barbershop_modules;((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role))
+ALL;PERMISSIVE;Users can manage their own barbershop settings;{authenticated};public;barbershop_settings;(auth.uid() = barber_id);
+UPDATE;PERMISSIVE;Owners can update their own barbershop;{public};public;barbershops;(auth.uid() = owner_id);
+SELECT;PERMISSIVE;Public read access for barbershops;{public};public;barbershops;true;
+SELECT;PERMISSIVE;Tenants can view their own campaign logs;{public};public;campaign_logs;(auth.uid() = tenant_id);
+ALL;PERMISSIVE;Tenants can manage their own campaigns;{public};public;campaigns;(auth.uid() = tenant_id);
+SELECT;PERMISSIVE;Customers can view own cashback transactions;{authenticated};public;cashback_transactions;"(customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.auth_user_id = ( SELECT auth.uid() AS uid))))";
+ALL;PERMISSIVE;Service role can do everything on cashback_transactions;{service_role};public;cashback_transactions;true;true
+INSERT;PERMISSIVE;Users can insert cashback transactions for their tenant;{authenticated};public;cashback_transactions;;"((tenant_id = auth.uid()) OR (tenant_id IN ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid()))))"
+SELECT;PERMISSIVE;Users can view their tenant's cashback transactions;{authenticated};public;cashback_transactions;"((tenant_id = auth.uid()) OR (tenant_id IN ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid()))))";
+DELETE;RESTRICTIVE;require_module_cashback_delete;{authenticated};public;cashback_transactions;has_module_access(auth.uid(), 'cashback'::text);
+INSERT;RESTRICTIVE;require_module_cashback_insert;{authenticated};public;cashback_transactions;;has_module_access(auth.uid(), 'cashback'::text)
+UPDATE;RESTRICTIVE;require_module_cashback_update;{authenticated};public;cashback_transactions;has_module_access(auth.uid(), 'cashback'::text);has_module_access(auth.uid(), 'cashback'::text)
+UPDATE;PERMISSIVE;Service role manages client auth updates;{service_role};public;client_auth;true;true
+SELECT;PERMISSIVE;Service role reads client auth;{service_role};public;client_auth;true;
+DELETE;RESTRICTIVE;require_module_commissions_delete;{authenticated};public;commission_closings;has_module_access(auth.uid(), 'commissions'::text);
+INSERT;RESTRICTIVE;require_module_commissions_insert;{authenticated};public;commission_closings;;has_module_access(auth.uid(), 'commissions'::text)
+UPDATE;RESTRICTIVE;require_module_commissions_update;{authenticated};public;commission_closings;has_module_access(auth.uid(), 'commissions'::text);has_module_access(auth.uid(), 'commissions'::text)
+ALL;PERMISSIVE;tenant manages commission closings;{public};public;commission_closings;(tenant_id = auth.uid());(tenant_id = auth.uid())
+DELETE;RESTRICTIVE;require_module_commissions_delete;{authenticated};public;commission_entries;has_module_access(auth.uid(), 'commissions'::text);
+INSERT;RESTRICTIVE;require_module_commissions_insert;{authenticated};public;commission_entries;;has_module_access(auth.uid(), 'commissions'::text)
+UPDATE;RESTRICTIVE;require_module_commissions_update;{authenticated};public;commission_entries;has_module_access(auth.uid(), 'commissions'::text);has_module_access(auth.uid(), 'commissions'::text)
+ALL;PERMISSIVE;tenant manages commission entries;{public};public;commission_entries;(tenant_id = auth.uid());(tenant_id = auth.uid())
+ALL;PERMISSIVE;Users can access their own tenant communication_channels;{authenticated};public;communication_channels;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+ALL;PERMISSIVE;Users can access their own tenant communication_messages;{authenticated};public;communication_messages;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+ALL;PERMISSIVE;Users can access their own tenant communication_templates;{authenticated};public;communication_templates;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+INSERT;PERMISSIVE;Anyone can insert cookie consent;{anon,authenticated};public;cookie_consents;;true
+SELECT;PERMISSIVE;Users view own cookie consents;{authenticated};public;cookie_consents;((user_id = auth.uid()) OR (tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));
+SELECT;PERMISSIVE;Tenant can view own coupons;{authenticated};public;coupons;(tenant_id = auth.uid());
+ALL;PERMISSIVE;Tenants can manage their own coupons;{authenticated};public;coupons;(auth.uid() = tenant_id);
+SELECT;PERMISSIVE;Customers can view own credit transactions;{authenticated};public;credit_transactions;"(customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.auth_user_id = ( SELECT auth.uid() AS uid))))";
+SELECT;PERMISSIVE;Users can view their tenant's credit transactions;{public};public;credit_transactions;"((tenant_id = auth.uid()) OR (tenant_id IN ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid()))))";
+SELECT;PERMISSIVE;Customers can view own achievements;{authenticated};public;customer_achievements;"(customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.auth_user_id = ( SELECT auth.uid() AS uid))))";
+INSERT;PERMISSIVE;Allow INSERT for tenant;{public};public;customer_credits;;(auth.uid() = tenant_id)
+SELECT;PERMISSIVE;Allow SELECT for tenant and owner;{public};public;customer_credits;((auth.uid() = tenant_id) OR (auth.uid() = customer_id));
+UPDATE;PERMISSIVE;Allow UPDATE for tenant;{public};public;customer_credits;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+ALL;PERMISSIVE;Manage own tenant customer documents;{authenticated};public;customer_documents;(tenant_id = auth.uid());(tenant_id = auth.uid())
+ALL;PERMISSIVE;Manage own tenant customer interactions;{authenticated};public;customer_interactions;(tenant_id = auth.uid());(tenant_id = auth.uid())
+SELECT;PERMISSIVE;Customers can view own subscriptions;{authenticated};public;customer_subscriptions;"(customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.auth_user_id = ( SELECT auth.uid() AS uid))))";
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;customer_subscriptions;has_module_access(auth.uid(), 'subscriptions'::text);
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;customer_subscriptions;;has_module_access(auth.uid(), 'subscriptions'::text)
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;customer_subscriptions;has_module_access(auth.uid(), 'subscriptions'::text);has_module_access(auth.uid(), 'subscriptions'::text)
+ALL;PERMISSIVE;tenant manages own subs;{authenticated};public;customer_subscriptions;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+ALL;PERMISSIVE;Manage own tenant customer tasks;{authenticated};public;customer_tasks;(tenant_id = auth.uid());(tenant_id = auth.uid())
+INSERT;PERMISSIVE;Allow public insert on customers;{anon,authenticated};public;customers;;(tenant_id IS NOT NULL)
+SELECT;PERMISSIVE;Allow public select for identification;{public};public;customers;true;
+SELECT;PERMISSIVE;Customers can view own profile;{authenticated};public;customers;(auth_user_id = ( SELECT auth.uid() AS uid));
+ALL;PERMISSIVE;Super admins can manage all customers;{public};public;customers;is_super_admin_user();is_super_admin_user()
+SELECT;PERMISSIVE;Tenant members can view customers;{authenticated};public;customers;"((tenant_id = auth.uid()) OR (tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE ((tenant_memberships.user_id = auth.uid()) AND (tenant_memberships.status = 'active'::text)))) OR (tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid()))) OR has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'super_admin'::app_role))";
+ALL;PERMISSIVE;Users can manage their own customers;{authenticated};public;customers;"((auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = customers.barber_id) AND (barbers.user_id = auth.uid())))))";
+SELECT;PERMISSIVE;Users can view their own customers;{authenticated};public;customers;"((auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text)))))";
+SELECT;PERMISSIVE;Admins can view all email logs;{authenticated};public;email_logs;(has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'super_admin'::app_role));
+SELECT;PERMISSIVE;Tenants can view their own email logs;{authenticated};public;email_logs;"(tenant_id = ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid())
+ LIMIT 1))";
+ALL;PERMISSIVE;Tenants can manage their own email settings;{public};public;email_settings;(auth.uid() = tenant_id);
+INSERT;PERMISSIVE;Users can insert their own tenant logs;{public};public;financial_adjustment_logs;;"(tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid())))"
+SELECT;PERMISSIVE;Users can view their own tenant logs;{public};public;financial_adjustment_logs;"(tenant_id IN ( SELECT barbershops.id
+   FROM barbershops
+  WHERE (barbershops.owner_id = auth.uid())))";
+INSERT;PERMISSIVE;Anyone can submit lgpd request;{anon,authenticated};public;lgpd_requests;;true
+SELECT;PERMISSIVE;Customers view own requests;{authenticated};public;lgpd_requests;"((user_id = auth.uid()) OR (customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.user_id = auth.uid()))) OR (tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role))";
+UPDATE;PERMISSIVE;Tenant and admin update requests;{authenticated};public;lgpd_requests;((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role))
+SELECT;PERMISSIVE;Anyone can read achievements;{public};public;loyalty_achievements;true;
+ALL;PERMISSIVE;Tenant owners view participations;{authenticated};public;loyalty_campaign_participations;"(tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";"(tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))"
+DELETE;RESTRICTIVE;require_module_loyalty_delete;{authenticated};public;loyalty_campaign_participations;has_module_access(auth.uid(), 'loyalty'::text);
+INSERT;RESTRICTIVE;require_module_loyalty_insert;{authenticated};public;loyalty_campaign_participations;;has_module_access(auth.uid(), 'loyalty'::text)
+UPDATE;RESTRICTIVE;require_module_loyalty_update;{authenticated};public;loyalty_campaign_participations;has_module_access(auth.uid(), 'loyalty'::text);has_module_access(auth.uid(), 'loyalty'::text)
+SELECT;PERMISSIVE;Templates readable by all;{public};public;loyalty_campaign_templates;true;
+DELETE;RESTRICTIVE;require_module_loyalty_delete;{authenticated};public;loyalty_campaign_templates;has_module_access(auth.uid(), 'loyalty'::text);
+INSERT;RESTRICTIVE;require_module_loyalty_insert;{authenticated};public;loyalty_campaign_templates;;has_module_access(auth.uid(), 'loyalty'::text)
+UPDATE;RESTRICTIVE;require_module_loyalty_update;{authenticated};public;loyalty_campaign_templates;has_module_access(auth.uid(), 'loyalty'::text);has_module_access(auth.uid(), 'loyalty'::text)
+ALL;PERMISSIVE;Tenant owners manage campaigns;{authenticated};public;loyalty_campaigns;"(tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";"(tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))"
+DELETE;RESTRICTIVE;require_module_loyalty_delete;{authenticated};public;loyalty_campaigns;has_module_access(auth.uid(), 'loyalty'::text);
+INSERT;RESTRICTIVE;require_module_loyalty_insert;{authenticated};public;loyalty_campaigns;;has_module_access(auth.uid(), 'loyalty'::text)
+UPDATE;RESTRICTIVE;require_module_loyalty_update;{authenticated};public;loyalty_campaigns;has_module_access(auth.uid(), 'loyalty'::text);has_module_access(auth.uid(), 'loyalty'::text)
+SELECT;PERMISSIVE;Anyone can read levels;{public};public;loyalty_levels;true;
+SELECT;PERMISSIVE;public can read loyalty rewards;{anon};public;loyalty_rewards;true;
+DELETE;RESTRICTIVE;require_module_loyalty_delete;{authenticated};public;loyalty_rewards;has_module_access(auth.uid(), 'loyalty'::text);
+INSERT;RESTRICTIVE;require_module_loyalty_insert;{authenticated};public;loyalty_rewards;;has_module_access(auth.uid(), 'loyalty'::text)
+UPDATE;RESTRICTIVE;require_module_loyalty_update;{authenticated};public;loyalty_rewards;has_module_access(auth.uid(), 'loyalty'::text);has_module_access(auth.uid(), 'loyalty'::text)
+ALL;PERMISSIVE;tenant manages own loyalty rewards;{authenticated};public;loyalty_rewards;(tenant_id = auth.uid());(tenant_id = auth.uid())
+SELECT;PERMISSIVE;public can read loyalty settings;{anon};public;loyalty_settings;true;
+DELETE;RESTRICTIVE;require_module_loyalty_delete;{authenticated};public;loyalty_settings;has_module_access(auth.uid(), 'loyalty'::text);
+INSERT;RESTRICTIVE;require_module_loyalty_insert;{authenticated};public;loyalty_settings;;has_module_access(auth.uid(), 'loyalty'::text)
+UPDATE;RESTRICTIVE;require_module_loyalty_update;{authenticated};public;loyalty_settings;has_module_access(auth.uid(), 'loyalty'::text);has_module_access(auth.uid(), 'loyalty'::text)
+ALL;PERMISSIVE;tenant manages own loyalty settings;{authenticated};public;loyalty_settings;(tenant_id = auth.uid());(tenant_id = auth.uid())
+ALL;PERMISSIVE;Tenants can manage their own audiences;{authenticated};public;marketing_audiences;(tenant_id = auth.uid());
+ALL;PERMISSIVE;Tenant can manage own recipients;{authenticated};public;notification_recipients;((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role))
+SELECT;PERMISSIVE;Barbeiros podem ver suas próprias notificações;{public};public;notifications;"((EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = notifications.barber_id) AND (barbers.user_id = auth.uid())))) OR (user_id = auth.uid()) OR is_super_admin_user())";
+SELECT;PERMISSIVE;Barber panel can read its notifications;{anon,authenticated};public;notifications;(barber_id IS NOT NULL);
+UPDATE;PERMISSIVE;Barber panel can update its notifications;{anon,authenticated};public;notifications;(barber_id IS NOT NULL);(barber_id IS NOT NULL)
+ALL;PERMISSIVE;Super admins can manage all notifications;{public};public;notifications;is_super_admin_user();is_super_admin_user()
+ALL;PERMISSIVE;Users can manage their own notifications;{public};public;notifications;"((EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = notifications.barber_id) AND (barbers.user_id = auth.uid())))) OR (user_id = auth.uid()) OR is_super_admin_user())";
+ALL;PERMISSIVE;Users can view their own tenant data;{public};public;notifications;"(tenant_id = ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;Everyone can view onboarding settings;{public};public;onboarding_settings;true;
+ALL;PERMISSIVE;Only super admins can manage onboarding settings;{public};public;onboarding_settings;"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text))))";
+ALL;PERMISSIVE;Tenant access;{authenticated};public;operational_insights_interactions;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+INSERT;PERMISSIVE;tenant inserts own payment_gateway_logs;{public};public;payment_gateway_logs;;(tenant_id = auth.uid())
+SELECT;PERMISSIVE;tenant views own payment_gateway_logs;{public};public;payment_gateway_logs;(tenant_id = auth.uid());
+ALL;PERMISSIVE;tenant manages own payment_gateways;{public};public;payment_gateways;(tenant_id = auth.uid());(tenant_id = auth.uid())
+INSERT;PERMISSIVE;Public customers can submit receipts;{anon};public;payment_receipts;;"((EXISTS ( SELECT 1
+   FROM profiles p
+  WHERE (p.id = p.tenant_id))) AND (appointment_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM appointments a
+  WHERE ((a.id = payment_receipts.appointment_id) AND (a.tenant_id = payment_receipts.tenant_id)))))"
+DELETE;PERMISSIVE;Tenant can delete own receipts;{authenticated};public;payment_receipts;(tenant_id = get_my_tenant_id());
+INSERT;PERMISSIVE;Tenant can insert own receipts;{authenticated};public;payment_receipts;;(tenant_id = get_my_tenant_id())
+UPDATE;PERMISSIVE;Tenant can update own receipts;{authenticated};public;payment_receipts;(tenant_id = get_my_tenant_id());(tenant_id = get_my_tenant_id())
+SELECT;PERMISSIVE;Tenant can view own receipts;{authenticated};public;payment_receipts;((tenant_id = get_my_tenant_id()) OR is_super_admin());
+SELECT;PERMISSIVE;Allow read for authenticated permissions;{authenticated};public;permissions;true;
+SELECT;PERMISSIVE;Plans are viewable by everyone;{public};public;plans;true;
+ALL;PERMISSIVE;Plans manageable by super_admin;{public};public;plans;is_super_admin_user();is_super_admin_user()
+INSERT;PERMISSIVE;Anyone can insert consent;{anon,authenticated};public;privacy_consents;;true
+SELECT;PERMISSIVE;Users view own/tenant consents;{authenticated};public;privacy_consents;"((user_id = auth.uid()) OR (customer_id IN ( SELECT customers.id
+   FROM customers
+  WHERE (customers.user_id = auth.uid()))) OR (tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid()))))";
+SELECT;PERMISSIVE;Qualquer pessoa pode ver imagens de produtos;{public};public;product_images;true;
+ALL;PERMISSIVE;Vendedores podem gerenciar imagens de seus produtos;{public};public;product_images;"(EXISTS ( SELECT 1
+   FROM products p
+  WHERE ((p.id = product_images.product_id) AND (p.user_id = auth.uid()))))";"(EXISTS ( SELECT 1
+   FROM products p
+  WHERE ((p.id = product_images.product_id) AND (p.user_id = auth.uid()))))"
+DELETE;RESTRICTIVE;require_module_products_delete;{authenticated};public;product_images;has_module_access(auth.uid(), 'products'::text);
+INSERT;RESTRICTIVE;require_module_products_insert;{authenticated};public;product_images;;has_module_access(auth.uid(), 'products'::text)
+UPDATE;RESTRICTIVE;require_module_products_update;{authenticated};public;product_images;has_module_access(auth.uid(), 'products'::text);has_module_access(auth.uid(), 'products'::text)
+INSERT;PERMISSIVE;Authenticated tenant can create product sales;{authenticated};public;product_sales;;"((barber_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM barbers b
+  WHERE ((b.id = product_sales.barber_id) AND (b.tenant_id = auth.uid())))))"
+ALL;PERMISSIVE;Super admins can manage all product sales;{public};public;product_sales;is_super_admin_user();is_super_admin_user()
+INSERT;PERMISSIVE;Users can insert their own product sales;{public};public;product_sales;;(auth.uid() = user_id)
+ALL;PERMISSIVE;Users can manage their own product sales;{authenticated};public;product_sales;"((auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = product_sales.barber_id) AND (barbers.user_id = auth.uid())))))";
+UPDATE;PERMISSIVE;Users can update their own product sales;{public};public;product_sales;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view their own product sales;{public};public;product_sales;(auth.uid() = user_id);
+DELETE;RESTRICTIVE;require_module_store_delete;{authenticated};public;product_sales;has_module_access(auth.uid(), 'store'::text);
+INSERT;RESTRICTIVE;require_module_store_insert;{authenticated};public;product_sales;;has_module_access(auth.uid(), 'store'::text)
+UPDATE;RESTRICTIVE;require_module_store_update;{authenticated};public;product_sales;has_module_access(auth.uid(), 'store'::text);has_module_access(auth.uid(), 'store'::text)
+SELECT;PERMISSIVE;Public can view products;{public};public;products;true;
+SELECT;PERMISSIVE;Public select for products;{public};public;products;true;
+ALL;PERMISSIVE;Super admins can manage all products;{public};public;products;is_super_admin_user();is_super_admin_user()
+INSERT;PERMISSIVE;Users can create their own products;{public};public;products;;(auth.uid() = user_id)
+DELETE;PERMISSIVE;Users can delete their own products;{public};public;products;(auth.uid() = user_id);
+UPDATE;PERMISSIVE;Users can update their own products;{public};public;products;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view their own products;{public};public;products;"((auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text)))))";
+DELETE;RESTRICTIVE;require_module_products_delete;{authenticated};public;products;has_module_access(auth.uid(), 'products'::text);
+INSERT;RESTRICTIVE;require_module_products_insert;{authenticated};public;products;;has_module_access(auth.uid(), 'products'::text)
+UPDATE;RESTRICTIVE;require_module_products_update;{authenticated};public;products;has_module_access(auth.uid(), 'products'::text);has_module_access(auth.uid(), 'products'::text)
+ALL;PERMISSIVE;Admins can manage time off for their tenant;{authenticated};public;professional_time_off;(tenant_id = auth.uid());(tenant_id = auth.uid())
+SELECT;PERMISSIVE;Users can view time off for their tenant;{authenticated};public;professional_time_off;"((tenant_id = auth.uid()) OR (professional_id IN ( SELECT barbers.id
+   FROM barbers
+  WHERE (barbers.user_id = auth.uid()))))";
+SELECT;PERMISSIVE;Profiles are viewable by everyone;{public};public;profiles;true;
+SELECT;PERMISSIVE;Profiles are viewable by owner, tenant, or super admin;{public};public;profiles;((auth.uid() = id) OR is_super_admin_user() OR ((get_my_tenant_id() IS NOT NULL) AND ((tenant_id = get_my_tenant_id()) OR (id = get_my_tenant_id()))));
+DELETE;PERMISSIVE;Super admins can delete profiles;{public};public;profiles;is_super_admin_user();
+INSERT;PERMISSIVE;Users can insert own profile;{public};public;profiles;;(auth.uid() = id)
+UPDATE;PERMISSIVE;Users can update own profile or super admin can update any;{public};public;profiles;((auth.uid() = id) OR is_super_admin_user());((auth.uid() = id) OR is_super_admin_user())
+DELETE;PERMISSIVE;user_own_subs_delete;{authenticated};public;push_subscriptions;(auth.uid() = user_id);
+SELECT;PERMISSIVE;user_own_subs_select;{authenticated};public;push_subscriptions;(auth.uid() = user_id);
+ALL;PERMISSIVE;service_only_rl;{public};public;rate_limit_hits;false;false
+ALL;PERMISSIVE;Owner manages reception permissions;{authenticated};public;reception_permissions;((tenant_id = get_my_tenant_id()) OR is_super_admin_user());((tenant_id = get_my_tenant_id()) OR is_super_admin_user())
+SELECT;PERMISSIVE;Reception reads own permissions;{authenticated};public;reception_permissions;(user_id = auth.uid());
+SELECT;PERMISSIVE;Admins can view their own tenant's refund audits;{public};public;refund_audits;(auth.uid() = tenant_id);
+ALL;PERMISSIVE;Tenants can manage their own refund requests;{authenticated};public;refund_requests;(tenant_id = auth.uid());(tenant_id = auth.uid())
+SELECT;PERMISSIVE;Only Super Admins can read Resend settings;{authenticated};public;resend_settings;has_role(auth.uid(), 'super_admin'::app_role);
+ALL;PERMISSIVE;Super Admins can manage Resend settings;{authenticated};public;resend_settings;has_role(auth.uid(), 'super_admin'::app_role);
+SELECT;PERMISSIVE;Tenant owner reads review logs;{authenticated};public;review_automation_logs;(tenant_id = auth.uid());
+SELECT;PERMISSIVE;Allow read for authenticated role_permissions;{authenticated};public;role_permissions;true;
+SELECT;PERMISSIVE;Catálogo de add-ons ativos é público;{public};public;saas_addons;((is_active = true) OR has_role(auth.uid(), 'super_admin'::app_role));
+ALL;PERMISSIVE;Super admin gerencia add-ons;{authenticated};public;saas_addons;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+INSERT;PERMISSIVE;super_admin_insert_audit;{authenticated};public;saas_admin_voucher_audit_logs;;has_role(auth.uid(), 'super_admin'::app_role)
+SELECT;PERMISSIVE;super_admin_read_audit;{authenticated};public;saas_admin_voucher_audit_logs;has_role(auth.uid(), 'super_admin'::app_role);
+ALL;PERMISSIVE;super_admin_full_access_redemptions;{authenticated};public;saas_admin_voucher_redemptions;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+SELECT;PERMISSIVE;tenant_can_view_own_redemption;{authenticated};public;saas_admin_voucher_redemptions;(tenant_id = auth.uid());
+ALL;PERMISSIVE;super_admin_full_access_vouchers;{authenticated};public;saas_admin_vouchers;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+SELECT;PERMISSIVE;tenant_can_view_own_voucher;{authenticated};public;saas_admin_vouchers;(specific_tenant_id = auth.uid());
+SELECT;PERMISSIVE;authenticated reads billing settings;{authenticated};public;saas_billing_settings;true;
+ALL;PERMISSIVE;super admin manages billing settings;{authenticated};public;saas_billing_settings;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+ALL;PERMISSIVE;Service role manages checkout sessions;{service_role};public;saas_checkout_sessions;true;true
+INSERT;PERMISSIVE;Users insert own checkout sessions;{authenticated};public;saas_checkout_sessions;;(auth.uid() = user_id)
+SELECT;PERMISSIVE;Users see own checkout sessions;{authenticated};public;saas_checkout_sessions;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view their own security logs;{authenticated};public;security_activity_logs;(auth.uid() = user_id);
+INSERT;PERMISSIVE;Public can rate real appointments;{anon,authenticated};public;service_ratings;;"((appointment_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM appointments a
+  WHERE (a.id = service_ratings.appointment_id))) AND ((rating >= 1) AND (rating <= 5)))"
+SELECT;PERMISSIVE;Ratings are viewable by everyone;{public};public;service_ratings;true;
+SELECT;PERMISSIVE;Public select for services;{public};public;services;true;
+SELECT;PERMISSIVE;Serviços são públicos;{public};public;services;true;
+ALL;PERMISSIVE;Super admins can manage all services;{public};public;services;is_super_admin_user();is_super_admin_user()
+ALL;PERMISSIVE;Users can manage their own services;{public};public;services;(auth.uid() = user_id);(auth.uid() = user_id)
+SELECT;PERMISSIVE;Users can view their own services;{public};public;services;"((auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text)))))";
+ALL;PERMISSIVE;Users can view their own tenant data;{public};public;services;"(tenant_id = ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;status_checks public read;{public};public;status_checks;true;
+ALL;PERMISSIVE;status_incidents admin write;{authenticated};public;status_incidents;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+SELECT;PERMISSIVE;status_incidents public read;{public};public;status_incidents;true;
+ALL;PERMISSIVE;status_maintenances admin write;{authenticated};public;status_maintenances;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+SELECT;PERMISSIVE;status_maintenances public read;{public};public;status_maintenances;true;
+ALL;PERMISSIVE;status_services admin write;{authenticated};public;status_services;has_role(auth.uid(), 'admin'::app_role);has_role(auth.uid(), 'admin'::app_role)
+SELECT;PERMISSIVE;status_services public read;{public};public;status_services;true;
+SELECT;PERMISSIVE;Public can view active subprocessors;{anon,authenticated};public;subprocessors;(active = true);
+ALL;PERMISSIVE;Super admin manages subprocessors;{authenticated};public;subprocessors;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_card_scans;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_card_scans;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_card_scans;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+INSERT;PERMISSIVE;tenant inserts card scans;{authenticated};public;subscription_card_scans;;((tenant_id = auth.uid()) OR is_super_admin_user())
+SELECT;PERMISSIVE;tenant reads own card scans;{authenticated};public;subscription_card_scans;((tenant_id = auth.uid()) OR is_super_admin_user());
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_invoices;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_invoices;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_invoices;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+ALL;PERMISSIVE;tenant manages own invoices;{authenticated};public;subscription_invoices;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_loyalty_history;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_loyalty_history;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_loyalty_history;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+ALL;PERMISSIVE;tenant manages own history;{authenticated};public;subscription_loyalty_history;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_loyalty_rewards;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_loyalty_rewards;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_loyalty_rewards;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+ALL;PERMISSIVE;tenant manages own rewards;{authenticated};public;subscription_loyalty_rewards;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_payments;has_module_access(auth.uid(), 'subscriptions'::text);
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_payments;;has_module_access(auth.uid(), 'subscriptions'::text)
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_payments;has_module_access(auth.uid(), 'subscriptions'::text);has_module_access(auth.uid(), 'subscriptions'::text)
+ALL;PERMISSIVE;tenant manages own subscription_payments;{authenticated};public;subscription_payments;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+SELECT;PERMISSIVE;tenant reads own subscription_payments;{authenticated};public;subscription_payments;((tenant_id = auth.uid()) OR is_super_admin_user());
+SELECT;PERMISSIVE;auth can view plan benefit services;{authenticated};public;subscription_plan_benefit_services;((active = true) OR (tenant_id = auth.uid()) OR is_super_admin_user());
+SELECT;PERMISSIVE;public can view plan benefit services;{anon};public;subscription_plan_benefit_services;(active = true);
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_plan_benefit_services;has_module_access(auth.uid(), 'subscriptions'::text);
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_plan_benefit_services;;has_module_access(auth.uid(), 'subscriptions'::text)
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_plan_benefit_services;has_module_access(auth.uid(), 'subscriptions'::text);has_module_access(auth.uid(), 'subscriptions'::text)
+ALL;PERMISSIVE;tenant manages own plan benefit services;{authenticated};public;subscription_plan_benefit_services;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+SELECT;PERMISSIVE;auth can view plan benefits;{authenticated};public;subscription_plan_benefits;((active = true) OR (tenant_id = auth.uid()) OR is_super_admin_user());
+SELECT;PERMISSIVE;public can view plan benefits;{anon};public;subscription_plan_benefits;(active = true);
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_plan_benefits;has_module_access(auth.uid(), 'subscriptions'::text);
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_plan_benefits;;has_module_access(auth.uid(), 'subscriptions'::text)
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_plan_benefits;has_module_access(auth.uid(), 'subscriptions'::text);has_module_access(auth.uid(), 'subscriptions'::text)
+ALL;PERMISSIVE;tenant manages own plan benefits;{authenticated};public;subscription_plan_benefits;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_plan_changes;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_plan_changes;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_plan_changes;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+INSERT;PERMISSIVE;tenant insert plan changes;{authenticated};public;subscription_plan_changes;;(tenant_id = auth.uid())
+SELECT;PERMISSIVE;tenant read plan changes;{authenticated};public;subscription_plan_changes;(tenant_id = auth.uid());
+SELECT;PERMISSIVE;public can view plan services;{anon};public;subscription_plan_services;true;
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_plan_services;has_module_access(auth.uid(), 'subscriptions'::text);
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_plan_services;;has_module_access(auth.uid(), 'subscriptions'::text)
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_plan_services;has_module_access(auth.uid(), 'subscriptions'::text);has_module_access(auth.uid(), 'subscriptions'::text)
+ALL;PERMISSIVE;tenant manages own plan services;{authenticated};public;subscription_plan_services;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+SELECT;PERMISSIVE;auth can view active plans;{authenticated};public;subscription_plans;(active = true);
+SELECT;PERMISSIVE;public can view active plans;{anon};public;subscription_plans;(active = true);
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_plans;has_module_access(auth.uid(), 'subscriptions'::text);
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_plans;;has_module_access(auth.uid(), 'subscriptions'::text)
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_plans;has_module_access(auth.uid(), 'subscriptions'::text);has_module_access(auth.uid(), 'subscriptions'::text)
+ALL;PERMISSIVE;tenant manages own plans;{authenticated};public;subscription_plans;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+ALL;PERMISSIVE;Service role full access referrals;{service_role};public;subscription_referrals;true;true
+ALL;PERMISSIVE;Tenant manages own referrals;{authenticated};public;subscription_referrals;"(tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";"(tenant_id IN ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))"
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_referrals;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_referrals;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_referrals;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_status_logs;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_status_logs;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_status_logs;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+INSERT;PERMISSIVE;tenant inserts status logs;{authenticated};public;subscription_status_logs;;((tenant_id = auth.uid()) OR is_super_admin_user())
+SELECT;PERMISSIVE;tenant reads own status logs;{authenticated};public;subscription_status_logs;((tenant_id = auth.uid()) OR is_super_admin_user());
+DELETE;RESTRICTIVE;require_module_subscriptions_delete;{authenticated};public;subscription_usage_logs;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());
+INSERT;RESTRICTIVE;require_module_subscriptions_insert;{authenticated};public;subscription_usage_logs;;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+UPDATE;RESTRICTIVE;require_module_subscriptions_update;{authenticated};public;subscription_usage_logs;(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user());(has_module_access(auth.uid(), 'subscriptions'::text) OR is_super_admin_user())
+ALL;PERMISSIVE;tenant manages own usage logs;{authenticated};public;subscription_usage_logs;((tenant_id = auth.uid()) OR is_super_admin_user());((tenant_id = auth.uid()) OR is_super_admin_user())
+ALL;PERMISSIVE;Service role can manage subscriptions;{public};public;subscriptions;(auth.role() = 'service_role'::text);
+ALL;PERMISSIVE;Super admins can manage all subscriptions;{authenticated};public;subscriptions;"(EXISTS ( SELECT 1
+   FROM user_roles
+  WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'super_admin'::app_role))))";
+ALL;PERMISSIVE;Super admins can manage subscriptions;{public};public;subscriptions;is_super_admin_user();
+SELECT;PERMISSIVE;Users can view own subscription;{public};public;subscriptions;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Messages access;{public};public;support_messages;"(EXISTS ( SELECT 1
+   FROM support_tickets
+  WHERE ((support_tickets.id = support_messages.ticket_id) AND ((support_tickets.user_id = auth.uid()) OR is_super_admin()))))";
+INSERT;PERMISSIVE;Messages insert;{public};public;support_messages;;"(EXISTS ( SELECT 1
+   FROM support_tickets
+  WHERE ((support_tickets.id = support_messages.ticket_id) AND ((support_tickets.user_id = auth.uid()) OR is_super_admin()))))"
+SELECT;PERMISSIVE;Tickets access;{public};public;support_tickets;((auth.uid() = user_id) OR is_super_admin());
+INSERT;PERMISSIVE;Tickets insert;{public};public;support_tickets;;(auth.uid() = user_id)
+UPDATE;PERMISSIVE;Tickets update;{public};public;support_tickets;((auth.uid() = user_id) OR is_super_admin());
+ALL;PERMISSIVE;Service role manages system health settings;{service_role};public;system_health_settings;true;true
+ALL;PERMISSIVE;Super admins manage system health settings;{authenticated};public;system_health_settings;is_super_admin_user();is_super_admin_user()
+ALL;PERMISSIVE;Super admins can manage system settings;{public};public;system_settings;"(EXISTS ( SELECT 1
+   FROM user_roles
+  WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'super_admin'::app_role))))";
+SELECT;PERMISSIVE;Users can view audit logs for their tenant;{authenticated};public;team_audit_logs;"((tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid()))) OR (tenant_id = auth.uid()))";
+SELECT;PERMISSIVE;Barbearia vê seus próprios add-ons;{authenticated};public;tenant_addons;((tenant_id = auth.uid()) OR has_role(auth.uid(), 'super_admin'::app_role));
+ALL;PERMISSIVE;Super admin gerencia contratos;{authenticated};public;tenant_addons;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+ALL;PERMISSIVE;Tenants manage their own integrations;{authenticated};public;tenant_integrations;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+ALL;PERMISSIVE;Admins can manage their tenant memberships;{authenticated};public;tenant_memberships;(auth.uid() = tenant_id);
+SELECT;PERMISSIVE;Users can view their own memberships;{authenticated};public;tenant_memberships;((auth.uid() = user_id) OR (auth.uid() = tenant_id));
+ALL;PERMISSIVE;Tenants can manage their own webhooks;{authenticated};public;tenant_webhooks;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+INSERT;PERMISSIVE;Inserção de mensagens permitida para donos do ticket ou super;{public};public;ticket_messages;;"(EXISTS ( SELECT 1
+   FROM support_tickets st
+  WHERE ((st.id = ticket_messages.ticket_id) AND ((st.user_id = auth.uid()) OR (( SELECT profiles.role
+           FROM profiles
+          WHERE (profiles.id = auth.uid())) = 'super_admin'::text)))))"
+SELECT;PERMISSIVE;Mensagens visíveis por donos do ticket ou super admin;{public};public;ticket_messages;"(EXISTS ( SELECT 1
+   FROM support_tickets st
+  WHERE ((st.id = ticket_messages.ticket_id) AND ((st.user_id = auth.uid()) OR (( SELECT profiles.role
+           FROM profiles
+          WHERE (profiles.id = auth.uid())) = 'super_admin'::text)))))";
+SELECT;PERMISSIVE;Barbers can view their own transactions;{public};public;transactions;"((EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = transactions.barber_id) AND (barbers.user_id = auth.uid())))) OR (EXISTS ( SELECT 1
+   FROM user_roles
+  WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::app_role, 'tenant_admin'::app_role, 'super_admin'::app_role]))))) OR (auth.uid() = user_id))";
+ALL;PERMISSIVE;Super admins can manage all transactions;{public};public;transactions;is_super_admin_user();is_super_admin_user()
+ALL;PERMISSIVE;Users can manage their own transactions;{public};public;transactions;"((EXISTS ( SELECT 1
+   FROM barbers
+  WHERE ((barbers.id = transactions.barber_id) AND (barbers.user_id = auth.uid())))) OR (EXISTS ( SELECT 1
+   FROM user_roles
+  WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::app_role, 'tenant_admin'::app_role, 'super_admin'::app_role]))))) OR (auth.uid() = user_id))";
+ALL;PERMISSIVE;Users can view their own tenant data;{public};public;transactions;"(tenant_id = ( SELECT profiles.id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;Everyone can view tutorial categories;{public};public;tutorial_categories;true;
+ALL;PERMISSIVE;Only super admins can manage tutorial categories;{public};public;tutorial_categories;"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text))))";
+SELECT;PERMISSIVE;Everyone can view tutorials;{public};public;tutorials;true;
+ALL;PERMISSIVE;Only super admins can manage tutorials;{public};public;tutorials;"(EXISTS ( SELECT 1
+   FROM profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text))))";
+INSERT;PERMISSIVE;Users can create invitations for their tenant;{authenticated};public;user_invitations;;"((tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid()))) OR (tenant_id = auth.uid()))"
+UPDATE;PERMISSIVE;Users can update invitations for their tenant;{authenticated};public;user_invitations;"((tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid()))) OR (tenant_id = auth.uid()))";
+SELECT;PERMISSIVE;Users can view invitations for their tenant;{authenticated};public;user_invitations;"((tenant_id IN ( SELECT tenant_memberships.tenant_id
+   FROM tenant_memberships
+  WHERE (tenant_memberships.user_id = auth.uid()))) OR (tenant_id = auth.uid()))";
+ALL;PERMISSIVE;Users can manage their own backup codes;{authenticated};public;user_mfa_backup_codes;(auth.uid() = user_id);
+ALL;PERMISSIVE;Users can manage their own preferences;{public};public;user_onboarding_preferences;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view their own preferences;{public};public;user_onboarding_preferences;(auth.uid() = user_id);
+ALL;PERMISSIVE;Users can manage their own onboarding progress;{authenticated};public;user_onboarding_progress;(auth.uid() = user_id);
+ALL;PERMISSIVE;Super admins can manage roles;{public};public;user_roles;has_role(auth.uid(), 'super_admin'::app_role);has_role(auth.uid(), 'super_admin'::app_role)
+SELECT;PERMISSIVE;Users can view their own role;{public};public;user_roles;((auth.uid() = user_id) OR has_role(auth.uid(), 'super_admin'::app_role));
+ALL;PERMISSIVE;Users can manage their own tour states;{authenticated};public;user_tour_states;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view their own challenges;{authenticated};public;verification_challenges;"(email = ( SELECT profiles.email
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+SELECT;PERMISSIVE;Reception reads waiting list;{authenticated};public;waiting_list;(tenant_id = reception_tenant_id(auth.uid()));
+UPDATE;PERMISSIVE;Reception updates waiting list;{authenticated};public;waiting_list;((tenant_id = reception_tenant_id(auth.uid())) AND reception_can(auth.uid(), 'manage_waiting_list'::text));((tenant_id = reception_tenant_id(auth.uid())) AND reception_can(auth.uid(), 'manage_waiting_list'::text))
+INSERT;PERMISSIVE;Reception writes waiting list;{authenticated};public;waiting_list;;((tenant_id = reception_tenant_id(auth.uid())) AND reception_can(auth.uid(), 'manage_waiting_list'::text))
+ALL;PERMISSIVE;Tenant manages waiting list;{authenticated};public;waiting_list;((tenant_id = get_my_tenant_id()) OR is_super_admin_user());((tenant_id = get_my_tenant_id()) OR is_super_admin_user())
+ALL;PERMISSIVE;Users can manage wallets of their customers;{public};public;wallet;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view wallets of their customers;{public};public;wallet;(auth.uid() = user_id);
+ALL;PERMISSIVE;Users can manage transactions of their customers;{public};public;wallet_transactions;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view transactions of their customers;{public};public;wallet_transactions;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Barbearias podem ver seus próprios logs;{public};public;webhook_logs;(auth.uid() = barbershop_id);
+ALL;PERMISSIVE;Users can manage their own whatsapp connections;{public};public;whatsapp_cloud_connections;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Barbers can view their conversations;{authenticated};public;whatsapp_conversations;"(EXISTS ( SELECT 1
+   FROM barbers b
+  WHERE ((b.id = whatsapp_conversations.barber_id) AND (b.user_id = auth.uid()))))";
+ALL;PERMISSIVE;Service role can manage all conversations;{service_role};public;whatsapp_conversations;true;
+ALL;PERMISSIVE;Users can manage their own delivery logs;{public};public;whatsapp_delivery_logs;(auth.uid() = tenant_id);(auth.uid() = tenant_id)
+SELECT;PERMISSIVE;Users can view their own delivery logs;{public};public;whatsapp_delivery_logs;(tenant_id = auth.uid());
+ALL;PERMISSIVE;Manage own whatsapp instances;{public};public;whatsapp_instances;((auth.uid() = tenant_id) OR (auth.uid() = barber_id));
+SELECT;PERMISSIVE;View own whatsapp instances;{public};public;whatsapp_instances;((auth.uid() = tenant_id) OR (auth.uid() = barber_id));
+SELECT;PERMISSIVE;Users can view their own whatsapp messages;{public};public;whatsapp_messages;(auth.uid() = user_id);
+ALL;PERMISSIVE;Users can manage their own whatsapp templates;{public};public;whatsapp_templates;(auth.uid() = user_id);
+SELECT;PERMISSIVE;Users can view their own integration logs;{public};public;zapi_integration_logs;(auth.uid() = tenant_id);
+SELECT;PERMISSIVE;Tenants can view their own debug logs;{public};public;zapi_webhook_debug;"(tenant_id = ( SELECT profiles.tenant_id
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))";
+ALL;PERMISSIVE;Service role manages zapi webhook logs;{service_role};public;zapi_webhook_logs;true;true
+SELECT;PERMISSIVE;Tenants can view their own webhook logs;{public};public;zapi_webhook_logs;(auth.uid() = tenant_id);

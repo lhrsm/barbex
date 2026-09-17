@@ -11,8 +11,7 @@ import { Crown, CheckCircle2, Loader2, ShieldAlert, ArrowRight } from "lucide-re
 import { PhoneInput } from "react-international-phone";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useServerFn } from "@tanstack/react-start";
-import { createCustomerSubscription } from "@/lib/payments/subscriptions.functions";
+import { createCustomerSubscriptionClient } from "@/lib/backend/edge/gateway";
 
 // Providers com checkout online funcional (via createCustomerSubscription).
 // Os demais caem no fluxo manual (WhatsApp).
@@ -40,7 +39,6 @@ interface Props {
 type Step = "form" | "duplicate" | "success" | "pending";
 
 export function SubscribePlanModal({ open, onClose, plan, tenantId, slug, defaultName = "", defaultPhone = "" }: Props) {
-  const startCheckout = useServerFn(createCustomerSubscription);
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(defaultName);
@@ -178,14 +176,12 @@ export function SubscribePlanModal({ open, onClose, plan, tenantId, slug, defaul
         } catch { /* non-fatal — server fn falhará se realmente inválido */ }
 
         const returnUrl = `${window.location.origin}/${slug}/portal?subscribed=1`;
-        const result = await startCheckout({
-          data: {
-            tenantId,
-            planId: plan.id,
-            phone: normalizedPhone,
-            email: email.trim(),
-            returnUrl,
-          },
+        const result = await createCustomerSubscriptionClient({
+          tenantId,
+          planId: plan.id,
+          phone: normalizedPhone,
+          email: email.trim(),
+          returnUrl,
         });
 
         if (result?.checkoutUrl) {

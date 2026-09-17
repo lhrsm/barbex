@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-E",
+    "title": "Operational Readiness / Pre-Cutover Inventory Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-13T10:45:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_a4b_final_delta_manifest_sha256": "87e9979de3b2737d22dff88814d220d027c42a56b48963c1eefaec141475a00b",
+    "m7h_a4b_frozen_cutover_bundle_sha256": "62e10366e085591c1a370c002466f8d51ea021184b2a00572eb56bba532a23f6",
+    "m7h_b_storage_materialization_bundle_sha256": "5a719badc98f4c25e797ceedd4cd803c3560cb992ac9e43bd2908b9e7054b362",
+    "m7h_c_remediation_authority_sha256": "f32620c1984a0dc67b0729f5e92b90c6b731c08833f0f7c7803f64ac89068f78",
+    "m7h_d_public_data_materialization_bundle_sha256": "2e91796e4823d9245d5f5c1edfed0e017e19dfc87c4e013612e39909ef762682"
+  },
+  "evidence_artifacts": {
+    "runtime_inventory_sha256": "53cadd005d4f7a0b9cf13be61b4586da54537c61a592dab8db966e5c053b77c3",
+    "integrations_matrix_sha256": "cfa692425e39b3fad2b75f1681c4b8ae72f5548293659bc1942306290ab9affc",
+    "env_switch_matrix_sha256": "a5927db6eeddfc36c1e99f27f8a416bdb46cf063985e9e547d814ce9b0533ba9",
+    "cutover_draft_sha256": "44d60ad7b22e4aa3a0acf92c21bfd432a34979efe50f7984e17aae29d2adc9fe",
+    "smoke_test_plan_sha256": "f3812d3ad629e4276ffe822b27b6bb976f48721dd3bd8ceae3ffeb67224aa659"
+  },
+  "metrics": {
+    "source_physical_raw_public_rows": 257691,
+    "canonical_post_remediation_public_rows": 257687,
+    "target_public_rows": 257687,
+    "source_status_checks_rows": 256998,
+    "target_status_checks_rows": 256998,
+    "source_freeze_mutable_tables": 24,
+    "target_fingerprints_evaluated": 159,
+    "target_auth_users": 10,
+    "target_auth_identities": 12,
+    "target_storage_buckets": 5,
+    "target_storage_objects": 30,
+    "target_storage_bytes": 10480575,
+    "target_triggers_enabled": 21,
+    "target_cron_jobs": 0,
+    "edge_functions_total": 38,
+    "edge_secrets_total": 10,
+    "realtime_subscriptions_total": 21,
+    "storage_reference_rows_valid": "6/6",
+    "application_rpcs_referenced": 95,
+    "target_rpcs_resolved": 94,
+    "p0_blockers": 0,
+    "p1_blockers": 3,
+    "p2_blockers": 2
+  },
+  "bundle_hash": "f5f9f5c05cfc8b09ac9060e3a73b2220bc048c20c8048c39793ae2798d1f81de"
+}

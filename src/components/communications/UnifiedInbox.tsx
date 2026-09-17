@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { getMessages } from "@/lib/communications.functions";
+import { getMessagesClient } from "@/lib/backend/client/communications";
 import { MessageSquare, Search, Filter, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ interface Props {
 export function UnifiedInbox({ tenantId }: Props) {
   const { data: messages, isLoading } = useQuery({
     queryKey: ['communication-messages-inbox', tenantId],
-    queryFn: () => getMessages({ data: { tenantId, limit: 50 } })
+    queryFn: () => getMessagesClient({ tenantId, limit: 50 })
   });
 
   return (

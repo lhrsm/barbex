@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7D",
+    "generated_at": "2026-09-10T11:07:39.497Z",
+    "final_decision": "AUTH_MATERIALIZATION_COMMITTED_VERIFIED"
+  },
+  "hashes": {
+    "m7dd_auth_execution_bundle_sha256": "779cf81db2229385f558c3859999a823b5224e7e7a080d5fb32a908a69841126",
+    "auth_topology_manifest_sha256": "5df2b96f0f3ee9fcbb0aa0fb2d3fa4c10c68d020d30c01db464cf7906295056d",
+    "auth_users_secure_file_sha256": "ded2ae546348ca71c5806f5665de39c2af1d0f71d21a9dfac0b6a02ab5ef05e8",
+    "auth_identities_secure_file_sha256": "681e74382b174e2866fe1a2bfc675420d5116c57a7b773f1a50df136fc3004f7"
+  },
+  "verified_state": {
+    "target_auth_users": 10,
+    "target_auth_identities": 12,
+    "email_identities": 10,
+    "phone_identities": 2,
+    "users_with_1_identity": 8,
+    "users_with_2_identities": 2,
+    "users_with_0_identities": 0,
+    "users_with_gt2_identities": 0,
+    "orphan_identities": 0,
+    "duplicate_provider_identities": 0,
+    "password_hash_rows": 10,
+    "email_confirmed_users": 10,
+    "users_with_nonempty_phone": 2,
+    "phone_identity_user_state_consistent": "YES",
+    "public_business_rows_unexpected_delta": 0,
+    "storage_bucket_delta": 0,
+    "storage_object_delta": 0,
+    "cron_delta": 0,
+    "migration_history_delta": 0
+  },
+  "bundle_sha256": "1491b063b45d336a5f423a42dcc88a8723a7bd1c9edf4d9bce6aa8b967fecf25"
+}

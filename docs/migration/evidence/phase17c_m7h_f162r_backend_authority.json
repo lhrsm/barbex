@@ -1,0 +1,29 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Backend Authority & Source Invariant Proof",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "target_supabase": {
+    "project_ref": "ywdwrstxvsdqiryhieiz",
+    "status": "PRIMARY_ACTIVE",
+    "authorities": {
+      "database": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "auth": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "storage": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "realtime": "Target Supabase (ywdwrstxvsdqiryhieiz)",
+      "edge_functions": "Target Supabase (ywdwrstxvsdqiryhieiz)"
+    }
+  },
+  "source_supabase": {
+    "project_ref": "wdxhjwodyctgzqtogkgv",
+    "status": "FROZEN_ARCHIVAL",
+    "calls_recorded": 0
+  },
+  "verdict": {
+    "F162R_DATABASE_AUTHORITY_TARGET": "YES",
+    "F162R_AUTH_AUTHORITY_TARGET": "YES",
+    "F162R_STORAGE_AUTHORITY_TARGET": "YES",
+    "F162R_REALTIME_AUTHORITY_TARGET": "YES",
+    "F162R_EDGE_AUTHORITY_TARGET": "YES",
+    "F162R_SOURCE_SUPABASE_CALLS": 0
+  }
+}

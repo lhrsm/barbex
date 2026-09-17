@@ -1,0 +1,111 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Retirement Order Synthesis",
+  "evaluated_at": "2026-09-16T11:54:00.000Z",
+  "ordered_plan": [
+    {
+      "step": "A",
+      "name": "REPOSITORY_CONSOLIDATION",
+      "prerequisites": "F17 hosting stabilization PASS",
+      "mutation": "Stage and commit runtime adapters, configs, and documentation into Git; untrack .env",
+      "rollback_effect": "None; purely repo commit",
+      "validation": "git status clean, no secret leak",
+      "gate": "GIT_WORKTREE_CLEAN"
+    },
+    {
+      "step": "B",
+      "name": "REPRODUCIBILITY_PROOF_FROM_GITHUB_MAIN",
+      "prerequisites": "Step A pushed to GitHub main",
+      "mutation": "None (local clean build in isolated container/dir)",
+      "rollback_effect": "None",
+      "validation": "Fresh clone builds identically to production",
+      "gate": "REPRODUCIBILITY_VERIFIED"
+    },
+    {
+      "step": "C",
+      "name": "PRODUCTION_DEPLOYMENT_FROM_GITHUB_MAIN",
+      "prerequisites": "Step B verified",
+      "mutation": "Vercel triggers production deployment directly from GitHub main webhook",
+      "rollback_effect": "Can redeploy prior CLI deployment instantly",
+      "validation": "Vercel deployment status Ready, source = GitHub main",
+      "gate": "CI_CD_PIPELINE_CLOSED"
+    },
+    {
+      "step": "D",
+      "name": "POST_DEPLOYMENT_STABILIZATION",
+      "prerequisites": "Step C active",
+      "mutation": "None",
+      "rollback_effect": "None",
+      "validation": "Production custom domain smoke 100% PASS on GitHub deployment",
+      "gate": "GITHUB_PROD_VERIFIED"
+    },
+    {
+      "step": "E",
+      "name": "LOVABLE_ROLLBACK_RETIREMENT",
+      "prerequisites": "Step D stable for stabilization window",
+      "mutation": "Decommission Lovable frontend project 8e95dc9e-ab64-44cf-956c-ecec6fefeb51",
+      "rollback_effect": "Lovable fallback removed",
+      "validation": "Zero dependencies remain on Lovable",
+      "gate": "LOVABLE_RETIRED"
+    },
+    {
+      "step": "F",
+      "name": "OBSOLETE_DNS_VERIFICATION_CLEANUP",
+      "prerequisites": "Step E complete",
+      "mutation": "Delete _lovable and _lovable.www TXT records in Hostinger DNS",
+      "rollback_effect": "Cannot re-verify Lovable without re-adding TXT",
+      "validation": "DNS clean, zero legacy records",
+      "gate": "DNS_CLEANED"
+    },
+    {
+      "step": "G",
+      "name": "SOURCE_ROLLBACK_RETIREMENT",
+      "prerequisites": "Step F complete",
+      "mutation": "Formally declare Source Supabase rollback closed",
+      "rollback_effect": "Source is now purely archival baseline",
+      "validation": "Reconciliation not needed; Target is permanent primary",
+      "gate": "ROLLBACK_CLOSED"
+    },
+    {
+      "step": "H",
+      "name": "WP16_RETIREMENT",
+      "prerequisites": "Step G complete",
+      "mutation": "Drop write-prevention trigger WP16 on Source",
+      "rollback_effect": "Source triggers cleared",
+      "validation": "Source tables unconstrained before pause",
+      "gate": "WP16_DROPPED"
+    },
+    {
+      "step": "I",
+      "name": "SOURCE_PROJECT_PAUSE",
+      "prerequisites": "Step H complete",
+      "mutation": "Pause Source Supabase project wdxhjwodyctgzqtogkgv in Supabase dashboard",
+      "rollback_effect": "Can unpause within 90 days",
+      "validation": "Project state: PAUSED",
+      "gate": "SOURCE_PAUSED"
+    },
+    {
+      "step": "J",
+      "name": "EVENTUAL_SOURCE_DELETION",
+      "prerequisites": "Step I paused for retention compliance period (>30 days)",
+      "mutation": "Delete project wdxhjwodyctgzqtogkgv",
+      "rollback_effect": "Irreversible; relies on F13 sealed backup",
+      "validation": "Zero active legacy projects",
+      "gate": "MIGRATION_FULLY_COMPLETE"
+    }
+  ],
+  "metrics": {
+    "F18_RETIREMENT_ORDER": [
+      "A_REPOSITORY_CONSOLIDATION",
+      "B_REPRODUCIBILITY_PROOF_FROM_GITHUB_MAIN",
+      "C_PRODUCTION_DEPLOYMENT_FROM_GITHUB_MAIN",
+      "D_POST_DEPLOYMENT_STABILIZATION",
+      "E_LOVABLE_ROLLBACK_RETIREMENT",
+      "F_OBSOLETE_DNS_VERIFICATION_CLEANUP",
+      "G_SOURCE_ROLLBACK_RETIREMENT",
+      "H_WP16_RETIREMENT",
+      "I_SOURCE_PROJECT_PAUSE",
+      "J_EVENTUAL_SOURCE_DELETION"
+    ]
+  }
+}

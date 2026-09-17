@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-09-16T12:21:34.798Z",
+  "phase": "PHASE 17C.M7H-F19A",
+  "topic": "Local Preview Smoke Verification",
+  "server": "http://localhost:4173",
+  "routes_tested": 8,
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "length": 122606,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/auth",
+      "status": 200,
+      "length": 26915,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/dashboard",
+      "status": 200,
+      "length": 20939,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/status",
+      "status": 200,
+      "length": 9192,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/privacy",
+      "status": 200,
+      "length": 10577,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/terms",
+      "status": 200,
+      "length": 10097,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/cookies",
+      "status": 200,
+      "length": 11017,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    },
+    {
+      "route": "/trust",
+      "status": 200,
+      "length": 25448,
+      "has5xx": false,
+      "hasFatalError": false,
+      "hasHydrationError": false
+    }
+  ],
+  "metrics": {
+    "F19A_PREVIEW_ROUTES_TESTED": 8,
+    "F19A_PREVIEW_HTTP_5XX": 0,
+    "F19A_PREVIEW_FATAL_JS_ERRORS": 0,
+    "F19A_PREVIEW_SSR_ERRORS": 0,
+    "F19A_PREVIEW_HYDRATION_ERRORS": 0,
+    "F19A_PREVIEW_PASS": "YES"
+  }
+}

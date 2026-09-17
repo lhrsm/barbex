@@ -1,0 +1,16 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Repository State & Worktree Safety",
+  "evaluated_at": "2026-09-16T11:46:10.000Z",
+  "repo_state": {
+    "head": "350be6e5",
+    "branch": "main",
+    "worktree_clean": false,
+    "preexisting_changes_preserved": true
+  },
+  "metrics": {
+    "F17_HEAD": "350be6e5",
+    "F17_WORKTREE_CLEAN": "NO",
+    "F17_PREEXISTING_CHANGES_PRESERVED": "YES"
+  }
+}

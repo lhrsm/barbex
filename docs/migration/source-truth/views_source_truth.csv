@@ -1,0 +1,19 @@
+schema_name;view_definition;view_name
+public;" SELECT barber_id,
+    tenant_id,
+    round(avg(barber_rating), 2) AS avg_rating,
+    count(barber_rating) AS total_ratings
+   FROM appointment_reviews
+  WHERE (barber_rating IS NOT NULL)
+  GROUP BY barber_id, tenant_id;";barber_rating_stats
+public;" SELECT a.id AS appointment_id,
+    a.status,
+    a.created_at,
+    a.start_time,
+    a.confirmation_sent_at,
+    a.confirmation_sent,
+    c.name AS customer_name,
+    c.phone AS customer_phone,
+    a.tenant_id
+   FROM (appointments a
+     LEFT JOIN customers c ON ((a.customer_id = c.id)));";vw_automation_debug

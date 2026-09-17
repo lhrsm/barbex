@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { getTemplates } from "@/lib/communications.functions";
+import { getTemplatesClient } from "@/lib/backend/client/communications";
 import { FileText, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ interface Props {
 export function TemplateManager({ tenantId }: Props) {
   const { data: templates, isLoading } = useQuery({
     queryKey: ['communication-templates', tenantId],
-    queryFn: () => getTemplates({ data: { tenantId } })
+    queryFn: () => getTemplatesClient(tenantId)
   });
 
   return (

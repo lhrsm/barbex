@@ -1,0 +1,277 @@
+constraint_definition;constraint_name;constraint_type;initially_deferred;is_deferrable;is_validated;schema_name;table_name
+PRIMARY KEY (id);academy_lessons_pkey;PRIMARY KEY;false;false;true;public;academy_lessons
+PRIMARY KEY (id);academy_modules_pkey;PRIMARY KEY;false;false;true;public;academy_modules
+PRIMARY KEY (id);academy_paths_pkey;PRIMARY KEY;false;false;true;public;academy_paths
+PRIMARY KEY (id);academy_progress_pkey;PRIMARY KEY;false;false;true;public;academy_progress
+UNIQUE (user_id, lesson_id);academy_progress_user_id_lesson_id_key;UNIQUE;false;false;true;public;academy_progress
+CHECK (customer_action = ANY (ARRAY['upgraded'::text, 'kept_addons'::text, 'reviewed_selection'::text, 'dismissed'::text]));addon_upgrade_recommendations_customer_action_check;CHECK;false;false;true;public;addon_upgrade_recommendations
+PRIMARY KEY (id);addon_upgrade_recommendations_pkey;PRIMARY KEY;false;false;true;public;addon_upgrade_recommendations
+PRIMARY KEY (id);admin_event_log_pkey;PRIMARY KEY;false;false;true;public;admin_event_log
+PRIMARY KEY (id);admin_event_subscriptions_pkey;PRIMARY KEY;false;false;true;public;admin_event_subscriptions
+UNIQUE (user_id, event_key);admin_event_subscriptions_user_id_event_key_key;UNIQUE;false;false;true;public;admin_event_subscriptions
+PRIMARY KEY (event_key);admin_event_templates_pkey;PRIMARY KEY;false;false;true;public;admin_event_templates
+PRIMARY KEY (id);admin_notifications_pkey;PRIMARY KEY;false;false;true;public;admin_notifications
+PRIMARY KEY (id);ai_settings_pkey;PRIMARY KEY;false;false;true;public;ai_settings
+UNIQUE (tenant_id);ai_settings_tenant_id_key;UNIQUE;false;false;true;public;ai_settings
+PRIMARY KEY (id);appointment_checkins_pkey;PRIMARY KEY;false;false;true;public;appointment_checkins
+UNIQUE (appointment_id);appointment_checkins_appointment_id_key;UNIQUE;false;false;true;public;appointment_checkins
+PRIMARY KEY (id);appointment_groups_pkey;PRIMARY KEY;false;false;true;public;appointment_groups
+UNIQUE (group_token);appointment_groups_group_token_key;UNIQUE;false;false;true;public;appointment_groups
+CHECK (barber_rating >= 1 AND barber_rating <= 5);appointment_reviews_barber_rating_check;CHECK;false;false;true;public;appointment_reviews
+CHECK (barbershop_rating >= 1 AND barbershop_rating <= 5);appointment_reviews_barbershop_rating_check;CHECK;false;false;true;public;appointment_reviews
+CHECK (service_rating IS NULL OR service_rating >= 1 AND service_rating <= 5);appointment_reviews_service_rating_check;CHECK;false;false;true;public;appointment_reviews
+CHECK (testimonial_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]));appointment_reviews_testimonial_status_check;CHECK;false;false;true;public;appointment_reviews
+CHECK (would_recommend = ANY (ARRAY['yes'::text, 'maybe'::text, 'no'::text]));appointment_reviews_would_recommend_check;CHECK;false;false;true;public;appointment_reviews
+PRIMARY KEY (id);appointment_reviews_pkey;PRIMARY KEY;false;false;true;public;appointment_reviews
+UNIQUE (appointment_id);appointment_reviews_appointment_id_key;UNIQUE;false;false;true;public;appointment_reviews
+UNIQUE (review_token);appointment_reviews_review_token_key;UNIQUE;false;false;true;public;appointment_reviews
+PRIMARY KEY (id);appointment_status_logs_pkey;PRIMARY KEY;false;false;true;public;appointment_status_logs
+CHECK (appointment_type = ANY (ARRAY['online'::text, 'walk_in'::text]));appointments_appointment_type_check;CHECK;false;false;true;public;appointments
+CHECK (refund_status = ANY (ARRAY['none'::text, 'not_applicable'::text, 'refund_requested'::text, 'refund_approved'::text, 'refund_rejected'::text, 'refunded'::text, 'converted_to_credit'::text, 'pending'::text, 'requested'::text, 'approved'::text, 'completed'::text, 'cancelled'::text]));appointments_refund_status_check;CHECK;false;false;true;public;appointments
+CHECK (refund_type = ANY (ARRAY['credits'::text, 'refund'::text]));appointments_refund_type_check;CHECK;false;false;true;public;appointments
+CHECK (review_decision IS NULL OR (review_decision = ANY (ARRAY['pending'::text, 'submitted'::text, 'skipped'::text])));appointments_review_decision_check;CHECK;false;false;true;public;appointments
+PRIMARY KEY (id);appointments_pkey;PRIMARY KEY;false;false;true;public;appointments
+PRIMARY KEY (id);audit_logs_pkey;PRIMARY KEY;false;false;true;public;audit_logs
+PRIMARY KEY (id);automation_conversations_pkey;PRIMARY KEY;false;false;true;public;automation_conversations
+PRIMARY KEY (id);automation_cron_runs_pkey;PRIMARY KEY;false;false;true;public;automation_cron_runs
+PRIMARY KEY (id);automation_dispatches_pkey;PRIMARY KEY;false;false;true;public;automation_dispatches
+UNIQUE (unique_key);automation_dispatches_unique_key_key;UNIQUE;false;false;true;public;automation_dispatches
+CHECK (event_type = ANY (ARRAY['sent'::text, 'delivered'::text, 'read'::text, 'clicked'::text, 'replied'::text, 'timeout'::text, 'failed'::text, 'action_executed'::text]));automation_interaction_events_type_check;CHECK;false;false;true;public;automation_interaction_events
+PRIMARY KEY (id);automation_interaction_events_pkey;PRIMARY KEY;false;false;true;public;automation_interaction_events
+CHECK (action_type = ANY (ARRAY['confirm_appointment'::text, 'reschedule_appointment'::text, 'cancel_appointment'::text, 'open_portal'::text, 'open_public_page'::text, 'review'::text, 'renew_subscription'::text, 'change_plan'::text, 'buy_product'::text, 'talk_to_shop'::text, 'webhook'::text, 'edge_function'::text, 'api_call'::text, 'start_flow'::text]));automation_interactions_action_type_check;CHECK;false;false;true;public;automation_interactions
+CHECK (button_color = ANY (ARRAY['green'::text, 'blue'::text, 'red'::text, 'gold'::text, 'gray'::text]));automation_interactions_color_check;CHECK;false;false;true;public;automation_interactions
+CHECK (automation_template_id IS NOT NULL OR automation_id IS NOT NULL);automation_interactions_parent_check;CHECK;false;false;true;public;automation_interactions
+PRIMARY KEY (id);automation_interactions_pkey;PRIMARY KEY;false;false;true;public;automation_interactions
+PRIMARY KEY (id);automation_logs_pkey;PRIMARY KEY;false;false;true;public;automation_logs
+PRIMARY KEY (id);automation_queue_pkey;PRIMARY KEY;false;false;true;public;automation_queue
+PRIMARY KEY (id);automation_reconciliation_settings_pkey;PRIMARY KEY;false;false;true;public;automation_reconciliation_settings
+PRIMARY KEY (id);automation_send_history_pkey;PRIMARY KEY;false;false;true;public;automation_send_history
+PRIMARY KEY (id);automation_status_pkey;PRIMARY KEY;false;false;true;public;automation_status
+PRIMARY KEY (id);automation_templates_pkey;PRIMARY KEY;false;false;true;public;automation_templates
+UNIQUE (tenant_id, key);automation_templates_tenant_id_key_key;UNIQUE;false;false;true;public;automation_templates
+PRIMARY KEY (id);automation_v2_dispatches_pkey;PRIMARY KEY;false;false;true;public;automation_v2_dispatches
+PRIMARY KEY (id);automation_v2_logs_pkey;PRIMARY KEY;false;false;true;public;automation_v2_logs
+PRIMARY KEY (id);automation_v2_sessions_pkey;PRIMARY KEY;false;false;true;public;automation_v2_sessions
+PRIMARY KEY (id);automation_webhook_logs_pkey;PRIMARY KEY;false;false;true;public;automation_webhook_logs
+PRIMARY KEY (id);automations_pkey;PRIMARY KEY;false;false;true;public;automations
+PRIMARY KEY (id);availability_conflict_logs_pkey;PRIMARY KEY;false;false;true;public;availability_conflict_logs
+PRIMARY KEY (id);background_jobs_pkey;PRIMARY KEY;false;false;true;public;background_jobs
+CHECK (status = ANY (ARRAY['pending'::text, 'paid'::text, 'cancelled'::text]));barber_commissions_status_check;CHECK;false;false;true;public;barber_commissions
+PRIMARY KEY (id);barber_commissions_pkey;PRIMARY KEY;false;false;true;public;barber_commissions
+UNIQUE (appointment_id, barber_id);barber_commissions_appointment_barber_key;UNIQUE;false;false;true;public;barber_commissions
+PRIMARY KEY (id);barber_services_pkey;PRIMARY KEY;false;false;true;public;barber_services
+UNIQUE (barber_id, service_id);barber_services_barber_id_service_id_key;UNIQUE;false;false;true;public;barber_services
+CHECK (amount > 0::numeric);barber_tips_amount_check;CHECK;false;false;true;public;barber_tips
+CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'cancelled'::text]));barber_tips_status_check;CHECK;false;false;true;public;barber_tips
+PRIMARY KEY (id);barber_tips_pkey;PRIMARY KEY;false;false;true;public;barber_tips
+CHECK (pix_key_type = ANY (ARRAY['cpf'::text, 'cnpj'::text, 'email'::text, 'phone'::text, 'random'::text]));barbers_pix_key_type_check;CHECK;false;false;true;public;barbers
+PRIMARY KEY (id);barbers_pkey;PRIMARY KEY;false;false;true;public;barbers
+PRIMARY KEY (id);barbershop_module_logs_pkey;PRIMARY KEY;false;false;true;public;barbershop_module_logs
+PRIMARY KEY (id);barbershop_modules_pkey;PRIMARY KEY;false;false;true;public;barbershop_modules
+UNIQUE (tenant_id, module_key);barbershop_modules_tenant_id_module_key_key;UNIQUE;false;false;true;public;barbershop_modules
+PRIMARY KEY (id);barbershop_settings_pkey;PRIMARY KEY;false;false;true;public;barbershop_settings
+UNIQUE (barber_id);barbershop_settings_barber_id_key;UNIQUE;false;false;true;public;barbershop_settings
+PRIMARY KEY (id);barbershops_pkey;PRIMARY KEY;false;false;true;public;barbershops
+UNIQUE (owner_id);barbershops_owner_id_key;UNIQUE;false;false;true;public;barbershops
+UNIQUE (slug);barbershops_slug_key;UNIQUE;false;false;true;public;barbershops
+PRIMARY KEY (id);campaign_logs_pkey;PRIMARY KEY;false;false;true;public;campaign_logs
+PRIMARY KEY (id);campaigns_pkey;PRIMARY KEY;false;false;true;public;campaigns
+PRIMARY KEY (id);cashback_transactions_pkey;PRIMARY KEY;false;false;true;public;cashback_transactions
+UNIQUE (appointment_id);unique_cashback_per_appointment;UNIQUE;false;false;true;public;cashback_transactions
+PRIMARY KEY (id);client_auth_pkey;PRIMARY KEY;false;false;true;public;client_auth
+UNIQUE (phone);client_auth_phone_key;UNIQUE;false;false;true;public;client_auth
+UNIQUE (phone);client_auth_phone_unique;UNIQUE;false;false;true;public;client_auth
+PRIMARY KEY (id);commission_closings_pkey;PRIMARY KEY;false;false;true;public;commission_closings
+PRIMARY KEY (id);commission_entries_pkey;PRIMARY KEY;false;false;true;public;commission_entries
+UNIQUE (appointment_id);commission_entries_appointment_id_key;UNIQUE;false;false;true;public;commission_entries
+PRIMARY KEY (id);communication_channels_pkey;PRIMARY KEY;false;false;true;public;communication_channels
+UNIQUE (tenant_id, type);communication_channels_tenant_id_type_key;UNIQUE;false;false;true;public;communication_channels
+CHECK (direction = ANY (ARRAY['inbound'::text, 'outbound'::text]));communication_messages_direction_check;CHECK;false;false;true;public;communication_messages
+PRIMARY KEY (id);communication_messages_pkey;PRIMARY KEY;false;false;true;public;communication_messages
+PRIMARY KEY (id);communication_templates_pkey;PRIMARY KEY;false;false;true;public;communication_templates
+UNIQUE (tenant_id, key, channel_type);communication_templates_tenant_id_key_channel_type_key;UNIQUE;false;false;true;public;communication_templates
+PRIMARY KEY (id);cookie_consents_pkey;PRIMARY KEY;false;false;true;public;cookie_consents
+CHECK (applies_to = ANY (ARRAY['order'::text, 'subscription'::text]));coupons_applies_to_check;CHECK;false;false;true;public;coupons
+CHECK (type = ANY (ARRAY['fixed'::text, 'percentage'::text]));coupons_type_check;CHECK;false;false;true;public;coupons
+PRIMARY KEY (id);coupons_pkey;PRIMARY KEY;false;false;true;public;coupons
+UNIQUE (tenant_id, code);coupons_tenant_id_code_key;UNIQUE;false;false;true;public;coupons
+PRIMARY KEY (id);credit_transactions_pkey;PRIMARY KEY;false;false;true;public;credit_transactions
+PRIMARY KEY (id);customer_achievements_pkey;PRIMARY KEY;false;false;true;public;customer_achievements
+UNIQUE (customer_id, achievement_id);customer_achievements_customer_id_achievement_id_key;UNIQUE;false;false;true;public;customer_achievements
+PRIMARY KEY (id);customer_credits_pkey;PRIMARY KEY;false;false;true;public;customer_credits
+UNIQUE (appointment_id);customer_credits_appointment_id_key;UNIQUE;false;false;true;public;customer_credits
+PRIMARY KEY (id);customer_documents_pkey;PRIMARY KEY;false;false;true;public;customer_documents
+PRIMARY KEY (id);customer_interactions_pkey;PRIMARY KEY;false;false;true;public;customer_interactions
+CHECK (status = ANY (ARRAY['active'::text, 'pending_payment'::text, 'past_due'::text, 'canceled'::text, 'expired'::text, 'paused'::text]));customer_subscriptions_status_check;CHECK;false;false;true;public;customer_subscriptions
+PRIMARY KEY (id);customer_subscriptions_pkey;PRIMARY KEY;false;false;true;public;customer_subscriptions
+PRIMARY KEY (id);customer_tasks_pkey;PRIMARY KEY;false;false;true;public;customer_tasks
+PRIMARY KEY (id);customers_pkey;PRIMARY KEY;false;false;true;public;customers
+PRIMARY KEY (id);email_logs_pkey;PRIMARY KEY;false;false;true;public;email_logs
+UNIQUE (provider_event_id);email_logs_provider_event_id_key;UNIQUE;false;false;true;public;email_logs
+PRIMARY KEY (id);email_settings_pkey;PRIMARY KEY;false;false;true;public;email_settings
+UNIQUE (tenant_id);email_settings_tenant_id_key;UNIQUE;false;false;true;public;email_settings
+PRIMARY KEY (id);financial_adjustment_logs_pkey;PRIMARY KEY;false;false;true;public;financial_adjustment_logs
+CHECK (request_type = ANY (ARRAY['export'::text, 'delete'::text, 'anonymize'::text, 'correction'::text]));lgpd_requests_request_type_check;CHECK;false;false;true;public;lgpd_requests
+CHECK (status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'done'::text, 'rejected'::text]));lgpd_requests_status_check;CHECK;false;false;true;public;lgpd_requests
+PRIMARY KEY (id);lgpd_requests_pkey;PRIMARY KEY;false;false;true;public;lgpd_requests
+PRIMARY KEY (id);loyalty_achievements_pkey;PRIMARY KEY;false;false;true;public;loyalty_achievements
+PRIMARY KEY (id);loyalty_campaign_participations_pkey;PRIMARY KEY;false;false;true;public;loyalty_campaign_participations
+UNIQUE (campaign_id, customer_id);loyalty_campaign_participations_campaign_id_customer_id_key;UNIQUE;false;false;true;public;loyalty_campaign_participations
+PRIMARY KEY (id);loyalty_campaign_templates_pkey;PRIMARY KEY;false;false;true;public;loyalty_campaign_templates
+UNIQUE (slug);loyalty_campaign_templates_slug_key;UNIQUE;false;false;true;public;loyalty_campaign_templates
+PRIMARY KEY (id);loyalty_campaigns_pkey;PRIMARY KEY;false;false;true;public;loyalty_campaigns
+PRIMARY KEY (id);loyalty_levels_pkey;PRIMARY KEY;false;false;true;public;loyalty_levels
+CHECK (status = ANY (ARRAY['available'::text, 'redeemed'::text, 'expired'::text, 'canceled'::text]));loyalty_rewards_status_check;CHECK;false;false;true;public;loyalty_rewards
+PRIMARY KEY (id);loyalty_rewards_pkey;PRIMARY KEY;false;false;true;public;loyalty_rewards
+CHECK (appointments_required >= 1);loyalty_settings_appointments_required_check;CHECK;false;false;true;public;loyalty_settings
+CHECK (benefit_type = ANY (ARRAY['free_service'::text, 'percent_discount'::text, 'fixed_discount'::text, 'free_addon'::text]));loyalty_settings_benefit_type_check;CHECK;false;false;true;public;loyalty_settings
+CHECK (validity_days >= 0);loyalty_settings_validity_days_check;CHECK;false;false;true;public;loyalty_settings
+PRIMARY KEY (id);loyalty_settings_pkey;PRIMARY KEY;false;false;true;public;loyalty_settings
+UNIQUE (tenant_id);loyalty_settings_tenant_id_key;UNIQUE;false;false;true;public;loyalty_settings
+PRIMARY KEY (id);marketing_audiences_pkey;PRIMARY KEY;false;false;true;public;marketing_audiences
+PRIMARY KEY (id);notification_recipients_pkey;PRIMARY KEY;false;false;true;public;notification_recipients
+PRIMARY KEY (id);notifications_pkey;PRIMARY KEY;false;false;true;public;notifications
+UNIQUE (tenant_id, type, unique_key);notifications_tenant_type_unique_key_key;UNIQUE;false;false;true;public;notifications
+PRIMARY KEY (id);observability_logs_pkey;PRIMARY KEY;false;false;true;public;observability_logs
+PRIMARY KEY (id);onboarding_settings_pkey;PRIMARY KEY;false;false;true;public;onboarding_settings
+PRIMARY KEY (key);operation_locks_pkey;PRIMARY KEY;false;false;true;public;operation_locks
+PRIMARY KEY (id);operational_insights_interactions_pkey;PRIMARY KEY;false;false;true;public;operational_insights_interactions
+PRIMARY KEY (id);payment_gateway_logs_pkey;PRIMARY KEY;false;false;true;public;payment_gateway_logs
+PRIMARY KEY (id);payment_gateways_pkey;PRIMARY KEY;false;false;true;public;payment_gateways
+PRIMARY KEY (id);payment_receipts_pkey;PRIMARY KEY;false;false;true;public;payment_receipts
+PRIMARY KEY (id);permissions_pkey;PRIMARY KEY;false;false;true;public;permissions
+UNIQUE (key);permissions_key_key;UNIQUE;false;false;true;public;permissions
+PRIMARY KEY (id);plans_pkey;PRIMARY KEY;false;false;true;public;plans
+UNIQUE (name);plans_name_key;UNIQUE;false;false;true;public;plans
+PRIMARY KEY (id);privacy_consents_pkey;PRIMARY KEY;false;false;true;public;privacy_consents
+PRIMARY KEY (id);product_images_pkey;PRIMARY KEY;false;false;true;public;product_images
+CHECK (jsonb_array_length(items) > 0);check_items_not_empty;CHECK;false;false;true;public;product_sales
+PRIMARY KEY (id);product_sales_pkey;PRIMARY KEY;false;false;true;public;product_sales
+PRIMARY KEY (id);products_pkey;PRIMARY KEY;false;false;true;public;products
+CHECK (starts_at < ends_at);time_off_dates_check;CHECK;false;false;true;public;professional_time_off
+PRIMARY KEY (id);professional_time_off_pkey;PRIMARY KEY;false;false;true;public;professional_time_off
+CHECK (loyalty_mode = ANY (ARRAY['none'::text, 'cashback'::text, 'loyalty'::text, 'subscription'::text]));profiles_loyalty_mode_check;CHECK;false;false;true;public;profiles
+PRIMARY KEY (id);profiles_pkey;PRIMARY KEY;false;false;true;public;profiles
+UNIQUE (checkin_token);profiles_checkin_token_key;UNIQUE;false;false;true;public;profiles
+UNIQUE (slug);profiles_slug_key;UNIQUE;false;false;true;public;profiles
+PRIMARY KEY (id);push_subscriptions_pkey;PRIMARY KEY;false;false;true;public;push_subscriptions
+UNIQUE (endpoint);push_subscriptions_endpoint_key;UNIQUE;false;false;true;public;push_subscriptions
+PRIMARY KEY (id);rate_limit_hits_pkey;PRIMARY KEY;false;false;true;public;rate_limit_hits
+PRIMARY KEY (id);reception_permissions_pkey;PRIMARY KEY;false;false;true;public;reception_permissions
+UNIQUE (user_id);reception_permissions_user_id_key;UNIQUE;false;false;true;public;reception_permissions
+CHECK (changed_by_type = ANY (ARRAY['admin'::text, 'system'::text]));refund_audits_changed_by_type_check;CHECK;false;false;true;public;refund_audits
+PRIMARY KEY (id);refund_audits_pkey;PRIMARY KEY;false;false;true;public;refund_audits
+PRIMARY KEY (id);refund_requests_pkey;PRIMARY KEY;false;false;true;public;refund_requests
+PRIMARY KEY (id);resend_settings_pkey;PRIMARY KEY;false;false;true;public;resend_settings
+PRIMARY KEY (id);review_automation_logs_pkey;PRIMARY KEY;false;false;true;public;review_automation_logs
+PRIMARY KEY (id);role_permissions_pkey;PRIMARY KEY;false;false;true;public;role_permissions
+UNIQUE (role, permission_key);role_permissions_role_permission_key_key;UNIQUE;false;false;true;public;role_permissions
+PRIMARY KEY (id);saas_addons_pkey;PRIMARY KEY;false;false;true;public;saas_addons
+UNIQUE (addon_key);saas_addons_addon_key_key;UNIQUE;false;false;true;public;saas_addons
+PRIMARY KEY (id);saas_admin_voucher_audit_logs_pkey;PRIMARY KEY;false;false;true;public;saas_admin_voucher_audit_logs
+CHECK (status = ANY (ARRAY['pending'::text, 'active'::text, 'failed'::text, 'revoked'::text, 'expired'::text]));saas_admin_voucher_redemptions_status_check;CHECK;false;false;true;public;saas_admin_voucher_redemptions
+PRIMARY KEY (id);saas_admin_voucher_redemptions_pkey;PRIMARY KEY;false;false;true;public;saas_admin_voucher_redemptions
+CHECK (discount_percentage >= 0::numeric AND discount_percentage <= 100::numeric);saas_admin_vouchers_discount_percentage_check;CHECK;false;false;true;public;saas_admin_vouchers
+CHECK (duration_type = ANY (ARRAY['forever'::text, 'until_date'::text]));saas_admin_vouchers_duration_type_check;CHECK;false;false;true;public;saas_admin_vouchers
+CHECK (purpose = 'internal_testing'::text);saas_admin_vouchers_purpose_check;CHECK;false;false;true;public;saas_admin_vouchers
+CHECK (status = ANY (ARRAY['draft'::text, 'pending'::text, 'active'::text, 'failed'::text, 'revoked'::text, 'expired'::text]));saas_admin_vouchers_status_check;CHECK;false;false;true;public;saas_admin_vouchers
+PRIMARY KEY (id);saas_admin_vouchers_pkey;PRIMARY KEY;false;false;true;public;saas_admin_vouchers
+PRIMARY KEY (id);saas_billing_settings_pkey;PRIMARY KEY;false;false;true;public;saas_billing_settings
+UNIQUE (singleton);saas_billing_settings_singleton_key;UNIQUE;false;false;true;public;saas_billing_settings
+PRIMARY KEY (id);saas_checkout_sessions_pkey;PRIMARY KEY;false;false;true;public;saas_checkout_sessions
+PRIMARY KEY (id);security_activity_logs_pkey;PRIMARY KEY;false;false;true;public;security_activity_logs
+CHECK (rating >= 1 AND rating <= 5);service_ratings_rating_check;CHECK;false;false;true;public;service_ratings
+PRIMARY KEY (id);service_ratings_pkey;PRIMARY KEY;false;false;true;public;service_ratings
+UNIQUE (appointment_id);service_ratings_appointment_id_key;UNIQUE;false;false;true;public;service_ratings
+PRIMARY KEY (id);services_pkey;PRIMARY KEY;false;false;true;public;services
+PRIMARY KEY (id);status_checks_pkey;PRIMARY KEY;false;false;true;public;status_checks
+PRIMARY KEY (id);status_incidents_pkey;PRIMARY KEY;false;false;true;public;status_incidents
+PRIMARY KEY (id);status_maintenances_pkey;PRIMARY KEY;false;false;true;public;status_maintenances
+PRIMARY KEY (id);status_services_pkey;PRIMARY KEY;false;false;true;public;status_services
+UNIQUE (slug);status_services_slug_key;UNIQUE;false;false;true;public;status_services
+PRIMARY KEY (id);subprocessors_pkey;PRIMARY KEY;false;false;true;public;subprocessors
+PRIMARY KEY (id);subscription_card_scans_pkey;PRIMARY KEY;false;false;true;public;subscription_card_scans
+CHECK (status = ANY (ARRAY['pending'::text, 'paid'::text, 'failed'::text, 'refunded'::text, 'canceled'::text]));subscription_invoices_status_check;CHECK;false;false;true;public;subscription_invoices
+PRIMARY KEY (id);subscription_invoices_pkey;PRIMARY KEY;false;false;true;public;subscription_invoices
+CHECK (status = ANY (ARRAY['granted'::text, 'redeemed'::text, 'expired'::text, 'cancelled'::text]));subscription_loyalty_history_status_check;CHECK;false;false;true;public;subscription_loyalty_history
+PRIMARY KEY (id);subscription_loyalty_history_pkey;PRIMARY KEY;false;false;true;public;subscription_loyalty_history
+UNIQUE (tenant_id, customer_id, subscription_id, reward_id, reward_cycle);subscription_loyalty_history_unique_cycle;UNIQUE;false;false;true;public;subscription_loyalty_history
+CHECK (months_required > 0);subscription_loyalty_rewards_months_required_check;CHECK;false;false;true;public;subscription_loyalty_rewards
+CHECK (reward_type = ANY (ARRAY['free_service'::text, 'cashback'::text, 'credit'::text, 'product'::text, 'discount'::text, 'custom'::text]));subscription_loyalty_rewards_reward_type_check;CHECK;false;false;true;public;subscription_loyalty_rewards
+PRIMARY KEY (id);subscription_loyalty_rewards_pkey;PRIMARY KEY;false;false;true;public;subscription_loyalty_rewards
+UNIQUE (tenant_id, months_required, reward_type);subscription_loyalty_rewards_tenant_id_months_required_rewa_key;UNIQUE;false;false;true;public;subscription_loyalty_rewards
+PRIMARY KEY (id);subscription_payments_pkey;PRIMARY KEY;false;false;true;public;subscription_payments
+CHECK (consume_quantity > 0);subscription_plan_benefit_services_consume_quantity_check;CHECK;false;false;true;public;subscription_plan_benefit_services
+PRIMARY KEY (id);subscription_plan_benefit_services_pkey;PRIMARY KEY;false;false;true;public;subscription_plan_benefit_services
+UNIQUE (benefit_id, service_id);subscription_plan_benefit_services_benefit_id_service_id_key;UNIQUE;false;false;true;public;subscription_plan_benefit_services
+CHECK (monthly_limit >= 0);subscription_plan_benefits_monthly_limit_check;CHECK;false;false;true;public;subscription_plan_benefits
+PRIMARY KEY (id);subscription_plan_benefits_pkey;PRIMARY KEY;false;false;true;public;subscription_plan_benefits
+UNIQUE (plan_id, benefit_key);subscription_plan_benefits_plan_id_benefit_key_key;UNIQUE;false;false;true;public;subscription_plan_benefits
+CHECK (change_type = ANY (ARRAY['upgrade'::text, 'downgrade'::text, 'same'::text]));subscription_plan_changes_change_type_check;CHECK;false;false;true;public;subscription_plan_changes
+PRIMARY KEY (id);subscription_plan_changes_pkey;PRIMARY KEY;false;false;true;public;subscription_plan_changes
+PRIMARY KEY (id);subscription_plan_services_pkey;PRIMARY KEY;false;false;true;public;subscription_plan_services
+UNIQUE (plan_id, service_id);subscription_plan_services_plan_id_service_id_key;UNIQUE;false;false;true;public;subscription_plan_services
+CHECK (barber_commission_type = ANY (ARRAY['fixed'::text, 'percent'::text, 'custom'::text, 'none'::text]));subscription_plans_barber_commission_type_check;CHECK;false;false;true;public;subscription_plans
+CHECK (monthly_price >= 0::numeric);subscription_plans_monthly_price_check;CHECK;false;false;true;public;subscription_plans
+CHECK (plan_type = ANY (ARRAY['hair'::text, 'beard'::text, 'hair_beard'::text, 'custom'::text]));subscription_plans_plan_type_check;CHECK;false;false;true;public;subscription_plans
+CHECK (usage_type = ANY (ARRAY['unlimited'::text, 'limited'::text]));subscription_plans_usage_type_check;CHECK;false;false;true;public;subscription_plans
+PRIMARY KEY (id);subscription_plans_pkey;PRIMARY KEY;false;false;true;public;subscription_plans
+PRIMARY KEY (id);subscription_referrals_pkey;PRIMARY KEY;false;false;true;public;subscription_referrals
+UNIQUE (subscription_id);subscription_referrals_subscription_id_key;UNIQUE;false;false;true;public;subscription_referrals
+PRIMARY KEY (id);subscription_status_logs_pkey;PRIMARY KEY;false;false;true;public;subscription_status_logs
+PRIMARY KEY (id);subscription_usage_logs_pkey;PRIMARY KEY;false;false;true;public;subscription_usage_logs
+PRIMARY KEY (id);subscriptions_pkey;PRIMARY KEY;false;false;true;public;subscriptions
+UNIQUE (stripe_subscription_id);subscriptions_stripe_subscription_id_key;UNIQUE;false;false;true;public;subscriptions
+PRIMARY KEY (id);support_messages_pkey;PRIMARY KEY;false;false;true;public;support_messages
+PRIMARY KEY (id);support_tickets_pkey;PRIMARY KEY;false;false;true;public;support_tickets
+PRIMARY KEY (id);system_health_settings_pkey;PRIMARY KEY;false;false;true;public;system_health_settings
+PRIMARY KEY (id);system_settings_pkey;PRIMARY KEY;false;false;true;public;system_settings
+PRIMARY KEY (id);team_audit_logs_pkey;PRIMARY KEY;false;false;true;public;team_audit_logs
+CHECK (status = ANY (ARRAY['pending'::text, 'trialing'::text, 'active'::text, 'past_due'::text, 'cancelled'::text, 'expired'::text]));tenant_addons_status_check;CHECK;false;false;true;public;tenant_addons
+PRIMARY KEY (id);tenant_addons_pkey;PRIMARY KEY;false;false;true;public;tenant_addons
+PRIMARY KEY (id);tenant_integrations_pkey;PRIMARY KEY;false;false;true;public;tenant_integrations
+UNIQUE (tenant_id, provider);tenant_integrations_tenant_id_provider_key;UNIQUE;false;false;true;public;tenant_integrations
+PRIMARY KEY (id);tenant_memberships_pkey;PRIMARY KEY;false;false;true;public;tenant_memberships
+UNIQUE (tenant_id, user_id);tenant_memberships_tenant_id_user_id_key;UNIQUE;false;false;true;public;tenant_memberships
+PRIMARY KEY (id);tenant_webhooks_pkey;PRIMARY KEY;false;false;true;public;tenant_webhooks
+CHECK (sender_type = ANY (ARRAY['barber_admin'::text, 'super_admin'::text]));ticket_messages_sender_type_check;CHECK;false;false;true;public;ticket_messages
+PRIMARY KEY (id);ticket_messages_pkey;PRIMARY KEY;false;false;true;public;ticket_messages
+PRIMARY KEY (id);transactions_pkey;PRIMARY KEY;false;false;true;public;transactions
+PRIMARY KEY (id);tutorial_categories_pkey;PRIMARY KEY;false;false;true;public;tutorial_categories
+UNIQUE (name);tutorial_categories_name_key;UNIQUE;false;false;true;public;tutorial_categories
+CHECK (level = ANY (ARRAY['basico'::text, 'intermediario'::text, 'avancado'::text]));tutorials_level_check;CHECK;false;false;true;public;tutorials
+CHECK (type = ANY (ARRAY['video'::text, 'pdf'::text, 'link'::text, 'document'::text]));tutorials_type_check;CHECK;false;false;true;public;tutorials
+PRIMARY KEY (id);tutorials_pkey;PRIMARY KEY;false;false;true;public;tutorials
+UNIQUE (slug);tutorials_slug_key;UNIQUE;false;false;true;public;tutorials
+CHECK (status = ANY (ARRAY['pending'::text, 'accepted'::text, 'expired'::text, 'revoked'::text]));user_invitations_status_check;CHECK;false;false;true;public;user_invitations
+PRIMARY KEY (id);user_invitations_pkey;PRIMARY KEY;false;false;true;public;user_invitations
+PRIMARY KEY (id);user_mfa_backup_codes_pkey;PRIMARY KEY;false;false;true;public;user_mfa_backup_codes
+PRIMARY KEY (user_id);user_onboarding_preferences_pkey;PRIMARY KEY;false;false;true;public;user_onboarding_preferences
+PRIMARY KEY (id);user_onboarding_progress_pkey;PRIMARY KEY;false;false;true;public;user_onboarding_progress
+UNIQUE (user_id, tenant_id, step_key);user_onboarding_progress_user_id_tenant_id_step_key_key;UNIQUE;false;false;true;public;user_onboarding_progress
+PRIMARY KEY (id);user_roles_pkey;PRIMARY KEY;false;false;true;public;user_roles
+UNIQUE (user_id);user_roles_user_id_key;UNIQUE;false;false;true;public;user_roles
+PRIMARY KEY (id);user_tour_states_pkey;PRIMARY KEY;false;false;true;public;user_tour_states
+UNIQUE (user_id, tenant_id, tour_key);user_tour_states_user_id_tenant_id_tour_key_key;UNIQUE;false;false;true;public;user_tour_states
+CHECK (NOT (client_id IS NOT NULL AND barber_id IS NOT NULL));verification_challenges_target_exclusivity_check;CHECK;false;false;true;public;verification_challenges
+PRIMARY KEY (id);verification_challenges_pkey;PRIMARY KEY;false;false;true;public;verification_challenges
+PRIMARY KEY (id);waiting_list_pkey;PRIMARY KEY;false;false;true;public;waiting_list
+PRIMARY KEY (id);wallet_pkey;PRIMARY KEY;false;false;true;public;wallet
+UNIQUE (customer_id);wallet_customer_id_key;UNIQUE;false;false;true;public;wallet
+CHECK (type = ANY (ARRAY['credit'::text, 'debit'::text]));wallet_transactions_type_check;CHECK;false;false;true;public;wallet_transactions
+PRIMARY KEY (id);wallet_transactions_pkey;PRIMARY KEY;false;false;true;public;wallet_transactions
+PRIMARY KEY (id);webhook_logs_pkey;PRIMARY KEY;false;false;true;public;webhook_logs
+CHECK (status = ANY (ARRAY['pending'::text, 'active'::text, 'disconnected'::text, 'error'::text]));whatsapp_connections_status_check;CHECK;false;false;true;public;whatsapp_cloud_connections
+PRIMARY KEY (id);whatsapp_connections_pkey;PRIMARY KEY;false;false;true;public;whatsapp_cloud_connections
+PRIMARY KEY (id);whatsapp_conversations_pkey;PRIMARY KEY;false;false;true;public;whatsapp_conversations
+PRIMARY KEY (id);whatsapp_delivery_logs_pkey;PRIMARY KEY;false;false;true;public;whatsapp_delivery_logs
+PRIMARY KEY (id);whatsapp_connections_pkey1;PRIMARY KEY;false;false;true;public;whatsapp_instances
+UNIQUE (tenant_id);unique_barbershop_whatsapp;UNIQUE;false;false;true;public;whatsapp_instances
+CHECK (status = ANY (ARRAY['pending'::text, 'sending'::text, 'sent'::text, 'delivered'::text, 'read'::text, 'failed'::text]));whatsapp_messages_status_check;CHECK;false;false;true;public;whatsapp_messages
+CHECK (type = ANY (ARRAY['sent'::text, 'received'::text]));whatsapp_messages_type_check;CHECK;false;false;true;public;whatsapp_messages
+PRIMARY KEY (id);whatsapp_messages_pkey;PRIMARY KEY;false;false;true;public;whatsapp_messages
+PRIMARY KEY (id);whatsapp_templates_pkey;PRIMARY KEY;false;false;true;public;whatsapp_templates
+UNIQUE (user_id, event_type);whatsapp_templates_user_id_event_type_key;UNIQUE;false;false;true;public;whatsapp_templates
+PRIMARY KEY (id);zapi_integration_logs_pkey;PRIMARY KEY;false;false;true;public;zapi_integration_logs
+PRIMARY KEY (id);zapi_webhook_debug_pkey;PRIMARY KEY;false;false;true;public;zapi_webhook_debug
+PRIMARY KEY (id);zapi_webhook_logs_pkey;PRIMARY KEY;false;false;true;public;zapi_webhook_logs

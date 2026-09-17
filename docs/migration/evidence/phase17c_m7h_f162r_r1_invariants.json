@@ -1,0 +1,31 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R1",
+  "topic": "Backend Authority & Source Invariants Recheck",
+  "evaluated_at": "2026-09-16T10:28:50.000Z",
+  "backend_authorities": {
+    "R1_DATABASE_AUTHORITY_TARGET": "YES",
+    "R1_AUTH_AUTHORITY_TARGET": "YES",
+    "R1_STORAGE_AUTHORITY_TARGET": "YES",
+    "R1_REALTIME_AUTHORITY_TARGET": "YES",
+    "R1_EDGE_AUTHORITY_TARGET": "YES",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz"
+  },
+  "source_isolation": {
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "R1_SOURCE_SUPABASE_CALLS": 0,
+    "public_row_count": 257691,
+    "status_checks_count": 256998,
+    "status_check_max_id": 256998,
+    "wp16_protection_active": true
+  },
+  "producers_and_workers": {
+    "target_producers_active": 6,
+    "provider_callback_mutations": 0,
+    "vercel_duplicate_workers": 0
+  },
+  "verdict": {
+    "INVARIANTS_MAINTAINED": "YES",
+    "SOURCE_FROZEN": "YES",
+    "ZERO_DATA_MUTATION": "YES"
+  }
+}

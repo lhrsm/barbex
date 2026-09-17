@@ -1,0 +1,55 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "DNS Before/After Transition Plan & Live Target Instructions",
+  "evaluated_at": "2026-09-16T09:29:00.000Z",
+  "gate_status": {
+    "f16_dns_values_refreshed": "YES",
+    "f16_dns_values_currently_verified": "YES",
+    "f16_rollback_dns_values_refreshed": "YES"
+  },
+  "records": {
+    "apex": {
+      "domain": "barbex.shop",
+      "before": {
+        "type": "A",
+        "value": "185.158.133.1",
+        "ttl": 14220,
+        "authority": "Cloudflare / Lovable Cloud"
+      },
+      "vercel_instructions": {
+        "primary_a_records": [
+          { "type": "A", "name": "@", "value": "216.198.79.1" },
+          { "type": "A", "name": "@", "value": "64.29.17.1" }
+        ],
+        "secondary_a_record": { "type": "A", "name": "@", "value": "76.76.21.21" }
+      },
+      "rollback": {
+        "type": "A",
+        "value": "185.158.133.1",
+        "authority": "Cloudflare / Lovable Cloud"
+      }
+    },
+    "subdomain_www": {
+      "domain": "www.barbex.shop",
+      "before": {
+        "type": "CNAME",
+        "value": "barbex.shop",
+        "ttl": 300,
+        "authority": "Cloudflare / Lovable Cloud"
+      },
+      "vercel_instructions": {
+        "primary_cname": { "type": "CNAME", "name": "www", "value": "e34acb8ae207b7cf.vercel-dns-017.com." },
+        "secondary_cname": { "type": "CNAME", "name": "www", "value": "cname.vercel-dns.com." }
+      },
+      "rollback": {
+        "type": "CNAME",
+        "value": "barbex.shop"
+      }
+    }
+  },
+  "execution_verdict": {
+    "f16_apex_dns_changed": "NO (HELD_BEFORE_DNS)",
+    "f16_www_dns_changed": "NO (HELD_BEFORE_DNS)",
+    "f16_unrelated_dns_mutations": 0
+  }
+}

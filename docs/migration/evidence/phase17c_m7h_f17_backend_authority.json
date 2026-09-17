@@ -1,0 +1,20 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Target Backend Authority Stability",
+  "evaluated_at": "2026-09-16T11:45:00.000Z",
+  "target_project_ref": "ywdwrstxvsdqiryhieiz",
+  "authorities": {
+    "database": "TARGET",
+    "auth": "TARGET",
+    "storage": "TARGET",
+    "realtime": "TARGET",
+    "edge_functions": "TARGET"
+  },
+  "metrics": {
+    "F17_DATABASE_AUTHORITY": "TARGET",
+    "F17_AUTH_BACKEND_AUTHORITY": "TARGET",
+    "F17_STORAGE_AUTHORITY": "TARGET",
+    "F17_REALTIME_AUTHORITY": "TARGET",
+    "F17_EDGE_FUNCTION_AUTHORITY": "TARGET"
+  }
+}

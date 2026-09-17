@@ -1,0 +1,18 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Lovable Rollback Preservation",
+  "evaluated_at": "2026-09-16T11:46:00.000Z",
+  "lovable_state": {
+    "project_id": "8e95dc9e-ab64-44cf-956c-ecec6fefeb51",
+    "project_retained": true,
+    "rollback_available": true,
+    "public_traffic_authority": false,
+    "backend_authority": false
+  },
+  "metrics": {
+    "F17_LOVABLE_PROJECT_RETAINED": "YES",
+    "F17_LOVABLE_ROLLBACK_AVAILABLE": "YES",
+    "F17_LOVABLE_PUBLIC_TRAFFIC_AUTHORITY": "NO",
+    "F17_LOVABLE_BACKEND_AUTHORITY": "NO"
+  }
+}

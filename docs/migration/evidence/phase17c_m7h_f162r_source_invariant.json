@@ -1,0 +1,24 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R",
+  "topic": "Source Supabase Freeze & Isolation Invariant",
+  "evaluated_at": "2026-09-16T10:07:00.000Z",
+  "source_supabase": {
+    "project_ref": "wdxhjwodyctgzqtogkgv",
+    "status": "FROZEN_ARCHIVAL",
+    "public_row_count": 257691,
+    "status_checks_count": 256998,
+    "status_check_max_id": 256998,
+    "wp16_protection_active": true,
+    "traffic": {
+      "app": 0,
+      "provider": 0,
+      "background": 0
+    }
+  },
+  "verdict": {
+    "SOURCE_ROWS_STABLE": "YES (257691)",
+    "STATUS_CHECKS_STABLE": "YES (256998)",
+    "WP16_ACTIVE": "YES",
+    "SOURCE_TRAFFIC_ZERO": "YES"
+  }
+}

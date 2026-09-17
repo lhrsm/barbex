@@ -1,0 +1,26 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Vercel Domain Authority Post-Cutover",
+  "evaluated_at": "2026-09-16T11:44:10.000Z",
+  "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+  "project_name": "barbex-staging",
+  "domains": {
+    "barbex.shop": {
+      "status": "ok",
+      "misconfigured": false,
+      "attached": true
+    },
+    "www.barbex.shop": {
+      "status": "ok",
+      "misconfigured": false,
+      "attached": true
+    }
+  },
+  "metrics": {
+    "F17_VERCEL_APEX_OK": "YES",
+    "F17_VERCEL_WWW_OK": "YES",
+    "F17_VERCEL_APEX_MISCONFIGURED": "NO",
+    "F17_VERCEL_WWW_MISCONFIGURED": "NO",
+    "F17_DOMAIN_PROJECT_ATTACHMENT_PASS": "YES"
+  }
+}

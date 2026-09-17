@@ -1,0 +1,29 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D1",
+  "topic": "Certificate Remediation Plan (Read-Only Proposal)",
+  "evaluated_at": "2026-09-16T11:18:40.000Z",
+  "eligibility": {
+    "D1_MANUAL_CERT_ISSUANCE_ELIGIBLE": "YES",
+    "D1_PROPOSED_CERT_COMMAND": "vercel certs issue barbex.shop www.barbex.shop",
+    "executed": false
+  },
+  "impact_analysis": {
+    "D1_EXPECTED_SIDE_EFFECTS": "Triggers immediate ACME HTTP-01 challenge against Vercel edge IP 76.76.21.21. Generates dual-SAN SSL certificate for barbex.shop and www.barbex.shop and binds it to Vercel edge proxies.",
+    "D1_ROLLBACK_IMPLICATION": "Zero risk to backend, database, or repository. Completely reversible via 'vercel certs rm' if necessary.",
+    "D1_CA_RATE_LIMIT_CONSIDERATION": "Let's Encrypt / ZeroSSL allows 50 certificates per registered domain per week. Current count issued for barbex.shop on Vercel is 0. Rate limit risk is zero."
+  },
+  "invariants": {
+    "SOURCE_SUPABASE_CALLS": 0,
+    "SOURCE_WP16_STILL_ACTIVE": "YES",
+    "TARGET_BACKEND_AUTHORITY": "YES",
+    "NO_PROVIDER_MUTATION": "YES",
+    "NO_DNS_MUTATION": "YES",
+    "NO_DEPLOYMENT_MUTATION": "YES"
+  },
+  "decision": {
+    "D1_TLS_RECOVERED_NATURALLY": "NO",
+    "D1_READY_TO_CLOSE_F16": "NO",
+    "D1_OPERATOR_AUTHORIZATION_REQUIRED": "YES",
+    "FINAL_DECISION": "D1_CERTIFICATE_REISSUANCE_RECOMMENDED_AWAITING_EXPLICIT_AUTHORIZATION"
+  }
+}

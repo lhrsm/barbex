@@ -1,0 +1,59 @@
+{
+  "phase": "PHASE 17C.M7H-F18",
+  "topic": "Local Worktree Forensic Inventory",
+  "evaluated_at": "2026-09-16T11:52:00.000Z",
+  "counts": {
+    "changed_tracked_files": 54,
+    "untracked_files": 691,
+    "staged_files": 0
+  },
+  "classification_categories": {
+    "REQUIRED_RUNTIME_MIGRATION": [
+      "src/lib/backend/quick-wins.ts",
+      "src/lib/backend/client/*",
+      "src/lib/backend/edge-client.ts",
+      "src/lib/backend/edge/*",
+      "src/lib/backend/rpc/*",
+      "src/components/public/PublicContactSection.tsx",
+      "src/components/public/booking/BookingAuthStep.tsx",
+      "src/components/profile/EditProfileModal.tsx",
+      "src/components/security/MFASettings.tsx",
+      "src/components/security/MFAVerificationGuard.tsx",
+      "src/components/security/SecurityCentral.tsx",
+      "src/routes/invite.$token.tsx",
+      "src/routes/admin.observability.tsx"
+    ],
+    "REQUIRED_VERCEL_CONFIGURATION": [
+      "vite.config.ts",
+      ".gitignore"
+    ],
+    "REQUIRED_SUPABASE_MIGRATION": [
+      "supabase/migrations/*",
+      "supabase/functions/*",
+      "supabase/config.toml"
+    ],
+    "MIGRATION_EVIDENCE_DOCUMENTATION": [
+      "docs/migration/evidence/*",
+      "docs/migration/*.md",
+      "docs/recovery/*"
+    ],
+    "TEMPORARY_MIGRATION_ARTIFACT": [
+      "docs/migration/test_tut_parse.ts",
+      "docs/migration/test_limit.ts",
+      "scratch_last_prompt.json",
+      "transcript_tail.txt"
+    ],
+    "SECRET_OR_SENSITIVE_FILE": [
+      ".env"
+    ]
+  },
+  "metrics": {
+    "F18_CHANGED_TRACKED_FILES": 54,
+    "F18_UNTRACKED_FILES": 691,
+    "F18_STAGED_FILES": 0,
+    "F18_SECRET_FILES_DETECTED": 1,
+    "F18_UNKNOWN_FILES": 0,
+    "F18_RUNTIME_FILES_PENDING_COMMIT": 67,
+    "F18_EVIDENCE_FILES_PENDING_COMMIT": 412
+  }
+}

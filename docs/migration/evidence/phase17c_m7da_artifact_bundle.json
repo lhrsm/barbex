@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7D-A",
+    "generated_at": "2026-09-10T09:08:21.814Z",
+    "bundle_sha256": "d58e641f71fd7e68fb4e5d0c66d1676b6c7ef264bc4ce3825793c05da12f23dd"
+  },
+  "files": {
+    "docs/migration/PHASE17C_M7DA_AUTH_METHOD_CLOSURE.md": "0b172086df6561bf2a668a827748c0f0b9bc8acb703e24cbbc0358741bf4e1e2",
+    "docs/migration/sql/phase17c_m7da_export_auth_users.sql": "d354f2e6a328be93f47e7ed1f64a630eefbe53feba7d4167b80cfa94129aec32",
+    "docs/migration/sql/phase17c_m7da_export_auth_identities.sql": "9a192b196cf618bbb26f585409d2c8ad3d7d8da84bb06567b46695b3c436d52e",
+    "docs/migration/evidence/phase17c_m7da_auth_method_matrix.json": "5895aaa0b990c8ded437a7e7139f7c62a9bb52ac8a83b22f4ae83a46b9b934a5",
+    "docs/migration/evidence/phase17c_m7da_auth_schema_compatibility.json": "436953752ec106e9386a0b8781b8ae9a994c1e98d9268f9c9a2c0a3709896a59",
+    "docs/migration/evidence/phase17c_m7da_auth_uuid_manifest.json": "f1479934db442d326702047c7c583b1f7a948153d4312a746e9a8534eb303fb2",
+    "docs/migration/evidence/phase17c_m7da_auth_field_map.json": "54bb4ae2cc28e6085e27768e5004f7e0d808cd8d9909ffd9f413b8fe156ae5f4",
+    "docs/migration/evidence/phase17c_m7da_auth_execution_spec.json": "cf61ded23f0ad102555c784c969cb55c8725fdebe207dfb44c9596275241505a"
+  }
+}

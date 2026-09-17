@@ -1,0 +1,19 @@
+{
+  "phase": "PHASE 17C.M7H-F17",
+  "topic": "Target Background Producers Stability",
+  "evaluated_at": "2026-09-16T11:45:20.000Z",
+  "producers": [
+    "status-check",
+    "addon-billing",
+    "admin-digest",
+    "anniversary-reward",
+    "review-collector",
+    "automation-queue"
+  ],
+  "metrics": {
+    "F17_TARGET_PRODUCERS_EXPECTED": 6,
+    "F17_TARGET_PRODUCERS_ACTIVE": 6,
+    "F17_VERCEL_DUPLICATE_PRODUCERS": 0,
+    "F17_PRODUCER_AUTHORITY_PASS": "YES"
+  }
+}

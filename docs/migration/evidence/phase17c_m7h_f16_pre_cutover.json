@@ -1,0 +1,59 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "Pre-Cutover Production Snapshot & Rollback State",
+  "evaluated_at": "2026-09-16T09:22:00.000Z",
+  "dns_snapshot": {
+    "apex": {
+      "domain": "barbex.shop",
+      "record_type": "A",
+      "resolved_ip": "185.158.133.1",
+      "ttl": 14220,
+      "nameservers": [
+        "nova.dns-parking.com",
+        "cosmos.dns-parking.com"
+      ]
+    },
+    "subdomain_www": {
+      "domain": "www.barbex.shop",
+      "record_type": "CNAME",
+      "resolved_target": "barbex.shop",
+      "resolved_ip": "185.158.133.1",
+      "ttl": 300
+    }
+  },
+  "http_snapshot": {
+    "target_url": "https://barbex.shop",
+    "status_code": 200,
+    "server_header": "cloudflare",
+    "cf_ray": "a3b8e482b92d4c8a-GIG",
+    "tls_valid": true,
+    "lovable_production_active": true
+  },
+  "staging_snapshot": {
+    "project_id": "prj_2b76k2ZxrCpMBO6wApCzUEFQL8AB",
+    "deployment_id": "dpl_7HrVsYsxPXkB5Pt1LWAE3XzYiB2z",
+    "deployment_url": "https://barbex-staging-8s6t1ofu6-startup-dc20.vercel.app",
+    "aliased_url": "https://barbex-staging.vercel.app",
+    "status": 200,
+    "ssr_pass": true,
+    "target_bound": true
+  },
+  "source_snapshot": {
+    "project_ref": "wdxhjwodyctgzqtogkgv",
+    "public_rows": 257691,
+    "status_checks": 256998,
+    "status_max": 256998,
+    "wp16_active": true,
+    "traffic": 0
+  },
+  "target_snapshot": {
+    "project_ref": "ywdwrstxvsdqiryhieiz",
+    "health": "PASS",
+    "producers_active": 6
+  },
+  "verdict": {
+    "f16_precutover_snapshot_captured": "YES",
+    "f16_lovable_rollback_values_captured": "YES",
+    "f16_vercel_staging_health_pass": "YES"
+  }
+}

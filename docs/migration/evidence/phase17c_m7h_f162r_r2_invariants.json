@@ -1,0 +1,34 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-R2",
+  "topic": "Target / Source Invariants Recheck",
+  "evaluated_at": "2026-09-16T11:00:00.000Z",
+  "target_supabase": {
+    "project_ref": "ywdwrstxvsdqiryhieiz",
+    "status": "PRIMARY_ACTIVE",
+    "background_producers": 6
+  },
+  "source_supabase": {
+    "project_ref": "wdxhjwodyctgzqtogkgv",
+    "status": "FROZEN_ARCHIVAL",
+    "public_rows": 257691,
+    "status_checks": 256998,
+    "status_max": 256998,
+    "wp16_active": true,
+    "calls": 0
+  },
+  "metrics": {
+    "R2_DATABASE_AUTHORITY_TARGET": "YES",
+    "R2_AUTH_AUTHORITY_TARGET": "YES",
+    "R2_STORAGE_AUTHORITY_TARGET": "YES",
+    "R2_REALTIME_AUTHORITY_TARGET": "YES",
+    "R2_EDGE_AUTHORITY_TARGET": "YES",
+    "R2_SOURCE_SUPABASE_CALLS": 0,
+    "SOURCE_ROWS_STABLE": "YES (257691)",
+    "SOURCE_STATUS_CHECKS_STABLE": "YES (256998)",
+    "SOURCE_STATUS_MAX_STABLE": "YES (256998)",
+    "SOURCE_WP16_ACTIVE": "YES",
+    "TARGET_PRODUCERS_ACTIVE": 6,
+    "R2_PROVIDER_CALLBACK_MUTATIONS": 0,
+    "R2_VERCEL_DUPLICATE_WORKERS": 0
+  }
+}

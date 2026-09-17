@@ -1,0 +1,26 @@
+{
+  "phase": "PHASE 17C.M7H-F16.2R-D2",
+  "topic": "Safety Invariants Post-TLS",
+  "evaluated_at": "2026-09-16T11:31:40.000Z",
+  "source_safety": {
+    "public_rows": 257691,
+    "status_checks": 256998,
+    "status_max": 256998,
+    "wp16_active": true,
+    "source_calls": 0
+  },
+  "target_authority": {
+    "database_authority": true,
+    "auth_authority": true,
+    "storage_authority": true,
+    "realtime_authority": true,
+    "edge_authority": true,
+    "producers_active": 6,
+    "target_ref": "ywdwrstxvsdqiryhieiz"
+  },
+  "workers_and_providers": {
+    "provider_callback_mutations": 0,
+    "vercel_duplicate_workers": 0,
+    "lovable_rollback_retained": true
+  }
+}

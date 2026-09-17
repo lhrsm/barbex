@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Package, TrendingUp, Users, Pencil, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { DefaultRouteError, DefaultRouteNotFound } from "@/components/route-boundaries";
-import { adminCreateAddonStripePrice } from "@/utils/addons.functions";
+import { adminCreateAddonStripePrice } from "@/lib/backend/edge/stripe";
 import { getStripeEnvironment } from "@/lib/stripe";
 
 export const Route = createFileRoute("/admin/addons")({

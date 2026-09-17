@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listAdminUpgradeRecommendations } from "@/lib/addons-engine.functions";
+import { listAdminUpgradeRecommendationsClient } from "@/lib/backend/rpc/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,7 +29,7 @@ function AdminUpgradeRecommendations() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-upgrade-recommendations", days],
     queryFn: async () => {
-      const r = await listAdminUpgradeRecommendations({ data: { days } });
+      const r = await listAdminUpgradeRecommendationsClient(days);
       if ("error" in r) throw new Error(r.error);
       return r;
     },

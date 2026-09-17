@@ -1,0 +1,12 @@
+{
+  "phase": "PHASE 17C.M7H-F16",
+  "topic": "DNS Propagation & Public Authority State",
+  "evaluated_at": "2026-09-16T09:30:00.000Z",
+  "propagation": {
+    "public_apex_authority_vercel": "NO (HELD_BEFORE_DNS)",
+    "public_www_authority_vercel": "NO (HELD_BEFORE_DNS)",
+    "public_lovable_authority_for_apex": "YES (ACTIVE_PRODUCTION_AUTHORITY)",
+    "current_apex_ip": "185.158.133.1",
+    "current_server": "cloudflare"
+  }
+}

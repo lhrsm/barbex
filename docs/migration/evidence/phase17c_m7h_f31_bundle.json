@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F3.1",
+    "title": "Zero-Probe Runtime Metadata Closure Bundle",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "generated_at": "2026-09-13T11:39:00.000Z"
+  },
+  "prior_authorities": {
+    "m7h_f2_edge_function_deployment_bundle_sha256": "f0ce2ee4ff1daaff1fc3882285b9eabb479467de4c47c8385d72c832211175af",
+    "m7h_f3_edge_runtime_verification_bundle_sha256": "7a6c7197955dfcd7daafae619e4e879051b6e6afeb7dc6a05d358d13382b1dc8"
+  },
+  "evidence_artifacts": {
+    "control_plane_inventory_sha256": "4caf314e6a5e49dd7d1de61308d2a65aa5c70b75a3f855af8e4b703bc70b0676",
+    "f3_disposition_sha256": "327a2caceceea3776e7236e60ed38ba1934a056c439177c08c1224c7454b249b",
+    "f4_readiness_sha256": "0cb466e6abbd9f66062095133eddd5b5cec357578e88e72bd7183829cac65574"
+  },
+  "metrics": {
+    "f3_zero_safe_active_probes_confirmed": true,
+    "f3_zero_invocations_confirmed": true,
+    "f3_proved_runtime_boot_by_invocation": false,
+    "target_edge_functions_control_plane_total": 38,
+    "target_edge_functions_canonical_present": 38,
+    "target_edge_functions_missing": 0,
+    "target_edge_functions_unexpected": 0,
+    "functions_platform_healthy": 38,
+    "functions_platform_failed": 0,
+    "functions_platform_unknown": 0,
+    "function_remote_identity_matches": 38,
+    "function_verify_jwt_matches": 38,
+    "deployment_errors_found": 0,
+    "module_bundle_errors_found": 0,
+    "configuration_errors_found": 0,
+    "f3_verification_classification": "STATIC_RUNTIME_DEPLOYMENT_VERIFIED_ZERO_SAFE_ACTIVE_PROBES",
+    "f4_requires_edge_runtime_invocation": false,
+    "f4_requires_business_write_validation": false,
+    "f4_requires_webhook_runtime_validation": false,
+    "target_foundation_unchanged": true,
+    "source_state_unchanged": true,
+    "source_freeze_still_valid": true,
+    "wp16_hotfix_still_active": true,
+    "edge_function_invocations_by_f31": 0,
+    "edge_function_redeployments_by_f31": 0,
+    "secret_mutations": 0,
+    "provider_mutations": 0,
+    "app_env_mutations": 0,
+    "app_publish_operations": 0,
+    "target_cron_activations": 0,
+    "dns_mutations": 0,
+    "f3_original_evidence_remains_valid": true,
+    "f3_original_final_decision_wording_corrected": true,
+    "ready_for_f4_env_prestaging": true
+  },
+  "bundle_hash": "54535642ac321b027e9efc91be3de5e6c6a81dbfaf55fd66d730545277b9cc70"
+}

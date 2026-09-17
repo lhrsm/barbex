@@ -351,15 +351,17 @@ function TestModal({ isOpen, onClose, settings, onRefreshLogs }: {
     setTestResult(null);
     
     try {
-      const { sendTransactionalEmail } = await import("@/lib/resend.functions");
+      const { sendTransactionalEmail } = await import("@/lib/backend/edge/email");
       const result = await sendTransactionalEmail({
-        data: {
-          recipient: testEmail,
-          templateKey: 'test_email'
-        }
+        recipient: testEmail,
+        templateKey: 'test_email'
       });
       
-      setTestResult({ success: true, messageId: result.messageId });
+      if (!result.ok) {
+        throw new Error(result.message || "Falha ao enviar e-mail de teste");
+      }
+
+      setTestResult({ success: true, messageId: (result as any).messageId || (result as any).data?.messageId });
       toast.success("E-mail de teste enviado com sucesso!");
       onRefreshLogs?.();
     } catch (error: any) {

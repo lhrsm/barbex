@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "phase": "PHASE 17C.M7H-F11",
+    "title": "Post-Cutover Stabilization Baseline Snapshot",
+    "source_project_ref": "wdxhjwodyctgzqtogkgv",
+    "target_project_ref": "ywdwrstxvsdqiryhieiz",
+    "f11_started_at": "2026-09-14T09:35:00.000Z"
+  },
+  "baseline": {
+    "target": {
+      "status_checks": 1,
+      "automation_queue": 0,
+      "background_jobs": 0,
+      "communication_messages": 0,
+      "email_logs": 1,
+      "notifications": 0,
+      "tenant_addons": 18,
+      "payment_gateway_logs": 1,
+      "stripe_events": 1,
+      "zapi_events": 1,
+      "active_producers": 6
+    },
+    "source": {
+      "public_rows": 257691,
+      "status_checks": 256998,
+      "status_checks_max_id": 256998,
+      "write_freeze_active": true,
+      "wp16_hotfix_active": true
+    }
+  },
+  "f11_baseline_captured": true
+}
