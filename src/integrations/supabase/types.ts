@@ -5959,6 +5959,7 @@ export type Database = {
           cashback_type: string | null
           checkin_token: string | null
           commission_base: string
+          contact_email: string | null
           created_at: string
           display_name: string | null
           effective_plan: string | null
@@ -6023,6 +6024,7 @@ export type Database = {
           cashback_type?: string | null
           checkin_token?: string | null
           commission_base?: string
+          contact_email?: string | null
           created_at?: string
           display_name?: string | null
           effective_plan?: string | null
@@ -6089,6 +6091,7 @@ export type Database = {
           cashback_type?: string | null
           checkin_token?: string | null
           commission_base?: string
+          contact_email?: string | null
           created_at?: string
           display_name?: string | null
           effective_plan?: string | null
@@ -8374,49 +8377,67 @@ export type Database = {
       }
       system_settings: {
         Row: {
+          address: string | null
           admin_access_level: string | null
           audit_logs_enabled: boolean | null
+          contact_email: string | null
           id: string
           integrations: Json | null
           main_url: string | null
           maintenance_mode: boolean | null
           payments_test_mode: boolean | null
+          phone: string | null
+          public_email: string | null
           saas_logo: string | null
           saas_name: string | null
+          social_links: Json | null
           stripe_secret_key: string | null
           stripe_webhook_secret: string | null
           two_factor_auth_enabled: boolean | null
           updated_at: string | null
+          whatsapp_number: string | null
         }
         Insert: {
+          address?: string | null
           admin_access_level?: string | null
           audit_logs_enabled?: boolean | null
+          contact_email?: string | null
           id?: string
           integrations?: Json | null
           main_url?: string | null
           maintenance_mode?: boolean | null
           payments_test_mode?: boolean | null
+          phone?: string | null
+          public_email?: string | null
           saas_logo?: string | null
           saas_name?: string | null
+          social_links?: Json | null
           stripe_secret_key?: string | null
           stripe_webhook_secret?: string | null
           two_factor_auth_enabled?: boolean | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
+          address?: string | null
           admin_access_level?: string | null
           audit_logs_enabled?: boolean | null
+          contact_email?: string | null
           id?: string
           integrations?: Json | null
           main_url?: string | null
           maintenance_mode?: boolean | null
           payments_test_mode?: boolean | null
+          phone?: string | null
+          public_email?: string | null
           saas_logo?: string | null
           saas_name?: string | null
+          social_links?: Json | null
           stripe_secret_key?: string | null
           stripe_webhook_secret?: string | null
           two_factor_auth_enabled?: boolean | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -10126,6 +10147,13 @@ export type Database = {
         }[]
       }
       claim_customer_profile: { Args: { p_tenant_id: string }; Returns: Json }
+      claim_staff_verification_challenge: {
+        Args: { p_barber_id: string; p_email: string; p_max_attempts?: number }
+        Returns: {
+          challenge_id: string
+          claimed: boolean
+        }[]
+      }
       cleanup_invalid_cashback: { Args: { p_tenant_id: string }; Returns: Json }
       clear_barbershop_financial_data: {
         Args: { p_tenant_id: string }
@@ -10824,6 +10852,10 @@ export type Database = {
         Args: { p_tenant_id: string }
         Returns: undefined
       }
+      set_appointment_review_decision: {
+        Args: { p_appointment_id: string; p_decision: string }
+        Returns: Json
+      }
       settle_appointment_payment: {
         Args: {
           p_appointment_id: string
@@ -10949,6 +10981,18 @@ export type Database = {
         }
         Returns: Json
       }
+      verify_staff_verification_challenge: {
+        Args: {
+          p_barber_id: string
+          p_challenge_id: string
+          p_code_hash: string
+          p_max_attempts?: number
+        }
+        Returns: {
+          error_code: string
+          success: boolean
+        }[]
+      }
     }
     Enums: {
       addon_access_source: "addon" | "plan" | "voucher"
@@ -11025,12 +11069,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11054,11 +11098,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11079,11 +11123,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11104,11 +11148,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11121,11 +11165,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
