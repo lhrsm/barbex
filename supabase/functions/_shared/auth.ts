@@ -77,7 +77,7 @@ export async function resolveUserTenantAndRole(userId: string): Promise<{ tenant
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
     .from("profiles")
-    .select("tenant_id, role")
+    .select("id, tenant_id, role")
     .eq("id", userId)
     .maybeSingle();
 

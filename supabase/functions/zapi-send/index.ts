@@ -1,19 +1,20 @@
 // ==============================================================================
 // BARBEX — EDGE FUNCTION: zapi-send
 // ==============================================================================
-// Multi-tenant WhatsApp outbound sender & instance management via Z-API.
+// Multi-tenant WhatsApp outbound sender, safe status & write-only credential manager.
 // Strictly enforces tenant isolation, RBAC, rate limiting, and zero secret leaks.
+// Backed by Supabase Vault for secure credential storage.
 // ==============================================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { createSupabaseAdminClient } from "../_shared/supabase-admin.ts";
-import { getAuthenticatedUser } from "../_shared/auth.ts";
+import { createAdminClient } from "../_shared/supabase-admin.ts";
+import { extractBearerToken } from "../_shared/auth.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
-import { jsonResponse, errorResponse } from "../_shared/response.ts";
-import { AppError } from "../_shared/errors.ts";
+import { EdgeError } from "../_shared/errors.ts";
 import {
   getTenantWhatsAppInstance,
+  getTenantWhatsAppCredentials,
   getWhatsAppInstanceById,
   sendZApiText,
   sendZApiButton,
@@ -24,12 +25,16 @@ import {
   getZApiQRCode,
   logZApiIntegration,
   maskPhone,
+  maskSecret,
   WhatsAppInstance,
+  WhatsAppCredentials,
 } from "../_shared/zapi.ts";
-import { normalizePhoneBR } from "../_shared/phone.ts";
 
 interface RequestBody {
   action:
+    | "save-config"
+    | "get-status"
+    | "remove-config"
     | "send-text"
     | "send-button"
     | "send-image"
@@ -41,7 +46,16 @@ interface RequestBody {
     | "get-qrcode";
   tenantId?: string;
   instanceId?: string;
+  instance_id?: string;
+  token?: string;
+  client_token?: string;
+  server_url?: string;
+  phone?: string;
   data?: {
+    instance_id?: string;
+    token?: string;
+    client_token?: string;
+    server_url?: string;
     phone?: string;
     message?: string;
     buttons?: Array<{ id: string; label: string }>;
@@ -51,7 +65,7 @@ interface RequestBody {
     customer_id?: string;
     appointment_id?: string;
   };
-  phone?: string;
+  phone_number?: string;
   message?: string;
   buttons?: Array<{ id: string; label: string }>;
   imageUrl?: string;
@@ -60,45 +74,79 @@ interface RequestBody {
   customer_id?: string;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function jsonResponse(data: unknown, status = 200, headers: HeadersInit = {}): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  });
+}
+
+function errorResponse(err: any, headers: HeadersInit = {}): Response {
+  const status = err?.status || 500;
+  const message = err?.message || "Internal server error";
+  const code = err?.code || "INTERNAL_ERROR";
+  return new Response(JSON.stringify({ ok: false, success: false, error: message, code }), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  });
+}
+
 serve(async (req: Request) => {
-  const origin = req.headers.get("origin");
-  const corsHeaders = getCorsHeaders(origin);
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return errorResponse(new AppError("METHOD_NOT_ALLOWED", "Method not allowed", 405), corsHeaders);
+    return errorResponse(new EdgeError("INVALID_REQUEST", "Method not allowed", 405), corsHeaders);
   }
 
   try {
-    const supabaseAdmin = createSupabaseAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     // 1. Determine caller identity: User JWT vs Internal Service Role
-    const authHeader = req.headers.get("authorization") || "";
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
     const isServiceRole =
       authHeader.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "SERVICE_ROLE_KEY_NOT_MATCHED") ||
       req.headers.get("x-service-role-key") === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     let authenticatedUserId: string | null = null;
-    let userRole: string = "anon";
+    let userRole = "anon";
 
     if (!isServiceRole) {
-      const user = await getAuthenticatedUser(req, supabaseAdmin);
-      if (!user) {
-        throw new AppError("UNAUTHORIZED", "Authentication required", 401);
+      const token = extractBearerToken(req);
+      if (!token) {
+        throw new EdgeError("UNAUTHORIZED", "Authentication required", 401);
+      }
+      const { data: { user }, error: userErr } = await supabaseAdmin.auth.getUser(token);
+      if (userErr || !user) {
+        throw new EdgeError("UNAUTHORIZED", "Authentication required", 401);
       }
       authenticatedUserId = user.id;
 
-      // Check role in user_roles
+      // Check role in user_roles and profiles
       const { data: roleRow } = await supabaseAdmin
         .from("user_roles")
         .select("role")
         .eq("user_id", authenticatedUserId)
         .maybeSingle();
 
-      userRole = roleRow?.role || "tenant_admin";
+      const { data: profileRow } = await supabaseAdmin
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", authenticatedUserId)
+        .maybeSingle();
+
+      userRole = roleRow?.role || profileRow?.role || "tenant_admin";
     }
 
     // 2. Parse Request Body
@@ -106,17 +154,17 @@ serve(async (req: Request) => {
     try {
       body = await req.json();
     } catch {
-      throw new AppError("INVALID_REQUEST", "Invalid JSON payload", 400);
+      throw new EdgeError("INVALID_REQUEST", "Invalid JSON payload", 400);
     }
 
     const { action } = body;
     if (!action) {
-      throw new AppError("INVALID_REQUEST", "Action is required", 400);
+      throw new EdgeError("INVALID_REQUEST", "Action is required", 400);
     }
 
     // Merge nested data if present
     const data = body.data || {};
-    const phone = data.phone || body.phone;
+    const phone = data.phone || body.phone || body.phone_number;
     const message = data.message || body.message;
     const buttons = data.buttons || body.buttons;
     const imageUrl = data.imageUrl || body.imageUrl;
@@ -128,13 +176,13 @@ serve(async (req: Request) => {
     let targetTenantId: string;
     if (isServiceRole) {
       // Internal service role / worker can explicitly specify target tenantId
-      targetTenantId = body.tenantId || (body.instanceId ? "" : "");
+      targetTenantId = body.tenantId || "";
       if (!targetTenantId && body.instanceId) {
         const inst = await getWhatsAppInstanceById(supabaseAdmin, body.instanceId);
         if (inst) targetTenantId = inst.tenant_id;
       }
       if (!targetTenantId) {
-        throw new AppError("INVALID_REQUEST", "Tenant ID is required for service role calls", 400);
+        throw new EdgeError("INVALID_REQUEST", "Tenant ID is required for service role calls", 400);
       }
     } else {
       // Authenticated user: tenant is derived from auth.uid() or verified if super_admin
@@ -149,32 +197,216 @@ serve(async (req: Request) => {
           .maybeSingle();
 
         targetTenantId = profile?.tenant_id || authenticatedUserId!;
+
+        // Cross-tenant check: if caller provided a tenantId different from resolved tenant
+        if (body.tenantId && body.tenantId !== targetTenantId && userRole !== "super_admin") {
+          throw new EdgeError("FORBIDDEN", "Cross-tenant access forbidden", 403);
+        }
       }
     }
 
-    // 4. Retrieve Tenant WhatsApp Instance
-    let instance: WhatsAppInstance | null = null;
-    if (body.instanceId) {
-      instance = await getWhatsAppInstanceById(supabaseAdmin, body.instanceId);
-      // Cross-tenant verification: Ensure instance belongs to targetTenantId
-      if (instance && instance.tenant_id !== targetTenantId && userRole !== "super_admin") {
-        throw new AppError("FORBIDDEN", "Instance does not belong to your tenant", 403);
-      }
-    } else {
-      instance = await getTenantWhatsAppInstance(supabaseAdmin, targetTenantId);
+    // Validate UUID structure
+    if (!targetTenantId || !UUID_REGEX.test(targetTenantId)) {
+      throw new EdgeError("INVALID_REQUEST", "Malformed or missing tenant ID", 400);
     }
 
-    if (!instance) {
-      throw new AppError(
+    // =========================================================================
+    // SECTION A: CONFIGURATION MANAGEMENT (save-config, get-status, remove-config)
+    // =========================================================================
+    if (action === "save-config" || action === "get-status" || action === "remove-config") {
+      // Barbers, professionals, and clients CANNOT configure or inspect integration credentials
+      if (!isServiceRole) {
+        const forbiddenRoles = ["barber", "professional", "client", "customer"];
+        if (forbiddenRoles.includes(userRole.toLowerCase())) {
+          throw new EdgeError("FORBIDDEN", "Non-admin roles cannot manage integration credentials", 403);
+        }
+
+        // Must be the tenant owner or have admin/manager role in the tenant
+        if (userRole !== "super_admin" && authenticatedUserId !== targetTenantId) {
+          const { data: callerProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("tenant_id, role")
+            .eq("id", authenticatedUserId!)
+            .maybeSingle();
+
+          const isTenantAdminOrManager =
+            callerProfile?.tenant_id === targetTenantId &&
+            (callerProfile?.role === "admin" || callerProfile?.role === "manager");
+
+          if (!isTenantAdminOrManager) {
+            throw new EdgeError("FORBIDDEN", "Forbidden: You are not an administrator of this tenant", 403);
+          }
+        }
+      }
+
+      // ACTION: SAVE CONFIG (Write-Only Credential Persistence)
+      if (action === "save-config") {
+        const rawInstanceId = data.instance_id || body.instance_id || body.instanceId;
+        const rawToken = data.token || body.token;
+        const rawClientToken = data.client_token || body.client_token;
+        const rawServerUrl = data.server_url || body.server_url || "https://api.z-api.io";
+        const rawPhone = data.phone || body.phone || "";
+
+        if (!rawInstanceId || typeof rawInstanceId !== "string" || !rawInstanceId.trim()) {
+          throw new EdgeError("INVALID_REQUEST", "Instance ID is required", 400);
+        }
+        if (!rawToken || typeof rawToken !== "string" || !rawToken.trim()) {
+          throw new EdgeError("INVALID_REQUEST", "Token is required", 400);
+        }
+
+        const trimmedInstanceId = rawInstanceId.trim();
+        const trimmedToken = rawToken.trim();
+        const trimmedClientToken = rawClientToken && typeof rawClientToken === "string" ? rawClientToken.trim() : null;
+        const trimmedServerUrl = rawServerUrl.trim();
+        const normalizedPhone = rawPhone.replace(/\D/g, "");
+
+        // 1. Try secure RPC backed by Supabase Vault
+        let rpcSucceeded = false;
+        try {
+          const { data: rpcRes, error: rpcErr } = await supabaseAdmin.rpc("set_whatsapp_credentials", {
+            p_tenant_id: targetTenantId,
+            p_instance_id: trimmedInstanceId,
+            p_token: trimmedToken,
+            p_client_token: trimmedClientToken,
+            p_phone: normalizedPhone || null,
+            p_server_url: trimmedServerUrl,
+          });
+          if (!rpcErr && rpcRes) {
+            rpcSucceeded = true;
+          }
+        } catch {
+          // Fall through to fallback
+        }
+
+        // 2. Direct fallback upsert via service role if RPC is not yet materialized in DB
+        if (!rpcSucceeded) {
+          const { data: existing } = await supabaseAdmin
+            .from("whatsapp_instances")
+            .select("id")
+            .eq("tenant_id", targetTenantId)
+            .maybeSingle();
+
+          const upsertPayload: any = {
+            tenant_id: targetTenantId,
+            instance_id: trimmedInstanceId,
+            server_url: trimmedServerUrl,
+            phone: normalizedPhone,
+            provider: "z-api",
+            updated_at: new Date().toISOString(),
+          };
+
+          // Store in legacy token columns only if available
+          upsertPayload.token = trimmedToken;
+          if (trimmedClientToken) upsertPayload.client_token = trimmedClientToken;
+
+          if (existing?.id) {
+            await supabaseAdmin.from("whatsapp_instances").update(upsertPayload).eq("id", existing.id);
+          } else {
+            upsertPayload.status = "disconnected";
+            upsertPayload.connected = false;
+            await supabaseAdmin.from("whatsapp_instances").insert([upsertPayload]);
+          }
+        }
+
+        // Audit log safe save event (zero raw secrets)
+        await logZApiIntegration(supabaseAdmin, {
+          tenant_id: targetTenantId,
+          instance_id: trimmedInstanceId,
+          action: "save-config",
+          method: "POST",
+          status_code: 200,
+          token: trimmedToken,
+          client_token: trimmedClientToken || undefined,
+        });
+
+        // Return SAFE metadata ONLY: Never echo or return raw token/client_token
+        return jsonResponse(
+          {
+            success: true,
+            configured: true,
+            connected: false,
+            phone: normalizedPhone || null,
+            instanceIdMasked: maskSecret(trimmedInstanceId),
+            tokenConfigured: true,
+            clientTokenConfigured: Boolean(trimmedClientToken),
+          },
+          200,
+          corsHeaders
+        );
+      }
+
+      // ACTION: GET STATUS (Safe Non-Sensitive Telemetry)
+      if (action === "get-status") {
+        const inst = await getTenantWhatsAppInstance(supabaseAdmin, targetTenantId);
+        const creds = await getTenantWhatsAppCredentials(supabaseAdmin, targetTenantId);
+
+        const isTokenConfigured = Boolean(
+          creds?.token || (inst as any)?.token_secret_id || (inst as any)?.token_configured || (inst as any)?.token
+        );
+        const isClientTokenConfigured = Boolean(
+          creds?.client_token || (inst as any)?.client_token_secret_id || (inst as any)?.client_token_configured || (inst as any)?.client_token
+        );
+
+        return jsonResponse(
+          {
+            success: true,
+            id: inst?.id || null,
+            configured: Boolean(inst),
+            connected: Boolean(inst?.connected),
+            status: inst?.status || "disconnected",
+            phone: inst?.phone || null,
+            instanceId: inst?.instance_id || null,
+            instanceIdMasked: inst?.instance_id ? maskSecret(inst.instance_id) : null,
+            serverUrl: inst?.server_url || "https://api.z-api.io",
+            tokenConfigured: isTokenConfigured,
+            clientTokenConfigured: isClientTokenConfigured,
+            webhookReceivedUrl: inst?.webhook_received_url || null,
+            webhookReceivedConfiguredAt: inst?.webhook_received_configured_at || null,
+          },
+          200,
+          corsHeaders
+        );
+      }
+
+      // ACTION: REMOVE CONFIG (Safe Secret Revocation)
+      if (action === "remove-config") {
+        let rpcDone = false;
+        try {
+          const { data: delRes, error: delErr } = await supabaseAdmin.rpc("delete_whatsapp_credentials", {
+            p_tenant_id: targetTenantId,
+          });
+          if (!delErr && delRes === true) {
+            rpcDone = true;
+          }
+        } catch {
+          // Fallback
+        }
+
+        if (!rpcDone) {
+          await supabaseAdmin.from("whatsapp_instances").delete().eq("tenant_id", targetTenantId);
+        }
+
+        return jsonResponse({ success: true, removed: true }, 200, corsHeaders);
+      }
+    }
+
+    // =========================================================================
+    // SECTION B: PROVIDER OPERATIONS (send-text, send-button, check-status, etc.)
+    // =========================================================================
+
+    // 4. Retrieve Tenant WhatsApp Credentials Securely from Server-Side Storage
+    const credentials = await getTenantWhatsAppCredentials(supabaseAdmin, targetTenantId);
+    if (!credentials || !credentials.token) {
+      throw new EdgeError(
         "NOT_FOUND",
-        "WhatsApp instance not found for this tenant",
+        "WhatsApp credentials not configured for this tenant. Configure credentials first.",
         404
       );
     }
 
     // 5. Rate Limiting for Browser-Facing Manual Sends
     if (!isServiceRole && (action === "send-test-message" || action === "send-test-button" || action === "send-text")) {
-      await checkRateLimit(supabaseAdmin, `zapi_send_${authenticatedUserId}`, 30, 60);
+      await checkRateLimit(`zapi_send_${authenticatedUserId}`, 30, 60);
     }
 
     // 6. Cross-Tenant Customer Validation (if customerId is supplied)
@@ -186,14 +418,14 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (!customer || customer.tenant_id !== targetTenantId) {
-        throw new AppError("FORBIDDEN", "Customer does not belong to this tenant", 403);
+        throw new EdgeError("FORBIDDEN", "Customer does not belong to this tenant", 403);
       }
     }
 
     // 7. Execute Actions
     switch (action) {
       case "check-status": {
-        const result = await checkZApiStatus(instance);
+        const result = await checkZApiStatus(credentials as any);
         // Update database with latest status
         await supabaseAdmin
           .from("whatsapp_instances")
@@ -202,17 +434,17 @@ serve(async (req: Request) => {
             status: result.status,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", instance.id);
+          .eq("id", credentials.id);
 
         await logZApiIntegration(supabaseAdmin, {
           tenant_id: targetTenantId,
-          instance_id: instance.instance_id,
+          instance_id: credentials.instance_id,
           action: "check-status",
           method: "GET",
           status_code: 200,
           response_payload: result.raw,
-          token: instance.token,
-          client_token: instance.client_token || undefined,
+          token: credentials.token,
+          client_token: credentials.client_token || undefined,
         });
 
         return jsonResponse(
@@ -231,7 +463,7 @@ serve(async (req: Request) => {
           webhookUrl ||
           `${Deno.env.get("SUPABASE_URL")}/functions/v1/zapi-webhook`;
 
-        const result = await setZApiWebhook(instance, targetWebhookUrl);
+        const result = await setZApiWebhook(credentials as any, targetWebhookUrl);
 
         if (result.success) {
           await supabaseAdmin
@@ -242,19 +474,19 @@ serve(async (req: Request) => {
               webhook_received_last_response: result.results,
               updated_at: new Date().toISOString(),
             })
-            .eq("id", instance.id);
+            .eq("id", credentials.id);
         }
 
         await logZApiIntegration(supabaseAdmin, {
           tenant_id: targetTenantId,
-          instance_id: instance.instance_id,
+          instance_id: credentials.instance_id,
           action: "set-webhook",
           method: "PUT",
           status_code: result.success ? 200 : 400,
           request_payload: { webhookUrl: targetWebhookUrl },
           response_payload: result.results,
-          token: instance.token,
-          client_token: instance.client_token || undefined,
+          token: credentials.token,
+          client_token: credentials.client_token || undefined,
         });
 
         return jsonResponse(
@@ -269,7 +501,7 @@ serve(async (req: Request) => {
       }
 
       case "disconnect": {
-        const result = await disconnectZApi(instance);
+        const result = await disconnectZApi(credentials as any);
         await supabaseAdmin
           .from("whatsapp_instances")
           .update({
@@ -277,24 +509,24 @@ serve(async (req: Request) => {
             status: "disconnected",
             updated_at: new Date().toISOString(),
           })
-          .eq("id", instance.id);
+          .eq("id", credentials.id);
 
         await logZApiIntegration(supabaseAdmin, {
           tenant_id: targetTenantId,
-          instance_id: instance.instance_id,
+          instance_id: credentials.instance_id,
           action: "disconnect",
           method: "GET",
           status_code: 200,
           response_payload: result.raw,
-          token: instance.token,
-          client_token: instance.client_token || undefined,
+          token: credentials.token,
+          client_token: credentials.client_token || undefined,
         });
 
         return jsonResponse({ success: true, status: "disconnected" }, 200, corsHeaders);
       }
 
       case "get-qrcode": {
-        const result = await getZApiQRCode(instance);
+        const result = await getZApiQRCode(credentials as any);
         return jsonResponse(
           {
             success: result.success,
@@ -308,15 +540,15 @@ serve(async (req: Request) => {
       case "send-text":
       case "send-test-message": {
         if (!phone) {
-          throw new AppError("INVALID_REQUEST", "Recipient phone is required", 400);
+          throw new EdgeError("INVALID_REQUEST", "Recipient phone is required", 400);
         }
-        const textMessage = message || "Mensagem de teste BarberX";
+        const textMessage = message || "Mensagem de teste Barbex";
 
-        const result = await sendZApiText(instance, phone, textMessage);
+        const result = await sendZApiText(credentials as any, phone, textMessage);
 
         await logZApiIntegration(supabaseAdmin, {
           tenant_id: targetTenantId,
-          instance_id: instance.instance_id,
+          instance_id: credentials.instance_id,
           action: action,
           method: "POST",
           phone: phone,
@@ -324,12 +556,12 @@ serve(async (req: Request) => {
           request_payload: { phone: maskPhone(phone), action },
           response_payload: result.raw,
           error_message: result.error || undefined,
-          token: instance.token,
-          client_token: instance.client_token || undefined,
+          token: credentials.token,
+          client_token: credentials.client_token || undefined,
         });
 
         if (!result.success) {
-          throw new AppError(
+          throw new EdgeError(
             "SERVICE_UNAVAILABLE",
             result.error || "Failed to send WhatsApp text message",
             result.status || 502
@@ -350,7 +582,7 @@ serve(async (req: Request) => {
       case "send-button":
       case "send-test-button": {
         if (!phone) {
-          throw new AppError("INVALID_REQUEST", "Recipient phone is required", 400);
+          throw new EdgeError("INVALID_REQUEST", "Recipient phone is required", 400);
         }
         const textMessage =
           message || "Por favor, confirme seu agendamento no botão abaixo:";
@@ -359,11 +591,11 @@ serve(async (req: Request) => {
             ? buttons
             : [{ id: "main_confirm", label: "Confirmar Agendamento" }];
 
-        const result = await sendZApiButton(instance, phone, textMessage, buttonList);
+        const result = await sendZApiButton(credentials as any, phone, textMessage, buttonList);
 
         await logZApiIntegration(supabaseAdmin, {
           tenant_id: targetTenantId,
-          instance_id: instance.instance_id,
+          instance_id: credentials.instance_id,
           action: action,
           method: "POST",
           phone: phone,
@@ -371,12 +603,12 @@ serve(async (req: Request) => {
           request_payload: { phone: maskPhone(phone), buttonsCount: buttonList.length },
           response_payload: result.raw,
           error_message: result.error || undefined,
-          token: instance.token,
-          client_token: instance.client_token || undefined,
+          token: credentials.token,
+          client_token: credentials.client_token || undefined,
         });
 
         if (!result.success) {
-          throw new AppError(
+          throw new EdgeError(
             "SERVICE_UNAVAILABLE",
             result.error || "Failed to send WhatsApp button message",
             result.status || 502
@@ -396,17 +628,17 @@ serve(async (req: Request) => {
 
       case "send-image": {
         if (!phone) {
-          throw new AppError("INVALID_REQUEST", "Recipient phone is required", 400);
+          throw new EdgeError("INVALID_REQUEST", "Recipient phone is required", 400);
         }
         if (!imageUrl) {
-          throw new AppError("INVALID_REQUEST", "Image URL is required", 400);
+          throw new EdgeError("INVALID_REQUEST", "Image URL is required", 400);
         }
 
-        const result = await sendZApiImage(instance, phone, imageUrl, caption);
+        const result = await sendZApiImage(credentials as any, phone, imageUrl, caption);
 
         await logZApiIntegration(supabaseAdmin, {
           tenant_id: targetTenantId,
-          instance_id: instance.instance_id,
+          instance_id: credentials.instance_id,
           action: "send-image",
           method: "POST",
           phone: phone,
@@ -414,12 +646,12 @@ serve(async (req: Request) => {
           request_payload: { phone: maskPhone(phone), imageUrl },
           response_payload: result.raw,
           error_message: result.error || undefined,
-          token: instance.token,
-          client_token: instance.client_token || undefined,
+          token: credentials.token,
+          client_token: credentials.client_token || undefined,
         });
 
         if (!result.success) {
-          throw new AppError(
+          throw new EdgeError(
             "SERVICE_UNAVAILABLE",
             result.error || "Failed to send WhatsApp image message",
             result.status || 502
@@ -438,7 +670,7 @@ serve(async (req: Request) => {
       }
 
       default:
-        throw new AppError("INVALID_REQUEST", `Unsupported action: ${action}`, 400);
+        throw new EdgeError("INVALID_REQUEST", `Unsupported action: ${action}`, 400);
     }
   } catch (err) {
     return errorResponse(err, corsHeaders);

@@ -8,17 +8,20 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { createSupabaseAdminClient } from "../_shared/supabase-admin.ts";
-import { jsonResponse, errorResponse } from "../_shared/response.ts";
-import { AppError } from "../_shared/errors.ts";
+import { createAdminClient } from "../_shared/supabase-admin.ts";
+import { EdgeError } from "../_shared/errors.ts";
 import {
   getWhatsAppInstanceByInstanceId,
   getTenantWhatsAppInstance,
+  getTenantWhatsAppCredentials,
+  getWhatsAppCredentialsByInstanceId,
   sendZApiText,
   maskPhone,
   maskSecret,
+  constantTimeCompare,
   normalizePhoneForZApi,
   WhatsAppInstance,
+  WhatsAppCredentials,
 } from "../_shared/zapi.ts";
 
 /** Mantém apenas dígitos e remove o DDI 55 para comparar telefones localmente */
@@ -27,9 +30,31 @@ function stripDDI55(raw: unknown): string {
   return digits.startsWith("55") ? digits.slice(2) : digits;
 }
 
+function jsonResponse(data: unknown, status = 200, headers: HeadersInit = {}): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  });
+}
+
+function errorResponse(err: any, headers: HeadersInit = {}): Response {
+  const status = err?.status || 500;
+  const message = err?.message || "Internal server error";
+  const code = err?.code || "INTERNAL_ERROR";
+  return new Response(JSON.stringify({ ok: false, success: false, error: message, code }), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  });
+}
+
 serve(async (req: Request) => {
-  const origin = req.headers.get("origin");
-  const corsHeaders = getCorsHeaders(origin);
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -41,11 +66,11 @@ serve(async (req: Request) => {
   }
 
   if (req.method !== "POST") {
-    return errorResponse(new AppError("METHOD_NOT_ALLOWED", "Method not allowed", 405), corsHeaders);
+    return errorResponse(new EdgeError("INVALID_REQUEST", "Method not allowed", 405), corsHeaders);
   }
 
   try {
-    const supabaseAdmin = createSupabaseAdminClient();
+    const supabaseAdmin = createAdminClient();
     const url = new URL(req.url);
 
     // 1. Parse Payload
@@ -53,10 +78,10 @@ serve(async (req: Request) => {
     try {
       body = await req.json();
     } catch {
-      throw new AppError("INVALID_REQUEST", "Invalid JSON payload", 400);
+      throw new EdgeError("INVALID_REQUEST", "Invalid JSON payload", 400);
     }
 
-    // 2. Identify Instance & Tenant
+    // 2. Identify Instance & Tenant Securely
     const instanceId =
       body.instanceId ||
       body.instance_id ||
@@ -69,21 +94,30 @@ serve(async (req: Request) => {
       url.searchParams.get("tenantId") ||
       "";
 
+    let credentials: WhatsAppCredentials | null = null;
     let instance: WhatsAppInstance | null = null;
 
     if (instanceId) {
-      instance = await getWhatsAppInstanceByInstanceId(supabaseAdmin, instanceId);
+      credentials = await getWhatsAppCredentialsByInstanceId(supabaseAdmin, instanceId);
+      if (!credentials) {
+        instance = await getWhatsAppInstanceByInstanceId(supabaseAdmin, instanceId);
+      }
     } else if (barbershopIdFromQuery) {
-      instance = await getTenantWhatsAppInstance(supabaseAdmin, barbershopIdFromQuery);
+      credentials = await getTenantWhatsAppCredentials(supabaseAdmin, barbershopIdFromQuery);
+      if (!credentials) {
+        instance = await getTenantWhatsAppInstance(supabaseAdmin, barbershopIdFromQuery);
+      }
     }
 
-    if (!instance) {
+    const effectiveInstance = credentials || instance;
+
+    if (!effectiveInstance) {
       // If instance is unknown, reject unauthorized
       console.warn(`[Z-API Webhook] Unknown instance or tenant. instanceId=[${instanceId}] tenant=[${barbershopIdFromQuery}]`);
       return jsonResponse({ success: false, error: "UNAUTHORIZED_INSTANCE" }, 401, corsHeaders);
     }
 
-    // 3. Provider Authentication Verification
+    // 3. Provider Authentication Verification with Constant-Time Comparison
     const providedClientToken =
       req.headers.get("client-token") ||
       req.headers.get("Client-Token") ||
@@ -96,23 +130,26 @@ serve(async (req: Request) => {
       url.searchParams.get("token") ||
       "";
 
-    // If instance has client_token or webhook_token configured, enforce match
-    if (instance.client_token && instance.client_token.trim().length > 0) {
-      if (
-        providedClientToken !== instance.client_token.trim() &&
-        providedWebhookToken !== (instance.webhook_token || instance.token)
-      ) {
-        console.warn(`[Z-API Webhook] Invalid client-token for instance ${instance.instance_id}`);
+    const expectedClientToken = credentials?.client_token || effectiveInstance.client_token;
+    const expectedWebhookToken = credentials?.webhook_token || effectiveInstance.webhook_token;
+    const expectedToken = credentials?.token || (effectiveInstance as any).token;
+
+    // If client_token or webhook_token configured, enforce constant-time match
+    if (expectedClientToken && expectedClientToken.trim().length > 0) {
+      const matchClient = constantTimeCompare(providedClientToken, expectedClientToken.trim());
+      const matchWebhook = constantTimeCompare(providedWebhookToken, expectedWebhookToken || expectedToken);
+      if (!matchClient && !matchWebhook) {
+        console.warn(`[Z-API Webhook] Invalid client-token for instance ${effectiveInstance.instance_id}`);
         return jsonResponse({ success: false, error: "UNAUTHORIZED" }, 401, corsHeaders);
       }
-    } else if (instance.webhook_token && instance.webhook_token.trim().length > 0) {
-      if (providedWebhookToken !== instance.webhook_token.trim()) {
-        console.warn(`[Z-API Webhook] Invalid webhook-token for instance ${instance.instance_id}`);
+    } else if (expectedWebhookToken && expectedWebhookToken.trim().length > 0) {
+      if (!constantTimeCompare(providedWebhookToken, expectedWebhookToken.trim())) {
+        console.warn(`[Z-API Webhook] Invalid webhook-token for instance ${effectiveInstance.instance_id}`);
         return jsonResponse({ success: false, error: "UNAUTHORIZED" }, 401, corsHeaders);
       }
     }
 
-    const tenantId = instance.tenant_id;
+    const tenantId = effectiveInstance.tenant_id;
     const eventType = body.type || "unknown_event";
 
     // 4. Extract Event / Message Identifier for Idempotency
@@ -129,7 +166,7 @@ serve(async (req: Request) => {
       p_event_id: String(eventId),
       p_event_type: eventType,
       p_tenant_id: tenantId,
-      p_instance_id: instance.instance_id,
+      p_instance_id: effectiveInstance.instance_id,
       p_source: "zapi_webhook",
     });
 
@@ -207,9 +244,9 @@ serve(async (req: Request) => {
               .eq("id", matchingAppt.id);
 
             // Send confirmation acknowledgment back via WhatsApp
-            if (instance.connected) {
+            if (effectiveInstance.connected && (effectiveInstance as any).token) {
               await sendZApiText(
-                instance,
+                effectiveInstance as any,
                 rawPhone,
                 "✅ Seu agendamento foi confirmado com sucesso! Te esperamos lá."
               );
@@ -239,26 +276,30 @@ serve(async (req: Request) => {
       }
 
       case "ConnectedCallback": {
-        await supabaseAdmin
-          .from("whatsapp_instances")
-          .update({
-            connected: true,
-            status: "connected",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", instance.id);
+        if (effectiveInstance.id) {
+          await supabaseAdmin
+            .from("whatsapp_instances")
+            .update({
+              connected: true,
+              status: "connected",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", effectiveInstance.id);
+        }
         break;
       }
 
       case "DisconnectedCallback": {
-        await supabaseAdmin
-          .from("whatsapp_instances")
-          .update({
-            connected: false,
-            status: "disconnected",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", instance.id);
+        if (effectiveInstance.id) {
+          await supabaseAdmin
+            .from("whatsapp_instances")
+            .update({
+              connected: false,
+              status: "disconnected",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", effectiveInstance.id);
+        }
         break;
       }
 

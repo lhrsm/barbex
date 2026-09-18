@@ -5,17 +5,19 @@
 // Multi-tenant safe, zero secret leaks, PII masked, robust error handling.
 // ==============================================================================
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { normalizePhoneBR } from "./phone.ts";
-import { AppError } from "./errors.ts";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
 
 export interface WhatsAppInstance {
   id: string;
   tenant_id: string;
   barber_id?: string | null;
   instance_id: string;
-  token: string;
+  token?: string | null;
   client_token?: string | null;
+  token_secret_id?: string | null;
+  client_token_secret_id?: string | null;
+  token_configured?: boolean | null;
+  client_token_configured?: boolean | null;
   server_url?: string | null;
   provider: string;
   connected?: boolean | null;
@@ -84,8 +86,163 @@ export function normalizePhoneForZApi(rawPhone: string): string {
   return digits;
 }
 
+export interface WhatsAppCredentials {
+  id: string;
+  tenant_id: string;
+  instance_id: string;
+  server_url?: string | null;
+  token: string;
+  client_token?: string | null;
+  phone?: string | null;
+  status?: string | null;
+  connected?: boolean | null;
+  webhook_received_url?: string | null;
+  webhook_token?: string | null;
+}
+
 /**
- * Retrieves the WhatsApp instance for a given tenant.
+ * Constant-time string comparison to prevent timing attacks on tokens.
+ */
+export function constantTimeCompare(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const bufA = new TextEncoder().encode(a);
+  const bufB = new TextEncoder().encode(b);
+  if (bufA.byteLength !== bufB.byteLength) return false;
+  let diff = 0;
+  for (let i = 0; i < bufA.byteLength; i++) {
+    diff |= bufA[i] ^ bufB[i];
+  }
+  return diff === 0;
+}
+
+/**
+ * Retrieves decrypted WhatsApp credentials for a given tenant inside trusted server execution.
+ * Fails closed if tenant, integration, or credentials are missing.
+ */
+export async function getTenantWhatsAppCredentials(
+  supabase: SupabaseClient,
+  tenantId: string
+): Promise<WhatsAppCredentials | null> {
+  if (!tenantId || typeof tenantId !== "string" || tenantId.trim() === "") {
+    return null;
+  }
+
+  // 1. Try secure RPC backed by Supabase Vault
+  try {
+    const { data: rpcRows, error: rpcErr } = await supabase.rpc("get_whatsapp_credentials", {
+      p_tenant_id: tenantId,
+    });
+    if (!rpcErr && rpcRows && rpcRows.length > 0) {
+      const row = rpcRows[0];
+      if (row.token && row.instance_id) {
+        return {
+          id: row.id,
+          tenant_id: row.tenant_id,
+          instance_id: row.instance_id,
+          server_url: row.server_url || "https://api.z-api.io",
+          phone: row.phone,
+          status: row.status,
+          connected: row.connected,
+          token: row.token,
+          client_token: row.client_token,
+          webhook_received_url: row.webhook_received_url,
+          webhook_token: row.webhook_token,
+        };
+      }
+    }
+  } catch {
+    // Fall back to table check
+  }
+
+  // 2. Direct table lookup (supporting Vault references and backward compatibility)
+  const { data: inst, error } = await supabase
+    .from("whatsapp_instances")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (error || !inst) {
+    return null;
+  }
+
+  let token = (inst as any).token || "";
+  let clientToken = (inst as any).client_token || null;
+
+  // Resolve Vault secrets if IDs are stored
+  if (!token && (inst as any).token_secret_id) {
+    try {
+      const { data: sec } = await supabase
+        .schema("vault")
+        .from("decrypted_secrets")
+        .select("decrypted_secret")
+        .eq("id", (inst as any).token_secret_id)
+        .maybeSingle();
+      if (sec?.decrypted_secret) {
+        token = sec.decrypted_secret;
+      }
+    } catch {
+      // Vault schema query not permitted or failed
+    }
+  }
+
+  if (!clientToken && (inst as any).client_token_secret_id) {
+    try {
+      const { data: sec } = await supabase
+        .schema("vault")
+        .from("decrypted_secrets")
+        .select("decrypted_secret")
+        .eq("id", (inst as any).client_token_secret_id)
+        .maybeSingle();
+      if (sec?.decrypted_secret) {
+        clientToken = sec.decrypted_secret;
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+
+  // Fail closed if instance or token is absent
+  if (!token || !inst.instance_id) {
+    return null;
+  }
+
+  return {
+    id: inst.id,
+    tenant_id: inst.tenant_id,
+    instance_id: inst.instance_id,
+    server_url: inst.server_url || "https://api.z-api.io",
+    token,
+    client_token: clientToken,
+    phone: inst.phone,
+    status: inst.status,
+    connected: inst.connected,
+    webhook_received_url: inst.webhook_received_url,
+    webhook_token: inst.webhook_token,
+  };
+}
+
+/**
+ * Retrieves WhatsApp credentials by Z-API instance ID.
+ */
+export async function getWhatsAppCredentialsByInstanceId(
+  supabase: SupabaseClient,
+  instanceId: string
+): Promise<WhatsAppCredentials | null> {
+  const { data: inst, error } = await supabase
+    .from("whatsapp_instances")
+    .select("tenant_id")
+    .eq("instance_id", instanceId)
+    .maybeSingle();
+
+  if (error || !inst?.tenant_id) {
+    return null;
+  }
+
+  return getTenantWhatsAppCredentials(supabase, inst.tenant_id);
+}
+
+/**
+ * Retrieves the WhatsApp instance for a given tenant (metadata only, no raw token required).
  */
 export async function getTenantWhatsAppInstance(
   supabase: SupabaseClient,

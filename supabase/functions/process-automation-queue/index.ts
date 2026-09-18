@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { sendMessage } from "../_shared/whatsapp-settings.ts";
+import { sendMessage, getWhatsAppSettings } from "../_shared/whatsapp-settings.ts";
 import { sendAutomationMessageV2 } from "../_shared/automation-v2-engine.ts";
 import { formatBrazilDate, formatBrazilTime } from "../_shared/utils.ts";
 import { processAutomationTemplate } from "../_shared/template-parser.ts";
@@ -399,8 +399,8 @@ serve(async (req) => {
           continue;
         }
 
-        const { data: instance } = await supabase.from("whatsapp_instances").select("*").eq("tenant_id", itemTenantId).maybeSingle();
-        if (!instance) throw new Error("WhatsApp not configured (instance not found)");
+        const instance = await getWhatsAppSettings(supabase, itemTenantId);
+        if (!instance || !instance.token) throw new Error("WhatsApp not configured (instance not found)");
 
         // Recipient-aware phone resolution (event-driven automations set payload.recipient_phone)
         const recipient = automation?.recipient || item.payload?.recipient || 'customer';

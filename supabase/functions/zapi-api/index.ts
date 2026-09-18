@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
 import { sendMessage } from "../_shared/whatsapp-settings.ts";
+import { getTenantWhatsAppCredentials } from "../_shared/zapi.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,10 +38,15 @@ serve(async (req) => {
       throw new Error("Instância não encontrada");
     }
 
-    const instanceId = instance.instance_id;
-    const token = instance.token;
-    const clientToken = instance.client_token;
-    const baseUrl = instance.server_url || "https://api.z-api.io";
+    const credentials = await getTenantWhatsAppCredentials(supabase, instance.tenant_id);
+    if (!credentials || !credentials.token) {
+      throw new Error("Credenciais da instância não configuradas");
+    }
+
+    const instanceId = credentials.instance_id;
+    const token = credentials.token;
+    const clientToken = credentials.client_token;
+    const baseUrl = credentials.server_url || "https://api.z-api.io";
 
     console.log(`[Z-API] Action: ${action} | Instance: ${instanceId}`);
 
@@ -83,7 +89,7 @@ serve(async (req) => {
             token_masked: maskToken(token),
             client_token_masked: maskToken(clientToken)
           }]);
-      } catch (e) {
+      } catch (e: any) {
         console.error("[Z-API] Error logging to DB:", e.message);
       }
     }
@@ -375,7 +381,7 @@ serve(async (req) => {
             endpointUsed: url,
             methodUsed: "PUT"
           };
-        } catch (e) {
+        } catch (e: any) {
           return { type: webhookType, error: e.message, success: false, required: typeInfo.required, isCompatible: false, url };
         }
       }));
@@ -488,7 +494,7 @@ serve(async (req) => {
 
     throw new Error("Ação inválida");
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Z-API Edge Function] Error:", error.message);
     return new Response(JSON.stringify({ 
       error: error.message,

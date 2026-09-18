@@ -1,14 +1,8 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
+import { getTenantWhatsAppCredentials, WhatsAppCredentials } from "./zapi.ts";
 
-export async function getWhatsAppSettings(supabase: any, tenantId: string) {
-  const { data: connection, error } = await supabase
-    .from("whatsapp_instances")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-
-  if (error || !connection) return null;
-  return connection;
+export async function getWhatsAppSettings(supabase: any, tenantId: string): Promise<WhatsAppCredentials | null> {
+  return getTenantWhatsAppCredentials(supabase, tenantId);
 }
 
 export interface ZApiButton {
@@ -37,6 +31,10 @@ export async function sendMessage(
     }
   }
 ) {
+  if (!connection?.token || !connection?.instance_id) {
+    return { success: false, error: "CREDENTIALS_NOT_CONFIGURED" };
+  }
+
   const instanceId = connection.instance_id;
   const token = connection.token;
   const clientToken = connection.client_token;

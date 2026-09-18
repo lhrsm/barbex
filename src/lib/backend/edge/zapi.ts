@@ -92,7 +92,7 @@ function unwrapInput<T>(input: T | { data: T }): T {
  */
 export async function sendZApiText(
   rawInput: SendZApiTextInput | { data: SendZApiTextInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ messageId?: string; status?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -116,7 +116,7 @@ export async function sendZApiText(
       tenantId: input.tenantId,
       instanceId: input.instanceId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -142,7 +142,7 @@ export async function sendZApiText(
  */
 export async function sendZApiButton(
   rawInput: SendZApiButtonInput | { data: SendZApiButtonInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ messageId?: string; status?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -168,7 +168,7 @@ export async function sendZApiButton(
       tenantId: input.tenantId,
       instanceId: input.instanceId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -194,7 +194,7 @@ export async function sendZApiButton(
  */
 export async function sendZApiImage(
   rawInput: SendZApiImageInput | { data: SendZApiImageInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ messageId?: string; status?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -220,7 +220,7 @@ export async function sendZApiImage(
       tenantId: input.tenantId,
       instanceId: input.instanceId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -246,7 +246,7 @@ export async function sendZApiImage(
  */
 export async function sendZApiTestMessage(
   rawInput: SendZApiTestMessageInput | { data: SendZApiTestMessageInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ messageId?: string; status?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -268,7 +268,7 @@ export async function sendZApiTestMessage(
       instanceId: input.instanceId,
       tenantId: input.tenantId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -294,7 +294,7 @@ export async function sendZApiTestMessage(
  */
 export async function sendZApiTestButton(
   rawInput: SendZApiTestButtonInput | { data: SendZApiTestButtonInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ messageId?: string; status?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -318,7 +318,7 @@ export async function sendZApiTestButton(
       instanceId: input.instanceId,
       tenantId: input.tenantId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -344,7 +344,7 @@ export async function sendZApiTestButton(
  */
 export async function checkZApiStatus(
   rawInput: CheckZApiStatusInput | { data: CheckZApiStatusInput } = {},
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ connected: boolean; status: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -362,7 +362,7 @@ export async function checkZApiStatus(
       instanceId: input.instanceId,
       tenantId: input.tenantId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -388,7 +388,7 @@ export async function checkZApiStatus(
  */
 export async function setZApiWebhook(
   rawInput: SetZApiWebhookInput | { data: SetZApiWebhookInput } = {},
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ webhookUrl: string; results?: unknown }>> {
   const input = unwrapInput(rawInput);
 
@@ -408,7 +408,7 @@ export async function setZApiWebhook(
       instanceId: input.instanceId,
       tenantId: input.tenantId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -434,7 +434,7 @@ export async function setZApiWebhook(
  */
 export async function disconnectZApi(
   rawInput: DisconnectZApiInput | { data: DisconnectZApiInput } = {},
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ status: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -452,7 +452,7 @@ export async function disconnectZApi(
       instanceId: input.instanceId,
       tenantId: input.tenantId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -477,7 +477,7 @@ export async function disconnectZApi(
  */
 export async function getZApiQRCode(
   rawInput: GetZApiQRCodeInput | { data: GetZApiQRCodeInput } = {},
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<ZApiResult<{ qrCode?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -495,7 +495,7 @@ export async function getZApiQRCode(
       instanceId: input.instanceId,
       tenantId: input.tenantId,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -512,5 +512,196 @@ export async function getZApiQRCode(
     ok: true,
     success: true,
     qrCode: data.qrCode,
+  };
+}
+
+export interface SaveZApiConfigInput {
+  instance_id: string;
+  token: string;
+  client_token?: string;
+  server_url?: string;
+  phone?: string;
+  tenantId?: string;
+}
+
+export interface SaveZApiConfigResult {
+  configured: boolean;
+  connected: boolean;
+  phone?: string | null;
+  instanceIdMasked?: string | null;
+  tokenConfigured: boolean;
+  clientTokenConfigured: boolean;
+}
+
+/**
+ * Saves WhatsApp credentials via write-only secure Edge Function endpoint.
+ * Raw secrets are never stored in browser memory or echoed in responses.
+ */
+export async function saveZApiConfig(
+  rawInput: SaveZApiConfigInput | { data: SaveZApiConfigInput },
+  options?: EdgeInvokeOptions,
+): Promise<ZApiResult<SaveZApiConfigResult>> {
+  const input = unwrapInput(rawInput);
+
+  const result = await invokeEdgeFunction<
+    {
+      action: "save-config";
+      tenantId?: string;
+      instance_id: string;
+      token: string;
+      client_token?: string;
+      server_url?: string;
+      phone?: string;
+    },
+    SaveZApiConfigResult
+  >(
+    "zapi-send",
+    {
+      action: "save-config",
+      tenantId: input.tenantId,
+      instance_id: input.instance_id,
+      token: input.token,
+      client_token: input.client_token,
+      server_url: input.server_url,
+      phone: input.phone,
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      success: false,
+      error: result.message || "Falha ao salvar configurações do WhatsApp.",
+      code: result.code,
+    };
+  }
+
+  const data = (result as any).data || result;
+  return {
+    ok: true,
+    success: true,
+    configured: Boolean(data.configured),
+    connected: Boolean(data.connected),
+    phone: data.phone,
+    instanceIdMasked: data.instanceIdMasked,
+    tokenConfigured: Boolean(data.tokenConfigured),
+    clientTokenConfigured: Boolean(data.clientTokenConfigured),
+  };
+}
+
+export interface GetZApiStatusInput {
+  tenantId?: string;
+}
+
+export interface GetZApiStatusResult {
+  id?: string | null;
+  configured: boolean;
+  connected: boolean;
+  status: string;
+  phone?: string | null;
+  instanceId?: string | null;
+  instanceIdMasked?: string | null;
+  serverUrl: string;
+  tokenConfigured: boolean;
+  clientTokenConfigured: boolean;
+  webhookReceivedUrl?: string | null;
+  webhookReceivedConfiguredAt?: string | null;
+}
+
+/**
+ * Retrieves safe status telemetry for WhatsApp instance.
+ * Never returns or exposes raw provider secrets.
+ */
+export async function getZApiStatus(
+  rawInput: GetZApiStatusInput | { data: GetZApiStatusInput } = {},
+  options?: EdgeInvokeOptions,
+): Promise<ZApiResult<GetZApiStatusResult>> {
+  const input = unwrapInput(rawInput);
+
+  const result = await invokeEdgeFunction<
+    {
+      action: "get-status";
+      tenantId?: string;
+    },
+    GetZApiStatusResult
+  >(
+    "zapi-send",
+    {
+      action: "get-status",
+      tenantId: input.tenantId,
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      success: false,
+      error: result.message || "Falha ao consultar status do WhatsApp.",
+      code: result.code,
+    };
+  }
+
+  const data = (result as any).data || result;
+  return {
+    ok: true,
+    success: true,
+    id: data.id || null,
+    configured: Boolean(data.configured),
+    connected: Boolean(data.connected),
+    status: data.status || "disconnected",
+    phone: data.phone || null,
+    instanceId: data.instanceId || null,
+    instanceIdMasked: data.instanceIdMasked || null,
+    serverUrl: data.serverUrl || "https://api.z-api.io",
+    tokenConfigured: Boolean(data.tokenConfigured),
+    clientTokenConfigured: Boolean(data.clientTokenConfigured),
+    webhookReceivedUrl: data.webhookReceivedUrl || null,
+    webhookReceivedConfiguredAt: data.webhookReceivedConfiguredAt || null,
+  };
+}
+
+export interface RemoveZApiConfigInput {
+  tenantId?: string;
+}
+
+/**
+ * Removes WhatsApp configuration and revokes secrets safely via Edge Function.
+ */
+export async function removeZApiConfig(
+  rawInput: RemoveZApiConfigInput | { data: RemoveZApiConfigInput } = {},
+  options?: EdgeInvokeOptions,
+): Promise<ZApiResult<{ removed: boolean }>> {
+  const input = unwrapInput(rawInput);
+
+  const result = await invokeEdgeFunction<
+    {
+      action: "remove-config";
+      tenantId?: string;
+    },
+    { removed: boolean }
+  >(
+    "zapi-send",
+    {
+      action: "remove-config",
+      tenantId: input.tenantId,
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      success: false,
+      error: result.message || "Falha ao remover configurações do WhatsApp.",
+      code: result.code,
+    };
+  }
+
+  return {
+    ok: true,
+    success: true,
+    removed: true,
   };
 }
