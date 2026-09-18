@@ -1,5 +1,17 @@
 project_id = "ywdwrstxvsdqiryhieiz"
 
+[auth]
+site_url = "https://barbex.shop"
+additional_redirect_urls = [
+  "https://barbex.shop/auth/reset-password",
+  "https://barbex.shop/**",
+  "https://www.barbex.shop/auth/reset-password",
+  "https://www.barbex.shop/**"
+]
+
+[functions.emit-automation-event]
+verify_jwt = false
+
 [functions.zapi-webhook]
 verify_jwt = false
 
