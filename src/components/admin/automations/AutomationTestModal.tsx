@@ -49,6 +49,8 @@ export function AutomationTestModal({
   const [showDebug, setShowDebug] = useState(false);
   const [isLoadingDebug, setIsLoadingDebug] = useState(false);
 
+  const isUnsupportedRecipient = automation?.recipient === 'previous_barber' || automation?.recipient === 'new_barber';
+
   const getActiveSession = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session) {
@@ -275,6 +277,10 @@ export function AutomationTestModal({
   const renderedTemplate = replaceVariables(getBaseTemplate(), testData);
 
   const handleSimulateTrigger = async () => {
+    if (isUnsupportedRecipient) {
+      toast.error("Simulação não disponível para este tipo de destinatário contextual.");
+      return;
+    }
     const session = await getActiveSession();
     if (!session) return;
 
@@ -304,6 +310,10 @@ export function AutomationTestModal({
 
 
   const handleTest = async () => {
+    if (isUnsupportedRecipient) {
+      toast.error("Envio de teste não disponível para este tipo de destinatário contextual.");
+      return;
+    }
     const session = await getActiveSession();
     if (!session) return;
 
@@ -397,6 +407,18 @@ export function AutomationTestModal({
         </DialogHeader>
 
         <div className="p-6 pt-2 space-y-6 overflow-y-auto max-h-[80vh]">
+          {isUnsupportedRecipient && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-300 flex items-start gap-3">
+              <AlertCircle size={18} className="shrink-0 text-amber-400 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-400">Teste Direto Indisponível</p>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Este template utiliza um destinatário contextual ({automation.recipient === 'previous_barber' ? 'Profissional anterior' : 'Novo profissional'}). O teste direto via modal está desativado para garantir a integridade dos dados, mas o template pode ser visualizado e editado normalmente.
+                </p>
+              </div>
+            </div>
+          )}
+
           {testType === "fictitious" && (
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-slate-400 text-xs font-bold uppercase tracking-wider">Telefone de destino</Label>
@@ -689,12 +711,18 @@ export function AutomationTestModal({
             </Button>
             <Button 
               onClick={handleTest} 
-              disabled={isTesting || (testType === "real" && !realData) || isLoadingRealData}
-              className="w-full sm:flex-[1.5] h-12 rounded-xl font-bold bg-amber-500 text-slate-900 hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20"
+              disabled={isTesting || isUnsupportedRecipient || (testType === "real" && !realData) || isLoadingRealData}
+              title={isUnsupportedRecipient ? "Teste direto indisponível para este tipo de destinatário contextual" : undefined}
+              className="w-full sm:flex-[1.5] h-12 rounded-xl font-bold bg-amber-500 text-slate-900 hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isTesting ? (
                 <span className="flex items-center gap-2">
                   <Loader2 size={16} className="animate-spin" /> Enviando...
+                </span>
+              ) : isUnsupportedRecipient ? (
+                <span className="flex flex-col items-center leading-tight">
+                  <span className="text-xs">Teste Indisponível</span>
+                  <span className="text-[9px] opacity-70 font-normal">Destinatário contextual</span>
                 </span>
               ) : (
                 <span className="flex flex-col items-center leading-tight">

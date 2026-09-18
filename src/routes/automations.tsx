@@ -78,6 +78,13 @@ import { withModule } from "@/components/modules/withModule";
 // Casting to any to bypass type errors for new table
 const anySupabase = supabase as any;
 
+import {
+  getRecipientMeta,
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  normalizeAutomationCategory,
+} from "@/lib/automations-contract";
+
 export const Route = createFileRoute("/automations")({
   component: withModule("automations", "Automações", AutomationsComponent),
 });
@@ -285,24 +292,11 @@ function AutomationsComponent() {
           <PremiumTabsBody>
             <PremiumTabsContent value="active">
               {(() => {
-                const CATEGORY_LABELS: Record<string, string> = {
-                  agendamentos: "Agendamentos",
-                  assinaturas: "Assinaturas",
-                  financeiro: "Financeiro",
-                  fidelidade: "Fidelidade",
-                  marketing: "Marketing",
-                };
-                const RECIPIENT_LABELS: Record<string, { label: string; cls: string }> = {
-                  customer: { label: "Cliente", cls: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
-                  barber: { label: "Barbeiro", cls: "bg-purple-500/10 text-purple-400 border-purple-500/30" },
-                  shop: { label: "Barbearia", cls: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
-                };
                 const grouped = automations.reduce((acc: Record<string, any[]>, a: any) => {
-                  const cat = a.category || "agendamentos";
+                  const cat = normalizeAutomationCategory(a.category);
                   (acc[cat] ||= []).push(a);
                   return acc;
                 }, {});
-                const catOrder = ["agendamentos", "assinaturas", "financeiro", "fidelidade", "marketing"];
                 const toggleActive = async (auto: any, next: boolean) => {
                   setAutomations((prev) => prev.map((x) => (x.id === auto.id ? { ...x, active: next } : x)));
                   const { error } = await anySupabase.from("automation_templates").update({ active: next }).eq("id", auto.id);
@@ -315,12 +309,12 @@ function AutomationsComponent() {
                 };
                 return (
                   <div className="space-y-8">
-                    {catOrder.filter((c) => grouped[c]?.length).map((cat) => (
+                    {CATEGORY_ORDER.filter((c) => grouped[c]?.length).map((cat) => (
                       <div key={cat}>
-                        <h2 className="text-xs font-black uppercase tracking-widest text-amber-500 mb-3">{CATEGORY_LABELS[cat]}</h2>
+                        <h2 className="text-xs font-black uppercase tracking-widest text-amber-500 mb-3">{CATEGORY_LABELS[cat] || "Outros"}</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {grouped[cat].map((auto: any) => {
-                            const rec = RECIPIENT_LABELS[auto.recipient || "customer"];
+                            const rec = getRecipientMeta(auto.recipient);
                             return (
                               <Card
                                 key={auto.id}
