@@ -129,15 +129,54 @@ export async function getTeamMembers(
       .eq("tenant_id", input.tenantId),
     client
       .from("tenant_memberships")
-      .select("id, user_id, role, status, created_at, profiles:profiles!tenant_memberships_user_id_fkey(id, full_name, display_name, email, phone, avatar_url, role)")
+      .select("id, user_id, role, status, created_at")
       .eq("tenant_id", input.tenantId)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .order("created_at", { ascending: true }),
   ]);
+
+  if (barbersRes.error) {
+    console.error("[getTeamMembers] Error loading barbers:", barbersRes.error);
+    throw new Error(`Erro ao buscar barbeiros: ${barbersRes.error.message}`);
+  }
+
+  if (membershipsRes.error) {
+    console.error("[getTeamMembers] Error loading tenant memberships:", membershipsRes.error);
+    throw new Error(`Erro ao buscar colaboradores da equipe: ${membershipsRes.error.message}`);
+  }
+
+  // 1. Collect user IDs from tenant memberships to fetch profiles
+  const staffUserIds = Array.from(
+    new Set(
+      (membershipsRes.data || [])
+        .map((m) => m.user_id)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const profilesMap = new Map<string, any>();
+  if (staffUserIds.length > 0) {
+    const profilesRes = await client
+      .from("profiles")
+      .select("id, display_name, responsible_name, email, phone, avatar_url, role")
+      .in("id", staffUserIds);
+
+    if (profilesRes.error) {
+      console.error("[getTeamMembers] Error loading staff profiles:", profilesRes.error);
+      throw new Error(`Erro ao buscar perfis dos colaboradores: ${profilesRes.error.message}`);
+    }
+
+    if (profilesRes.data) {
+      for (const prof of profilesRes.data) {
+        profilesMap.set(prof.id, prof);
+      }
+    }
+  }
 
   const unifiedList: UnifiedTeamMember[] = [];
   const registeredUserIds = new Set<string>();
 
-  // 1. Process Barbers
+  // 2. Process Barbers
   if (barbersRes.data) {
     for (const barber of barbersRes.data) {
       if (barber.user_id) {
@@ -170,25 +209,26 @@ export async function getTeamMembers(
     }
   }
 
-  // 2. Process Staff Memberships (Reception, Manager, Finance, Admin)
+  // 3. Process Staff Memberships (Reception, Manager, Finance, Admin)
   if (membershipsRes.data) {
     for (const mem of membershipsRes.data) {
       if (mem.user_id && registeredUserIds.has(mem.user_id)) {
         continue; // Avoid duplicating user who is already mapped as a barber
       }
-      const prof = (mem as any).profiles;
+      const prof = mem.user_id ? profilesMap.get(mem.user_id) : null;
       const category = mapRoleToCategory(mem.role) || "admin";
+      const staffName = prof?.display_name || prof?.responsible_name || prof?.email || "Colaborador";
       unifiedList.push({
         id: `staff-${mem.id}`,
         entityType: "staff",
         domainId: mem.id,
         userId: mem.user_id,
-        name: prof?.full_name || prof?.display_name || prof?.email || "Colaborador",
-        displayName: prof?.display_name || prof?.full_name,
-        responsibleName: null,
+        name: staffName,
+        displayName: prof?.display_name || prof?.responsible_name || null,
+        responsibleName: prof?.responsible_name || null,
         email: prof?.email || "",
         phone: prof?.phone || "",
-        avatarUrl: prof?.avatar_url,
+        avatarUrl: prof?.avatar_url || null,
         role: mem.role,
         roleLabel: getRoleLabel(mem.role),
         category,

@@ -100,7 +100,13 @@ function TeamManagementPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  const { data: members = [], isLoading: loadingMembers, refetch: refetchMembers } = useQuery<UnifiedTeamMember[]>({
+  const {
+    data: members = [],
+    isLoading: loadingMembers,
+    isError: isMembersError,
+    error: membersError,
+    refetch: refetchMembers,
+  } = useQuery<UnifiedTeamMember[]>({
     queryKey: ["team-members", tenantId],
     queryFn: () => getTeamMembers({ tenantId: tenantId! }),
     enabled: !!tenantId,
@@ -479,6 +485,29 @@ function TeamManagementPage() {
           </button>
         </div>
       </div>
+
+      {/* Error Alert if team members query fails */}
+      {isMembersError && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
+            <div>
+              <p className="font-semibold text-sm">Não foi possível carregar os colaboradores</p>
+              <p className="text-xs text-red-400/80">
+                {(membersError as any)?.message || "Ocorreu um erro ao consultar os membros da equipe."}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchMembers()}
+            className="border-red-500/30 hover:bg-red-500/20 text-xs shrink-0 text-red-300"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      )}
 
       {/* Search and Filters Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
