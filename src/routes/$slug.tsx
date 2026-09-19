@@ -894,7 +894,7 @@ function ShopPageComponent() {
         supabase
           .from("barbers")
           .select("*, barber_services(service_id)")
-          .eq("user_id", currentShop.id)
+          .eq("tenant_id", currentShop.id)
           .eq("active", true),
 
         supabase
@@ -2330,7 +2330,20 @@ function ShopPageComponent() {
                   </nav>
 
                   {/* 3. RIGHT: CTA + Mobile Hamburger */}
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    {shop?.social_links?.instagram && (
+                      <a
+                        href={shop.social_links.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Instagram da Barbearia"
+                        className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-[#0B1324] border border-gold/30 hover:border-gold text-white/80 hover:text-gold flex items-center justify-center transition-all hover:scale-105 shadow-[0_0_12px_rgba(212,175,55,0.15)] shrink-0"
+                      >
+                        <svg className="w-5 h-5 fill-currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM17.5 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+                        </svg>
+                      </a>
+                    )}
                     <Button
                       onClick={handleBookingAction}
                       className={cn(
@@ -2384,7 +2397,21 @@ function ShopPageComponent() {
                             ))}
                           </nav>
                         </div>
-                        <div className="p-4 border-t border-white/10 bg-black/40">
+                        <div className="p-4 border-t border-white/10 bg-black/40 space-y-3">
+                          {shop?.social_links?.instagram && (
+                            <a
+                              href={shop.social_links.instagram}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2.5 w-full h-11 rounded-full bg-white/5 border border-gold/30 hover:border-gold text-white/90 hover:text-gold text-xs font-bold uppercase tracking-wider transition-all"
+                            >
+                              <svg className="w-4 h-4 fill-currentColor text-gold" viewBox="0 0 24 24">
+                                <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM17.5 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+                              </svg>
+                              <span>Siga no Instagram</span>
+                              <ExternalLink size={12} className="text-gold/60" />
+                            </a>
+                          )}
                           <Button
                             onClick={() => {
                               setMobileNavOpen(false);
