@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +31,7 @@ export function EditProfileModal({
   title = "Meu Perfil",
   description = "Mantenha suas informações pessoais e foto de perfil atualizadas.",
 }: EditProfileModalProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
@@ -39,14 +39,33 @@ export function EditProfileModal({
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
+  // Directly fetch fresh profile record to eliminate any stale session/auth state
+  const { data: directProfile } = useQuery({
+    queryKey: ["my-profile-direct", user?.id],
+    enabled: isOpen && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, display_name, responsible_name, full_name, phone, avatar_url")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    staleTime: 0,
+  });
+
   useEffect(() => {
-    if (isOpen && profile) {
-      setName(profile.display_name || profile.responsible_name || profile.full_name || "");
-      setPhone(profile.phone || "");
-      // Strictly personal avatar: never fall back to barbershop logo_url
-      setAvatarUrl((profile as any)?.avatar_url || "");
+    if (isOpen) {
+      const current = directProfile || profile;
+      if (current) {
+        setName(current.display_name || current.responsible_name || (current as any).full_name || "");
+        setPhone(current.phone || "");
+        // Strictly personal avatar: never fall back to barbershop logo_url
+        setAvatarUrl(current.avatar_url || "");
+      }
     }
-  }, [isOpen, profile]);
+  }, [isOpen, profile, directProfile]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,8 +132,14 @@ export function EditProfileModal({
         avatarUrl: avatarUrl.trim(),
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Perfil atualizado com sucesso!");
+      try {
+        await refreshProfile();
+      } catch (e) {
+        console.warn("[EditProfileModal] Failed to refresh auth profile:", e);
+      }
+      queryClient.invalidateQueries({ queryKey: ["my-profile-direct", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["tenant-profile"] });
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
       queryClient.invalidateQueries({ queryKey: ["barbers"] });

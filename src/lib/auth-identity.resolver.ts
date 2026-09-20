@@ -25,6 +25,7 @@ export interface AuthenticatedIdentity {
   tenantSlug: string | null;
   businessName: string | null;
   displayName: string | null;
+  avatarUrl?: string | null;
   barberId: string | null;
   customerId: string | null;
   destination: string;
@@ -120,6 +121,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
           tenantSlug: null,
           businessName: profile?.business_name || 'SaaS Admin',
           displayName: profile?.display_name || profile?.responsible_name || 'Super Admin',
+          avatarUrl: profile?.avatar_url || null,
           barberId: null,
           customerId: null,
           destination: '/admin/dashboard'
@@ -166,6 +168,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
           tenantSlug,
           businessName: profile?.business_name || null,
           displayName: resolvedBarber?.name || profile?.responsible_name || profile?.display_name || 'Profissional',
+          avatarUrl: profile?.avatar_url || null,
           barberId: resolvedBarber?.id || null,
           customerId: null,
           destination
@@ -193,6 +196,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
           tenantSlug,
           businessName: tProf?.business_name || profile?.business_name || null,
           displayName: profile?.display_name || profile?.responsible_name || null,
+          avatarUrl: profile?.avatar_url || null,
           barberId: null,
           customerId: null,
           destination: ""
@@ -207,6 +211,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
           tenantSlug,
           businessName: tProf?.business_name || profile?.business_name || null,
           displayName: profile?.display_name || profile?.responsible_name || null,
+          avatarUrl: profile?.avatar_url || null,
           barberId: null,
           customerId: null,
           destination
@@ -227,6 +232,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
           tenantSlug,
           businessName: profile.business_name || null,
           displayName: profile.responsible_name || profile.display_name || profile.business_name || 'Administrador',
+          avatarUrl: profile.avatar_url || null,
           barberId: null,
           customerId: null,
           destination: '/dashboard'
@@ -255,6 +261,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
           tenantSlug,
           businessName: profile.business_name || null,
           displayName: profile.responsible_name || profile.display_name || null,
+          avatarUrl: profile.avatar_url || null,
           barberId: null,
           customerId: null,
           destination
@@ -284,6 +291,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
             tenantSlug,
             businessName: null,
             displayName: profile?.responsible_name || profile?.display_name || customer?.name || 'Cliente',
+            avatarUrl: profile?.avatar_url || customer?.avatar_url || null,
             barberId: null,
             customerId: customer?.id || null,
             destination: `/${tenantSlug}/portal`
@@ -302,6 +310,7 @@ export async function resolveAuthenticatedIdentity(userId: string): Promise<Auth
         tenantSlug: null,
         businessName: null,
         displayName: profile?.responsible_name || profile?.display_name || null,
+        avatarUrl: profile?.avatar_url || null,
         barberId: null,
         customerId: null,
         destination: '/auth'

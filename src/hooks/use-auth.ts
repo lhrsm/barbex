@@ -24,6 +24,7 @@ export interface Profile {
   email: string | null;
   identity_status: IdentityStatus;
   phone: string | null;
+  avatar_url: string | null;
 }
 
 // Global state shared across useAuth instances
@@ -124,6 +125,7 @@ async function executeIdentityResolution(userId: string, resolutionId: number) {
       email: identity.email,
       identity_status: 'completed',
       phone: identity.phone,
+      avatar_url: identity.avatarUrl || null,
     };
 
     setState({
@@ -301,5 +303,15 @@ export function useAuth() {
     initialized: state.initialized,
     refreshing: state.refreshing,
     logout,
+    refreshProfile,
   };
 }
+
+export async function refreshProfile(): Promise<void> {
+  const currentUid = globalUser?.id;
+  if (!currentUid) return;
+  const resolutionId = ++currentResolutionId;
+  setState({ refreshing: true });
+  await executeIdentityResolution(currentUid, resolutionId);
+}
+

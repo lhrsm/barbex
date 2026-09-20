@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useReception } from "@/hooks/use-reception";
 import { useTenant } from "@/hooks/use-tenant";
@@ -110,9 +111,14 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
           {nav}
           <div className="pt-3 border-t border-zinc-800 space-y-2">
             <div className="flex items-center gap-3 px-2 py-1">
-              <div className="h-8 w-8 rounded-full bg-gold/20 flex items-center justify-center text-gold font-bold text-xs">
-                {userInitial}
-              </div>
+              <Avatar className="h-8 w-8 rounded-full border border-gold/30 shrink-0">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={userName} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-gold/20 text-gold font-bold text-xs">
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-white truncate">{userName}</p>
                 <p className="text-[10px] text-zinc-400 truncate">{barbershopName}</p>
@@ -177,9 +183,14 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
           {/* Rodapé da Sidebar com Identidade & Ações */}
           <div className="mt-auto pt-4 border-t border-zinc-800/80 space-y-2">
             <div className="flex items-center gap-2.5 rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-2.5">
-              <div className="h-8 w-8 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center text-gold font-bold text-xs shrink-0">
-                {userInitial}
-              </div>
+              <Avatar className="h-8 w-8 rounded-full border border-gold/30 shrink-0">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={userName} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-gold/15 text-gold font-bold text-xs">
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-white truncate leading-tight">{userName}</p>
                 <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
