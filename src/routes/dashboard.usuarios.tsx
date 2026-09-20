@@ -20,7 +20,8 @@ import {
   Table as TableIcon,
   AlertCircle,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getPendingInvitations, resendTeamInvitation, revokeTeamInvitation, UnifiedTeamMember } from "@/lib/backend/edge/team";
 import { useTenant } from "@/hooks/use-tenant";
 import { AddUserModal } from "@/components/team/AddUserModal";
+import { EditTeamMemberModal } from "@/components/team/EditTeamMemberModal";
 import { PermissionMatrix } from "@/components/security/PermissionMatrix";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useState, useMemo } from "react";
@@ -94,6 +96,7 @@ function TeamManagementPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<UnifiedTeamMember | null>(null);
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<CategoryTab>("all");
@@ -842,11 +845,16 @@ function TeamManagementPage() {
                       <ExternalLink className="h-3 w-3 ml-1 opacity-70" />
                     </Button>
                   ) : (
-                    <div className="w-full flex items-center justify-between text-xs text-zinc-500">
-                      <span>Membro interno da equipe</span>
-                      <Badge variant="outline" className="border-zinc-800 text-zinc-400 text-[10px]">
-                        Sistema
-                      </Badge>
+                    <div className="w-full flex items-center justify-between gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingMember(member)}
+                        className="w-full h-10 border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Editar Dados
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -957,7 +965,15 @@ function TeamManagementPage() {
                             <ExternalLink className="h-3 w-3 ml-1" />
                           </Button>
                         ) : (
-                          <span className="text-xs text-zinc-600">Equipe</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingMember(member)}
+                            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 text-xs inline-flex items-center gap-1"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Editar
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -1033,6 +1049,15 @@ function TeamManagementPage() {
 
       {/* Matriz de Permissões de Referência */}
       <PermissionMatrix />
+
+      {/* Modal de Edição de Membro da Equipe */}
+      <EditTeamMemberModal
+        isOpen={!!editingMember}
+        onClose={() => setEditingMember(null)}
+        member={editingMember}
+        tenantId={tenantId || ""}
+        onSuccess={() => refetchMembers()}
+      />
     </div>
   );
 }

@@ -11,10 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { updateMyProfileClient } from "@/lib/backend/client/profile";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Phone, Mail, Loader2, Sparkles, ShieldCheck } from "lucide-react";
+import { User, Phone, Mail, Loader2, Sparkles, ShieldCheck, Camera, Trash2 } from "lucide-react";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -27,7 +29,7 @@ export function EditProfileModal({
   isOpen,
   onClose,
   title = "Meu Perfil",
-  description = "Mantenha suas informações pessoais e de contato atualizadas.",
+  description = "Mantenha suas informações pessoais e foto de perfil atualizadas.",
 }: EditProfileModalProps) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -35,14 +37,72 @@ export function EditProfileModal({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (isOpen && profile) {
       setName(profile.display_name || profile.responsible_name || profile.full_name || "");
       setPhone(profile.phone || "");
-      setAvatarUrl((profile as any)?.avatar_url || (profile as any)?.logo_url || "");
+      // Strictly personal avatar: never fall back to barbershop logo_url
+      setAvatarUrl((profile as any)?.avatar_url || "");
     }
   }, [isOpen, profile]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // 1. Client-side Size Validation (Max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A foto deve ter no máximo 5MB.");
+      return;
+    }
+
+    // 2. Client-side MIME Type Validation
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato inválido. Por favor, envie uma imagem JPG, PNG ou WEBP.");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const safeExt = ["jpg", "jpeg", "png", "webp"].includes(fileExt) ? fileExt : "jpg";
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${safeExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("user-avatars")
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("user-avatars")
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+      toast.success("Foto carregada com sucesso! Clique em 'Salvar perfil' para confirmar.");
+    } catch (err: any) {
+      console.error("[EditProfileModal] Avatar upload error:", err);
+      toast.error(err.message || "Erro ao enviar imagem.");
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset input value so same file can be chosen again if needed
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl("");
+    toast.info("Foto removida. Clique em 'Salvar perfil' para confirmar.");
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -58,8 +118,6 @@ export function EditProfileModal({
       queryClient.invalidateQueries({ queryKey: ["tenant-profile"] });
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
-      // Atualiza o estado da janela local
-      window.location.reload();
       onClose();
     },
     onError: (err: any) => {
@@ -89,10 +147,11 @@ export function EditProfileModal({
   };
 
   const roleLabel = (profile?.role || "colaborador").toUpperCase();
+  const initials = (name?.substring(0, 2) || "US").toUpperCase();
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-[#0b0f17] border-gold/20 text-white shadow-2xl">
+      <DialogContent className="sm:max-w-md bg-[#0b0f17] border-gold/20 text-white shadow-2xl rounded-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10 text-gold">
@@ -106,6 +165,56 @@ export function EditProfileModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {/* Avatar Upload & Preview Section */}
+          <div className="flex flex-col items-center gap-2 py-2 border-b border-zinc-800/60 pb-4">
+            <div className="relative group">
+              <Avatar className="h-24 w-24 border-2 border-gold/40 ring-4 ring-gold/10 shadow-xl">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={name || "Perfil"} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-gold/10 text-gold text-2xl font-black">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+
+              <label
+                htmlFor="personal-avatar-file-input"
+                className="absolute bottom-0 right-0 h-8 w-8 bg-gold hover:bg-gold/90 text-black rounded-full flex items-center justify-center cursor-pointer shadow-md transition-transform hover:scale-105 active:scale-95 z-10"
+                title="Alterar foto de perfil"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-black" />
+                ) : (
+                  <Camera className="h-4 w-4 text-black" />
+                )}
+                <input
+                  id="personal-avatar-file-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={isUploadingAvatar || mutation.isPending}
+                  onChange={handleAvatarUpload}
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[11px] text-zinc-400">
+                {isUploadingAvatar ? "Enviando foto..." : "JPG, PNG ou WEBP até 5MB"}
+              </span>
+              {avatarUrl && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  disabled={isUploadingAvatar || mutation.isPending}
+                  className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-0.5 ml-1 transition-colors"
+                >
+                  <Trash2 className="h-3 w-3 inline" /> Remover foto
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* E-mail (somente leitura) */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-zinc-400">E-mail de acesso</Label>
@@ -167,14 +276,14 @@ export function EditProfileModal({
                 type="button"
                 variant="ghost"
                 onClick={onClose}
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || isUploadingAvatar}
                 className="text-zinc-400 hover:text-white hover:bg-zinc-800"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || isUploadingAvatar}
                 className="bg-gold hover:bg-gold/90 text-black font-semibold shadow-lg shadow-gold/20"
               >
                 {mutation.isPending ? (

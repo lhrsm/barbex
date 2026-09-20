@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, X } from "lucide-react";
+import { Camera, Save, X, Loader2 } from "lucide-react";
 
 export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -38,6 +39,60 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
     }
   }, [barber, isOpen]);
 
+  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A foto deve ter no máximo 5MB.");
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato inválido. Use imagens JPG, PNG ou WEBP.");
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      toast.error("Sessão não identificada para upload.");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const safeExt = ["jpg", "jpeg", "png", "webp"].includes(fileExt) ? fileExt : "jpg";
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${safeExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("barber-avatars")
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("barber-avatars")
+        .getPublicUrl(filePath);
+
+      setFormData((prev) => ({ ...prev, avatar_url: publicUrl }));
+      toast.success("Foto carregada com sucesso! Clique em 'Salvar Perfil' para confirmar.");
+    } catch (err: any) {
+      console.error("[EditProfileDialog] Upload error:", err);
+      toast.error(err.message || "Erro ao carregar foto do profissional.");
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -61,7 +116,7 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
         .eq("id", barber.id);
       
       if (error) throw error;
-      toast.success("Perfil atualizado!");
+      toast.success("Perfil atualizado com sucesso!");
       if (onUpdate) onUpdate();
       onClose();
     } catch (e: any) {
@@ -79,26 +134,45 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
         </DialogHeader>
         
         <div className="space-y-6 py-6">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative">
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative group">
               <Avatar className="h-28 w-28 border-4 border-gold/30 shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-                <AvatarImage src={formData.avatar_url} />
+                <AvatarImage src={formData.avatar_url} className="object-cover" />
                 <AvatarFallback className="bg-gold/10 text-gold text-3xl font-black">
                   {formData.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute bottom-0 right-0 bg-gold p-2 rounded-full text-black shadow-lg">
-                <Camera className="h-4 w-4" />
-              </div>
+              <label
+                htmlFor="barber-avatar-input"
+                className="absolute bottom-0 right-0 bg-gold hover:bg-gold/90 p-2.5 rounded-full text-black shadow-lg cursor-pointer transition-transform hover:scale-105 active:scale-95 z-10"
+                title="Carregar foto do computador/celular"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-black" />
+                ) : (
+                  <Camera className="h-4 w-4 text-black" />
+                )}
+                <input
+                  id="barber-avatar-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={uploadingAvatar || loading}
+                  onChange={handleAvatarFileUpload}
+                />
+              </label>
             </div>
+            <p className="text-[11px] text-zinc-400">
+              {uploadingAvatar ? "Enviando imagem..." : "Clique na câmera para enviar foto (máx. 5MB)"}
+            </p>
             
-            <div className="w-full space-y-2">
-              <Label className="text-gold font-black uppercase text-[10px] tracking-[0.2em] ml-1">URL da Foto</Label>
+            <div className="w-full space-y-1.5 pt-1">
+              <Label className="text-gold font-black uppercase text-[10px] tracking-[0.2em] ml-1">Ou informe a URL da Foto</Label>
               <Input 
                 placeholder="https://..." 
                 value={formData.avatar_url}
                 onChange={(e) => setFormData({...formData, avatar_url: e.target.value})}
-                className="bg-[#05070d] border-gold/20 focus-visible:ring-gold/40 rounded-xl h-11 text-white placeholder:text-gray-600 font-medium"
+                className="bg-[#05070d] border-gold/20 focus-visible:ring-gold/40 rounded-xl h-11 text-white placeholder:text-gray-600 font-medium text-xs"
               />
             </div>
           </div>
@@ -187,7 +261,7 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={loading}
+            disabled={loading || uploadingAvatar}
             className="bg-gold hover:bg-[#B8962E] text-black border-0 rounded-xl font-black px-8 h-10 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(212,175,55,0.2)]"
           >
             {loading ? (
