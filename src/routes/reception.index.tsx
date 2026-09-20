@@ -27,7 +27,7 @@ import { ReceptionQueue } from "@/components/reception/ReceptionQueue";
 import { useReception } from "@/hooks/use-reception";
 import { useTenant } from "@/hooks/use-tenant";
 import { ProfileCompletionBanner } from "@/components/profile/ProfileCompletionBanner";
-import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/reception/")({
   head: () => ({
@@ -94,6 +94,9 @@ function ReceptionHome() {
     (profile as any)?.display_name?.split(" ")[0] ||
     user?.email?.split("@")[0] ||
     "Recepção";
+  const userInitials = (profile?.responsible_name || profile?.display_name || user?.email || "R")
+    .slice(0, 2)
+    .toUpperCase();
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["reception-stats", tenantId, day],
@@ -148,7 +151,18 @@ function ReceptionHome() {
       {/* Header Principal da Recepção */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-5 border-b border-zinc-800/80">
         <div className="flex items-start gap-4">
-          <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" className="mt-0.5" />
+          <Avatar className="h-12 w-12 rounded-2xl border border-gold/30 shadow-lg shrink-0 mt-0.5 bg-gradient-to-br from-gold/20 to-transparent">
+            {profile?.avatar_url ? (
+              <AvatarImage
+                src={profile.avatar_url}
+                alt={userGreetingName}
+                className="h-full w-full object-cover rounded-2xl"
+              />
+            ) : null}
+            <AvatarFallback className="bg-gradient-to-br from-gold/20 to-gold/5 text-gold font-black text-sm rounded-2xl border border-gold/30">
+              {userInitials}
+            </AvatarFallback>
+          </Avatar>
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">

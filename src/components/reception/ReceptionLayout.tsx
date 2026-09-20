@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useReception } from "@/hooks/use-reception";
 import { useTenant } from "@/hooks/use-tenant";
+import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 
 const NAV = [
@@ -34,8 +35,9 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { isOwner, profile, user } = useReception();
-  const { tenantProfile } = useTenant();
+  const { isOwner, profile, user, tenantId: receptionTenantId } = useReception();
+  const { tenantProfile, tenantId: contextTenantId } = useTenant();
+  const tenantId = receptionTenantId || contextTenantId || profile?.tenant_id;
 
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname.startsWith(to);
@@ -76,9 +78,14 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
       {/* Topbar mobile */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-zinc-800/80 bg-[#0b0f17]/95 px-4 py-3 backdrop-blur lg:hidden">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15 border border-gold/30 text-gold font-bold">
-            <Scissors className="h-4 w-4" aria-hidden />
-          </span>
+          <Avatar className="h-8 w-8 rounded-lg border border-gold/30 shrink-0">
+            {profile?.avatar_url ? (
+              <AvatarImage src={profile.avatar_url} alt={userName} className="object-cover" />
+            ) : null}
+            <AvatarFallback className="bg-gold/15 text-gold font-bold text-xs">
+              {userInitial}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <span className="text-sm font-bold text-white block leading-tight">Central de Atendimento</span>
             <span className="text-[11px] text-zinc-400 truncate block max-w-[180px]">{barbershopName}</span>
@@ -108,6 +115,27 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
 
       {open && (
         <div className="border-b border-zinc-800 bg-[#0b0f17] px-4 py-4 lg:hidden space-y-4 shadow-xl">
+          {/* Business branding block na gaveta mobile */}
+          <div className="flex items-center gap-3 px-2 pb-3 border-b border-zinc-800/80">
+            <TenantBrandLogo
+              tenantIdOrSlug={tenantId}
+              shop={tenantProfile}
+              size="sm"
+              shape="rounded"
+              className="h-9 w-9 shrink-0 shadow-md"
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-black text-white leading-tight">Recepção</p>
+                <Badge variant="outline" className="border-gold/30 text-gold text-[9px] px-1 py-0 uppercase font-bold">
+                  Operação
+                </Badge>
+              </div>
+              <p className="text-xs text-zinc-400 truncate mt-0.5" title={barbershopName}>
+                {barbershopName}
+              </p>
+            </div>
+          </div>
           {nav}
           <div className="pt-3 border-t border-zinc-800 space-y-2">
             <div className="flex items-center gap-3 px-2 py-1">
@@ -159,11 +187,15 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
       <div className="flex">
         {/* Sidebar desktop */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-zinc-800/80 bg-[#0b0f17] p-4 lg:flex shadow-2xl">
-          {/* Logo / Header da Sidebar */}
+          {/* Logo / Header da Sidebar com Logo da Barbearia */}
           <div className="mb-6 flex items-center gap-3 px-2 py-1">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/30 text-gold shadow-md">
-              <Scissors className="h-5 w-5" aria-hidden />
-            </div>
+            <TenantBrandLogo
+              tenantIdOrSlug={tenantId}
+              shop={tenantProfile}
+              size="md"
+              shape="rounded"
+              className="h-10 w-10 shrink-0 shadow-md"
+            />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-black text-white leading-tight">Recepção</p>
