@@ -20,7 +20,8 @@ import {
   ShieldAlert,
   Mail,
   Bell,
-  Clock
+  Clock,
+  MessageSquare
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AdminEventSubscriptions } from "@/components/admin/AdminEventSubscriptions";
 import { AdminEventTemplates } from "@/components/admin/AdminEventTemplates";
+import { PlatformContactInbox } from "@/components/admin/PlatformContactInbox";
 
 export const Route = createFileRoute("/admin/settings")({
   component: AdminSettings,
@@ -142,6 +144,7 @@ function AdminSettings() {
           <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-auto inline-flex gap-0.5 w-auto">
             {[
               { id: "geral", label: "Geral", icon: Globe },
+              { id: "mensagens", label: "Mensagens da Landing", icon: MessageSquare },
               { id: "faturamento", label: "Faturamento", icon: CreditCard },
               { id: "saude", label: "Saúde", icon: ShieldAlert },
               { id: "seguranca", label: "Segurança", icon: Shield },
@@ -358,21 +361,43 @@ function AdminSettings() {
                     />
                   </div>
 
-                  <div className="pt-4 border-t border-white/5 space-y-2">
-                    <Label className="text-purple-400 text-[10px] uppercase font-black tracking-widest px-1 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5" />
-                      E-mail para receber mensagens da landing
-                    </Label>
-                    <Input
-                      type="email"
-                      placeholder="Ex: leads@barbex.shop ou atendimento@barbex.shop"
-                      value={formData.contact_email || ""}
-                      onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                      className="h-12 bg-white/5 border-purple-500/30 rounded-xl focus:ring-purple-500/20"
-                    />
-                    <p className="text-[11px] text-gray-400 px-1 leading-relaxed">
-                      Este endereço receberá as mensagens enviadas pelo formulário de contato da landing institucional do Barbex. Este e-mail <strong>não será exibido publicamente</strong>; será utilizado somente para receber mensagens do formulário. Enquanto estiver vazio, o formulário de envio por e-mail permanecerá oculto na landing.
-                    </p>
+                  <div className="pt-4 border-t border-white/5 space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <Label
+                          htmlFor="has_contact_form"
+                          className="text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+                          Exibir formulário de contato na landing page
+                        </Label>
+                        <p className="text-[11px] text-gray-400">
+                          Habilita o formulário de envio de mensagens em barbex.shop/#contato.
+                        </p>
+                      </div>
+                      <Switch
+                        id="has_contact_form"
+                        checked={formData.has_contact_form ?? true}
+                        onCheckedChange={(checked) => setFormData({ ...formData, has_contact_form: checked })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-purple-400 text-[10px] uppercase font-black tracking-widest px-1 flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5" />
+                        E-mail para receber mensagens da landing
+                      </Label>
+                      <Input
+                        type="email"
+                        placeholder="Ex: leads@barbex.shop ou atendimento@barbex.shop"
+                        value={formData.contact_email || ""}
+                        onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                        className="h-12 bg-white/5 border-purple-500/30 rounded-xl focus:ring-purple-500/20"
+                      />
+                      <p className="text-[11px] text-gray-400 px-1 leading-relaxed">
+                        Este endereço receberá as mensagens enviadas pelo formulário de contato da landing institucional do Barbex. Este e-mail <strong>não será exibido publicamente</strong>; será utilizado somente para receber mensagens do formulário.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -686,6 +711,10 @@ function AdminSettings() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="mensagens" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <PlatformContactInbox />
         </TabsContent>
 
         <TabsContent value="notificacoes" className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">

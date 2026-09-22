@@ -214,7 +214,7 @@ serve(async (req: Request) => {
     const admin = createAdminClient();
     let tenantQuery = admin
       .from("profiles")
-      .select("id, business_name, contact_email, email, slug");
+      .select("id, business_name, contact_email, email, slug, contact_form_enabled");
 
     if (slug) {
       tenantQuery = tenantQuery.eq("slug", slug);
@@ -228,9 +228,29 @@ serve(async (req: Request) => {
       return jsonError("NOT_FOUND", "Barbearia não encontrada.", 404, req);
     }
 
+    // 6.1 Enforce tenant-level contact form toggle (R2E.4D)
+    if (tenantProfile.contact_form_enabled !== true) {
+      return jsonError(
+        "FORBIDDEN",
+        "O formulário de contato não está habilitado para esta barbearia.",
+        403,
+        req,
+      );
+    }
+
+    // 6.2 Enforce explicit, valid contact_email (NO fallback to login email)
+    const contactRecipient = (tenantProfile.contact_email || "").trim();
+    if (!contactRecipient || !contactRecipient.includes("@")) {
+      return jsonError(
+        "UNPROCESSABLE_ENTITY",
+        "O formulário de contato desta barbearia não possui um e-mail de recebimento configurado.",
+        422,
+        req,
+      );
+    }
+
     const targetTenantId = tenantProfile.id;
     const targetShopSlug = tenantProfile.slug || slug || "barbex";
-    const contactRecipient = tenantProfile.contact_email || tenantProfile.email;
 
     // 7. Durable Database Persistence in public.contact_messages
     const safeName = escapeHtml(name);

@@ -789,6 +789,7 @@ function ShopPageComponent() {
           whatsapp_number,
           whatsapp_enabled,
           contact_email,
+          contact_form_enabled,
           primary_color,
           secondary_color,
           logo_url,

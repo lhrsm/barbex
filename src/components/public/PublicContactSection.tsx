@@ -22,6 +22,7 @@ interface PublicContactSectionProps {
     slug?: string;
     business_name?: string;
     contact_email?: string;
+    contact_form_enabled?: boolean;
     whatsapp_number?: string;
     address?: string;
     social_links?: Record<string, string>;
@@ -125,8 +126,9 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
 
   const hasAddress = !!shop?.address;
 
-  // Determine if explicit contact_email is configured
-  const hasContactEmail = Boolean(
+  // Determine if contact form is enabled by tenant AND explicit contact_email is configured
+  const isFormActive = Boolean(
+    shop?.contact_form_enabled === true &&
     shop?.contact_email &&
     typeof shop.contact_email === "string" &&
     shop.contact_email.trim().length > 0 &&
@@ -216,13 +218,13 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
             </span>
           </h2>
           <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-            {hasContactEmail
+            {isFormActive
               ? "Tem alguma dúvida, sugestão ou precisa de um horário especial? Envie sua mensagem e nossa equipe retornará rapidamente."
               : "Entre em contato conosco diretamente através dos nossos canais de atendimento."}
           </p>
         </div>
 
-        {hasContactEmail ? (
+        {isFormActive ? (
           /* Layout Completo com Formulário de E-mail */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Formulário Principal */}

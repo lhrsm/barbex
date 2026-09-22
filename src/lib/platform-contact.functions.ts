@@ -54,7 +54,7 @@ export const getPlatformPublicSettings = createServerFn({ method: "GET" }).handl
       const { data, error } = await (supabaseAdmin as any)
         .from("system_settings")
         .select(
-          "saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links",
+          "saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links, has_contact_form",
         )
         .limit(1)
         .maybeSingle();
@@ -68,7 +68,9 @@ export const getPlatformPublicSettings = createServerFn({ method: "GET" }).handl
 
       const raw = data || {};
       const contactEmail = (raw.contact_email || "").trim();
-      const hasContactForm = Boolean(contactEmail && contactEmail.includes("@"));
+      const hasContactForm = Boolean(
+        raw.has_contact_form !== false && contactEmail && contactEmail.includes("@"),
+      );
 
       return {
         saas_name: raw.saas_name || "Barbex",
@@ -156,7 +158,7 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: settingsRow, error: settingsError } = await (supabaseAdmin as any)
       .from("system_settings")
-      .select("id, saas_name, contact_email")
+      .select("id, saas_name, contact_email, has_contact_form")
       .limit(1)
       .maybeSingle();
 
@@ -165,6 +167,11 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
       throw new Error(
         "O serviço de contato institucional da plataforma está indisponível no momento. Entre em contato pelos canais oficiais.",
       );
+    }
+
+    if (settingsRow.has_contact_form === false) {
+      console.warn("[PlatformContact] Institutional contact form is disabled in system_settings.");
+      throw new Error("O formulário de contato institucional está temporariamente desativado.");
     }
 
     const platformContactEmail = (settingsRow.contact_email || "").trim();
@@ -179,29 +186,81 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
       );
     }
 
-    // 6. Send transactional email via Resend
-    const result = await sendTransactionalEmail({
-      data: {
-        recipient: platformContactEmail,
-        replyTo: data.email,
-        customSubject: `[Barbex] Nova mensagem pelo site — ${data.name.trim()}`,
-        templateKey: "platform_contact_form_message",
-        templateData: {
-          platformName: settingsRow.saas_name || "Barbex",
-          visitorName: data.name,
-          visitorEmail: data.email,
-          visitorPhone: data.phone || "",
-          company: data.company || "",
-          subject: data.subject,
-          message: data.message,
-          timestamp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+    // 5.1 Durable Database Persistence in public.platform_contact_messages (R2E.4D)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: savedRecord, error: insertError } = await (supabaseAdmin as any)
+      .from("platform_contact_messages")
+      .insert({
+        sender_name: data.name.trim(),
+        sender_email: data.email.trim().toLowerCase(),
+        sender_phone: data.phone?.trim() || null,
+        company: data.company?.trim() || null,
+        subject: data.subject.trim(),
+        message: data.message.trim(),
+        ip_address: clientIp,
+        email_recipient: platformContactEmail,
+        email_status: "pending",
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !savedRecord) {
+      console.error("[PlatformContact] Durable message persistence failed:", insertError);
+      throw new Error("Erro ao registrar sua mensagem. Por favor tente novamente.");
+    }
+
+    const savedMessageId = savedRecord.id;
+
+    // 6. Send transactional email via Resend with independent status recording
+    let emailResult: { messageId?: string } | null = null;
+    let emailErrorCode: string | null = null;
+    let emailSentSuccessfully = false;
+
+    try {
+      emailResult = await sendTransactionalEmail({
+        data: {
+          recipient: platformContactEmail,
+          replyTo: data.email,
+          customSubject: `[Barbex] Nova mensagem pelo site — ${data.name.trim()}`,
+          templateKey: "platform_contact_form_message",
+          templateData: {
+            platformName: settingsRow.saas_name || "Barbex",
+            visitorName: data.name,
+            visitorEmail: data.email,
+            visitorPhone: data.phone || "",
+            company: data.company || "",
+            subject: data.subject,
+            message: data.message,
+            timestamp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+          },
         },
-      },
-    });
+      });
+      emailSentSuccessfully = Boolean(emailResult?.messageId);
+    } catch (sendErr: unknown) {
+      console.error("[PlatformContact] Failed to send email notification:", sendErr);
+      emailErrorCode = (sendErr as Error)?.message || "EMAIL_SEND_FAILED";
+    }
+
+    // 7. Update status independently in platform_contact_messages
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin as any)
+        .from("platform_contact_messages")
+        .update({
+          email_status: emailSentSuccessfully ? "sent" : "failed",
+          email_provider_message_id: emailResult?.messageId || null,
+          email_attempt_at: new Date().toISOString(),
+          email_error_code: emailErrorCode,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", savedMessageId);
+    } catch (statusErr) {
+      console.error("[PlatformContact] Error updating delivery status on message:", statusErr);
+    }
 
     return {
       success: true,
       message: "Mensagem enviada com sucesso! Nossa equipe entrará em contato.",
-      messageId: result.messageId,
+      messageId: savedMessageId,
     };
   });

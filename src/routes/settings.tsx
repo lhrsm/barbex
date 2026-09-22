@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PortalContentEditor } from "@/components/settings/PortalContentEditor";
@@ -152,6 +152,7 @@ function SettingsComponent() {
     pix_qr_code_url: "",
     whatsapp_number: "",
     contact_email: "",
+    contact_form_enabled: false,
     // Z-API settings
     instance_id: "",
     instance_token: "",
@@ -321,6 +322,7 @@ function SettingsComponent() {
           pix_qr_code_url: profile.pix_qr_code_url || "",
           whatsapp_number: settingsData?.whatsapp_number || profile.whatsapp_number || "",
           contact_email: loadedContactEmail,
+          contact_form_enabled: Boolean((profile as any).contact_form_enabled ?? false),
           instance_id: settingsData?.instance_id || "",
           instance_token: settingsData?.instance_token || "",
           client_token: settingsData?.client_token || "",
@@ -494,38 +496,62 @@ function SettingsComponent() {
       return;
     }
 
-    // Desacoplamento inteligente de contact_email: salvar separadamente SOMENTE se foi alterado
+    // Salvar configurações de contato do site (R2E.4D)
     const originalContactEmail = normalizeContactEmail(initialContactEmailRef.current);
     const currentContactEmail = normalizeContactEmail(formData.contact_email);
-    const contactEmailChanged = originalContactEmail !== currentContactEmail;
+    const contactFormEnabled = Boolean(formData.contact_form_enabled);
+
+    // Validação de formato se o formulário estiver ativado
+    if (contactFormEnabled && currentContactEmail && !currentContactEmail.includes("@")) {
+      toast.error("Por favor, informe um e-mail válido para receber as mensagens do formulário.");
+      setSaving(false);
+      return;
+    }
 
     let contactEmailWarning = false;
 
-    if (contactEmailChanged) {
-      const { error: contactEmailError } = await supabase
+    // Invocação da RPC com validação server-side de autorização de tenant (R2E.4D)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: rpcError } = await (supabase as any).rpc(
+      "update_tenant_contact_settings",
+      {
+        p_tenant_id: targetId,
+        p_contact_form_enabled: contactFormEnabled,
+        p_contact_email: currentContactEmail,
+      },
+    );
+
+    let contactSettingsError = rpcError;
+
+    // Fallback gracioso para update direto em profiles caso RPC falhe
+    if (rpcError) {
+      console.warn("[/settings] RPC update_tenant_contact_settings error, falling back to direct profile update:", rpcError);
+      const { error: directError } = await supabase
         .from("profiles")
         .update({
           contact_email: currentContactEmail,
+          contact_form_enabled: contactFormEnabled,
         } as any)
         .eq("id", targetId);
+      contactSettingsError = directError;
+    }
 
-      if (contactEmailError) {
-        const isSchemaError =
-          contactEmailError.code === "42703" ||
-          contactEmailError.code === "PGRST204" ||
-          (contactEmailError.message || "").toLowerCase().includes("contact_email") ||
-          (contactEmailError.message || "").toLowerCase().includes("schema cache");
+    if (contactSettingsError) {
+      const isSchemaError =
+        contactSettingsError.code === "42703" ||
+        contactSettingsError.code === "PGRST204" ||
+        (contactSettingsError.message || "").toLowerCase().includes("contact") ||
+        (contactSettingsError.message || "").toLowerCase().includes("schema cache");
 
-        if (isSchemaError) {
-          contactEmailWarning = true;
-          console.warn("[/settings] contact_email column schema drift detected, bypassed gracefully:", contactEmailError);
-        } else {
-          console.error("[/settings] Unexpected error saving contact_email:", contactEmailError);
-          toast.error("Erro ao salvar e-mail de contato: " + contactEmailError.message);
-        }
+      if (isSchemaError) {
+        contactEmailWarning = true;
+        console.warn("[/settings] contact column schema drift detected, bypassed gracefully:", contactSettingsError);
       } else {
-        initialContactEmailRef.current = currentContactEmail;
+        console.error("[/settings] Unexpected error saving contact settings:", contactSettingsError);
+        toast.error("Erro ao salvar configurações de contato: " + contactSettingsError.message);
       }
+    } else {
+      initialContactEmailRef.current = currentContactEmail;
     }
 
     setSaving(false);
@@ -878,22 +904,59 @@ function SettingsComponent() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
-                  {/* E-mail de Contato Público */}
-                  <div className="bg-[#05070d]/60 border border-gold/15 rounded-2xl p-5 space-y-2">
-                    <Label htmlFor="contact_email" className="text-gold font-bold uppercase text-[11px] tracking-widest flex items-center gap-2">
-                      <Mail size={14} /> E-mail para receber mensagens do site
-                    </Label>
-                    <Input
-                      id="contact_email"
-                      type="email"
-                      value={formData.contact_email || ""}
-                      onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                      placeholder="contato@suaempresa.com.br"
-                      className="bg-[#05070d] border-[#1f2937] text-white focus:border-gold transition-all rounded-xl h-12"
-                    />
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      Este endereço receberá as mensagens enviadas pelo formulário de contato da sua página pública. Enquanto este campo estiver vazio, o formulário de contato por e-mail não será exibido na sua página pública.
-                    </p>
+                  {/* Formulário de Contato Público e E-mail */}
+                  <div className="bg-[#05070d]/60 border border-gold/15 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between gap-4 pb-3 border-b border-white/5">
+                      <div className="space-y-0.5">
+                        <Label
+                          htmlFor="contact_form_enabled"
+                          className="text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer"
+                        >
+                          <MessageSquare size={14} className="text-gold" />
+                          Exibir formulário de contato na minha página pública
+                        </Label>
+                        <p className="text-[11px] text-slate-400 font-medium">
+                          Permite que clientes e visitantes enviem mensagens diretamente pelo formulário da sua página.
+                        </p>
+                      </div>
+                      <Switch
+                        id="contact_form_enabled"
+                        checked={formData.contact_form_enabled}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, contact_form_enabled: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2 pt-1">
+                      <Label
+                        htmlFor="contact_email"
+                        className="text-gold font-bold uppercase text-[11px] tracking-widest flex items-center gap-2"
+                      >
+                        <Mail size={14} /> E-mail que receberá as mensagens do formulário
+                      </Label>
+                      <Input
+                        id="contact_email"
+                        type="email"
+                        value={formData.contact_email || ""}
+                        onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                        placeholder="contato@suabarbearia.com.br"
+                        maxLength={120}
+                        className="bg-[#05070d] border-[#1f2937] text-white focus:border-gold transition-all rounded-xl h-12"
+                      />
+                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                        As mensagens serão salvas no painel da barbearia e uma notificação será enviada para este e-mail.
+                      </p>
+
+                      {formData.contact_form_enabled && (!formData.contact_email || !formData.contact_email.includes("@")) && (
+                        <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs mt-2">
+                          <AlertTriangle size={14} className="shrink-0" />
+                          <span>
+                            Para que o formulário apareça na sua página pública, informe um endereço de e-mail válido acima.
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Redes Sociais */}
