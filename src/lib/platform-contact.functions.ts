@@ -45,19 +45,25 @@ function checkRateLimit(key: string, limit = 5, windowMs = 10 * 60 * 1000): bool
  * Server Function: getPlatformPublicSettings
  * Fetches public platform information from system_settings without exposing secret keys
  */
-export const getPlatformPublicSettings = createServerFn({ method: "GET" })
-  .handler(async (): Promise<PlatformPublicSettings> => {
+export const getPlatformPublicSettings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<PlatformPublicSettings> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabaseAdmin as any)
         .from("system_settings")
-        .select("saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links")
+        .select(
+          "saas_name, main_url, saas_logo, public_email, contact_email, phone, whatsapp_number, address, social_links",
+        )
         .limit(1)
         .maybeSingle();
 
       if (error) {
-        console.error("[PlatformSettings] Database error fetching system_settings with admin client:", error);
+        console.error(
+          "[PlatformSettings] Database error fetching system_settings with admin client:",
+          error,
+        );
       }
 
       const raw = data || {};
@@ -89,7 +95,8 @@ export const getPlatformPublicSettings = createServerFn({ method: "GET" })
         has_contact_form: false,
       };
     }
-  });
+  },
+);
 
 const platformContactSchema = z.object({
   name: z.string().trim().min(2, "Por favor informe seu nome").max(100, "Nome muito longo"),
@@ -97,7 +104,11 @@ const platformContactSchema = z.object({
   phone: z.string().trim().optional().or(z.literal("")),
   company: z.string().trim().max(100, "Nome da empresa muito longo").optional().or(z.literal("")),
   subject: z.string().trim().min(2, "Selecione ou informe um assunto").max(100),
-  message: z.string().trim().min(5, "Mensagem deve ter pelo menos 5 caracteres").max(1000, "Mensagem não pode exceder 1000 caracteres"),
+  message: z
+    .string()
+    .trim()
+    .min(5, "Mensagem deve ter pelo menos 5 caracteres")
+    .max(1000, "Mensagem não pode exceder 1000 caracteres"),
   honeypot: z.string().optional(),
 });
 
@@ -111,7 +122,10 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
     // 1. Silent Honeypot Trap
     if (data.honeypot && data.honeypot.trim().length > 0) {
       console.warn("[PlatformContact] Bot trap triggered via honeypot field. Discarding silently.");
-      return { success: true, message: "Mensagem enviada com sucesso! Nossa equipe entrará em contato." };
+      return {
+        success: true,
+        message: "Mensagem enviada com sucesso! Nossa equipe entrará em contato.",
+      };
     }
 
     // 2. Client IP Extraction via getRequestHeader
@@ -124,17 +138,22 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
     // 3. Composite Rate Limiting (5 msgs per 10 min per IP, 50 msgs per 10 min platform-wide)
     const ipRateLimitKey = `platform_contact:${clientIp}`;
     if (!checkRateLimit(ipRateLimitKey, 5, 10 * 60 * 1000)) {
-      throw new Error("Você atingiu o limite de mensagens institucionais temporariamente. Aguarde alguns minutos.");
+      throw new Error(
+        "Você atingiu o limite de mensagens institucionais temporariamente. Aguarde alguns minutos.",
+      );
     }
 
     const globalRateLimitKey = "platform_contact_global";
     if (!checkRateLimit(globalRateLimitKey, 50, 10 * 60 * 1000)) {
-      throw new Error("Muitas mensagens estão sendo enviadas no momento. Por favor tente novamente mais tarde.");
+      throw new Error(
+        "Muitas mensagens estão sendo enviadas no momento. Por favor tente novamente mais tarde.",
+      );
     }
 
     // 4. Resolve Platform Settings Server-Side
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: settingsRow, error: settingsError } = await (supabaseAdmin as any)
       .from("system_settings")
       .select("id, saas_name, contact_email")
@@ -143,15 +162,21 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
 
     if (settingsError || !settingsRow) {
       console.error("[PlatformContact] Failed to load system settings:", settingsError);
-      throw new Error("Não foi possível carregar as configurações de contato da plataforma.");
+      throw new Error(
+        "O serviço de contato institucional da plataforma está indisponível no momento. Entre em contato pelos canais oficiais.",
+      );
     }
 
     const platformContactEmail = (settingsRow.contact_email || "").trim();
 
     // 5. Explicit check: DO NOT fallback to any login or superadmin email
     if (!platformContactEmail || !platformContactEmail.includes("@")) {
-      console.warn("[PlatformContact] contact_email is not configured in system_settings. Submission blocked.");
-      throw new Error("A plataforma Barbex ainda não configurou um e-mail para receber mensagens da landing institucional.");
+      console.warn(
+        "[PlatformContact] contact_email is not configured in system_settings. Submission blocked.",
+      );
+      throw new Error(
+        "A plataforma Barbex ainda não configurou um e-mail para receber mensagens da landing institucional.",
+      );
     }
 
     // 6. Send transactional email via Resend
@@ -170,8 +195,8 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
           subject: data.subject,
           message: data.message,
           timestamp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-        }
-      }
+        },
+      },
     });
 
     return {

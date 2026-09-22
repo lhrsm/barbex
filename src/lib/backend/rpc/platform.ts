@@ -28,14 +28,18 @@ const DEFAULT_SETTINGS: PlatformPublicSettings = {
   whatsapp_number: null,
   address: null,
   social_links: null,
-  has_contact_form: true,
+  has_contact_form: false,
 };
 
 export async function getPublicPlatformSettingsClient(): Promise<PlatformPublicSettings> {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any).rpc("get_public_platform_settings");
     if (error) {
-      console.warn("[PlatformSettings] Error invoking get_public_platform_settings RPC, fallback to default:", error.message);
+      console.warn(
+        "[PlatformSettings] Error invoking get_public_platform_settings RPC, fallback to default:",
+        error.message,
+      );
       return DEFAULT_SETTINGS;
     }
     return (data as PlatformPublicSettings) || DEFAULT_SETTINGS;
