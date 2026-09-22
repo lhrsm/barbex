@@ -19,11 +19,14 @@ interface ContactRequestBody {
   name?: string;
   email?: string;
   phone?: string;
+  company?: string;
   subject?: string;
   message?: string;
   honeypot?: string;
   slug?: string;
   tenantId?: string;
+  isPlatform?: boolean;
+  target?: string;
 }
 
 serve(async (req: Request) => {
@@ -149,6 +152,8 @@ serve(async (req: Request) => {
       return jsonError("INVALID_REQUEST", "Corpo da requisição inválido (JSON esperado).", 400, req);
     }
 
+    const isPlatform = Boolean(body.isPlatform || body.target === "platform");
+
     // 3. Honeypot Anti-Spam Check: fake success for automated bots
     if (body.honeypot && body.honeypot.trim().length > 0) {
       return jsonSuccess(
@@ -156,7 +161,9 @@ serve(async (req: Request) => {
           success: true,
           persisted: true,
           emailStatus: "sent",
-          message: "Recebemos sua mensagem. A barbearia poderá consultá-la pelo painel."
+          message: isPlatform
+            ? "Mensagem institucional enviada com sucesso! Nossa equipe entrará em contato."
+            : "Recebemos sua mensagem. A barbearia poderá consultá-la pelo painel."
         },
         200,
         req
@@ -168,6 +175,224 @@ serve(async (req: Request) => {
       req.headers.get("cf-connecting-ip") ||
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       "unknown";
+
+    if (isPlatform) {
+      // --------------------------------------------------------------------------
+      // INSTITUTIONAL PLATFORM CONTACT FLOW (barbex.shop/#contato)
+      // --------------------------------------------------------------------------
+      const platformRateLimitKey = await generateRateLimitKey(
+        "contact_platform",
+        clientIp,
+        "landing_contato",
+        clientIp
+      );
+      await checkRateLimit(platformRateLimitKey, 5, 600);
+
+      const name = body.name?.trim();
+      const email = body.email?.trim().toLowerCase();
+      const message = body.message?.trim();
+      const phone = body.phone?.trim() || "";
+      const company = body.company?.trim() || "";
+      const subject = body.subject?.trim() || "Contato Institucional";
+
+      if (!name || !email || !message) {
+        return jsonError("INVALID_REQUEST", "Nome, e-mail e mensagem são obrigatórios.", 400, req);
+      }
+      if (name.length < 2 || name.length > 100) {
+        return jsonError("INVALID_REQUEST", "Nome deve ter entre 2 e 100 caracteres.", 400, req);
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) {
+        return jsonError("INVALID_REQUEST", "E-mail corporativo inválido.", 400, req);
+      }
+      if (message.length < 5 || message.length > 2000) {
+        return jsonError("INVALID_REQUEST", "Mensagem deve ter entre 5 e 2000 caracteres.", 400, req);
+      }
+      if (company.length > 100) {
+        return jsonError("INVALID_REQUEST", "Nome da empresa excede 100 caracteres.", 400, req);
+      }
+      if (phone.length > 30) {
+        return jsonError("INVALID_REQUEST", "Telefone excede 30 caracteres.", 400, req);
+      }
+
+      // Resolve Platform Settings Server-Side via Service Role
+      const admin = createAdminClient();
+      const { data: settingsRow, error: settingsError } = await admin
+        .from("system_settings")
+        .select("id, saas_name, contact_email, has_contact_form")
+        .limit(1)
+        .maybeSingle();
+
+      if (settingsError || !settingsRow) {
+        console.error("[contact-public:platform] Failed to load system settings:", settingsError);
+        return jsonError(
+          "SERVICE_UNAVAILABLE",
+          "O serviço de contato institucional da plataforma está indisponível no momento. Entre em contato pelos canais oficiais.",
+          503,
+          req
+        );
+      }
+
+      if (settingsRow.has_contact_form === false) {
+        return jsonError(
+          "FORBIDDEN",
+          "O formulário de contato institucional está temporariamente desativado.",
+          403,
+          req
+        );
+      }
+
+      const platformRecipient = (settingsRow.contact_email || "").trim() || "contato@lmstartup.com.br";
+      if (!platformRecipient || !platformRecipient.includes("@")) {
+        return jsonError(
+          "UNPROCESSABLE_ENTITY",
+          "A plataforma Barbex ainda não configurou um e-mail para receber mensagens institucionais.",
+          422,
+          req
+        );
+      }
+
+      // Durable persistence into public.platform_contact_messages (isolated from tenants)
+      const safeName = escapeHtml(name);
+      const safeSubject = escapeHtml(subject.slice(0, 150));
+      const safeMessage = escapeHtml(message);
+      const safePhone = phone ? escapeHtml(phone.slice(0, 30)) : null;
+      const safeCompany = company ? escapeHtml(company.slice(0, 100)) : null;
+
+      const { data: insertedMsg, error: insertErr } = await admin
+        .from("platform_contact_messages")
+        .insert({
+          sender_name: safeName,
+          sender_email: email,
+          sender_phone: safePhone,
+          company: safeCompany,
+          subject: safeSubject,
+          message: safeMessage,
+          ip_address: clientIp,
+          email_recipient: platformRecipient,
+          email_status: "pending"
+        })
+        .select("id")
+        .single();
+
+      if (insertErr || !insertedMsg) {
+        console.error("[contact-public:platform] DB persistence failed:", insertErr);
+        return jsonError(
+          "INTERNAL_ERROR",
+          "Não foi possível salvar sua mensagem institucional. Tente novamente mais tarde.",
+          500,
+          req
+        );
+      }
+
+      // Transactional Email Dispatch via Resend
+      const resendApiKey = getOptionalEnv("RESEND_API_KEY");
+      let emailStatus: "sent" | "failed" | "provider_unconfigured" = "provider_unconfigured";
+      let emailErrorCode: string | null = null;
+      let emailProviderMessageId: string | null = null;
+
+      if (!resendApiKey || resendApiKey === "mock" || resendApiKey === "test_key") {
+        emailStatus = "provider_unconfigured";
+        emailErrorCode = "MISSING_RESEND_API_KEY";
+      } else {
+        try {
+          const fromAddress = Deno.env.get("RESEND_FROM_EMAIL") || "Barbex <nao-responder@notify.barbex.shop>";
+          const saasName = settingsRow.saas_name || "Barbex";
+          const emailHtml = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Nova Mensagem Institucional - Barbex</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #05070d; color: #f8fafc; margin: 0; padding: 24px; }
+    .container { max-width: 580px; margin: 0 auto; background-color: #090d16; border-radius: 16px; border: 1px solid #1e293b; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .logo { font-size: 24px; font-weight: 900; color: #d4af37; font-style: italic; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+    h1 { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 16px; }
+    p { font-size: 14px; line-height: 1.6; color: #94a3b8; margin-bottom: 16px; }
+    .card { background-color: #0f172a; border-radius: 12px; border: 1px solid #334155; padding: 20px; margin: 20px 0; }
+    .field { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
+    .val { color: #f8fafc; font-weight: 600; }
+    .msg-box { font-size: 14px; color: #e2e8f0; white-space: pre-wrap; background-color: #05070d; padding: 16px; border-radius: 8px; border: 1px solid #334155; margin-top: 14px; line-height: 1.6; }
+    .footer { font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #1e293b; padding-top: 16px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">${escapeHtml(saasName)}</div>
+    <h1>Novo Contato Institucional pelo Site</h1>
+    <p>Uma nova mensagem foi enviada através do formulário institucional da plataforma (<strong>barbex.shop/#contato</strong>):</p>
+    <div class="card">
+      <div class="field">Remetente: <span class="val">${safeName}</span></div>
+      <div class="field">E-mail: <span class="val">${escapeHtml(email)}</span></div>
+      ${safePhone ? `<div class="field">Telefone / WhatsApp: <span class="val">${safePhone}</span></div>` : ""}
+      ${safeCompany ? `<div class="field">Empresa / Barbearia: <span class="val">${safeCompany}</span></div>` : ""}
+      <div class="field">Assunto: <span class="val">${safeSubject}</span></div>
+      <div class="msg-box">${safeMessage}</div>
+    </div>
+    <p style="font-size: 13px; color: #94a3b8;">Esta mensagem está registrada no banco de dados e disponível para consulta no painel <strong>Super Admin &gt; Contato da Plataforma</strong>.</p>
+    <div class="footer">
+      &copy; ${escapeHtml(saasName)} Platform &bull; Notificação Institucional Automática
+    </div>
+  </div>
+</body>
+</html>`.trim();
+
+          const resendRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              from: fromAddress,
+              to: [platformRecipient],
+              reply_to: email,
+              subject: `[Barbex Institucional] ${safeSubject} - ${safeName}`,
+              html: emailHtml
+            })
+          });
+
+          if (resendRes.ok) {
+            const resendData = await resendRes.json();
+            emailStatus = "sent";
+            emailProviderMessageId = resendData.id || null;
+          } else {
+            emailStatus = "failed";
+            emailErrorCode = `HTTP_${resendRes.status}`;
+            const errText = await resendRes.text();
+            console.warn(`[contact-public:platform] Resend returned HTTP ${resendRes.status}: ${errText.slice(0, 200)}`);
+          }
+        } catch (sendErr: any) {
+          emailStatus = "failed";
+          emailErrorCode = sendErr?.name || "NETWORK_ERROR";
+          console.warn("[contact-public:platform] Resend dispatch exception:", sendErr?.message || sendErr);
+        }
+      }
+
+      // Update delivery status in platform_contact_messages
+      await admin
+        .from("platform_contact_messages")
+        .update({
+          email_status: emailStatus,
+          email_provider_message_id: emailProviderMessageId,
+          email_attempt_at: new Date().toISOString(),
+          email_error_code: emailErrorCode,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", insertedMsg.id);
+
+      return jsonSuccess(
+        {
+          success: true,
+          persisted: true,
+          emailStatus,
+          id: insertedMsg.id,
+          message: "Mensagem institucional enviada com sucesso! Nossa equipe entrará em contato."
+        },
+        200,
+        req
+      );
+    }
 
     const rateLimitKey = await generateRateLimitKey(
       "contact_public",

@@ -15,7 +15,7 @@ import {
   Sparkles,
   Building,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { normalizePhone } from "@/utils/phone";
@@ -25,12 +25,10 @@ import {
   Twitter,
   Youtube,
   LinkedIn,
-  TikTok
+  TikTok,
 } from "@/components/ui/social-icons";
-import {
-  submitPlatformContactMessage,
-  PlatformPublicSettings
-} from "@/lib/platform-contact.functions";
+import { submitPlatformContactMessageClient } from "@/lib/backend/edge/contact";
+import type { PlatformPublicSettings } from "@/lib/platform-contact.functions";
 
 interface PlatformContactSectionProps {
   settings?: PlatformPublicSettings | null;
@@ -124,16 +122,14 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
 
     setIsSubmitting(true);
     try {
-      const response = await submitPlatformContactMessage({
-        data: {
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          company: company.trim(),
-          subject: subject.trim(),
-          message: message.trim(),
-          honeypot: honeypot.trim(),
-        },
+      const response = await submitPlatformContactMessageClient({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        company: company.trim() || undefined,
+        subject: subject.trim(),
+        message: message.trim(),
+        honeypot: honeypot.trim() || undefined,
       });
 
       if (response?.success) {
@@ -147,18 +143,23 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
           window.location.href = "/";
         }, 1500);
       } else {
-        toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+        toast.error(response?.error || "Não foi possível enviar sua mensagem. Tente novamente.");
         setIsSubmitting(false);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[PlatformContact] Submission error:", error);
-      toast.error(error.message || "Erro ao enviar mensagem. Tente novamente.");
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao enviar mensagem. Tente novamente.",
+      );
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section id="contato" className="py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#05070d]">
+    <section
+      id="contato"
+      className="py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#05070d]"
+    >
       {/* Background Ambience with Dark Blend and Golden Glow */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <img
@@ -198,7 +199,8 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
             viewport={{ once: true }}
             className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed text-balance"
           >
-            Quer saber mais sobre a plataforma, planos Enterprise ou implantação? Envie uma mensagem para nossa equipe de especialistas.
+            Quer saber mais sobre a plataforma, planos Enterprise ou implantação? Envie uma mensagem
+            para nossa equipe de especialistas.
           </motion.p>
         </div>
 
@@ -218,9 +220,12 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       <CheckCircle2 size={32} />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-2xl font-black uppercase italic text-white tracking-tight">Mensagem Enviada!</h3>
+                      <h3 className="text-2xl font-black uppercase italic text-white tracking-tight">
+                        Mensagem Enviada!
+                      </h3>
                       <p className="text-slate-400 text-sm max-w-md mx-auto">
-                        Obrigado pelo contato. Recebemos sua mensagem e nossa equipe retornará o mais breve possível.
+                        Obrigado pelo contato. Recebemos sua mensagem e nossa equipe retornará o
+                        mais breve possível.
                       </p>
                     </div>
                   </div>
@@ -242,7 +247,10 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="contact-name" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <Label
+                          htmlFor="contact-name"
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                        >
                           Seu Nome <span className="text-gold">*</span>
                         </Label>
                         <Input
@@ -257,7 +265,10 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="contact-email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <Label
+                          htmlFor="contact-email"
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                        >
                           E-mail de Contato <span className="text-gold">*</span>
                         </Label>
                         <Input
@@ -275,7 +286,10 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="contact-phone" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <Label
+                          htmlFor="contact-phone"
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                        >
                           WhatsApp / Telefone
                         </Label>
                         <Input
@@ -289,7 +303,10 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="contact-company" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <Label
+                          htmlFor="contact-company"
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                        >
                           Barbearia / Empresa
                         </Label>
                         <Input
@@ -304,7 +321,10 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contact-subject" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <Label
+                        htmlFor="contact-subject"
+                        className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                      >
                         Assunto <span className="text-gold">*</span>
                       </Label>
                       <select
@@ -324,7 +344,10 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <Label htmlFor="contact-message" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <Label
+                          htmlFor="contact-message"
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                        >
                           Mensagem <span className="text-gold">*</span>
                         </Label>
                         <span className="text-[9px] font-mono text-slate-500">
@@ -375,9 +398,12 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                   <MessageSquare size={28} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-black uppercase italic text-white tracking-tight">Atendimento Direto Barbex</h3>
+                  <h3 className="text-2xl font-black uppercase italic text-white tracking-tight">
+                    Atendimento Direto Barbex
+                  </h3>
                   <p className="text-slate-400 text-sm max-w-lg mx-auto">
-                    Entre em contato diretamente com nossa equipe comercial e de suporte através dos nossos canais oficiais abaixo.
+                    Entre em contato diretamente com nossa equipe comercial e de suporte através dos
+                    nossos canais oficiais abaixo.
                   </p>
                 </div>
 
@@ -393,10 +419,17 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                         <MessageSquare size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">WhatsApp</div>
-                        <div className="text-white text-xs font-bold truncate">Falar com especialista</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          WhatsApp
+                        </div>
+                        <div className="text-white text-xs font-bold truncate">
+                          Falar com especialista
+                        </div>
                       </div>
-                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                      <ArrowUpRight
+                        size={14}
+                        className="text-slate-600 group-hover:text-gold transition-colors shrink-0"
+                      />
                     </a>
                   )}
 
@@ -409,10 +442,15 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                         <Mail size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">E-mail</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          E-mail
+                        </div>
                         <div className="text-white text-xs font-bold truncate">{publicEmail}</div>
                       </div>
-                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                      <ArrowUpRight
+                        size={14}
+                        className="text-slate-600 group-hover:text-gold transition-colors shrink-0"
+                      />
                     </a>
                   )}
 
@@ -425,10 +463,15 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                         <Phone size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Telefone</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          Telefone
+                        </div>
                         <div className="text-white text-xs font-bold truncate">{directPhone}</div>
                       </div>
-                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                      <ArrowUpRight
+                        size={14}
+                        className="text-slate-600 group-hover:text-gold transition-colors shrink-0"
+                      />
                     </a>
                   )}
 
@@ -438,14 +481,18 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                         <MapPin size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sede</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          Sede
+                        </div>
                         <div className="text-slate-300 text-xs font-medium truncate">{address}</div>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {Object.keys(socialLinks).some((k) => Boolean(socialLinks[k as keyof typeof socialLinks])) && (
+                {Object.keys(socialLinks).some((k) =>
+                  Boolean(socialLinks[k as keyof typeof socialLinks]),
+                ) && (
                   <div className="pt-6 border-t border-white/5 space-y-3">
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                       Siga o Barbex nas redes
@@ -549,10 +596,15 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       <MessageSquare size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">WhatsApp Oficial</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        WhatsApp Oficial
+                      </div>
                       <div className="text-white font-bold truncate">Falar com especialista</div>
                     </div>
-                    <ArrowUpRight size={16} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                    <ArrowUpRight
+                      size={16}
+                      className="text-slate-600 group-hover:text-gold transition-colors shrink-0"
+                    />
                   </a>
                 )}
 
@@ -565,10 +617,15 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       <Mail size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">E-mail Institucional</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        E-mail Institucional
+                      </div>
                       <div className="text-white font-bold truncate">{publicEmail}</div>
                     </div>
-                    <ArrowUpRight size={16} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                    <ArrowUpRight
+                      size={16}
+                      className="text-slate-600 group-hover:text-gold transition-colors shrink-0"
+                    />
                   </a>
                 )}
 
@@ -581,10 +638,15 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       <Phone size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Telefone</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        Telefone
+                      </div>
                       <div className="text-white font-bold truncate">{directPhone}</div>
                     </div>
-                    <ArrowUpRight size={16} className="text-slate-600 group-hover:text-gold transition-colors shrink-0" />
+                    <ArrowUpRight
+                      size={16}
+                      className="text-slate-600 group-hover:text-gold transition-colors shrink-0"
+                    />
                   </a>
                 )}
 
@@ -594,15 +656,21 @@ export function PlatformContactSection({ settings }: PlatformContactSectionProps
                       <MapPin size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sede</div>
-                      <div className="text-slate-300 text-xs leading-relaxed font-medium">{address}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        Sede
+                      </div>
+                      <div className="text-slate-300 text-xs leading-relaxed font-medium">
+                        {address}
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Social Media Badges */}
-              {Object.keys(socialLinks).some((k) => Boolean(socialLinks[k as keyof typeof socialLinks])) && (
+              {Object.keys(socialLinks).some((k) =>
+                Boolean(socialLinks[k as keyof typeof socialLinks]),
+              ) && (
                 <div className="pt-4 border-t border-white/5 space-y-3">
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                     Siga o Barbex nas redes

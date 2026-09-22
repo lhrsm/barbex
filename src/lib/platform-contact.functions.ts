@@ -264,3 +264,9 @@ export const submitPlatformContactMessage = createServerFn({ method: "POST" })
       messageId: savedMessageId,
     };
   });
+
+export {
+  submitPlatformContactMessageClient,
+  type SubmitPlatformContactParams,
+  type SubmitPlatformContactResult,
+} from "@/lib/backend/edge/contact";

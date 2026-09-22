@@ -55,3 +55,55 @@ export async function submitPublicContactMessageClient(
     message: data?.message || "Recebemos sua mensagem. A barbearia poderá consultá-la pelo painel.",
   };
 }
+
+export interface SubmitPlatformContactParams {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  subject?: string;
+  message: string;
+  honeypot?: string;
+}
+
+export interface SubmitPlatformContactResult {
+  success: boolean;
+  persisted: boolean;
+  emailStatus?: "sent" | "failed" | "provider_unconfigured" | "pending" | "ignored";
+  id?: string;
+  message?: string;
+  error?: string;
+}
+
+export async function submitPlatformContactMessageClient(
+  params: SubmitPlatformContactParams,
+): Promise<SubmitPlatformContactResult> {
+  const res = await invokeEdgeFunction<
+    SubmitPlatformContactParams & { isPlatform: boolean },
+    {
+      id?: string;
+      persisted?: boolean;
+      emailStatus?: "sent" | "failed" | "provider_unconfigured" | "pending" | "ignored";
+      message?: string;
+    }
+  >("contact-public", { ...params, isPlatform: true });
+
+  if (!res.ok) {
+    return {
+      success: false,
+      persisted: false,
+      error: res.message || "Falha na comunicação com o servidor.",
+    };
+  }
+
+  const data = res.data;
+  return {
+    success: true,
+    persisted: Boolean(data?.persisted ?? true),
+    emailStatus: data?.emailStatus,
+    id: data?.id,
+    message:
+      data?.message ||
+      "Mensagem institucional enviada com sucesso! Nossa equipe retornará o mais breve possível.",
+  };
+}
