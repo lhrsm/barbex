@@ -153,10 +153,10 @@ export function PlatformContactInbox() {
         <div>
           <h2 className="text-xl font-bold text-white uppercase italic tracking-tight flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-purple-400" />
-            Mensagens da Landing Page Institucional
+            Contato da Plataforma
           </h2>
           <p className="text-xs text-slate-400">
-            Mensagens enviadas por visitantes e potenciais parceiros no formulário oficial da plataforma.
+            Mensagens institucionais recebidas através do formulário oficial em barbex.shop/#contato.
           </p>
         </div>
 

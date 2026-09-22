@@ -501,11 +501,13 @@ function SettingsComponent() {
     const currentContactEmail = normalizeContactEmail(formData.contact_email);
     const contactFormEnabled = Boolean(formData.contact_form_enabled);
 
-    // Validação de formato se o formulário estiver ativado
-    if (contactFormEnabled && currentContactEmail && !currentContactEmail.includes("@")) {
-      toast.error("Por favor, informe um e-mail válido para receber as mensagens do formulário.");
-      setSaving(false);
-      return;
+    // Validação obrigatória se o formulário estiver ativado (R2E.9)
+    if (contactFormEnabled) {
+      if (!currentContactEmail || !currentContactEmail.includes("@") || !currentContactEmail.includes(".")) {
+        toast.error("Um endereço de e-mail válido é obrigatório para ativar o formulário de contato.");
+        setSaving(false);
+        return;
+      }
     }
 
     let contactEmailWarning = false;
@@ -913,10 +915,10 @@ function SettingsComponent() {
                           className="text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer"
                         >
                           <MessageSquare size={14} className="text-gold" />
-                          Exibir formulário de contato na minha página pública
+                          Exibir formulário de contato no meu site
                         </Label>
                         <p className="text-[11px] text-slate-400 font-medium">
-                          Permite que clientes e visitantes enviem mensagens diretamente pelo formulário da sua página.
+                          Permite que clientes e visitantes enviem mensagens diretamente pelo formulário da sua página pública.
                         </p>
                       </div>
                       <Switch
@@ -948,11 +950,29 @@ function SettingsComponent() {
                         As mensagens serão salvas no painel da barbearia e uma notificação será enviada para este e-mail.
                       </p>
 
-                      {formData.contact_form_enabled && (!formData.contact_email || !formData.contact_email.includes("@")) && (
+                      {!formData.contact_form_enabled && (
+                        <div className="flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-xl text-slate-400 text-xs mt-2">
+                          <Info size={14} className="shrink-0 text-slate-400" />
+                          <span>
+                            O formulário de contato está desativado no seu site. Visitantes visualizarão apenas seus canais de atendimento direto.
+                          </span>
+                        </div>
+                      )}
+
+                      {formData.contact_form_enabled && (!formData.contact_email || !formData.contact_email.includes("@") || !formData.contact_email.includes(".")) && (
                         <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs mt-2">
                           <AlertTriangle size={14} className="shrink-0" />
                           <span>
-                            Para que o formulário apareça na sua página pública, informe um endereço de e-mail válido acima.
+                            Para ativar e exibir o formulário no seu site, informe um endereço de e-mail válido acima.
+                          </span>
+                        </div>
+                      )}
+
+                      {formData.contact_form_enabled && formData.contact_email && formData.contact_email.includes("@") && formData.contact_email.includes(".") && (
+                        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs mt-2">
+                          <CheckCircle2 size={14} className="shrink-0 text-emerald-400" />
+                          <span>
+                            O formulário está ativo no seu site. As mensagens recebidas serão notificadas para <strong>{formData.contact_email}</strong>.
                           </span>
                         </div>
                       )}

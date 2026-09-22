@@ -42,7 +42,14 @@ export const Route = createFileRoute("/admin/settings")({
 
 function AdminSettings() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("geral");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("tab");
+      if (p === "contato" || p === "mensagens" || p === "platform-contact") return "mensagens";
+      if (p) return p;
+    }
+    return "geral";
+  });
 
   const { data: settings, isLoading, error: queryError } = useQuery({
     queryKey: ["admin-system-settings"],
@@ -144,7 +151,7 @@ function AdminSettings() {
           <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-auto inline-flex gap-0.5 w-auto">
             {[
               { id: "geral", label: "Geral", icon: Globe },
-              { id: "mensagens", label: "Mensagens da Landing", icon: MessageSquare },
+              { id: "mensagens", label: "Contato da Plataforma", icon: MessageSquare },
               { id: "faturamento", label: "Faturamento", icon: CreditCard },
               { id: "saude", label: "Saúde", icon: ShieldAlert },
               { id: "seguranca", label: "Segurança", icon: Shield },

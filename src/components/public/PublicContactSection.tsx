@@ -490,6 +490,15 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                   <MessageSquare size={16} /> Falar no WhatsApp
                 </a>
               )}
+              {shop?.contact_email && (
+                <a
+                  href={`mailto:${shop.contact_email}`}
+                  aria-label={`Enviar e-mail para ${businessName}`}
+                  className="inline-flex items-center justify-center gap-2 px-6 h-12 rounded-full bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider border border-white/15 hover:border-gold/50 transition-all w-full sm:w-auto"
+                >
+                  <Mail size={16} className="text-gold" /> {shop.contact_email}
+                </a>
+              )}
             </div>
 
             {hasAddress && (

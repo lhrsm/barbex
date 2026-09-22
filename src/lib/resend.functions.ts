@@ -147,7 +147,7 @@ export const sendTransactionalEmail = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const RESEND_API_KEY = process.env['RESEND_API_KEY'];
-    const FROM_EMAIL = (settings as any)?.from_email || process.env['RESEND_FROM_EMAIL'] || 'noreply@notify.barbex.shop';
+    const FROM_EMAIL = (settings as any)?.from_email || process.env['RESEND_FROM_EMAIL'] || 'nao-responder@notify.barbex.shop';
     const FROM_NAME = (settings as any)?.from_name || process.env['RESEND_FROM_NAME'] || 'Barbex';
 
     if (!RESEND_API_KEY) {

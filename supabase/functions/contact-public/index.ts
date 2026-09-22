@@ -348,6 +348,7 @@ serve(async (req: Request) => {
           body: JSON.stringify({
             from: fromAddress,
             to: [contactRecipient],
+            reply_to: email,
             subject: `[Contato Site] ${safeSubject} - ${safeName}`,
             html: emailHtml
           })
