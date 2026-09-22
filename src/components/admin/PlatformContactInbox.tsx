@@ -15,7 +15,12 @@ import {
   RefreshCw,
   Send,
   ShieldAlert,
+  Reply,
+  Lock,
+  ExternalLink,
+  MessageSquareReply,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -51,12 +56,31 @@ interface PlatformMessage {
   updated_at: string;
 }
 
+interface PlatformMessageReply {
+  id: string;
+  message_id: string;
+  admin_id: string | null;
+  admin_email: string | null;
+  subject: string;
+  content: string;
+  recipient_email: string;
+  status: "pending" | "accepted_by_provider" | "failed";
+  provider_message_id: string | null;
+  provider_error_code: string | null;
+  attempt_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export function PlatformContactInbox() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRead, setFilterRead] = useState<"all" | "unread" | "read">("all");
   const [selectedMessage, setSelectedMessage] = useState<PlatformMessage | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isReplyOpen, setIsReplyOpen] = useState(false);
+  const [replySubject, setReplySubject] = useState("");
+  const [replyContent, setReplyContent] = useState("");
 
   // 1. Fetch Platform Messages
   const {
@@ -118,6 +142,83 @@ export function PlatformContactInbox() {
     },
   });
 
+  // 3. Query Replies for Selected Message
+  const { data: messageReplies = [], isLoading: isLoadingReplies } = useQuery<
+    PlatformMessageReply[]
+  >({
+    queryKey: ["platform-contact-replies", selectedMessage?.id],
+    queryFn: async () => {
+      if (!selectedMessage?.id) return [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: fetchRepliesErr } = await (supabase as any)
+        .from("platform_contact_replies")
+        .select("*")
+        .eq("message_id", selectedMessage.id)
+        .order("created_at", { ascending: false });
+
+      if (fetchRepliesErr) {
+        throw new Error(fetchRepliesErr.message);
+      }
+      return (data || []) as PlatformMessageReply[];
+    },
+    enabled: Boolean(selectedMessage?.id),
+  });
+
+  // 4. Mutation to Send Direct Reply via Edge Function
+  const sendReplyMutation = useMutation({
+    mutationFn: async ({
+      messageId,
+      subject,
+      content,
+    }: {
+      messageId: string;
+      subject: string;
+      content: string;
+    }) => {
+      const { data, error: invokeErr } = await supabase.functions.invoke("contact-platform-reply", {
+        body: {
+          messageId,
+          subject,
+          content,
+        },
+      });
+
+      if (invokeErr) {
+        throw new Error(invokeErr.message || "Erro na comunicação com o servidor.");
+      }
+
+      if (!data?.ok) {
+        throw new Error(data?.error || "O provedor de e-mail rejeitou o envio.");
+      }
+
+      return data.data;
+    },
+    onSuccess: () => {
+      toast.success("Resposta enviada com sucesso e aceita pelo provedor Resend!");
+      queryClient.invalidateQueries({
+        queryKey: ["platform-contact-replies", selectedMessage?.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["platform-contact-messages"] });
+      setReplyContent("");
+      setIsReplyOpen(false);
+    },
+    onError: (err: Error) => {
+      toast.error("Falha ao enviar resposta: " + err.message);
+      // Draft text is safely preserved in replyContent!
+    },
+  });
+
+  const handleOpenReplyModal = () => {
+    if (!selectedMessage) return;
+    const defaultSubject = selectedMessage.subject?.trim()
+      ? selectedMessage.subject.toLowerCase().startsWith("re:")
+        ? selectedMessage.subject
+        : `Re: ${selectedMessage.subject}`
+      : "Re: Contato Barbex";
+    setReplySubject((prev) => (prev.trim() ? prev : defaultSubject));
+    setIsReplyOpen(true);
+  };
+
   const handleOpenDetail = (msg: PlatformMessage) => {
     setSelectedMessage(msg);
     setIsDetailOpen(true);
@@ -156,7 +257,8 @@ export function PlatformContactInbox() {
             Contato da Plataforma
           </h2>
           <p className="text-xs text-slate-400">
-            Mensagens institucionais recebidas através do formulário oficial em barbex.shop/#contato.
+            Mensagens institucionais recebidas através do formulário oficial em
+            barbex.shop/#contato.
           </p>
         </div>
 
@@ -343,9 +445,13 @@ export function PlatformContactInbox() {
                 </div>
                 <DialogDescription className="text-xs text-slate-400">
                   Enviado em{" "}
-                  {format(new Date(selectedMessage.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", {
-                    locale: ptBR,
-                  })}
+                  {format(
+                    new Date(selectedMessage.created_at),
+                    "dd 'de' MMMM 'de' yyyy 'às' HH:mm",
+                    {
+                      locale: ptBR,
+                    },
+                  )}
                 </DialogDescription>
               </DialogHeader>
 
@@ -427,8 +533,95 @@ export function PlatformContactInbox() {
                 )}
               </div>
 
+              {/* Reply History Section */}
+              <div className="space-y-3 pt-3 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
+                    <MessageSquareReply size={14} className="text-purple-400" />
+                    Histórico de Respostas ({messageReplies.length})
+                  </span>
+                  {isLoadingReplies && (
+                    <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                      <RefreshCw size={10} className="animate-spin" /> Carregando histórico...
+                    </span>
+                  )}
+                </div>
+
+                {messageReplies.length === 0 ? (
+                  <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-center">
+                    <p className="text-xs text-slate-500">
+                      Nenhuma resposta foi enviada pelo painel para esta mensagem até o momento.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                    {messageReplies.map((reply) => (
+                      <div
+                        key={reply.id}
+                        className="p-3.5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-2 text-xs"
+                      >
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            {reply.status === "accepted_by_provider" && (
+                              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] gap-1">
+                                <CheckCircle2 size={10} /> Aceito pelo provedor
+                              </Badge>
+                            )}
+                            {reply.status === "failed" && (
+                              <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px] gap-1">
+                                <AlertCircle size={10} /> Falha no envio
+                              </Badge>
+                            )}
+                            {reply.status === "pending" && (
+                              <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] gap-1">
+                                <Clock size={10} className="animate-spin" /> Processando
+                              </Badge>
+                            )}
+                            <span className="text-slate-400 text-[11px] font-medium">
+                              {reply.admin_email || "Super Admin"}
+                            </span>
+                          </div>
+
+                          <span className="text-slate-500 text-[11px] flex items-center gap-1">
+                            <Calendar size={11} />
+                            {format(new Date(reply.created_at), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[11px] font-semibold text-slate-300 block">
+                            Assunto: {reply.subject}
+                          </span>
+                          <div className="mt-1 p-2.5 bg-black/40 border border-white/5 rounded-xl text-slate-200 text-xs whitespace-pre-wrap leading-relaxed">
+                            {reply.content}
+                          </div>
+                        </div>
+
+                        <div className="text-[10px] text-slate-500 flex flex-wrap gap-x-4 gap-y-0.5 pt-1 border-t border-white/5">
+                          <span>
+                            <strong>Destino:</strong> {reply.recipient_email}
+                          </span>
+                          {reply.provider_message_id && (
+                            <span>
+                              <strong>Resend ID:</strong> {reply.provider_message_id} (em trânsito)
+                            </span>
+                          )}
+                          {reply.provider_error_code && (
+                            <span className="text-rose-400">
+                              <strong>Erro:</strong> {reply.provider_error_code}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Modal Actions */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-white/5">
                 <Button
                   variant="outline"
                   size="sm"
@@ -438,21 +631,146 @@ export function PlatformContactInbox() {
                       nextRead: !selectedMessage.read,
                     })
                   }
-                  className="border-white/10 text-xs"
+                  className="border-white/10 text-xs order-2 sm:order-1"
                 >
                   {selectedMessage.read ? "Marcar como não lida" : "Marcar como lida"}
                 </Button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 order-1 sm:order-2 self-end sm:self-auto">
                   <a
                     href={`mailto:${selectedMessage.sender_email}?subject=Re: ${encodeURIComponent(
                       selectedMessage.subject || "Contato pelo Barbex",
                     )}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-semibold text-xs transition-all"
                   >
-                    <Send size={12} /> Responder por E-mail
+                    <ExternalLink size={12} /> Responder por E-mail
                   </a>
+
+                  <Button
+                    size="sm"
+                    onClick={handleOpenReplyModal}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                  >
+                    <Reply size={12} /> Responder pelo painel
+                  </Button>
                 </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Direct Reply Dialog Modal */}
+      <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
+        <DialogContent className="max-w-xl bg-[#090D1A] border-white/10 text-white p-6 sm:p-7 rounded-3xl">
+          <DialogHeader className="space-y-1.5 border-b border-white/5 pb-4">
+            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+              <MessageSquareReply className="w-5 h-5 text-purple-400" />
+              Responder pelo Painel
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Sua resposta oficial será enviada por e-mail diretamente ao visitante através da
+              Resend.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedMessage && (
+            <div className="space-y-4 pt-2">
+              {/* Recipient Info Card (Read-only security badge) */}
+              <div className="p-3.5 bg-white/[0.03] border border-white/5 rounded-2xl space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Destinatário Original
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/30 text-emerald-400 text-[10px] gap-1 py-0.5"
+                  >
+                    <Lock size={10} /> Protegido via Banco
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-white truncate">
+                    {selectedMessage.sender_name}
+                  </div>
+                  <div className="text-purple-300 font-mono text-[11px] truncate">
+                    {selectedMessage.sender_email}
+                  </div>
+                </div>
+                <div className="text-[10px] text-slate-500 border-t border-white/5 pt-1.5 flex items-center justify-between flex-wrap gap-1">
+                  <span>Remetente: Barbex &lt;nao-responder@notify.barbex.shop&gt;</span>
+                  <span>Respostas para: contato@lmstartup.com.br</span>
+                </div>
+              </div>
+
+              {/* Subject Input */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300">
+                  Assunto da resposta
+                </label>
+                <Input
+                  value={replySubject}
+                  onChange={(e) => setReplySubject(e.target.value)}
+                  placeholder="Re: Assunto da mensagem..."
+                  className="h-10 bg-white/5 border-white/10 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-purple-500/50"
+                  maxLength={200}
+                />
+              </div>
+
+              {/* Content Textarea */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-slate-300">
+                    Mensagem da resposta
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {replyContent.length} / 10.000
+                  </span>
+                </div>
+                <Textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Escreva sua resposta institucional aqui..."
+                  rows={6}
+                  className="bg-white/5 border-white/10 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-purple-500/50 resize-none min-h-[140px]"
+                  maxLength={10000}
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsReplyOpen(false)}
+                  disabled={sendReplyMutation.isPending}
+                  className="border-white/10 text-xs"
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    sendReplyMutation.mutate({
+                      messageId: selectedMessage.id,
+                      subject: replySubject,
+                      content: replyContent,
+                    })
+                  }
+                  disabled={!replyContent.trim() || sendReplyMutation.isPending}
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs gap-1.5 px-4 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                >
+                  {sendReplyMutation.isPending ? (
+                    <>
+                      <RefreshCw size={12} className="animate-spin" /> Enviando resposta...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={12} /> Enviar resposta
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           )}

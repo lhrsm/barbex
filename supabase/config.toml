@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.gateway-webhook]
 verify_jwt = false
+
+[functions.contact-platform-reply]
+verify_jwt = false
