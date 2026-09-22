@@ -1,25 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { 
-  MessageSquare, 
-  Inbox, 
-  History, 
-  FileText, 
-  Share2, 
+import {
+  MessageSquare,
+  Inbox,
+  History,
+  FileText,
+  Share2,
   Settings,
   LayoutDashboard,
   AlertTriangle,
-  Ghost
+  Ghost,
+  Mail,
 } from "lucide-react";
-import { 
-  PremiumTabs, 
-  PremiumTabsList, 
-  PremiumTabsBody, 
-  PremiumTabsContent 
+import {
+  PremiumTabs,
+  PremiumTabsList,
+  PremiumTabsBody,
+  PremiumTabsContent,
 } from "@/components/ui/premium-tabs";
 import { CommunicationOverview } from "@/components/communications/CommunicationOverview";
 import { ChannelManager } from "@/components/communications/ChannelManager";
 import { UnifiedInbox } from "@/components/communications/UnifiedInbox";
+import { ContactMessagesInbox } from "@/components/communications/ContactMessagesInbox";
 import { TemplateManager } from "@/components/communications/TemplateManager";
 import { DeliveryFailures } from "@/components/communications/DeliveryFailures";
 import { DeadLetterQueue } from "@/components/communications/DeadLetterQueue";
@@ -39,17 +41,22 @@ function CommunicationsPage() {
             <MessageSquare className="text-gold" size={24} />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none">Omnichannel</h1>
-            <p className="text-zinc-500 font-medium text-sm mt-1">Central de Inteligência de Comunicação e Relacionamento.</p>
+            <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none">
+              Omnichannel
+            </h1>
+            <p className="text-zinc-500 font-medium text-sm mt-1">
+              Central de Inteligência de Comunicação e Relacionamento.
+            </p>
           </div>
         </div>
       </div>
 
       <PremiumTabs defaultValue="overview">
-        <PremiumTabsList 
+        <PremiumTabsList
           tabs={[
             { value: "overview", label: "Visão Geral", icon: LayoutDashboard },
             { value: "inbox", label: "Caixa de Entrada", icon: Inbox },
+            { value: "contact", label: "Contato do Site", icon: Mail },
             { value: "history", label: "Mensagens", icon: History },
             { value: "templates", label: "Templates", icon: FileText },
             { value: "channels", label: "Canais", icon: Share2 },
@@ -62,11 +69,15 @@ function CommunicationsPage() {
           <PremiumTabsContent value="overview">
             <CommunicationOverview tenantId={tenantId} />
           </PremiumTabsContent>
-          
+
           <PremiumTabsContent value="inbox">
             <UnifiedInbox tenantId={tenantId} />
           </PremiumTabsContent>
-          
+
+          <PremiumTabsContent value="contact">
+            <ContactMessagesInbox tenantId={tenantId} />
+          </PremiumTabsContent>
+
           <PremiumTabsContent value="history">
             <UnifiedInbox tenantId={tenantId} />
           </PremiumTabsContent>

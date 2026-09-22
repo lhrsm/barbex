@@ -4,14 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Send, MessageSquare, Phone, CheckCircle2, Mail, MapPin } from "lucide-react";
 import { submitPublicContactMessageClient } from "@/lib/backend/edge/contact";
 import { normalizePhone } from "@/utils/phone";
 
 interface PublicContactSectionProps {
-  shop: any;
+  shop: {
+    id?: string;
+    slug?: string;
+    business_name?: string;
+    contact_email?: string;
+    whatsapp_number?: string;
+    address?: string;
+    social_links?: Record<string, string>;
+    [key: string]: unknown;
+  };
   slug: string;
 }
 
@@ -44,7 +59,9 @@ function formatSocialUrl(platform: string, rawValue?: string): string {
     case "tiktok":
       return `https://tiktok.com/@${clean}`;
     case "youtube":
-      return clean.startsWith("channel/") || clean.startsWith("c/") ? `https://youtube.com/${clean}` : `https://youtube.com/@${clean}`;
+      return clean.startsWith("channel/") || clean.startsWith("c/")
+        ? `https://youtube.com/${clean}`
+        : `https://youtube.com/@${clean}`;
     default:
       return `https://${clean}`;
   }
@@ -72,18 +89,38 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
   }, []);
 
   const businessName = shop?.business_name || "Barbearia";
-  const rawWhatsapp = shop?.whatsapp_number || (shop?.social_links as any)?.whatsapp;
+  const rawWhatsapp = shop?.whatsapp_number || shop?.social_links?.whatsapp;
   const cleanWhatsapp = rawWhatsapp ? normalizePhone(rawWhatsapp) : "";
   const whatsappUrl = cleanWhatsapp
     ? `https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(`Olá! Vim pelo site da ${businessName} e gostaria de tirar uma dúvida.`)}`
     : "";
 
-  const social = (shop as any)?.social_links || {};
+  const social = shop?.social_links || {};
   const socials = [
-    { key: "instagram", url: formatSocialUrl("instagram", social.instagram), label: "Instagram", icon: "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM17.5 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" },
-    { key: "facebook", url: formatSocialUrl("facebook", social.facebook), label: "Facebook", icon: "M13 22v-8h3l1-4h-4V7.5C13 6.4 13.4 5.5 15 5.5h2V2.2C16.5 2.1 15.3 2 14 2c-3 0-5 1.8-5 5v3H6v4h3v8h4z" },
-    { key: "tiktok", url: formatSocialUrl("tiktok", social.tiktok), label: "TikTok", icon: "M16 2c.3 1.7 1.3 3 2.8 3.8 1 .5 2 .7 3.2.7v3.6c-2 .1-3.8-.4-5.5-1.5v6.6c0 4-3.3 7.3-7.3 7.3S2 18.7 2 14.7s3.3-7.3 7.3-7.3c.4 0 .8 0 1.2.1v3.8c-.4-.1-.8-.2-1.2-.2-2 0-3.7 1.7-3.7 3.7s1.7 3.7 3.7 3.7 3.7-1.7 3.7-3.7V2h3z" },
-    { key: "youtube", url: formatSocialUrl("youtube", social.youtube), label: "YouTube", icon: "M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8C22 15.2 22 12 22 12s0-3.2-.4-4.8zM10 15V9l5 3-5 3z" },
+    {
+      key: "instagram",
+      url: formatSocialUrl("instagram", social.instagram),
+      label: "Instagram",
+      icon: "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM17.5 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z",
+    },
+    {
+      key: "facebook",
+      url: formatSocialUrl("facebook", social.facebook),
+      label: "Facebook",
+      icon: "M13 22v-8h3l1-4h-4V7.5C13 6.4 13.4 5.5 15 5.5h2V2.2C16.5 2.1 15.3 2 14 2c-3 0-5 1.8-5 5v3H6v4h3v8h4z",
+    },
+    {
+      key: "tiktok",
+      url: formatSocialUrl("tiktok", social.tiktok),
+      label: "TikTok",
+      icon: "M16 2c.3 1.7 1.3 3 2.8 3.8 1 .5 2 .7 3.2.7v3.6c-2 .1-3.8-.4-5.5-1.5v6.6c0 4-3.3 7.3-7.3 7.3S2 18.7 2 14.7s3.3-7.3 7.3-7.3c.4 0 .8 0 1.2.1v3.8c-.4-.1-.8-.2-1.2-.2-2 0-3.7 1.7-3.7 3.7s1.7 3.7 3.7 3.7 3.7-1.7 3.7-3.7V2h3z",
+    },
+    {
+      key: "youtube",
+      url: formatSocialUrl("youtube", social.youtube),
+      label: "YouTube",
+      icon: "M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8C22 15.2 22 12 22 12s0-3.2-.4-4.8zM10 15V9l5 3-5 3z",
+    },
   ].filter((s) => s.url && s.url.length > 0);
 
   const hasAddress = !!shop?.address;
@@ -93,7 +130,7 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
     shop?.contact_email &&
     typeof shop.contact_email === "string" &&
     shop.contact_email.trim().length > 0 &&
-    shop.contact_email.includes("@")
+    shop.contact_email.includes("@"),
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,7 +143,9 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
     }
 
     if (!email.trim() && !phone.trim()) {
-      toast.error("Por favor, informe pelo menos um meio de retorno (E-mail ou WhatsApp/Telefone).");
+      toast.error(
+        "Por favor, informe pelo menos um meio de retorno (E-mail ou WhatsApp/Telefone).",
+      );
       return;
     }
 
@@ -118,6 +157,8 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
     setIsSubmitting(true);
     try {
       const res = await submitPublicContactMessageClient({
+        slug: slug || shop?.slug || undefined,
+        tenantId: shop?.id || undefined,
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || undefined,
@@ -126,24 +167,29 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
         honeypot: honeypot || undefined,
       });
 
-      if (res?.success) {
+      if (res?.success && res.persisted) {
         setIsSubmitted(true);
-        toast.success("Mensagem enviada com sucesso!", {
-          description: "Obrigado pelo contato. A barbearia recebeu sua mensagem.",
+        toast.success("Mensagem recebida com sucesso!", {
+          description:
+            res.message || "Recebemos sua mensagem. A barbearia poderá consultá-la pelo painel.",
         });
 
         // Delay 1500ms and navigate to /$slug top
         timerRef.current = setTimeout(() => {
-          navigate({ to: `/${slug}` as any });
+          navigate({ to: "/$slug", params: { slug } });
           window.scrollTo({ top: 0, behavior: "auto" });
         }, 1500);
       } else {
-        toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+        toast.error(res?.error || "Não foi possível enviar sua mensagem. Tente novamente.");
         setIsSubmitting(false);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[PublicContactSection] Error submitting contact form:", err);
-      toast.error(err.message || "Não foi possível enviar sua mensagem. Tente novamente.");
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : "Não foi possível enviar sua mensagem. Tente novamente.";
+      toast.error(errMsg);
       setIsSubmitting(false);
     }
   };
@@ -153,7 +199,8 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
       id="contato"
       className="relative py-20 px-4 sm:px-6 lg:px-8 border-t border-[#F5C542]/10 overflow-hidden"
       style={{
-        background: "radial-gradient(circle at 50% 0%, rgba(245,197,66,0.06), transparent 50%), #03060E",
+        background:
+          "radial-gradient(circle at 50% 0%, rgba(245,197,66,0.06), transparent 50%), #03060E",
       }}
     >
       <div className="max-w-5xl mx-auto">
@@ -163,7 +210,10 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
             <MessageSquare size={14} /> Atendimento Direto
           </div>
           <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-white">
-            Fale com a <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5C542] via-[#E6B800] to-[#D4A017]">{businessName}</span>
+            Fale com a{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5C542] via-[#E6B800] to-[#D4A017]">
+              {businessName}
+            </span>
           </h2>
           <p className="text-slate-400 text-sm md:text-base leading-relaxed">
             {hasContactEmail
@@ -209,7 +259,10 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                   />
 
                   <div className="space-y-2">
-                    <Label htmlFor="contact-name" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <Label
+                      htmlFor="contact-name"
+                      className="text-xs font-bold uppercase tracking-wider text-slate-300"
+                    >
                       Seu Nome <span className="text-gold">*</span>
                     </Label>
                     <Input
@@ -226,7 +279,10 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="contact-email" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                      <Label
+                        htmlFor="contact-email"
+                        className="text-xs font-bold uppercase tracking-wider text-slate-300"
+                      >
                         Seu E-mail
                       </Label>
                       <Input
@@ -242,7 +298,10 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contact-phone" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                      <Label
+                        htmlFor="contact-phone"
+                        className="text-xs font-bold uppercase tracking-wider text-slate-300"
+                      >
                         WhatsApp / Telefone
                       </Label>
                       <Input
@@ -259,20 +318,35 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                   </div>
 
                   <p className="text-[11px] text-slate-500 italic">
-                    * Informe pelo menos um meio de contato (E-mail ou WhatsApp) para podermos responder.
+                    * Informe pelo menos um meio de contato (E-mail ou WhatsApp) para podermos
+                    responder.
                   </p>
 
                   <div className="space-y-2">
-                    <Label htmlFor="contact-subject" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <Label
+                      htmlFor="contact-subject"
+                      className="text-xs font-bold uppercase tracking-wider text-slate-300"
+                    >
                       Assunto
                     </Label>
-                    <Select value={subject} onValueChange={setSubject} disabled={isSubmitting || isSubmitted}>
-                      <SelectTrigger id="contact-subject" className="bg-black/40 border-white/10 text-white focus:border-gold focus:ring-gold/20 h-11 rounded-xl">
+                    <Select
+                      value={subject}
+                      onValueChange={setSubject}
+                      disabled={isSubmitting || isSubmitted}
+                    >
+                      <SelectTrigger
+                        id="contact-subject"
+                        className="bg-black/40 border-white/10 text-white focus:border-gold focus:ring-gold/20 h-11 rounded-xl"
+                      >
                         <SelectValue placeholder="Selecione um assunto" />
                       </SelectTrigger>
                       <SelectContent className="bg-[#05070d] border-gold/20 text-white">
                         {SUBJECT_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt} className="cursor-pointer focus:bg-gold/10 focus:text-gold">
+                          <SelectItem
+                            key={opt}
+                            value={opt}
+                            className="cursor-pointer focus:bg-gold/10 focus:text-gold"
+                          >
                             {opt}
                           </SelectItem>
                         ))}
@@ -282,7 +356,10 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="contact-message" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                      <Label
+                        htmlFor="contact-message"
+                        className="text-xs font-bold uppercase tracking-wider text-slate-300"
+                      >
                         Sua Mensagem <span className="text-gold">*</span>
                       </Label>
                       <span className="text-[11px] text-slate-500">{message.length}/1000</span>
@@ -334,7 +411,8 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                     </div>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Prefere conversar em tempo real? Chame diretamente no WhatsApp oficial da barbearia.
+                    Prefere conversar em tempo real? Chame diretamente no WhatsApp oficial da
+                    barbearia.
                   </p>
                   <a
                     href={whatsappUrl}
@@ -352,10 +430,12 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
               {socials.length > 0 && (
                 <div className="bg-[#080D1A]/90 border border-gold/15 rounded-3xl p-6 shadow-xl space-y-4">
                   <h4 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-gold animate-pulse" /> Siga nossas redes
+                    <span className="h-2 w-2 rounded-full bg-gold animate-pulse" /> Siga nossas
+                    redes
                   </h4>
                   <p className="text-xs text-slate-400">
-                    Acompanhe cortes, novidades, bastidores e promoções exclusivas da {businessName}.
+                    Acompanhe cortes, novidades, bastidores e promoções exclusivas da {businessName}
+                    .
                   </p>
                   <div className="flex flex-wrap gap-2.5 pt-1">
                     {socials.map((s) => (
@@ -367,7 +447,9 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                         aria-label={`${s.label} da ${businessName}`}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:text-gold hover:border-gold/50 hover:bg-gold/5 transition-all"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d={s.icon} /></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d={s.icon} />
+                        </svg>
                         {s.label}
                       </a>
                     ))}
@@ -381,7 +463,8 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                   <Mail size={14} className="text-gold" /> Resposta Garantida
                 </div>
                 <p className="leading-relaxed">
-                  Mensagens enviadas pelo formulário são entregues com segurança diretamente à administração da barbearia.
+                  Mensagens enviadas pelo formulário são entregues com segurança diretamente à
+                  administração da barbearia.
                 </p>
               </div>
             </div>
@@ -416,7 +499,9 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
 
             {socials.length > 0 && (
               <div className="pt-4 border-t border-white/10">
-                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 block mb-3">Nossas Redes Sociais</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 block mb-3">
+                  Nossas Redes Sociais
+                </span>
                 <div className="flex flex-wrap justify-center gap-2.5">
                   {socials.map((s) => (
                     <a
@@ -427,7 +512,9 @@ export function PublicContactSection({ shop, slug }: PublicContactSectionProps) 
                       aria-label={`${s.label} da ${businessName}`}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:text-gold hover:border-gold/50 hover:bg-gold/5 transition-all"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d={s.icon} /></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d={s.icon} />
+                      </svg>
                       {s.label}
                     </a>
                   ))}
