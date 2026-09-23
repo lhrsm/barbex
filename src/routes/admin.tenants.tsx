@@ -19,7 +19,10 @@ import {
   Globe,
   Clock,
   ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -154,14 +157,14 @@ function AdminTenants() {
         throw new Error("Erro ao carregar assinaturas: " + (sError.message || "Falha na consulta"));
       }
 
-      const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
-      const plansMap = new Map((plans || []).map((pl) => [pl.id, pl]));
+      const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const plansMap = new Map((plans || []).map((pl: any) => [pl.id, pl]));
 
       // 3. Resolução segura de cada estabelecimento com métricas reais
       const resolvedTenants: TenantRecord[] = await Promise.all(
         barbershops.map(async (shop) => {
-          const ownerProfile = shop.owner_id ? profilesMap.get(shop.owner_id) : null;
-          const assignedPlan = shop.plan_id ? plansMap.get(shop.plan_id) : null;
+          const ownerProfile: any = shop.owner_id ? profilesMap.get(shop.owner_id) : null;
+          const assignedPlan: any = shop.plan_id ? plansMap.get(shop.plan_id) : null;
           const profilePlan = ownerProfile?.plan || null;
 
           // Classificação Comercial Centralizada (R2E.9)
