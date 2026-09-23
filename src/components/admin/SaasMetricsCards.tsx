@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { classifyTenant } from "@/lib/commercial-classification";
 
 interface PlanRow {
   id: string;
@@ -43,6 +44,7 @@ interface ProfileRow {
 
 interface SubscriptionRow {
   id: string;
+  user_id?: string | null;
   price_id: string | null;
   status: string;
   is_internal_test_tenant?: boolean;
@@ -83,7 +85,7 @@ export function SaasMetricsCards() {
               "id, slug, name, price_monthly, tier, stripe_price_id_live, stripe_price_id_test",
             ),
           supabase.from("barbershops").select("id, name, plan_id, owner_id, created_at"),
-          supabase.from("subscriptions").select("id, price_id, status, is_internal_test_tenant"),
+          supabase.from("subscriptions").select("id, user_id, price_id, status, is_internal_test_tenant"),
           supabase
             .from("profiles")
             .select("id, plan, trial_start, trial_end, is_internal_test_tenant"),
@@ -120,33 +122,42 @@ export function SaasMetricsCards() {
         }
       }
 
-      // 2. Planos atribuídos de catálogo (Homologação / Não faturado)
-      let catalogEstimatedValue = 0;
-      let assignedPlansCount = 0;
+      // 2. Planos Comerciais Atribuídos (Apenas assinaturas comerciais contratadas - R2E.9)
+      let commercialAssignedPlansCount = 0;
+      let commercialAssignedPlansValue = 0;
       const byPlanMap = new Map<
         string,
         { name: string; slug: string; count: number; estimatedValue: number }
       >();
 
       for (const shop of shopsList) {
-        let plan: PlanRow | undefined;
-        if (shop.plan_id) {
-          plan = planById.get(shop.plan_id);
-        }
-        if (!plan && shop.owner_id) {
-          const prof = profileById.get(shop.owner_id);
-          if (prof?.plan) {
-            plan = planById.get(prof.plan.toLowerCase());
-          }
-        }
+        const owner = shop.owner_id ? profileById.get(shop.owner_id) : profileById.get(shop.id);
+        const assignedPlan = shop.plan_id ? planById.get(shop.plan_id) : null;
+        const profilePlan = owner?.plan ? planById.get(owner.plan.toLowerCase()) : null;
+        const shopSubs = subsList.filter((s: any) => s.user_id === shop.owner_id || s.user_id === shop.id);
 
-        if (plan) {
-          assignedPlansCount += 1;
-          const price = Number(plan.price_monthly) || 0;
-          catalogEstimatedValue += price;
-          const slug = (plan.slug || plan.name).toLowerCase();
+        const classification = classifyTenant({
+          id: shop.id,
+          name: shop.name,
+          slug: (shop as any).slug || shop.name,
+          owner_id: shop.owner_id,
+          plan_id: shop.plan_id,
+          created_at: shop.created_at,
+          ownerProfile: owner,
+          assignedPlan,
+          profilePlan,
+          subscriptions: shopSubs,
+        });
+
+        // Contabiliza EXCLUSIVAMENTE barbearias com assinatura comercial contratada
+        if (classification.modality === "ASSINATURA") {
+          commercialAssignedPlansCount += 1;
+          const price = classification.contractedMonthlyAmount;
+          commercialAssignedPlansValue += price;
+          const planName = classification.commercialPlanName || "Plano";
+          const slug = planName.toLowerCase();
           const entry = byPlanMap.get(slug) || {
-            name: plan.name,
+            name: planName,
             slug,
             count: 0,
             estimatedValue: 0,
@@ -179,8 +190,8 @@ export function SaasMetricsCards() {
         effectiveArr: effectiveMrr * 12,
         activeStripeSubs,
         totalShops: shopsList.length,
-        assignedPlansCount,
-        catalogEstimatedValue,
+        assignedPlansCount: commercialAssignedPlansCount,
+        catalogEstimatedValue: commercialAssignedPlansValue,
         activeTrialsCount,
         byPlan,
       };
@@ -234,7 +245,7 @@ export function SaasMetricsCards() {
     {
       label: "Planos Atribuídos",
       value: `${metrics.assignedPlansCount} (${fmtBRL(metrics.catalogEstimatedValue)})`,
-      subtitle: "Est. não faturada",
+      subtitle: metrics.assignedPlansCount === 0 ? "Nenhum faturado" : "Assinaturas ativas",
       icon: Layers,
       color: "text-amber-400",
       border: "border-amber-500/30",
@@ -285,40 +296,42 @@ export function SaasMetricsCards() {
         ))}
       </div>
 
-      {/* Planos de Catálogo Atribuídos */}
+      {/* Planos Comerciais Atribuídos (Assinaturas Comerciais Contratadas) */}
       <Card className="glass rounded-2xl border border-white/10">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
             <div>
               <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
-                Planos Atribuídos às Barbearias (Catálogo)
+                Planos Comerciais Atribuídos
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <AlertCircle className="w-4 h-4 text-amber-400 cursor-help" />
+                      <AlertCircle className="w-4 h-4 text-emerald-400 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent className="bg-gray-900 border-white/10 text-white max-w-sm">
-                      Valores nominais baseados nos planos vinculados às barbearias em ambiente de
-                      homologação. Não constituem receita realizada nem MRR efetivo.
+                      Considera exclusivamente barbearias com assinatura comercial efetivamente contratada. As 5 barbearias cadastradas em teste ou voucher não são contabilizadas.
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </h3>
               <p className="text-xs text-white/50 mt-1">
-                Estimativa nominal não faturada ({metrics.assignedPlansCount} de{" "}
-                {metrics.totalShops} barbearias com plano atribuído)
+                {metrics.assignedPlansCount === 0
+                  ? "Nenhum plano comercial contratado (5 barbearias em teste/voucher)"
+                  : `${metrics.assignedPlansCount} de ${metrics.totalShops} barbearias com assinatura contratada`}
               </p>
             </div>
             <div className="text-right">
-              <span className="text-xs text-white/50 block">Estimativa Não Faturada:</span>
-              <strong className="text-amber-400 text-sm">
+              <span className="text-xs text-white/50 block">Receita Recorrente Contratada:</span>
+              <strong className="text-emerald-400 text-sm">
                 {fmtBRL(metrics.catalogEstimatedValue)}/mês
               </strong>
             </div>
           </div>
 
           {metrics.byPlan.length === 0 ? (
-            <p className="text-sm text-white/50">Nenhuma barbearia com plano atribuído.</p>
+            <div className="py-6 text-center text-white/50 text-xs italic bg-white/[0.02] rounded-xl border border-white/5">
+              Nenhuma barbearia possui assinatura comercial contratada no momento. Os 5 estabelecimentos cadastrados estão em período de teste (TRIAL) ou possuem benefício de VOUCHER permanente (sem cobrança comercial).
+            </div>
           ) : (
             <div className="space-y-4">
               {metrics.byPlan.map((p) => {
@@ -334,7 +347,7 @@ export function SaasMetricsCards() {
                       <span className="text-white/60">
                         {p.count} {p.count === 1 ? "barbearia" : "barbearias"} ·{" "}
                         <strong className="text-white">
-                          {fmtBRL(p.estimatedValue)}/mês (nominal)
+                          {fmtBRL(p.estimatedValue)}/mês (efetivo)
                         </strong>
                       </span>
                     </div>

@@ -164,24 +164,6 @@ function AdminTenants() {
           const assignedPlan = shop.plan_id ? plansMap.get(shop.plan_id) : null;
           const profilePlan = ownerProfile?.plan || null;
 
-          // Regra de convergência/divergência de planos
-          const assignedNameLower = assignedPlan ? assignedPlan.name.toLowerCase() : "";
-          const profilePlanLower = profilePlan ? profilePlan.toLowerCase() : "";
-
-          let plan_status: "verified" | "to_verify" = "verified";
-          let plan_label = assignedPlan ? assignedPlan.name : "Sem plano";
-          let plan_details = "";
-
-          if (!shop.plan_id || !assignedPlan || assignedNameLower !== profilePlanLower) {
-            plan_status = "to_verify";
-            plan_label = "Plano a verificar";
-            plan_details = assignedPlan
-              ? `Atribuído: ${assignedPlan.name} | Perfil: ${profilePlan || "Nenhum"}`
-              : `Perfil: ${profilePlan || "Nenhum"} | Sem plano no banco`;
-          } else {
-            plan_details = `Plano ativo: ${assignedPlan.name}`;
-          }
-
           // Classificação Comercial Centralizada (R2E.9)
           const shopSubs = (subs || []).filter(
             (s: any) => s.user_id === shop.owner_id || s.user_id === shop.id
@@ -198,6 +180,14 @@ function AdminTenants() {
             profilePlan: profilePlan ? plansMap.get(profilePlan.toLowerCase()) : null,
             subscriptions: shopSubs,
           });
+
+          const plan_label = classification.modality === "VOUCHER"
+            ? "VOUCHER"
+            : classification.modality === "TRIAL"
+            ? `TRIAL · ${classification.trialStatus}`
+            : (classification.commercialPlanName || "ASSINATURA");
+          const plan_details = classification.explanation;
+          const plan_status: "verified" | "to_verify" = "verified";
 
           // Nome do proprietário
           const owner_name =
@@ -416,7 +406,7 @@ function AdminTenants() {
                       Status
                     </TableHead>
                     <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                      Modalidade / Acesso
+                      Plano Atribuído / Vigência
                     </TableHead>
                     <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
                       Métricas
@@ -532,74 +522,86 @@ function AdminTenants() {
                           </Badge>
                         </TableCell>
 
-                        {/* Modalidade de Acesso / Plano Técnico (R2E.9) */}
+                        {/* Plano Atribuído / Vigência (R2E.9) */}
                         <TableCell>
-                          {tenant.classification.modality === "VOUCHER" ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="inline-flex items-center gap-1.5 cursor-help">
+                          <div className="flex flex-col gap-1 items-start">
+                            {tenant.classification.modality === "VOUCHER" ? (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(168,85,247,0.15)]">
                                     <ShieldCheck className="w-3 h-3 text-purple-400" />
-                                    VOUCHER PERMANENTE
+                                    VOUCHER
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="border-purple-500/30 text-purple-300 bg-purple-500/10 text-[9px] font-bold uppercase tracking-wider"
+                                  >
+                                    SEM EXPIRAÇÃO
                                   </Badge>
                                 </div>
-                              </TooltipTrigger>
-                              <TooltipContent
-                                side="top"
-                                className="bg-zinc-900 border-white/10 text-gray-200 text-xs p-3 rounded-xl max-w-xs shadow-xl"
-                              >
-                                <p className="font-semibold text-purple-300 mb-1">
-                                  Acesso por Voucher Permanente:
-                                </p>
-                                <p className="text-[11px] text-gray-300 leading-relaxed">
-                                  Conta de testes contínuos da plataforma. Sem contratação de assinatura comercial.
-                                </p>
                                 {tenant.classification.technicalPlanName && (
-                                  <p className="text-[10px] text-gray-400 mt-2">
-                                    Referência técnica liberada: <strong className="text-purple-300">{tenant.classification.technicalPlanName}</strong>
-                                  </p>
+                                  <span className="text-[10px] text-gray-400">
+                                    Acesso liberado: <strong className="text-gray-300 font-medium">{tenant.classification.technicalPlanName}</strong>
+                                  </span>
                                 )}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : tenant.classification.modality === "TRIAL" ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="inline-flex items-center gap-1.5 cursor-help">
+                              </>
+                            ) : tenant.classification.modality === "TRIAL" ? (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <Badge
                                     className={cn(
                                       "rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
                                       tenant.classification.trialStatus === "EXPIRADO"
                                         ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                                        : "bg-blue-500/15 text-blue-300 border border-blue-500/30"
+                                        : "bg-blue-500/15 text-blue-300 border border-blue-500/30",
                                     )}
                                   >
                                     <Clock className="w-3 h-3" />
-                                    TRIAL · {tenant.classification.trialStatus}
+                                    TRIAL
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[9px] font-bold uppercase tracking-wider",
+                                      tenant.classification.trialStatus === "EXPIRADO"
+                                        ? "text-amber-400 border-amber-500/30 bg-amber-500/5"
+                                        : "text-blue-400 border-blue-500/30 bg-blue-500/5",
+                                    )}
+                                  >
+                                    {tenant.classification.trialStatus}
                                   </Badge>
                                 </div>
-                              </TooltipTrigger>
-                              <TooltipContent
-                                side="top"
-                                className="bg-zinc-900 border-white/10 text-gray-200 text-xs p-3 rounded-xl max-w-xs shadow-xl"
-                              >
-                                <p className={cn("font-semibold mb-1", tenant.classification.trialStatus === "EXPIRADO" ? "text-amber-300" : "text-blue-300")}>
-                                  Período de Testes ({tenant.classification.trialStatus})
-                                </p>
-                                <p className="text-[11px] text-gray-300 leading-relaxed">
-                                  {tenant.classification.explanation}
-                                </p>
                                 {tenant.classification.technicalPlanName && (
-                                  <p className="text-[10px] text-gray-400 mt-2">
-                                    Referência técnica de liberação: <strong className="text-white">{tenant.classification.technicalPlanName}</strong>
-                                  </p>
+                                  <span className="text-[10px] text-gray-400">
+                                    Acesso liberado: <strong className="text-gray-300 font-medium">{tenant.classification.technicalPlanName}</strong>
+                                  </span>
                                 )}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                              ASSINATURA: {tenant.classification.commercialPlanName}
-                            </Badge>
-                          )}
+                                {tenant.classification.trialEnd && (
+                                  <span className="text-[9px] text-gray-500">
+                                    Término: {format(new Date(tenant.classification.trialEnd), "dd/MM/yyyy")}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                    {tenant.classification.commercialPlanName}
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-[9px] font-bold uppercase tracking-wider"
+                                  >
+                                    ASSINATURA ATIVA
+                                  </Badge>
+                                </div>
+                                <span className="text-[10px] text-gray-400">
+                                  Fonte: ASSINATURA (Stripe)
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
 
                         {/* Métricas */}

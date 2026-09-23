@@ -302,6 +302,7 @@ function AdminSubscriptions() {
   };
 
   const filteredSubs = (stripeSubscriptions || []).filter((sub) => {
+    if (sub.status !== "active") return false;
     const q = search.toLowerCase();
     const biz = sub.profiles?.business_name?.toLowerCase() || "";
     const stripeId = sub.stripe_subscription_id?.toLowerCase() || "";
@@ -465,16 +466,16 @@ function AdminSubscriptions() {
         </Card>
       </div>
 
-      {/* SEÇÃO 1: ASSINATURAS STRIPE */}
+      {/* SEÇÃO 1: ASSINATURAS STRIPE / PLANOS ATRIBUÍDOS (CATÁLOGO) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" />
-              1. Assinaturas Comerciais Contratadas (Stripe)
+              1. Planos Atribuídos (Catálogo) — Assinaturas Comerciais
             </h3>
             <p className="text-sm text-gray-400">
-              Registros de assinaturas comerciais efetivamente contratadas via gateway Stripe.
+              Exibe somente barbearias com assinatura comercial efetivamente contratada.
             </p>
           </div>
           <Badge
@@ -515,7 +516,7 @@ function AdminSubscriptions() {
                         colSpan={5}
                         className="py-6 text-center animate-pulse text-gray-500"
                       >
-                        Carregando assinaturas Stripe...
+                        Carregando assinaturas comerciais...
                       </TableCell>
                     </TableRow>
                   ))
@@ -525,12 +526,12 @@ function AdminSubscriptions() {
                       <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                         <CreditCard className="w-8 h-8 text-gray-500 mb-1" />
                         <span className="font-semibold text-white">
-                          Nenhuma assinatura Stripe registrada
+                          Nenhuma barbearia possui assinatura comercial contratada no momento.
                         </span>
                         <p className="text-xs text-gray-400">
-                          A plataforma está em pré-lançamento comercial. Nenhum estabelecimento
-                          possui cobrança recorrente Stripe ativa. Os estabelecimentos cadastrados
-                          constam na seção abaixo.
+                          As 5 barbearias cadastradas estão operando em períodos de teste (TRIAL) ou
+                          possuem voucher permanente (VOUCHER). Nenhuma barbearia possui plano
+                          comercial faturado no catálogo.
                         </p>
                       </div>
                     </TableCell>
@@ -594,7 +595,7 @@ function AdminSubscriptions() {
             </h3>
             <p className="text-sm text-gray-400">
               Estabelecimentos da entidade canônica (public.barbershops), proprietários vinculados,
-              planos e vigência de trials.
+              modalidade de acesso e vigência real.
             </p>
           </div>
           <Badge
@@ -623,7 +624,7 @@ function AdminSubscriptions() {
                     Trial / Vigência
                   </TableHead>
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                    Ambiente
+                    Plano Comercial
                   </TableHead>
                   <TableHead className="text-right text-gray-400 font-bold uppercase tracking-widest text-[10px] pr-8">
                     Stripe Status
@@ -687,6 +688,11 @@ function AdminSubscriptions() {
                               <span className="text-[10px] text-gray-500 font-medium">
                                 Fonte: VOUCHER PERMANENTE
                               </span>
+                              {t.classification.technicalPlanName && (
+                                <span className="text-[10px] text-gray-400">
+                                  Acesso liberado: <strong className="text-gray-300 font-medium">{t.classification.technicalPlanName}</strong>
+                                </span>
+                              )}
                             </>
                           ) : t.classification.modality === "TRIAL" ? (
                             <>
@@ -701,8 +707,13 @@ function AdminSubscriptions() {
                                 TRIAL
                               </Badge>
                               <span className="text-[10px] text-gray-500 font-medium">
-                                Fonte: TRIAL {t.classification.technicalPlanName ? `(Ref. técnica: ${t.classification.technicalPlanName})` : ""}
+                                Fonte: TRIAL
                               </span>
+                              {t.classification.technicalPlanName && (
+                                <span className="text-[10px] text-gray-400">
+                                  Acesso liberado: <strong className="text-gray-300 font-medium">{t.classification.technicalPlanName}</strong>
+                                </span>
+                              )}
                             </>
                           ) : (
                             <>
@@ -749,14 +760,15 @@ function AdminSubscriptions() {
                         </div>
                       </TableCell>
 
-                      {/* Ambiente / Concessão */}
+                      {/* Plano Comercial Contratado */}
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="border-white/10 text-gray-300 bg-white/5 text-[10px]"
-                        >
-                          Homologação / Pré-lançamento
-                        </Badge>
+                        {t.classification.commercialPlanName ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase">
+                            {t.classification.commercialPlanName}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-gray-500 italic">Nenhum</span>
+                        )}
                       </TableCell>
 
                       {/* Estado Stripe */}
