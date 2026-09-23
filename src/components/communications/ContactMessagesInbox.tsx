@@ -90,6 +90,7 @@ export function ContactMessagesInbox({ tenantId }: Props) {
   // Multi-selection & Delete Confirmation State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
+  const [deleteTargetMessage, setDeleteTargetMessage] = useState<ContactMessage | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // 1. Fetch Contact Messages strictly scoped to current tenant
@@ -284,11 +285,8 @@ export function ContactMessagesInbox({ tenantId }: Props) {
       }
       setIsDeleteDialogOpen(false);
       setDeleteTargetIds([]);
-      toast.success(
-        ids.length === 1
-          ? "Mensagem excluída definitivamente."
-          : `${ids.length} mensagens excluídas definitivamente.`,
-      );
+      setDeleteTargetMessage(null);
+      toast.success("Mensagem excluída definitivamente.");
     },
     onError: (err: Error) => {
       toast.error("Erro ao excluir mensagem: " + err.message);
@@ -362,8 +360,9 @@ export function ContactMessagesInbox({ tenantId }: Props) {
     }
   };
 
-  const handleConfirmPermanentDelete = (ids: string[]) => {
-    setDeleteTargetIds(ids);
+  const handleConfirmPermanentDelete = (msg: ContactMessage) => {
+    setDeleteTargetMessage(msg);
+    setDeleteTargetIds([msg.id]);
     setIsDeleteDialogOpen(true);
   };
 
@@ -535,27 +534,16 @@ export function ContactMessagesInbox({ tenantId }: Props) {
             )}
 
             {activeFolder === "trashed" && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => restoreMutation.mutate(Array.from(selectedIds))}
-                  disabled={restoreMutation.isPending}
-                  className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white text-xs gap-1.5 h-8"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                  Restaurar para Entrada
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleConfirmPermanentDelete(Array.from(selectedIds))}
-                  disabled={permanentDeleteMutation.isPending}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs gap-1.5 h-8"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Excluir Definitivamente
-                </Button>
-              </>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => restoreMutation.mutate(Array.from(selectedIds))}
+                disabled={restoreMutation.isPending}
+                className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white text-xs gap-1.5 h-8"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                Restaurar para Entrada
+              </Button>
             )}
           </div>
         </div>
@@ -805,7 +793,7 @@ export function ContactMessagesInbox({ tenantId }: Props) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleConfirmPermanentDelete([msg.id])}
+                              onClick={() => handleConfirmPermanentDelete(msg)}
                               className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                               title="Excluir definitivamente"
                             >
@@ -1052,7 +1040,7 @@ export function ContactMessagesInbox({ tenantId }: Props) {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => handleConfirmPermanentDelete([selectedMessage.id])}
+                        onClick={() => handleConfirmPermanentDelete(selectedMessage)}
                         disabled={permanentDeleteMutation.isPending}
                         className="bg-red-600 hover:bg-red-700 text-white text-xs gap-1"
                       >
@@ -1091,16 +1079,39 @@ export function ContactMessagesInbox({ tenantId }: Props) {
       {/* Confirmation Dialog for Permanent Deletion */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent className="bg-[#0b0f17] border-red-500/30 text-white rounded-2xl p-6">
-          <AlertDialogHeader className="space-y-2">
+          <AlertDialogHeader className="space-y-3">
             <AlertDialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-500" />
               Excluir mensagem permanentemente?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-zinc-300 leading-relaxed">
-              Esta ação é <strong className="text-red-400">definitiva e irreversível</strong>.{" "}
-              {deleteTargetIds.length === 1
-                ? "A mensagem selecionada será removida definitivamente da sua barbearia."
-                : `As ${deleteTargetIds.length} mensagens selecionadas serão removidas definitivamente da sua barbearia.`}
+            <AlertDialogDescription className="text-xs text-zinc-300 leading-relaxed space-y-2">
+              <p>
+                Esta ação é <strong className="text-red-400">definitiva e irreversível</strong>. A
+                mensagem a seguir será removida definitivamente:
+              </p>
+              {deleteTargetMessage && (
+                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl space-y-1 text-zinc-200">
+                  <div>
+                    <span className="text-zinc-400">Remetente: </span>
+                    <strong className="text-white">{deleteTargetMessage.sender_name}</strong> (
+                    {deleteTargetMessage.sender_email})
+                  </div>
+                  <div>
+                    <span className="text-zinc-400">Assunto: </span>
+                    <span className="text-gold">
+                      {deleteTargetMessage.subject || "Sem assunto"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-400">Recebida em: </span>
+                    <span className="text-zinc-300">
+                      {format(new Date(deleteTargetMessage.created_at), "dd/MM/yyyy HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
