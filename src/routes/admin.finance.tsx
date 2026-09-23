@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import { classifyTenant } from "@/lib/commercial-classification";
 import {
   TrendingUp,
   DollarSign,
@@ -135,21 +136,10 @@ function AdminFinance() {
         ((profiles || []) as unknown as ProfileDbRow[]).map((p) => [p.id, p]),
       );
 
-      // 2. MRR Efetivo da Plataforma (exclusivo de assinaturas Stripe ativas)
+      // 2. Classificação Comercial Centralizada e MRR Contratado
       let effectiveMrr = 0;
-      let activeStripeCount = 0;
-      ((subscriptions || []) as unknown as SubscriptionDbRow[]).forEach((sub) => {
-        if (sub.status === "active" && !sub.is_internal_test_tenant) {
-          activeStripeCount += 1;
-          if (sub.price_id) {
-            const plan = planById.get(sub.price_id);
-            if (plan) effectiveMrr += Number(plan.price_monthly) || 0;
-          }
-        }
-      });
-
-      // 3. Planos Atribuídos de Catálogo e Mapeamento de Inconsistências
-      let totalCatalogEstimate = 0;
+      let commercialSubsCount = 0;
+      let totalTechnicalCatalogEstimate = 0;
       const planDistribution: Record<string, { count: number; value: number }> = {};
       const tenantList: TenantFinanceInfo[] = [];
       const divergentTenants: TenantFinanceInfo[] = [];
@@ -159,6 +149,29 @@ function AdminFinance() {
         const ownerProf = shop.owner_id ? profileMap.get(shop.owner_id) : profileMap.get(shop.id);
         const profilePlanRaw = ownerProf?.plan ? ownerProf.plan.trim() : null;
         const profilePlan = profilePlanRaw ? planById.get(profilePlanRaw.toLowerCase()) : null;
+        const shopSubs = (subscriptions || []).filter(
+          (s: any) => s.barbershop_id === shop.id || s.user_id === shop.owner_id,
+        );
+
+        const classification = classifyTenant({
+          id: shop.id,
+          name: shop.name,
+          slug: shop.slug,
+          owner_id: shop.owner_id,
+          plan_id: shop.plan_id,
+          created_at: shop.created_at,
+          ownerProfile: ownerProf,
+          assignedPlan,
+          profilePlan,
+          subscriptions: shopSubs,
+        });
+
+        if (classification.modality === "ASSINATURA") {
+          commercialSubsCount += 1;
+          effectiveMrr += classification.contractedMonthlyAmount;
+        } else {
+          totalTechnicalCatalogEstimate += classification.catalogNominalAmount;
+        }
 
         const assignedPlanName = assignedPlan?.name || null;
         const profilePlanName = profilePlan?.name || profilePlanRaw || null;
@@ -173,20 +186,17 @@ function AdminFinance() {
           isDivergent = true;
         }
 
-        const effectivePlan = assignedPlan || profilePlan;
-        const effectiveName =
-          assignedPlanName || (profilePlanName ? `Perfil: ${profilePlanName}` : "Não atribuído");
-        const monthly = effectivePlan ? Number(effectivePlan.price_monthly) || 0 : 0;
+        const catKey = classification.modality === "VOUCHER"
+          ? "VOUCHER PERMANENTE"
+          : classification.modality === "TRIAL"
+            ? `TRIAL (${classification.technicalPlanName || "PADRÃO"})`
+            : (classification.commercialPlanName || "ASSINATURA").toUpperCase();
 
-        totalCatalogEstimate += monthly;
-
-        const catKey =
-          assignedPlanName || (profilePlanName ? profilePlanName.toUpperCase() : "SEM PLANO");
         if (!planDistribution[catKey]) {
           planDistribution[catKey] = { count: 0, value: 0 };
         }
         planDistribution[catKey].count += 1;
-        planDistribution[catKey].value += monthly;
+        planDistribution[catKey].value += classification.catalogNominalAmount;
 
         const record: TenantFinanceInfo = {
           id: shop.id,
@@ -194,8 +204,12 @@ function AdminFinance() {
           assignedPlanName,
           profilePlanName,
           isDivergent,
-          effectivePlanName: effectiveName,
-          monthlyEstimate: monthly,
+          effectivePlanName: classification.modality === "VOUCHER"
+            ? "Voucher Permanente (Sem Cobrança)"
+            : classification.modality === "TRIAL"
+              ? `Trial ${classification.trialStatus} (Ref: ${classification.technicalPlanName})`
+              : (classification.commercialPlanName || "Assinatura Ativa"),
+          monthlyEstimate: classification.contractedMonthlyAmount,
         };
 
         tenantList.push(record);
@@ -204,7 +218,7 @@ function AdminFinance() {
         }
       });
 
-      // 4. Volume Transacionado pelas Barbearias (Serviços de Clientes — Não é receita SaaS)
+      // 3. Volume Transacionado pelas Barbearias (Serviços de Clientes — Não é receita SaaS)
       const completedAppts = ((appointments || []) as unknown as AppointmentDbRow[]).filter(
         (a) => a.status === "completed",
       );
@@ -217,9 +231,9 @@ function AdminFinance() {
       return {
         effectiveMrr,
         effectiveArr: effectiveMrr * 12,
-        activeStripeCount,
+        commercialSubsCount,
         tenantsCount: (barbershops || []).length,
-        totalCatalogEstimate,
+        totalTechnicalCatalogEstimate,
         planDistribution,
         tenantList,
         divergentTenants,
@@ -295,7 +309,7 @@ function AdminFinance() {
             </div>
             <div className="flex items-center gap-1.5">
               <Badge className="rounded-lg px-1.5 py-0 text-[10px] border-none font-bold bg-emerald-500/20 text-emerald-400">
-                {financeStats?.activeStripeCount ?? 0} Assinaturas Ativas
+                {financeStats?.commercialSubsCount ?? 0} Assinaturas Contratadas
               </Badge>
               <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
                 Pré-lançamento
@@ -326,11 +340,11 @@ function AdminFinance() {
           </CardContent>
         </Card>
 
-        {/* Card 3: Planos de Catálogo Atribuídos (Estimativa Não Faturada) */}
+        {/* Card 3: Planos Técnicos de Teste / Referência (Estimativa Não Faturada) */}
         <Card className="glass border-white/5 rounded-3xl overflow-hidden shadow-none bg-white/[0.02]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
-              Planos de Catálogo
+              Catálogo de Teste / Referência
             </span>
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
               <Layers className="h-4 w-4" />
@@ -338,14 +352,14 @@ function AdminFinance() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black tracking-tight mb-1 text-amber-400">
-              {isLoading ? "..." : fmt(financeStats?.totalCatalogEstimate ?? 0)}/mês
+              {isLoading ? "..." : fmt(financeStats?.totalTechnicalCatalogEstimate ?? 0)}/mês
             </div>
             <div className="flex items-center gap-1.5">
               <Badge className="rounded-lg px-1.5 py-0 text-[10px] border-none font-bold bg-amber-500/20 text-amber-300">
-                Estimativa Não Faturada
+                Catálogo Nominal (Testes)
               </Badge>
               <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-                Homologação
+                Não faturado
               </span>
             </div>
           </CardContent>

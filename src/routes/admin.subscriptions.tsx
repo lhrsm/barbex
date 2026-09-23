@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyTenant, CommercialClassification } from "@/lib/commercial-classification";
 import {
   CreditCard,
   Search,
@@ -101,6 +102,7 @@ interface TenantPlanRecord {
   trial_status: "expired" | "active" | "undelimited";
   trial_label: string;
   stripe_status: "active" | "none";
+  classification: CommercialClassification;
 }
 
 function AdminSubscriptions() {
@@ -146,6 +148,7 @@ function AdminSubscriptions() {
         { data: barbershops, error: bErr },
         { data: profiles, error: pErr },
         { data: plans, error: plErr },
+        { data: subs, error: sErr },
       ] = await Promise.all([
         supabase
           .from("barbershops")
@@ -157,11 +160,13 @@ function AdminSubscriptions() {
             "id, business_name, responsible_name, display_name, email, phone, whatsapp_number, plan, trial_start, trial_end, is_internal_test_tenant",
           ),
         supabase.from("plans").select("id, name, price_monthly, tier"),
+        supabase.from("subscriptions").select("id, user_id, barbershop_id, status, price_id, is_internal_test_tenant"),
       ]);
 
       if (bErr) throw bErr;
       if (pErr) console.warn("[AdminSubscriptions] Aviso ao consultar perfis:", pErr);
       if (plErr) console.warn("[AdminSubscriptions] Aviso ao consultar planos:", plErr);
+      if (sErr) console.warn("[AdminSubscriptions] Aviso ao consultar assinaturas:", sErr);
 
       const profileMap = new Map<string, ProfileDbRow>();
       ((profiles || []) as unknown as ProfileDbRow[]).forEach((p) => profileMap.set(p.id, p));
@@ -188,6 +193,23 @@ function AdminSubscriptions() {
           ) {
             isDivergent = true;
           }
+
+          // Classificação comercial canônica
+          const shopSubs = (subs || []).filter(
+            (s: any) => s.barbershop_id === b.id || s.user_id === b.owner_id
+          );
+          const classification = classifyTenant({
+            id: b.id,
+            name: b.name,
+            slug: b.slug,
+            owner_id: b.owner_id,
+            plan_id: b.plan_id,
+            created_at: b.created_at,
+            ownerProfile: owner,
+            assignedPlan,
+            profilePlan: profilePlanName ? planMap.get(profilePlanName.toLowerCase()) : null,
+            subscriptions: shopSubs,
+          });
 
           // Situação do Trial
           const trialStart = owner?.trial_start || null;
@@ -228,6 +250,7 @@ function AdminSubscriptions() {
             trial_status: trialStatus,
             trial_label: trialLabel,
             stripe_status: "none",
+            classification,
           };
         },
       );
@@ -278,12 +301,14 @@ function AdminSubscriptions() {
 
   // Métricas de topo reconciliadas
   const totalTenantsCount = tenantPlans?.length || 0;
-  const activeStripeSubsCount = (stripeSubscriptions || []).filter(
-    (s) => s.status === "active",
-  ).length;
-  const assignedPlansCount = (tenantPlans || []).filter(
-    (t) => t.assigned_plan_name || t.profile_plan_name,
-  ).length;
+  const commercialSubs = (tenantPlans || []).filter(
+    (t) => t.classification.modality === "ASSINATURA",
+  );
+  const commercialSubsCount = commercialSubs.length;
+  const commercialMrr = commercialSubs.reduce(
+    (acc, t) => acc + (t.classification.contractedMonthlyAmount || 0),
+    0,
+  );
 
   return (
     <div className="space-y-8 pb-20">
@@ -340,10 +365,10 @@ function AdminSubscriptions() {
         <Card className="glass border-white/5 bg-white/[0.02]">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-              Assinaturas Stripe Ativas
+              Assinaturas Comerciais Ativas
             </CardDescription>
             <CardTitle className="text-3xl font-black text-emerald-400">
-              {isLoadingSubs ? "..." : activeStripeSubsCount}
+              {isLoadingTenants ? "..." : commercialSubsCount}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -356,13 +381,15 @@ function AdminSubscriptions() {
         <Card className="glass border-white/5 bg-white/[0.02]">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-              MRR Efetivo (Stripe)
+              MRR Comercial Efetivo
             </CardDescription>
-            <CardTitle className="text-3xl font-black text-white">R$ 0,00</CardTitle>
+            <CardTitle className="text-3xl font-black text-white">
+              R$ {commercialMrr.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <span className="text-xs text-gray-400 font-medium">
-              Receita recorrente efetivamente faturada
+              Receita recorrente efetivamente contratada
             </span>
           </CardContent>
         </Card>
@@ -370,23 +397,23 @@ function AdminSubscriptions() {
         <Card className="glass border-white/5 bg-white/[0.02]">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-              Planos Atribuídos (Catálogo)
+              Planos Comerciais Contratados
             </CardDescription>
             <CardTitle className="text-3xl font-black text-purple-400">
-              {isLoadingTenants ? "..." : assignedPlansCount}
+              {isLoadingTenants ? "..." : commercialSubsCount}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-xs text-amber-400/90 font-medium flex items-center gap-1 cursor-help">
-                    <AlertCircle className="w-3.5 h-3.5" /> Est. R$ 329,60/mês (Não faturado)
+                  <span className="text-xs text-gray-400 font-medium flex items-center gap-1 cursor-help">
+                    <AlertCircle className="w-3.5 h-3.5 text-blue-400" /> 5 contas em teste/voucher
                   </span>
                 </TooltipTrigger>
                 <TooltipContent className="bg-gray-900 border-white/10 text-white max-w-xs">
-                  Valor nominal dos planos de teste/catálogo atribuídos às barbearias. Não constitui
-                  MRR nem receita realizada.
+                  Nenhuma assinatura comercial contratada. 5 estabelecimentos cadastrados em período
+                  de teste ou voucher permanente (sem cobrança comercial).
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -400,10 +427,10 @@ function AdminSubscriptions() {
           <div>
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" />
-              1. Assinaturas Stripe (Faturamento Recorrente SaaS)
+              1. Assinaturas Comerciais Contratadas (Stripe)
             </h3>
             <p className="text-sm text-gray-400">
-              Registros reais de cobrança recorrente integrados via gateway Stripe.
+              Registros de assinaturas comerciais efetivamente contratadas via gateway Stripe.
             </p>
           </div>
           <Badge
@@ -605,68 +632,74 @@ function AdminSubscriptions() {
                         </div>
                       </TableCell>
 
-                      {/* Plano Atribuído & Divergência */}
+                      {/* Plano Atribuído & Fonte (R2E.9) */}
                       <TableCell>
                         <div className="flex flex-col gap-1 items-start">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <Badge
-                              variant="outline"
-                              className="border-purple-500/30 text-purple-300 bg-purple-500/10 text-xs font-semibold uppercase"
-                            >
-                              {t.assigned_plan_name ||
-                                (t.profile_plan_name
-                                  ? `Perfil: ${t.profile_plan_name}`
-                                  : "Não Atribuído")}
-                            </Badge>
-                            {t.is_divergent && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] flex items-center gap-1 cursor-help">
-                                      <AlertTriangle className="w-3 h-3 text-amber-400" /> Plano a
-                                      verificar
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-gray-900 border-white/10 text-white text-xs max-w-xs">
-                                    Divergência de cadastro: barbershops.plan_id aponta para &ldquo;
-                                    {t.assigned_plan_name || "Nenhum"}&rdquo;, enquanto
-                                    profiles.plan indica &ldquo;{t.profile_plan_name || "Nenhum"}
-                                    &rdquo;.
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-gray-500">
-                            Fonte: {t.assigned_plan_name ? "barbershops.plan_id" : "profiles.plan"}
-                          </span>
+                          {t.classification.modality === "VOUCHER" ? (
+                            <>
+                              <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-bold uppercase tracking-wider">
+                                VOUCHER
+                              </Badge>
+                              <span className="text-[10px] text-gray-500 font-medium">
+                                Fonte: VOUCHER PERMANENTE
+                              </span>
+                            </>
+                          ) : t.classification.modality === "TRIAL" ? (
+                            <>
+                              <Badge
+                                className={cn(
+                                  "text-xs font-bold uppercase tracking-wider",
+                                  t.classification.trialStatus === "EXPIRADO"
+                                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                    : "bg-blue-500/15 text-blue-300 border border-blue-500/30",
+                                )}
+                              >
+                                TRIAL
+                              </Badge>
+                              <span className="text-[10px] text-gray-500 font-medium">
+                                Fonte: TRIAL {t.classification.technicalPlanName ? `(Ref. técnica: ${t.classification.technicalPlanName})` : ""}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider">
+                                {t.classification.commercialPlanName}
+                              </Badge>
+                              <span className="text-[10px] text-gray-500 font-medium">
+                                Fonte: Assinatura Comercial Stripe
+                              </span>
+                            </>
+                          )}
                         </div>
                       </TableCell>
 
-                      {/* Trial / Vigência */}
+                      {/* Trial / Vigência (R2E.9) */}
                       <TableCell>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-1.5">
-                            {t.trial_status === "expired" ? (
-                              <Badge className="bg-rose-500/20 text-rose-400 border-none text-[10px] flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {t.trial_label}
+                            {t.classification.modality === "VOUCHER" ? (
+                              <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold uppercase flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3 text-purple-400" /> SEM EXPIRAÇÃO
                               </Badge>
-                            ) : t.trial_status === "active" ? (
-                              <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[10px] flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> {t.trial_label}
-                              </Badge>
+                            ) : t.classification.modality === "TRIAL" ? (
+                              t.classification.trialStatus === "EXPIRADO" ? (
+                                <Badge className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold uppercase flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> EXPIRADO
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold uppercase flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" /> EM VIGÊNCIA
+                                </Badge>
+                              )
                             ) : (
-                              <Badge
-                                variant="outline"
-                                className="border-blue-500/30 text-blue-300 bg-blue-500/5 text-[10px]"
-                              >
-                                {t.trial_label}
+                              <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> ATIVA
                               </Badge>
                             )}
                           </div>
-                          {t.trial_start && (
+                          {t.classification.trialEnd && t.classification.modality === "TRIAL" && (
                             <span className="text-[10px] text-gray-500 mt-0.5">
-                              Início: {format(new Date(t.trial_start), "dd/MM/yyyy")}
+                              Término: {format(new Date(t.classification.trialEnd), "dd/MM/yyyy")}
                             </span>
                           )}
                         </div>

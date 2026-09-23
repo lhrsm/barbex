@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import { classifyTenant } from "@/lib/commercial-classification";
 import {
   Users,
   Building2,
@@ -159,40 +160,41 @@ function AdminDashboard() {
         if (p.name) plansMap.set(p.name.toLowerCase(), p);
       });
 
-      // 2. Assinaturas Stripe Reais e MRR Efetivo
-      let activeStripeSubs = 0;
+      // 2. Classificação Comercial Centralizada dos Estabelecimentos
+      let commercialSubsCount = 0;
       let effectiveMrr = 0;
-      ((subs || []) as unknown as SubscriptionDbRow[]).forEach((sub) => {
-        if (sub.status === "active" && !sub.is_internal_test_tenant) {
-          activeStripeSubs += 1;
-          if (sub.price_id) {
-            const plan = plansMap.get(sub.price_id);
-            if (plan) effectiveMrr += Number(plan.price_monthly) || 0;
-          }
-        }
-      });
+      let testTenantsCount = 0;
+      let technicalCatalogPotential = 0;
 
-      // 3. Planos de Catálogo Atribuídos (Estimativa Não Faturada)
-      let assignedPlansCount = 0;
-      let potentialCatalogValue = 0;
       shopsList.forEach((shop) => {
-        let plan: PlanDbRow | undefined;
-        if (shop.plan_id) {
-          plan = plansMap.get(shop.plan_id);
-        }
-        if (!plan && shop.owner_id) {
-          const ownerProf = profilesMap.get(shop.owner_id);
-          if (ownerProf?.plan) {
-            plan = plansMap.get(ownerProf.plan.toLowerCase());
-          }
-        }
-        if (plan) {
-          assignedPlansCount += 1;
-          potentialCatalogValue += Number(plan.price_monthly) || 0;
+        const ownerProf = shop.owner_id ? profilesMap.get(shop.owner_id) : profilesMap.get(shop.id);
+        const assignedPlan = shop.plan_id ? plansMap.get(shop.plan_id) : null;
+        const profilePlan = ownerProf?.plan ? plansMap.get(ownerProf.plan.toLowerCase()) : null;
+        const shopSubs = (subs || []).filter((s: any) => s.barbershop_id === shop.id || s.user_id === shop.owner_id);
+
+        const classification = classifyTenant({
+          id: shop.id,
+          name: shop.name,
+          slug: (shop as any).slug || shop.name,
+          owner_id: shop.owner_id,
+          plan_id: shop.plan_id,
+          created_at: shop.created_at,
+          ownerProfile: ownerProf,
+          assignedPlan,
+          profilePlan,
+          subscriptions: shopSubs,
+        });
+
+        if (classification.modality === "ASSINATURA") {
+          commercialSubsCount += 1;
+          effectiveMrr += classification.contractedMonthlyAmount;
+        } else {
+          testTenantsCount += 1;
+          technicalCatalogPotential += classification.catalogNominalAmount;
         }
       });
 
-      // 4. Fetch Appointments, Customers e Barbers preservando escopo
+      // 3. Fetch Appointments, Customers e Barbers preservando escopo
       const { data: appointments } = await supabase
         .from("appointments")
         .select("final_amount, cashback_earned, credit_used, status, created_at");
@@ -228,10 +230,10 @@ function AdminDashboard() {
 
       return {
         totalTenants: shopsList.length,
-        activeStripeSubs,
+        commercialSubsCount,
         effectiveMrr,
-        assignedPlansCount,
-        potentialCatalogValue,
+        testTenantsCount,
+        technicalCatalogPotential,
         totalTransacted,
         totalCashback,
         totalCredits,
@@ -282,12 +284,12 @@ function AdminDashboard() {
       icon: Building2,
       color: "text-blue-400",
       glow: "shadow-blue-500/20",
-      trend: "Canônico",
+      trend: "Cadastradas (Homologação)",
       isPositive: true,
     },
     {
-      label: "Assinaturas Stripe Ativas",
-      value: stats?.activeStripeSubs ?? 0,
+      label: "Assinaturas Comerciais",
+      value: stats?.commercialSubsCount ?? 0,
       icon: CreditCard,
       color: "text-purple-400",
       glow: "shadow-purple-500/20",
@@ -295,7 +297,7 @@ function AdminDashboard() {
       isPositive: true,
     },
     {
-      label: "MRR Efetivo (Stripe)",
+      label: "MRR Comercial Efetivo",
       value: `R$ ${(stats?.effectiveMrr ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       icon: TrendingUp,
       color: "text-emerald-400",
@@ -304,13 +306,15 @@ function AdminDashboard() {
       isPositive: true,
     },
     {
-      label: "Planos de Catálogo",
-      value: `${stats?.assignedPlansCount ?? 0} atribuídos`,
+      label: "Planos Comerciais Contratados",
+      value: `${stats?.commercialSubsCount ?? 0} ativos`,
       icon: Rocket,
       color: "text-cyan-400",
       glow: "shadow-cyan-500/20",
-      trend: `Est. R$ ${(stats?.potentialCatalogValue ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (Não faturado)`,
-      isPositive: false,
+      trend: (stats?.commercialSubsCount ?? 0) === 0
+        ? "5 contas em teste/voucher (sem cobrança comercial)"
+        : `MRR: R$ ${(stats?.effectiveMrr ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      isPositive: (stats?.commercialSubsCount ?? 0) > 0,
     },
     {
       label: "Volume das Barbearias",

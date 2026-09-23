@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyTenant, CommercialClassification } from "@/lib/commercial-classification";
 import {
   Search,
   MoreVertical,
@@ -16,6 +17,8 @@ import {
   HelpCircle,
   User,
   Globe,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,6 +75,7 @@ interface TenantRecord {
   plan_details: string;
   assigned_plan_name: string | null;
   profile_plan_name: string | null;
+  classification: CommercialClassification;
   // Metrics
   stats: {
     customers: number;
@@ -118,27 +122,34 @@ function AdminTenants() {
 
       if (!barbershops || barbershops.length === 0) return [];
 
-      // 2. Consulta paralela aos perfis e planos canônicos do sistema
-      const [{ data: profiles, error: pError }, { data: plans, error: plError }] =
-        await Promise.all([
-          supabase.from("profiles").select(`
-            id,
-            business_name,
-            responsible_name,
-            display_name,
-            email,
-            phone,
-            whatsapp_number,
-            plan,
-            status,
-            created_at,
-            is_internal_test_tenant
-          `),
-          supabase.from("plans").select("id, name, price_monthly, tier"),
-        ]);
+      // 2. Consulta paralela aos perfis, planos e assinaturas
+      const [
+        { data: profiles, error: pError },
+        { data: plans, error: plError },
+        { data: subs, error: sError },
+      ] = await Promise.all([
+        supabase.from("profiles").select(`
+          id,
+          business_name,
+          responsible_name,
+          display_name,
+          email,
+          phone,
+          whatsapp_number,
+          plan,
+          status,
+          created_at,
+          is_internal_test_tenant,
+          trial_start,
+          trial_end
+        `),
+        supabase.from("plans").select("id, name, price_monthly, tier"),
+        supabase.from("subscriptions").select("id, user_id, barbershop_id, status, price_id, is_internal_test_tenant"),
+      ]);
 
       if (pError) console.warn("[AdminTenants] Aviso ao consultar profiles:", pError);
       if (plError) console.warn("[AdminTenants] Aviso ao consultar plans:", plError);
+      if (sError) console.warn("[AdminTenants] Aviso ao consultar subs:", sError);
 
       const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
       const plansMap = new Map((plans || []).map((pl) => [pl.id, pl]));
@@ -167,6 +178,23 @@ function AdminTenants() {
           } else {
             plan_details = `Plano ativo: ${assignedPlan.name}`;
           }
+
+          // Classificação Comercial Centralizada (R2E.9)
+          const shopSubs = (subs || []).filter(
+            (s: any) => s.barbershop_id === shop.id || s.user_id === shop.owner_id
+          );
+          const classification = classifyTenant({
+            id: shop.id,
+            name: shop.name,
+            slug: shop.slug,
+            owner_id: shop.owner_id,
+            plan_id: shop.plan_id,
+            created_at: shop.created_at,
+            ownerProfile,
+            assignedPlan,
+            profilePlan: profilePlan ? plansMap.get(profilePlan.toLowerCase()) : null,
+            subscriptions: shopSubs,
+          });
 
           // Nome do proprietário
           const owner_name =
@@ -219,6 +247,7 @@ function AdminTenants() {
             plan_details,
             assigned_plan_name: assignedPlan?.name || null,
             profile_plan_name: profilePlan,
+            classification,
             stats: {
               customers: customersRes.count || 0,
               barbers: barbersRes.count || 0,
@@ -384,7 +413,7 @@ function AdminTenants() {
                       Status
                     </TableHead>
                     <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                      Plano Atribuído
+                      Modalidade / Acesso
                     </TableHead>
                     <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
                       Métricas
@@ -500,22 +529,15 @@ function AdminTenants() {
                           </Badge>
                         </TableCell>
 
-                        {/* Plano Atribuído / Estado Informativo */}
+                        {/* Modalidade de Acesso / Plano Técnico (R2E.9) */}
                         <TableCell>
-                          {tenant.plan_status === "verified" ? (
-                            <Badge
-                              variant="outline"
-                              className="rounded-lg px-2.5 py-0.5 text-[10px] border-purple-500/30 bg-purple-500/10 text-purple-300 font-bold uppercase italic tracking-wider"
-                            >
-                              {tenant.plan_label}
-                            </Badge>
-                          ) : (
+                          {tenant.classification.modality === "VOUCHER" ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="inline-flex items-center gap-1.5 cursor-help">
-                                  <Badge className="bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                                    <HelpCircle className="w-3 h-3 text-amber-400" />
-                                    {tenant.plan_label}
+                                  <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(168,85,247,0.15)]">
+                                    <ShieldCheck className="w-3 h-3 text-purple-400" />
+                                    VOUCHER PERMANENTE
                                   </Badge>
                                 </div>
                               </TooltipTrigger>
@@ -523,17 +545,57 @@ function AdminTenants() {
                                 side="top"
                                 className="bg-zinc-900 border-white/10 text-gray-200 text-xs p-3 rounded-xl max-w-xs shadow-xl"
                               >
-                                <p className="font-semibold text-amber-300 mb-1">
-                                  Divergência de Plano Detectada:
+                                <p className="font-semibold text-purple-300 mb-1">
+                                  Acesso por Voucher Permanente:
                                 </p>
-                                <p className="text-[11px] text-gray-400 leading-relaxed">
-                                  {tenant.plan_details}
+                                <p className="text-[11px] text-gray-300 leading-relaxed">
+                                  Conta de testes contínuos da plataforma. Sem contratação de assinatura comercial.
                                 </p>
-                                <p className="text-[10px] text-gray-500 mt-2 italic">
-                                  Acesse /admin/plans para normalizar caso necessário.
-                                </p>
+                                {tenant.classification.technicalPlanName && (
+                                  <p className="text-[10px] text-gray-400 mt-2">
+                                    Referência técnica liberada: <strong className="text-purple-300">{tenant.classification.technicalPlanName}</strong>
+                                  </p>
+                                )}
                               </TooltipContent>
                             </Tooltip>
+                          ) : tenant.classification.modality === "TRIAL" ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="inline-flex items-center gap-1.5 cursor-help">
+                                  <Badge
+                                    className={cn(
+                                      "rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
+                                      tenant.classification.trialStatus === "EXPIRADO"
+                                        ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                        : "bg-blue-500/15 text-blue-300 border border-blue-500/30"
+                                    )}
+                                  >
+                                    <Clock className="w-3 h-3" />
+                                    TRIAL · {tenant.classification.trialStatus}
+                                  </Badge>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="bg-zinc-900 border-white/10 text-gray-200 text-xs p-3 rounded-xl max-w-xs shadow-xl"
+                              >
+                                <p className={cn("font-semibold mb-1", tenant.classification.trialStatus === "EXPIRADO" ? "text-amber-300" : "text-blue-300")}>
+                                  Período de Testes ({tenant.classification.trialStatus})
+                                </p>
+                                <p className="text-[11px] text-gray-300 leading-relaxed">
+                                  {tenant.classification.explanation}
+                                </p>
+                                {tenant.classification.technicalPlanName && (
+                                  <p className="text-[10px] text-gray-400 mt-2">
+                                    Referência técnica de liberação: <strong className="text-white">{tenant.classification.technicalPlanName}</strong>
+                                  </p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                              ASSINATURA: {tenant.classification.commercialPlanName}
+                            </Badge>
                           )}
                         </TableCell>
 
