@@ -4,12 +4,12 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
-import { 
-  Users, 
-  Building2, 
-  CreditCard, 
-  CircleDollarSign, 
-  TrendingUp, 
+import {
+  Users,
+  Building2,
+  CreditCard,
+  CircleDollarSign,
+  TrendingUp,
   Wallet,
   CalendarCheck,
   Award,
@@ -24,7 +24,7 @@ import {
   Target,
   BarChart3,
   Activity,
-  LifeBuoy
+  LifeBuoy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,141 +47,215 @@ export const Route = createFileRoute("/admin/dashboard")({
 });
 
 const adminOnboardingConfig = {
-  key: 'admin-onboarding',
-  title: 'Guia de Ativação Barbex',
+  key: "admin-onboarding",
+  title: "Guia de Ativação Barbex",
   steps: [
     {
-      key: 'shop-data',
-      title: 'Dados da Barbearia',
-      description: 'Complete o perfil público com endereço e links sociais.',
-      actionLabel: 'Configurar'
+      key: "shop-data",
+      title: "Dados da Barbearia",
+      description: "Complete o perfil público com endereço e links sociais.",
+      actionLabel: "Configurar",
     },
     {
-      key: 'logo',
-      title: 'Inserir Logotipo',
-      description: 'Personalize sua marca no portal e nos vouchers.',
-      actionLabel: 'Upload'
+      key: "logo",
+      title: "Inserir Logotipo",
+      description: "Personalize sua marca no portal e nos vouchers.",
+      actionLabel: "Upload",
     },
     {
-      key: 'services',
-      title: 'Cadastrar Serviços',
-      description: 'Adicione seus cortes, barbas e tratamentos.',
-      actionLabel: 'Cadastrar'
+      key: "services",
+      title: "Cadastrar Serviços",
+      description: "Adicione seus cortes, barbas e tratamentos.",
+      actionLabel: "Cadastrar",
     },
     {
-      key: 'barbers',
-      title: 'Equipe Técnica',
-      description: 'Cadastre seus profissionais e vincule aos serviços.',
-      actionLabel: 'Cadastrar'
+      key: "barbers",
+      title: "Equipe Técnica",
+      description: "Cadastre seus profissionais e vincule aos serviços.",
+      actionLabel: "Cadastrar",
     },
     {
-      key: 'whatsapp',
-      title: 'Configurar WhatsApp',
-      description: 'Ative as notificações automáticas via Z-API.',
-      actionLabel: 'Conectar'
+      key: "whatsapp",
+      title: "Configurar WhatsApp",
+      description: "Ative as notificações automáticas via Z-API.",
+      actionLabel: "Conectar",
     },
     {
-      key: 'publish',
-      title: 'Publicar Loja',
-      description: 'Torne sua página visível para agendamentos online.',
-      actionLabel: 'Publicar'
-    }
-  ]
+      key: "publish",
+      title: "Publicar Loja",
+      description: "Torne sua página visível para agendamentos online.",
+      actionLabel: "Publicar",
+    },
+  ],
 };
 
+interface BarbershopDbRow {
+  id: string;
+  name: string;
+  plan_id: string | null;
+  owner_id: string | null;
+  created_at: string;
+}
+
+interface ProfileDbRow {
+  id: string;
+  plan: string | null;
+  trial_start: string | null;
+  trial_end: string | null;
+  is_internal_test_tenant: boolean | null;
+}
+
+interface PlanDbRow {
+  id: string;
+  slug: string | null;
+  name: string;
+  price_monthly: number;
+}
+
+interface SubscriptionDbRow {
+  id: string;
+  price_id: string | null;
+  status: string;
+  is_internal_test_tenant: boolean | null;
+}
 
 function AdminDashboard() {
   const queryClient = useQueryClient();
-  const { data: stats, isLoading, isError, error } = useQuery({
-    queryKey: ["admin-stats"],
+  const {
+    data: stats,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["admin-stats-canonical"],
     queryFn: async () => {
-      // Fetch Tenants (Profiles) — exclui barbearias internas de teste das métricas comerciais
-      const { data: profiles, error: pError } = await supabase
-        .from("profiles")
-        .select("id, plan, created_at, is_internal_test_tenant");
-      
-      if (pError) throw pError;
-      if (!profiles) return null;
+      // 1. Fetch Estabelecimentos Canônicos (public.barbershops)
+      const [
+        { data: barbershops, error: bError },
+        { data: profiles, error: pError },
+        { data: plans },
+        { data: subs },
+      ] = await Promise.all([
+        supabase.from("barbershops").select("id, name, plan_id, owner_id, created_at"),
+        supabase
+          .from("profiles")
+          .select("id, plan, trial_start, trial_end, is_internal_test_tenant"),
+        supabase.from("plans").select("id, slug, name, price_monthly"),
+        supabase.from("subscriptions").select("id, price_id, status, is_internal_test_tenant"),
+      ]);
 
-      const { data: roles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      if (bError) throw bError;
+      if (pError) console.warn("[AdminDashboard] Aviso ao buscar perfis:", pError);
 
-      if (rolesError) throw rolesError;
-
-      const tenantIds = new Set(
-        (roles || [])
-          .filter((entry) => entry.role === 'tenant_admin')
-          .map((entry) => entry.user_id)
+      const shopsList = (barbershops || []) as unknown as BarbershopDbRow[];
+      const profilesMap = new Map<string, ProfileDbRow>(
+        ((profiles || []) as unknown as ProfileDbRow[]).map((p) => [p.id, p]),
       );
+      const plansMap = new Map<string, PlanDbRow>(
+        ((plans || []) as unknown as PlanDbRow[]).map((p) => [p.id, p]),
+      );
+      ((plans || []) as unknown as PlanDbRow[]).forEach((p) => {
+        if (p.slug) plansMap.set(p.slug.toLowerCase(), p);
+        if (p.name) plansMap.set(p.name.toLowerCase(), p);
+      });
 
-      const tenants = profiles.filter((profile) => tenantIds.has(profile.id) && !(profile as any).is_internal_test_tenant);
-      
-      // Fetch Plans
-      const { data: plans } = await supabase.from("plans").select("*");
-      
-      // Fetch ALL Appointments for stats
+      // 2. Assinaturas Stripe Reais e MRR Efetivo
+      let activeStripeSubs = 0;
+      let effectiveMrr = 0;
+      ((subs || []) as unknown as SubscriptionDbRow[]).forEach((sub) => {
+        if (sub.status === "active" && !sub.is_internal_test_tenant) {
+          activeStripeSubs += 1;
+          if (sub.price_id) {
+            const plan = plansMap.get(sub.price_id);
+            if (plan) effectiveMrr += Number(plan.price_monthly) || 0;
+          }
+        }
+      });
+
+      // 3. Planos de Catálogo Atribuídos (Estimativa Não Faturada)
+      let assignedPlansCount = 0;
+      let potentialCatalogValue = 0;
+      shopsList.forEach((shop) => {
+        let plan: PlanDbRow | undefined;
+        if (shop.plan_id) {
+          plan = plansMap.get(shop.plan_id);
+        }
+        if (!plan && shop.owner_id) {
+          const ownerProf = profilesMap.get(shop.owner_id);
+          if (ownerProf?.plan) {
+            plan = plansMap.get(ownerProf.plan.toLowerCase());
+          }
+        }
+        if (plan) {
+          assignedPlansCount += 1;
+          potentialCatalogValue += Number(plan.price_monthly) || 0;
+        }
+      });
+
+      // 4. Fetch Appointments, Customers e Barbers preservando escopo
       const { data: appointments } = await supabase
         .from("appointments")
         .select("final_amount, cashback_earned, credit_used, status, created_at");
 
-      // Fetch Customers (for credits and total count)
       const { data: customers } = await supabase
         .from("customers")
         .select("credits, cashback_balance");
 
-      // Fetch Barbers
       const { count: barberCount } = await supabase
         .from("barbers")
-        .select("*", { count: 'exact', head: true });
+        .select("*", { count: "exact", head: true });
 
-      // Calculations
-      const totalTenants = tenants.length;
-      const activeSubs = tenants.filter(t => t.plan && t.plan.toLowerCase() !== 'free').length;
-      const mrr = tenants.reduce((acc, t) => {
-        const plan = plans?.find(p => p.name.toLowerCase() === t.plan?.toLowerCase());
-        return acc + (plan ? Number(plan.price_monthly) : 0);
-      }, 0);
-
-      const completedAppointments = appointments?.filter(a => a.status === 'completed') || [];
-      const totalTransacted = completedAppointments.reduce((acc, curr) => acc + (curr.final_amount || 0), 0) || 0;
-      const totalCashback = completedAppointments.reduce((acc, curr) => acc + (curr.cashback_earned || 0), 0) || 0;
+      const completedAppointments = appointments?.filter((a) => a.status === "completed") || [];
+      const totalTransacted =
+        completedAppointments.reduce((acc, curr) => acc + (curr.final_amount || 0), 0) || 0;
+      const totalCashback =
+        completedAppointments.reduce((acc, curr) => acc + (curr.cashback_earned || 0), 0) || 0;
       const totalCredits = customers?.reduce((acc, curr) => acc + (curr.credits || 0), 0) || 0;
       const totalCustomers = customers?.length || 0;
 
       // Real-time activity mapping based on latest DB records
-      const recentActivity = appointments?.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ).slice(0, 4).map(app => ({
-        title: `Novo agendamento: ${app.status === 'pending' ? 'Aguardando' : 'Confirmado'}`,
-        time: formatDistanceToNow(new Date(app.created_at), { addSuffix: true, locale: ptBR }),
-        type: "appointment",
-        icon: CalendarCheck,
-        color: app.status === 'completed' ? "text-emerald-400" : "text-blue-400"
-      })) || [];
+      const recentActivity =
+        appointments
+          ?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 4)
+          .map((app) => ({
+            title: `Novo agendamento: ${app.status === "pending" ? "Aguardando" : "Confirmado"}`,
+            time: formatDistanceToNow(new Date(app.created_at), { addSuffix: true, locale: ptBR }),
+            type: "appointment",
+            icon: CalendarCheck,
+            color: app.status === "completed" ? "text-emerald-400" : "text-blue-400",
+          })) || [];
 
       return {
-        totalTenants,
-        activeSubs,
-        mrr,
+        totalTenants: shopsList.length,
+        activeStripeSubs,
+        effectiveMrr,
+        assignedPlansCount,
+        potentialCatalogValue,
         totalTransacted,
         totalCashback,
         totalCredits,
         totalCustomers,
         totalBarbers: barberCount || 0,
-        recentActivity
+        recentActivity,
       };
-    }
+    },
   });
 
   useEffect(() => {
     const channel = supabase
-      .channel('admin-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      .channel("admin-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-stats-canonical"] });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      .on("postgres_changes", { event: "*", schema: "public", table: "barbershops" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-stats-canonical"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-stats-canonical"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-stats-canonical"] });
       })
       .subscribe();
 
@@ -194,20 +268,86 @@ function AdminDashboard() {
     return (
       <div className="p-8 text-center bg-destructive/10 rounded-xl border border-destructive/20">
         <h3 className="text-xl font-bold text-destructive mb-2">Erro ao carregar métricas</h3>
-        <p className="text-muted-foreground">{(error as Error)?.message || "Ocorreu um erro inesperado."}</p>
+        <p className="text-muted-foreground">
+          {(error as Error)?.message || "Ocorreu um erro inesperado."}
+        </p>
       </div>
     );
   }
 
   const statCards = [
-    { label: "Total Barbearias", value: stats?.totalTenants ?? 0, icon: Building2, color: "text-blue-400", glow: "shadow-blue-500/20", trend: "+3", isPositive: true },
-    { label: "Assinaturas Ativas", value: stats?.activeSubs ?? 0, icon: CreditCard, color: "text-purple-400", glow: "shadow-purple-500/20", trend: "+12%", isPositive: true },
-    { label: "MRR Estimado", value: `R$ ${(stats?.mrr ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: "text-emerald-400", glow: "shadow-emerald-500/20", trend: "+R$ 450", isPositive: true },
-    { label: "Total Transacionado", value: `R$ ${(stats?.totalTransacted ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: CircleDollarSign, color: "text-amber-400", glow: "shadow-amber-500/20", trend: "+18%", isPositive: true },
-    { label: "Cashback Emitido", value: `R$ ${(stats?.totalCashback ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Award, color: "text-pink-400", glow: "shadow-pink-500/20", trend: "+5%", isPositive: true },
-    { label: "Créditos Ativos", value: `R$ ${(stats?.totalCredits ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Wallet, color: "text-orange-400", glow: "shadow-orange-500/20", trend: "-2%", isPositive: false },
-    { label: "Novos Assinantes", value: "8", icon: Rocket, color: "text-cyan-400", glow: "shadow-cyan-500/20", trend: "+25%", isPositive: true },
-    { label: "Ticket Médio", value: "R$ 45,00", icon: Target, color: "text-indigo-400", glow: "shadow-indigo-500/20", trend: "+3%", isPositive: true },
+    {
+      label: "Total Barbearias",
+      value: stats?.totalTenants ?? 0,
+      icon: Building2,
+      color: "text-blue-400",
+      glow: "shadow-blue-500/20",
+      trend: "Canônico",
+      isPositive: true,
+    },
+    {
+      label: "Assinaturas Stripe Ativas",
+      value: stats?.activeStripeSubs ?? 0,
+      icon: CreditCard,
+      color: "text-purple-400",
+      glow: "shadow-purple-500/20",
+      trend: "Pré-lançamento",
+      isPositive: true,
+    },
+    {
+      label: "MRR Efetivo (Stripe)",
+      value: `R$ ${(stats?.effectiveMrr ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      icon: TrendingUp,
+      color: "text-emerald-400",
+      glow: "shadow-emerald-500/20",
+      trend: "Faturamento Real",
+      isPositive: true,
+    },
+    {
+      label: "Planos de Catálogo",
+      value: `${stats?.assignedPlansCount ?? 0} atribuídos`,
+      icon: Rocket,
+      color: "text-cyan-400",
+      glow: "shadow-cyan-500/20",
+      trend: `Est. R$ ${(stats?.potentialCatalogValue ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (Não faturado)`,
+      isPositive: false,
+    },
+    {
+      label: "Volume das Barbearias",
+      value: `R$ ${(stats?.totalTransacted ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      icon: CircleDollarSign,
+      color: "text-amber-400",
+      glow: "shadow-amber-500/20",
+      trend: "Serviços (Não é SaaS)",
+      isPositive: true,
+    },
+    {
+      label: "Cashback Emitido",
+      value: `R$ ${(stats?.totalCashback ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      icon: Award,
+      color: "text-pink-400",
+      glow: "shadow-pink-500/20",
+      trend: "Fidelidade",
+      isPositive: true,
+    },
+    {
+      label: "Créditos Ativos",
+      value: `R$ ${(stats?.totalCredits ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      icon: Wallet,
+      color: "text-orange-400",
+      glow: "shadow-orange-500/20",
+      trend: "Clientes",
+      isPositive: false,
+    },
+    {
+      label: "Profissionais",
+      value: stats?.totalBarbers ?? 0,
+      icon: Users,
+      color: "text-indigo-400",
+      glow: "shadow-indigo-500/20",
+      trend: "Equipe Cadastrada",
+      isPositive: true,
+    },
   ];
 
   return (
@@ -218,8 +358,8 @@ function AdminDashboard() {
           <div className="absolute top-0 left-1/4 w-64 h-64 bg-purple-600 rounded-full blur-[120px] animate-pulse" />
           <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-pink-600 rounded-full blur-[120px] animate-pulse delay-700" />
         </div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -227,9 +367,11 @@ function AdminDashboard() {
         >
           <div className="flex items-center gap-2">
             <div className="h-px w-8 bg-purple-500" />
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-purple-400">Visão Geral da Plataforma</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-purple-400">
+              Visão Geral da Plataforma
+            </span>
           </div>
-          
+
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none italic bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
@@ -239,11 +381,14 @@ function AdminDashboard() {
                 Monitoramento global em tempo real da infraestrutura Barbex.
               </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="group relative overflow-hidden bg-transparent border-gold/30 hover:border-gold/60 text-white gap-2 h-12 px-6 rounded-2xl backdrop-blur-md transition-all duration-300 hover:shadow-[0_0_25px_rgba(212,175,55,0.15)]">
+              <Button
+                variant="outline"
+                className="group relative overflow-hidden bg-transparent border-gold/30 hover:border-gold/60 text-white gap-2 h-12 px-6 rounded-2xl backdrop-blur-md transition-all duration-300 hover:shadow-[0_0_25px_rgba(212,175,55,0.15)]"
+              >
                 <span className="absolute inset-0 bg-gradient-to-r from-gold/0 via-gold/10 to-gold/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <Filter className="w-4 h-4 text-gold relative" /> 
+                <Filter className="w-4 h-4 text-gold relative" />
                 <span className="relative">Filtros Avançados</span>
               </Button>
               <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] text-white gap-2 h-12 px-6 rounded-2xl border-none transition-all duration-300">
@@ -259,10 +404,8 @@ function AdminDashboard() {
       {/* Anomaly Alerts — top priority visibility */}
       <AnomalyAlerts />
 
-
       {/* SaaS Metrics (MRR/ARR/Churn/Conversion) */}
       <SaasMetricsCards />
-
 
       {/* Executive KPIs — real MRR/ARR/Churn/ARPU/LTV/Signups */}
       <ExecutiveKpis />
@@ -270,73 +413,105 @@ function AdminDashboard() {
       {/* Tenant Health Score — priorize contato com clientes em risco */}
       <TenantHealthList />
 
-
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
-          Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-3xl bg-white/5" />
-          ))
-        ) : (
-          statCards.map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              whileHover={{ y: -5 }}
-            >
-              <Card className={cn(
-                "glass group transition-all duration-500 rounded-[2rem] overflow-hidden relative h-full flex flex-col justify-between shadow-2xl shadow-black/40 border-2",
-                stat.color.replace('text-', 'border-').replace('400', '500/30'),
-                "hover:" + stat.color.replace('text-', 'border-').replace('400', '500/60')
-              )}>
-                {/* Decorative background glow */}
-                <div className={cn("absolute -top-10 -right-10 w-32 h-32 blur-[80px] opacity-20 pointer-events-none rounded-full group-hover:opacity-40 transition-opacity", stat.glow)} />
-                
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-6 px-6">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 group-hover:text-white transition-colors">
-                      {stat.label}
-                    </span>
-                    <div className={cn("h-0.5 w-6 opacity-40 group-hover:w-10 transition-all duration-500", stat.color.replace('text-', 'bg-'))} />
-                  </div>
-                  <div className={cn("p-3 rounded-2xl bg-white/10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-xl border border-white/10", stat.color)}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-6 px-6 pt-2">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-4xl font-black tracking-tighter mb-2 text-white group-hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all">
-                      {stat.value}
+        {isLoading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-3xl bg-white/5" />
+            ))
+          : statCards.map((stat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                whileHover={{ y: -5 }}
+              >
+                <Card
+                  className={cn(
+                    "glass group transition-all duration-500 rounded-[2rem] overflow-hidden relative h-full flex flex-col justify-between shadow-2xl shadow-black/40 border-2",
+                    stat.color.replace("text-", "border-").replace("400", "500/30"),
+                    "hover:" + stat.color.replace("text-", "border-").replace("400", "500/60"),
+                  )}
+                >
+                  {/* Decorative background glow */}
+                  <div
+                    className={cn(
+                      "absolute -top-10 -right-10 w-32 h-32 blur-[80px] opacity-20 pointer-events-none rounded-full group-hover:opacity-40 transition-opacity",
+                      stat.glow,
+                    )}
+                  />
+
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-6 px-6">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 group-hover:text-white transition-colors">
+                        {stat.label}
+                      </span>
+                      <div
+                        className={cn(
+                          "h-0.5 w-6 opacity-40 group-hover:w-10 transition-all duration-500",
+                          stat.color.replace("text-", "bg-"),
+                        )}
+                      />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] border-none font-black tracking-wider shadow-lg",
-                          stat.isPositive ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
-                        )}>
-                          <div className="flex items-center gap-1">
-                            {stat.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                            {stat.trend}
-                          </div>
-                        </Badge>
-                        <span className="text-[9px] text-white/50 font-bold uppercase tracking-tighter">Snapshot Mensal</span>
+                    <div
+                      className={cn(
+                        "p-3 rounded-2xl bg-white/10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-xl border border-white/10",
+                        stat.color,
+                      )}
+                    >
+                      <stat.icon className="h-5 w-5" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-6 px-6 pt-2">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-4xl font-black tracking-tighter mb-2 text-white group-hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all">
+                        {stat.value}
                       </div>
-                      
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/10 group-hover:border-white/30 transition-colors">
-                        <TrendingUp size={12} className={cn("transition-transform group-hover:scale-110", stat.color)} />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] border-none font-black tracking-wider shadow-lg",
+                              stat.isPositive
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : "bg-rose-500/20 text-rose-400",
+                            )}
+                          >
+                            <div className="flex items-center gap-1">
+                              {stat.isPositive ? (
+                                <ArrowUpRight size={10} />
+                              ) : (
+                                <ArrowDownRight size={10} />
+                              )}
+                              {stat.trend}
+                            </div>
+                          </Badge>
+                          <span className="text-[9px] text-white/50 font-bold uppercase tracking-tighter">
+                            Snapshot Mensal
+                          </span>
+                        </div>
+
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/10 group-hover:border-white/30 transition-colors">
+                          <TrendingUp
+                            size={12}
+                            className={cn("transition-transform group-hover:scale-110", stat.color)}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-                
-                {/* Bottom line accent */}
-                <div className={cn("absolute bottom-0 left-0 h-[3px] w-0 group-hover:w-full transition-all duration-700", stat.color.replace('text-', 'bg-'))} />
-              </Card>
-            </motion.div>
-          ))
-        )}
+                  </CardContent>
+
+                  {/* Bottom line accent */}
+                  <div
+                    className={cn(
+                      "absolute bottom-0 left-0 h-[3px] w-0 group-hover:w-full transition-all duration-700",
+                      stat.color.replace("text-", "bg-"),
+                    )}
+                  />
+                </Card>
+              </motion.div>
+            ))}
       </div>
 
       {/* Analytics Section */}
@@ -353,13 +528,16 @@ function AdminDashboard() {
             </div>
             <h2 className="text-2xl font-bold tracking-tight">Distribuição de Infraestrutura</h2>
           </div>
-          <Button variant="ghost" className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 gap-2">
+          <Button
+            variant="ghost"
+            className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 gap-2"
+          >
             Exportar Relatório <Download className="w-4 h-4" />
           </Button>
         </div>
-        
+
         <div className="p-1 glass rounded-[2.5rem] border-white/5">
-           <AdminChartsTab />
+          <AdminChartsTab />
         </div>
       </motion.div>
 
@@ -377,45 +555,101 @@ function AdminDashboard() {
             </div>
             <h2 className="text-2xl font-bold tracking-tight">Atividade Recente</h2>
           </div>
-          
+
           <Card className="glass border-white/5 rounded-3xl overflow-hidden">
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
-                {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-                  stats.recentActivity.map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 hover:bg-white/5 transition-colors cursor-pointer group">
-                      <div className={cn("p-2 rounded-xl bg-white/5 group-hover:scale-110 transition-transform", item.color)}>
-                        <item.icon size={16} />
+                {stats?.recentActivity && stats.recentActivity.length > 0
+                  ? stats.recentActivity.map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-4 p-4 hover:bg-white/5 transition-colors cursor-pointer group"
+                      >
+                        <div
+                          className={cn(
+                            "p-2 rounded-xl bg-white/5 group-hover:scale-110 transition-transform",
+                            item.color,
+                          )}
+                        >
+                          <item.icon size={16} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">
+                            {item.title}
+                          </p>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-tighter font-bold">
+                            {item.time}
+                          </p>
+                        </div>
+                        <ArrowUpRight
+                          size={14}
+                          className="text-gray-600 group-hover:text-white transition-colors"
+                        />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">{item.title}</p>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-tighter font-bold">{item.time}</p>
+                    ))
+                  : [
+                      {
+                        title: "Nova Barbearia Cadastrada",
+                        time: "Há 5 minutos",
+                        type: "tenant",
+                        icon: Building2,
+                        color: "text-blue-400",
+                      },
+                      {
+                        title: "Assinatura Plano Pro Aprovada",
+                        time: "Há 12 minutos",
+                        type: "payment",
+                        icon: Zap,
+                        color: "text-purple-400",
+                      },
+                      {
+                        title: "Ticket de Suporte Resolvido",
+                        time: "Há 45 minutos",
+                        type: "support",
+                        icon: LifeBuoy,
+                        color: "text-emerald-400",
+                      },
+                      {
+                        title: "Novo Barbeiro Adicionado",
+                        time: "Há 1 hora",
+                        type: "staff",
+                        icon: Users,
+                        color: "text-amber-400",
+                      },
+                    ].map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-4 p-4 hover:bg-white/5 transition-colors cursor-pointer group"
+                      >
+                        <div
+                          className={cn(
+                            "p-2 rounded-xl bg-white/5 group-hover:scale-110 transition-transform",
+                            item.color,
+                          )}
+                        >
+                          <item.icon size={16} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">
+                            {item.title}
+                          </p>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-tighter font-bold">
+                            {item.time}
+                          </p>
+                        </div>
+                        <ArrowUpRight
+                          size={14}
+                          className="text-gray-600 group-hover:text-white transition-colors"
+                        />
                       </div>
-                      <ArrowUpRight size={14} className="text-gray-600 group-hover:text-white transition-colors" />
-                    </div>
-                  ))
-                ) : (
-                  [
-                    { title: "Nova Barbearia Cadastrada", time: "Há 5 minutos", type: "tenant", icon: Building2, color: "text-blue-400" },
-                    { title: "Assinatura Plano Pro Aprovada", time: "Há 12 minutos", type: "payment", icon: Zap, color: "text-purple-400" },
-                    { title: "Ticket de Suporte Resolvido", time: "Há 45 minutos", type: "support", icon: LifeBuoy, color: "text-emerald-400" },
-                    { title: "Novo Barbeiro Adicionado", time: "Há 1 hora", type: "staff", icon: Users, color: "text-amber-400" },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 hover:bg-white/5 transition-colors cursor-pointer group">
-                      <div className={cn("p-2 rounded-xl bg-white/5 group-hover:scale-110 transition-transform", item.color)}>
-                        <item.icon size={16} />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">{item.title}</p>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-tighter font-bold">{item.time}</p>
-                      </div>
-                      <ArrowUpRight size={14} className="text-gray-600 group-hover:text-white transition-colors" />
-                    </div>
-                  ))
-                )}
+                    ))}
               </div>
               <div className="p-4 border-t border-white/5 text-center">
-                <Button variant="ghost" size="sm" className="text-xs text-gray-400 hover:text-white">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-gray-400 hover:text-white"
+                >
                   Ver log completo do sistema
                 </Button>
               </div>
@@ -430,7 +664,7 @@ function AdminDashboard() {
             </div>
             <h2 className="text-2xl font-bold tracking-tight">Metas e Performance</h2>
           </div>
-          
+
           <Card className="glass border-white/5 rounded-3xl p-6 space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
