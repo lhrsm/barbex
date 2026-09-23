@@ -144,12 +144,15 @@ function AdminTenants() {
           trial_end
         `),
         supabase.from("plans").select("id, name, price_monthly, tier"),
-        supabase.from("subscriptions").select("id, user_id, barbershop_id, status, price_id, is_internal_test_tenant"),
+        supabase.from("subscriptions").select("id, user_id, status, price_id, is_internal_test_tenant, current_period_end"),
       ]);
 
       if (pError) console.warn("[AdminTenants] Aviso ao consultar profiles:", pError);
       if (plError) console.warn("[AdminTenants] Aviso ao consultar plans:", plError);
-      if (sError) console.warn("[AdminTenants] Aviso ao consultar subs:", sError);
+      if (sError) {
+        console.error("[AdminTenants] Erro ao consultar assinaturas:", sError);
+        throw new Error("Erro ao carregar assinaturas: " + (sError.message || "Falha na consulta"));
+      }
 
       const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
       const plansMap = new Map((plans || []).map((pl) => [pl.id, pl]));
@@ -181,7 +184,7 @@ function AdminTenants() {
 
           // Classificação Comercial Centralizada (R2E.9)
           const shopSubs = (subs || []).filter(
-            (s: any) => s.barbershop_id === shop.id || s.user_id === shop.owner_id
+            (s: any) => s.user_id === shop.owner_id || s.user_id === shop.id
           );
           const classification = classifyTenant({
             id: shop.id,

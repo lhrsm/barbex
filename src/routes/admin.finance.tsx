@@ -102,9 +102,9 @@ function AdminFinance() {
       // 1. Fetch Planos Canônicos, Barbearias, Perfis e Assinaturas
       const [
         { data: plans },
-        { data: barbershops },
-        { data: profiles },
-        { data: subscriptions },
+        { data: barbershops, error: bErr },
+        { data: profiles, error: pErr },
+        { data: subscriptions, error: sErr },
         { data: appointments },
         { data: transactions },
       ] = await Promise.all([
@@ -115,7 +115,7 @@ function AdminFinance() {
         supabase
           .from("profiles")
           .select("id, plan, trial_start, trial_end, is_internal_test_tenant"),
-        supabase.from("subscriptions").select("id, price_id, status, is_internal_test_tenant"),
+        supabase.from("subscriptions").select("id, user_id, price_id, status, is_internal_test_tenant, current_period_end"),
         supabase.from("appointments").select("id, final_amount, status, created_at, tenant_id"),
         supabase
           .from("transactions")
@@ -123,6 +123,9 @@ function AdminFinance() {
           .order("created_at", { ascending: false })
           .limit(20),
       ]);
+
+      if (bErr) throw new Error("Erro ao consultar barbearias: " + bErr.message);
+      if (sErr) throw new Error("Erro ao consultar assinaturas: " + sErr.message);
 
       const plansList = (plans || []) as PlanItem[];
       const planById = new Map<string, PlanItem>();
@@ -150,7 +153,7 @@ function AdminFinance() {
         const profilePlanRaw = ownerProf?.plan ? ownerProf.plan.trim() : null;
         const profilePlan = profilePlanRaw ? planById.get(profilePlanRaw.toLowerCase()) : null;
         const shopSubs = (subscriptions || []).filter(
-          (s: any) => s.barbershop_id === shop.id || s.user_id === shop.owner_id,
+          (s: any) => s.user_id === shop.owner_id || s.user_id === shop.id,
         );
 
         const classification = classifyTenant({

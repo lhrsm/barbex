@@ -26,6 +26,7 @@ import {
   BarChart3,
   Activity,
   LifeBuoy,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -115,6 +116,7 @@ interface PlanDbRow {
 
 interface SubscriptionDbRow {
   id: string;
+  user_id: string;
   price_id: string | null;
   status: string;
   is_internal_test_tenant: boolean | null;
@@ -127,6 +129,7 @@ function AdminDashboard() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["admin-stats-canonical"],
     queryFn: async () => {
@@ -134,19 +137,27 @@ function AdminDashboard() {
       const [
         { data: barbershops, error: bError },
         { data: profiles, error: pError },
-        { data: plans },
-        { data: subs },
+        { data: plans, error: plError },
+        { data: subs, error: sError },
       ] = await Promise.all([
         supabase.from("barbershops").select("id, name, plan_id, owner_id, created_at"),
         supabase
           .from("profiles")
           .select("id, plan, trial_start, trial_end, is_internal_test_tenant"),
         supabase.from("plans").select("id, slug, name, price_monthly"),
-        supabase.from("subscriptions").select("id, price_id, status, is_internal_test_tenant"),
+        supabase.from("subscriptions").select("id, user_id, price_id, status, is_internal_test_tenant, current_period_end"),
       ]);
 
-      if (bError) throw bError;
+      if (bError) {
+        console.error("[AdminDashboard] Erro ao consultar barbershops:", bError);
+        throw new Error("Erro ao carregar barbearias: " + (bError.message || "Falha na consulta"));
+      }
       if (pError) console.warn("[AdminDashboard] Aviso ao buscar perfis:", pError);
+      if (plError) console.warn("[AdminDashboard] Aviso ao buscar planos:", plError);
+      if (sError) {
+        console.error("[AdminDashboard] Erro ao consultar assinaturas:", sError);
+        throw new Error("Erro ao carregar assinaturas: " + (sError.message || "Falha na consulta"));
+      }
 
       const shopsList = (barbershops || []) as unknown as BarbershopDbRow[];
       const profilesMap = new Map<string, ProfileDbRow>(
@@ -170,7 +181,7 @@ function AdminDashboard() {
         const ownerProf = shop.owner_id ? profilesMap.get(shop.owner_id) : profilesMap.get(shop.id);
         const assignedPlan = shop.plan_id ? plansMap.get(shop.plan_id) : null;
         const profilePlan = ownerProf?.plan ? plansMap.get(ownerProf.plan.toLowerCase()) : null;
-        const shopSubs = (subs || []).filter((s: any) => s.barbershop_id === shop.id || s.user_id === shop.owner_id);
+        const shopSubs = (subs || []).filter((s: any) => s.user_id === shop.owner_id || s.user_id === shop.id);
 
         const classification = classifyTenant({
           id: shop.id,
@@ -404,6 +415,30 @@ function AdminDashboard() {
       </section>
 
       <OnboardingChecklist config={adminOnboardingConfig} />
+
+      {/* Estado de Erro Explícito na Consulta de Métricas/Assinaturas */}
+      {isError && (
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-center">
+          <AlertCircle className="w-12 h-12 text-rose-400" />
+          <div>
+            <h3 className="text-lg font-bold text-white uppercase tracking-tight">
+              Falha ao carregar indicadores e assinaturas
+            </h3>
+            <p className="text-sm text-gray-400 max-w-md mt-1">
+              {error instanceof Error
+                ? error.message
+                : "Ocorreu um erro ao consultar os dados consolidados da plataforma."}
+            </p>
+          </div>
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            className="border-rose-500/30 text-rose-300 hover:bg-rose-500/20 rounded-xl gap-2 text-xs font-bold uppercase tracking-wider"
+          >
+            <RefreshCw className="w-4 h-4" /> Tentar Novamente
+          </Button>
+        </div>
+      )}
 
       {/* Anomaly Alerts — top priority visibility */}
       <AnomalyAlerts />

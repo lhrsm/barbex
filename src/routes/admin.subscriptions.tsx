@@ -13,6 +13,7 @@ import {
   Clock,
   ShieldCheck,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -109,7 +110,13 @@ function AdminSubscriptions() {
   const [search, setSearch] = useState("");
 
   // 1. Assinaturas Stripe canônicas da tabela subscriptions
-  const { data: stripeSubscriptions, isLoading: isLoadingSubs } = useQuery<SubscriptionDbRow[]>({
+  const {
+    data: stripeSubscriptions,
+    isLoading: isLoadingSubs,
+    isError: isErrorSubs,
+    error: errorSubs,
+    refetch: refetchSubs,
+  } = useQuery<SubscriptionDbRow[]>({
     queryKey: ["admin-stripe-subscriptions"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -134,14 +141,20 @@ function AdminSubscriptions() {
 
       if (error) {
         console.error("[AdminSubscriptions] Erro ao buscar assinaturas Stripe:", error);
-        throw error;
+        throw new Error("Erro ao carregar assinaturas Stripe: " + (error.message || "Falha na consulta"));
       }
       return (data || []) as unknown as SubscriptionDbRow[];
     },
   });
 
   // 2. Estabelecimentos canônicos (public.barbershops), perfis e planos
-  const { data: tenantPlans, isLoading: isLoadingTenants } = useQuery<TenantPlanRecord[]>({
+  const {
+    data: tenantPlans,
+    isLoading: isLoadingTenants,
+    isError: isErrorTenants,
+    error: errorTenants,
+    refetch: refetchTenants,
+  } = useQuery<TenantPlanRecord[]>({
     queryKey: ["admin-tenant-plans-canonical"],
     queryFn: async () => {
       const [
@@ -160,13 +173,19 @@ function AdminSubscriptions() {
             "id, business_name, responsible_name, display_name, email, phone, whatsapp_number, plan, trial_start, trial_end, is_internal_test_tenant",
           ),
         supabase.from("plans").select("id, name, price_monthly, tier"),
-        supabase.from("subscriptions").select("id, user_id, barbershop_id, status, price_id, is_internal_test_tenant"),
+        supabase.from("subscriptions").select("id, user_id, status, price_id, is_internal_test_tenant, current_period_end"),
       ]);
 
-      if (bErr) throw bErr;
+      if (bErr) {
+        console.error("[AdminSubscriptions] Erro ao consultar barbershops:", bErr);
+        throw new Error("Erro ao carregar barbearias: " + (bErr.message || "Falha na consulta"));
+      }
       if (pErr) console.warn("[AdminSubscriptions] Aviso ao consultar perfis:", pErr);
       if (plErr) console.warn("[AdminSubscriptions] Aviso ao consultar planos:", plErr);
-      if (sErr) console.warn("[AdminSubscriptions] Aviso ao consultar assinaturas:", sErr);
+      if (sErr) {
+        console.error("[AdminSubscriptions] Erro ao consultar assinaturas:", sErr);
+        throw new Error("Erro ao carregar assinaturas: " + (sErr.message || "Falha na consulta"));
+      }
 
       const profileMap = new Map<string, ProfileDbRow>();
       ((profiles || []) as unknown as ProfileDbRow[]).forEach((p) => profileMap.set(p.id, p));
@@ -196,7 +215,7 @@ function AdminSubscriptions() {
 
           // Classificação comercial canônica
           const shopSubs = (subs || []).filter(
-            (s: any) => s.barbershop_id === b.id || s.user_id === b.owner_id
+            (s: any) => s.user_id === b.owner_id || s.user_id === b.id
           );
           const classification = classifyTenant({
             id: b.id,
@@ -343,6 +362,31 @@ function AdminSubscriptions() {
           </Button>
         </div>
       </div>
+
+      {/* Estado de Erro Explícito na Consulta de Assinaturas ou Barbearias */}
+      {(isErrorSubs || isErrorTenants) && (
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-center">
+          <AlertCircle className="w-12 h-12 text-rose-400" />
+          <div>
+            <h3 className="text-lg font-bold text-white uppercase tracking-tight">
+              Falha ao carregar assinaturas ou estabelecimentos
+            </h3>
+            <p className="text-sm text-gray-400 max-w-md mt-1">
+              {(errorSubs as Error)?.message || (errorTenants as Error)?.message || "Ocorreu um erro ao consultar o banco de dados."}
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              if (isErrorSubs) refetchSubs();
+              if (isErrorTenants) refetchTenants();
+            }}
+            variant="outline"
+            className="border-rose-500/30 text-rose-300 hover:bg-rose-500/20 rounded-xl gap-2 text-xs font-bold uppercase tracking-wider"
+          >
+            <RefreshCw className="w-4 h-4" /> Tentar Novamente
+          </Button>
+        </div>
+      )}
 
       {/* Cards de Resumo Executivo Reconciliado */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
