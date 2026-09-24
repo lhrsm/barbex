@@ -161,9 +161,11 @@ function reasonLabel(r: string | null) {
 }
 
 function statusBadge(a: string | null) {
-  if (a === "accepted")
+  if (a === "accepted" || a === "upgraded")
     return <Badge className="bg-emerald-500/20 text-emerald-200 border border-emerald-500/30">Aceita</Badge>;
-  if (a === "dismissed")
+  if (a === "dismissed" || a === "kept_addons")
     return <Badge className="bg-rose-500/20 text-rose-200 border border-rose-500/30">Dispensada</Badge>;
+  if (a === "reviewed_selection")
+    return <Badge className="bg-blue-500/20 text-blue-200 border border-blue-500/30">Revisou seleção</Badge>;
   return <Badge className="bg-white/[0.05] text-white/60 border border-white/10">Pendente</Badge>;
 }

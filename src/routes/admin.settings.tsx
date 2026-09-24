@@ -51,6 +51,33 @@ function AdminSettings() {
     return "geral";
   });
 
+  const DEFAULT_SYSTEM_SETTINGS = {
+    saas_name: "Barbex",
+    main_url: "https://barbex.shop",
+    saas_logo: null,
+    maintenance_mode: false,
+    admin_access_level: "restricted",
+    two_factor_auth_enabled: false,
+    audit_logs_enabled: true,
+    public_email: "contato@barbex.shop",
+    contact_email: "contato@lmstartup.com.br",
+    phone: "",
+    whatsapp_number: "",
+    address: "",
+    has_contact_form: true,
+    social_links: {
+      instagram: "",
+      facebook: "",
+      tiktok: "",
+      linkedin: "",
+      youtube: "",
+      twitter: "",
+    },
+    payments_test_mode: false,
+    stripe_secret_key: "",
+    stripe_webhook_secret: "",
+  };
+
   const { data: settings, isLoading, error: queryError } = useQuery({
     queryKey: ["admin-system-settings"],
     queryFn: async () => {
@@ -73,27 +100,69 @@ function AdminSettings() {
 
   useEffect(() => {
     if (settings) {
-      setFormData(settings);
+      setFormData({
+        ...DEFAULT_SYSTEM_SETTINGS,
+        ...settings,
+        social_links: {
+          ...DEFAULT_SYSTEM_SETTINGS.social_links,
+          ...(settings.social_links || {}),
+        },
+      });
+    } else if (settings === null && !isLoading && !queryError) {
+      // Cenário B: Tabela vazia — inicializar com valores padrão seguros
+      setFormData(DEFAULT_SYSTEM_SETTINGS);
     }
-  }, [settings]);
+  }, [settings, isLoading, queryError]);
 
   const updateMutation = useMutation({
     mutationFn: async (newData: any) => {
-      if (!settings?.id) throw new Error("ID de configurações não encontrado");
-      const { error } = await supabase
-        .from("system_settings")
-        .update(newData)
-        .eq("id", settings.id);
+      const targetId = settings?.id || newData?.id;
 
-      if (error) throw error;
+      if (targetId) {
+        // Atualização de registro existente
+        const { id, updated_at, ...updatePayload } = newData;
+        const { error } = await supabase
+          .from("system_settings")
+          .update(updatePayload)
+          .eq("id", targetId);
+
+        if (error) throw error;
+      } else {
+        // Tabela estava vazia na leitura. Verificar atomicamente se outra sessão inseriu
+        const { data: existingRows, error: checkError } = await supabase
+          .from("system_settings")
+          .select("id")
+          .limit(1);
+
+        if (checkError) throw checkError;
+
+        if (existingRows && existingRows.length > 0) {
+          // Atualiza registro criado concorrentemente para evitar duplicação
+          const { id, updated_at, ...updatePayload } = newData;
+          const { error } = await supabase
+            .from("system_settings")
+            .update(updatePayload)
+            .eq("id", existingRows[0].id);
+
+          if (error) throw error;
+        } else {
+          // Insere o primeiro registro da plataforma
+          const { id, updated_at, ...insertPayload } = newData;
+          const { error } = await supabase
+            .from("system_settings")
+            .insert([insertPayload]);
+
+          if (error) throw error;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-system-settings"] });
       queryClient.invalidateQueries({ queryKey: ["platform-public-settings"] });
-      toast.success("Configurações atualizadas com sucesso!");
+      toast.success("Configurações salvas com sucesso!");
     },
-    onError: (error) => {
-      toast.error("Erro ao salvar configurações: " + error.message);
+    onError: (error: any) => {
+      toast.error("Erro ao salvar configurações: " + (error?.message || "Erro desconhecido"));
     }
   });
 
@@ -101,17 +170,20 @@ function AdminSettings() {
     return (
       <div className="p-20 flex flex-col items-center justify-center gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-        <p className="text-gray-500 font-black italic uppercase tracking-widest">Acessando Nucleo do Sistema...</p>
+        <p className="text-gray-500 font-black italic uppercase tracking-widest">Acessando Núcleo do Sistema...</p>
       </div>
     );
   }
 
-  if (queryError || (!settings && !isLoading)) {
+  // Cenário C: Erro real de conexão ou permissão
+  if (queryError) {
     return (
       <div className="p-20 text-center space-y-4">
         <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
         <h3 className="text-xl font-bold text-white uppercase italic">Erro de Conexão</h3>
-        <p className="text-gray-400">Não foi possível carregar as configurações do banco.</p>
+        <p className="text-gray-400">
+          {(queryError as Error)?.message || "Não foi possível carregar as configurações do banco."}
+        </p>
         <Button
           onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-system-settings"] })}
           className="bg-white/5 border border-white/10"
