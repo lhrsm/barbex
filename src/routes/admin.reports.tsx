@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { classifyTenant, CommercialClassification } from "@/lib/commercial-classification";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -9,179 +11,565 @@ import {
   Download,
   Filter,
   Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
-  Target,
+  AlertCircle,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  Sparkles,
   PieChart,
-  Activity
+  Activity,
+  Layers,
+  Store
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell
-} from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
   component: AdminReports,
+  head: () => ({
+    title: "Relatórios Enterprise | Barbex Super Admin",
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+      { name: "description", content: "Relatórios e métricas canônicas de receita e assinaturas da plataforma." },
+    ],
+  }),
 });
 
-const mockData = [
-  { name: "Jan", faturamento: 4000, churn: 240, growth: 10 },
-  { name: "Fev", faturamento: 3000, churn: 139, growth: 12 },
-  { name: "Mar", faturamento: 2000, churn: 980, growth: -5 },
-  { name: "Abr", faturamento: 2780, churn: 390, growth: 15 },
-  { name: "Mai", faturamento: 1890, churn: 480, growth: 8 },
-  { name: "Jun", faturamento: 2390, churn: 380, growth: 20 },
-];
+const brl = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    Number.isFinite(v) ? v : 0
+  );
 
-const COLORS = ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B'];
+interface BarbershopDbRow {
+  id: string;
+  name: string;
+  slug: string;
+  plan_id: string | null;
+  owner_id: string | null;
+  created_at: string;
+}
+
+interface ProfileDbRow {
+  id: string;
+  plan: string | null;
+  trial_start: string | null;
+  trial_end: string | null;
+  is_internal_test_tenant: boolean | null;
+}
+
+interface PlanDbRow {
+  id: string;
+  slug: string | null;
+  name: string;
+  price_monthly: number;
+}
+
+interface SubscriptionDbRow {
+  id: string;
+  user_id: string;
+  price_id: string | null;
+  status: string;
+  is_internal_test_tenant: boolean | null;
+  current_period_end: string | null;
+  created_at?: string;
+}
+
+interface TransactionDbRow {
+  id: string;
+  amount: number | null;
+  status: string | null;
+  created_at: string;
+}
 
 function AdminReports() {
+  const [periodDays, setPeriodDays] = useState<number>(30);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-reports-canonical", periodDays],
+    queryFn: async () => {
+      const [
+        { data: plans, error: plErr },
+        { data: barbershops, error: bErr },
+        { data: profiles, error: pErr },
+        { data: subscriptions, error: sErr },
+      ] = await Promise.all([
+        supabase.from("plans").select("id, slug, name, price_monthly"),
+        supabase.from("barbershops").select("id, name, slug, plan_id, owner_id, created_at"),
+        supabase
+          .from("profiles")
+          .select("id, plan, trial_start, trial_end, is_internal_test_tenant"),
+        supabase
+          .from("subscriptions")
+          .select("id, user_id, price_id, status, is_internal_test_tenant, current_period_end, created_at"),
+      ]);
+
+      if (bErr) throw new Error("Erro ao carregar barbearias: " + bErr.message);
+      if (sErr) throw new Error("Erro ao carregar assinaturas: " + sErr.message);
+      if (plErr) console.warn("Aviso ao carregar planos:", plErr);
+      if (pErr) console.warn("Aviso ao carregar perfis:", pErr);
+
+      const plansMap = new Map<string, PlanDbRow>();
+      ((plans || []) as unknown as PlanDbRow[]).forEach((p) => {
+        plansMap.set(p.id, p);
+        if (p.slug) plansMap.set(p.slug.toLowerCase(), p);
+        if (p.name) plansMap.set(p.name.toLowerCase(), p);
+      });
+
+      const profilesMap = new Map<string, ProfileDbRow>(
+        ((profiles || []) as unknown as ProfileDbRow[]).map((p) => [p.id, p])
+      );
+
+      const shopsList = (barbershops || []) as unknown as BarbershopDbRow[];
+      const subsList = (subscriptions || []) as unknown as SubscriptionDbRow[];
+
+      // Classificação Comercial Centralizada (R2E.9 / R2E.9.1)
+      let effectiveMrr = 0;
+      let commercialSubsCount = 0;
+      let totalVouchers = 0;
+      let totalTrials = 0;
+      let totalCatalogPotential = 0;
+
+      const tenantClassifications: CommercialClassification[] = [];
+
+      shopsList.forEach((shop) => {
+        const ownerProf = shop.owner_id ? profilesMap.get(shop.owner_id) : profilesMap.get(shop.id);
+        const assignedPlan = shop.plan_id ? plansMap.get(shop.plan_id) : null;
+        const profilePlan = ownerProf?.plan ? plansMap.get(ownerProf.plan.toLowerCase()) : null;
+        const shopSubs = subsList.filter(
+          (s) => s.user_id === shop.owner_id || s.user_id === shop.id
+        );
+
+        const classification = classifyTenant({
+          id: shop.id,
+          name: shop.name,
+          slug: shop.slug,
+          owner_id: shop.owner_id,
+          plan_id: shop.plan_id,
+          created_at: shop.created_at,
+          ownerProfile: ownerProf,
+          assignedPlan,
+          profilePlan,
+          subscriptions: shopSubs,
+        });
+
+        tenantClassifications.push(classification);
+
+        if (classification.modality === "ASSINATURA") {
+          commercialSubsCount += 1;
+          effectiveMrr += classification.contractedMonthlyAmount;
+        } else if (classification.modality === "VOUCHER") {
+          totalVouchers += 1;
+          totalCatalogPotential += classification.catalogNominalAmount;
+        } else if (classification.modality === "TRIAL") {
+          totalTrials += 1;
+          totalCatalogPotential += classification.catalogNominalAmount;
+        }
+      });
+
+      const averageTicket = commercialSubsCount > 0 ? effectiveMrr / commercialSubsCount : 0;
+
+      return {
+        effectiveMrr,
+        commercialSubsCount,
+        averageTicket,
+        totalShops: shopsList.length,
+        totalVouchers,
+        totalTrials,
+        totalCatalogPotential,
+        tenantClassifications,
+      };
+    },
+    staleTime: 60_000,
+  });
+
+  const exportCsv = () => {
+    if (!data || !data.tenantClassifications.length) {
+      toast.error("Nenhum dado disponível para exportação.");
+      return;
+    }
+
+    const headers = [
+      "ID Barbearia",
+      "Nome",
+      "Slug",
+      "Modalidade",
+      "Status Trial",
+      "Plano Comercial",
+      "Plano Técnico",
+      "MRR Contratado (R$)",
+      "Valor Nominal Catálogo (R$)",
+      "Voucher Permanente"
+    ];
+
+    const rows = data.tenantClassifications.map((t) => [
+      `"${t.tenantId}"`,
+      `"${t.tenantName.replace(/"/g, '""')}"`,
+      `"${t.slug}"`,
+      `"${t.modality}"`,
+      `"${t.trialStatus}"`,
+      `"${t.commercialPlanName || "—"}"`,
+      `"${t.technicalPlanName || "—"}"`,
+      t.contractedMonthlyAmount.toFixed(2),
+      t.catalogNominalAmount.toFixed(2),
+      t.isPermanentVoucher ? "Sim" : "Não"
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `barbex_relatorio_comercial_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Relatório comercial exportado com sucesso.");
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-black tracking-tight text-white italic uppercase tracking-tighter">Relatórios Enterprise</h2>
-          <p className="text-gray-400 font-medium">Visão analítica profunda da saúde do seu SaaS.</p>
+          <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">
+            Relatórios Enterprise
+          </h1>
+          <p className="text-gray-400 font-medium text-sm mt-1">
+            Visão consolidada de receita, assinaturas contratuais e saúde comercial da plataforma.
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-12 bg-white/5 border-white/10 rounded-xl gap-2 text-xs font-bold uppercase tracking-widest italic">
-            <Filter size={16} /> Filtrar
-          </Button>
-          <Button className="h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-xl gap-2 text-xs font-bold uppercase tracking-widest italic shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-            <Download size={16} /> Exportar
+          <Select value={String(periodDays)} onValueChange={(v) => setPeriodDays(Number(v))}>
+            <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white text-xs font-bold uppercase tracking-wider">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">Últimos 30 dias</SelectItem>
+              <SelectItem value="90">Últimos 90 dias</SelectItem>
+              <SelectItem value="180">Últimos 180 dias</SelectItem>
+              <SelectItem value="365">Último ano</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={exportCsv}
+            disabled={isLoading || !data}
+            className="h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-xl gap-2 text-xs font-bold uppercase tracking-widest italic shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+          >
+            <Download size={15} /> Exportar CSV
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: "MRR Atual", value: "R$ 12.450", icon: DollarSign, trend: "+12.5%", positive: true, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-          { title: "Churn Rate", value: "2.4%", icon: Activity, trend: "-0.8%", positive: true, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-          { title: "Novas Assinaturas", value: "124", icon: Users, trend: "+18%", positive: true, color: "text-purple-400", bg: "bg-purple-500/10" },
-          { title: "Ticket Médio", value: "R$ 49,90", icon: Target, trend: "-2.1%", positive: false, color: "text-rose-400", bg: "bg-rose-500/10" },
-        ].map((kpi, i) => (
-          <Card key={i} className="glass border-white/5 rounded-3xl overflow-hidden group hover:border-white/10 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className={cn("p-3 rounded-2xl", kpi.bg)}>
-                  <kpi.icon className={cn("w-6 h-6", kpi.color)} />
-                </div>
-                <div className={cn("flex items-center gap-1 text-[10px] font-black italic", kpi.positive ? "text-emerald-400" : "text-rose-400")}>
-                  {kpi.positive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                  {kpi.trend}
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">{kpi.title}</p>
-                <h3 className="text-2xl font-black text-white italic tracking-tighter">{kpi.value}</h3>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 glass border-white/5 rounded-[2.5rem] p-8 overflow-hidden">
-          <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
-                <TrendingUp className="text-purple-400 w-5 h-5" /> Crescimento Mensal
-              </CardTitle>
-              <CardDescription className="text-gray-500">Acompanhamento de receita e novos clientes.</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20">MRR</Badge>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Trial</Badge>
-            </div>
-          </CardHeader>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockData}>
-                <defs>
-                  <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#6b7280', fontSize: 10, fontWeight: 700}} 
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#6b7280', fontSize: 10, fontWeight: 700}} 
-                />
-                <Tooltip 
-                  contentStyle={{backgroundColor: '#111118', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px'}}
-                  itemStyle={{color: '#fff', fontSize: '12px', fontWeight: 700}}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="faturamento" 
-                  stroke="#8B5CF6" 
-                  strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorFaturamento)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      {isLoading ? (
+        <div className="py-24 text-center space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500 mx-auto" />
+          <p className="text-gray-500 font-black italic uppercase tracking-widest text-xs">
+            Consolidando dados canônicos...
+          </p>
+        </div>
+      ) : error ? (
+        <Card className="border-rose-500/20 bg-rose-500/5 p-8 text-center">
+          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" />
+          <h3 className="text-lg font-bold text-white uppercase italic">Erro ao Carregar Relatórios</h3>
+          <p className="text-gray-400 text-sm mt-1">{(error as Error).message}</p>
         </Card>
-
-        <Card className="glass border-white/5 rounded-[2.5rem] p-8">
-          <CardHeader className="p-0 mb-8">
-            <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
-              <PieChart className="text-pink-400 w-5 h-5" /> Distribuição de Planos
-            </CardTitle>
-            <CardDescription className="text-gray-500">Onde está concentrado seu volume.</CardDescription>
-          </CardHeader>
-          <div className="h-[300px] w-full flex flex-col justify-center">
-             <div className="space-y-6">
-                {[
-                  { name: "Elite", value: 45, color: "bg-purple-500" },
-                  { name: "Pro", value: 35, color: "bg-pink-500" },
-                  { name: "Starter", value: 20, color: "bg-blue-500" },
-                ].map((item, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
-                      <span className="text-gray-400">{item.name}</span>
-                      <span className="text-white">{item.value}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                      <div className={cn("h-full rounded-full transition-all duration-1000", item.color)} style={{ width: `${item.value}%` }} />
-                    </div>
+      ) : data ? (
+        <>
+          {/* KPI Cards Reais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Card 1: MRR Contratado */}
+            <Card className="glass border-white/5 rounded-3xl overflow-hidden shadow-none">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400">
+                    <DollarSign className="w-5 h-5" />
                   </div>
-                ))}
-             </div>
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] uppercase font-bold">
+                    Contratado
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">
+                    MRR Comercial
+                  </p>
+                  <h3 className="text-2xl font-black text-white italic tracking-tighter">
+                    {brl(data.effectiveMrr)}
+                  </h3>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Exclui trials e vouchers
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Assinaturas Comerciais Pagas */}
+            <Card className="glass border-white/5 rounded-3xl overflow-hidden shadow-none">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-400">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] uppercase font-bold">
+                    Ativas
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">
+                    Assinaturas Pagas
+                  </p>
+                  <h3 className="text-2xl font-black text-white italic tracking-tighter">
+                    {data.commercialSubsCount}
+                  </h3>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    De {data.totalShops} cadastradas
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Receita Recebida da Plataforma */}
+            <Card className="glass border-white/5 rounded-3xl overflow-hidden shadow-none">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2.5 rounded-2xl bg-slate-500/10 text-slate-400">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20 text-[10px] uppercase font-bold">
+                    Transacional
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">
+                    Receita Recebida
+                  </p>
+                  <h3 className="text-lg font-black text-white/90 italic tracking-tight">
+                    Dados indisponíveis
+                  </h3>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Fonte SaaS pendente
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 4: Ticket Médio Contratado */}
+            <Card className="glass border-white/5 rounded-3xl overflow-hidden shadow-none">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-400">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] uppercase font-bold">
+                    Média / Sub
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">
+                    Ticket Médio
+                  </p>
+                  <h3 className="text-2xl font-black text-white italic tracking-tighter">
+                    {data.commercialSubsCount > 0 ? brl(data.averageTicket) : "R$ 0,00"}
+                  </h3>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Base: assinaturas ativas
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 5: Churn Rate */}
+            <Card className="glass border-white/5 rounded-3xl overflow-hidden shadow-none">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-400">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] uppercase font-bold">
+                    N/A
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">
+                    Taxa de Churn
+                  </p>
+                  <h3 className="text-lg font-black text-white/90 italic tracking-tight">
+                    Dados insuficientes
+                  </h3>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Sem cancelamentos
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </Card>
-      </div>
+
+          {/* Gráficos e Distribuição Real */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Gráfico 1: Evolução de Receita da Plataforma */}
+            <Card className="lg:col-span-2 glass border-white/5 rounded-[2.5rem] p-8 overflow-hidden">
+              <CardHeader className="p-0 mb-6 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
+                    <TrendingUp className="text-purple-400 w-5 h-5" /> Faturamento da Plataforma
+                  </CardTitle>
+                  <CardDescription className="text-gray-500 text-xs mt-1">
+                    Receita liquidada de assinaturas contratuais na conta do SaaS Barbex.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20 text-[10px]">
+                  Fonte Canônica Pendente
+                </Badge>
+              </CardHeader>
+
+              <div className="h-[280px] w-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.01] p-6 text-center">
+                <AlertCircle className="w-10 h-10 text-amber-400/80 mb-3" />
+                <p className="text-sm font-bold text-white uppercase italic tracking-tight">
+                  Histórico Financeiro Transacional Indisponível
+                </p>
+                <p className="text-xs text-gray-400 max-w-lg mt-2 leading-relaxed">
+                  A tabela <code className="text-purple-300 font-mono">public.transactions</code> armazena exclusivamente os recebimentos operacionais das barbearias (serviços de corte e barba). O registro e conciliação de liquidações financeiras de assinaturas da plataforma requerem a integração de uma fonte financeira canônica dedicada a faturamento SaaS.
+                </p>
+              </div>
+            </Card>
+
+            {/* Painel 2: Distribuição por Modalidade Comercial */}
+            <Card className="glass border-white/5 rounded-[2.5rem] p-8">
+              <CardHeader className="p-0 mb-6">
+                <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
+                  <PieChart className="text-pink-400 w-5 h-5" /> Modalidades Ativas
+                </CardTitle>
+                <CardDescription className="text-gray-500 text-xs mt-1">
+                  Distribuição real das 5 barbearias cadastradas.
+                </CardDescription>
+              </CardHeader>
+              <div className="space-y-6">
+                {/* 1. Vouchers */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                    <span className="text-purple-300">Voucher Permanente (LM)</span>
+                    <span className="text-white">
+                      {data.totalShops > 0 ? `${Math.round((data.totalVouchers / data.totalShops) * 100)}%` : "0%"} ({data.totalVouchers})
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-purple-500 rounded-full transition-all duration-700" 
+                      style={{ width: `${data.totalShops > 0 ? (data.totalVouchers / data.totalShops) * 100 : 0}%` }} 
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Trials */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                    <span className="text-amber-300">Período de Testes (Trial)</span>
+                    <span className="text-white">
+                      {data.totalShops > 0 ? `${Math.round((data.totalTrials / data.totalShops) * 100)}%` : "0%"} ({data.totalTrials})
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-amber-500 rounded-full transition-all duration-700" 
+                      style={{ width: `${data.totalShops > 0 ? (data.totalTrials / data.totalShops) * 100 : 0}%` }} 
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Assinaturas Comerciais */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                    <span className="text-emerald-300">Assinaturas Comerciais</span>
+                    <span className="text-white">
+                      {data.totalShops > 0 ? `${Math.round((data.commercialSubsCount / data.totalShops) * 100)}%` : "0%"} ({data.commercialSubsCount})
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-emerald-500 rounded-full transition-all duration-700" 
+                      style={{ width: `${data.totalShops > 0 ? (data.commercialSubsCount / data.totalShops) * 100 : 0}%` }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Resumo de Potencial Nominal */}
+                <div className="pt-4 border-t border-white/5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-400 font-medium">Potencial de Catálogo (Nominal):</span>
+                    <span className="text-gray-300 font-mono font-bold">{brl(data.totalCatalogPotential)}/mês</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Valor de tabela dos planos técnicos atribuídos para homologação, sem faturamento ativo.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Tabela de Detalhamento Real */}
+          <Card className="glass border-white/5 rounded-3xl p-6">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-lg font-bold text-white uppercase italic flex items-center gap-2">
+                <Store className="w-5 h-5 text-purple-400" />
+                Detalhamento Canônico dos Estabelecimentos
+              </CardTitle>
+              <CardDescription className="text-xs text-gray-500">
+                Auditoria individual conforme a classificação comercial centralizada do release R2E.9.
+              </CardDescription>
+            </CardHeader>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b border-white/5 uppercase tracking-wider text-[10px]">
+                    <th className="pb-3">Estabelecimento</th>
+                    <th className="pb-3">Modalidade</th>
+                    <th className="pb-3">Status de Vigência</th>
+                    <th className="pb-3">Referência Técnica</th>
+                    <th className="pb-3 text-right">MRR Comercial</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {data.tenantClassifications.map((t) => (
+                    <tr key={t.tenantId} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3">
+                        <span className="font-bold text-white">{t.tenantName}</span>
+                        <span className="text-[10px] text-gray-500 block font-mono">slug: {t.slug}</span>
+                      </td>
+                      <td className="py-3">
+                        {t.modality === "VOUCHER" ? (
+                          <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px]">
+                            VOUCHER PERMANENTE
+                          </Badge>
+                        ) : t.modality === "TRIAL" ? (
+                          <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px]">
+                            TRIAL
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">
+                            ASSINATURA
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="py-3 text-gray-400 font-medium">
+                        {t.trialStatus}
+                      </td>
+                      <td className="py-3 text-gray-300 font-mono">
+                        {t.technicalPlanName || "PADRÃO"}
+                      </td>
+                      <td className="py-3 text-right font-mono font-bold text-white">
+                        {brl(t.contractedMonthlyAmount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      ) : null}
     </div>
   );
 }
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
-
-const Badge = ({ children, className, variant }: any) => (
-  <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border", className)}>
-    {children}
-  </span>
-);
