@@ -12,10 +12,11 @@ import { invokeEdgeFunction, type EdgeInvokeOptions } from "../edge-client";
 
 export type StripeEnvironment = "test" | "live" | "sandbox";
 
+export type BillingCycle = "month" | "year";
+
 export interface CreatePlanCheckoutInput {
-  planKey?: "starter" | "pro" | "elite" | string;
-  priceId?: string;
-  quantity?: number;
+  planKey: "starter" | "pro" | "elite";
+  billingCycle: BillingCycle;
   environment?: StripeEnvironment;
   returnUrl?: string;
   customerEmail?: string;
@@ -71,27 +72,52 @@ function unwrapInput<T>(input: T | { data: T }): T {
 
 /**
  * Creates an embedded Stripe Checkout session for a SaaS plan via 'stripe-checkout' Edge Function.
+ * Enforces explicit planKey and billingCycle; prevents silent fallbacks to Starter.
  */
 export async function createPlanCheckout(
   rawInput: CreatePlanCheckoutInput | { data: CreatePlanCheckoutInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<{ clientSecret?: string; sessionId?: string; url?: string }>> {
   const input = unwrapInput(rawInput);
-  const planKey = (input.planKey || (input.priceId?.includes("pro") ? "pro" : input.priceId?.includes("elite") ? "elite" : "starter")) as "starter" | "pro" | "elite";
+
+  if (!input.planKey || !["starter", "pro", "elite"].includes(input.planKey as any)) {
+    return {
+      ok: false,
+      error: "Plano inválido selecionado para contratação. Escolha starter, pro ou elite.",
+      code: "INVALID_PLAN",
+    };
+  }
+
+  const billingCycle = input.billingCycle;
+  if (!billingCycle || !["month", "year"].includes(billingCycle)) {
+    return {
+      ok: false,
+      error: "Ciclo de faturamento inválido ou ausente. Escolha mensal (month) ou anual (year).",
+      code: "INVALID_BILLING_CYCLE",
+    };
+  }
 
   const result = await invokeEdgeFunction<
-    { action: "create-plan-checkout"; planKey: string; environment?: string; returnUrl?: string; customerEmail?: string },
+    {
+      action: "create-plan-checkout";
+      planKey: string;
+      billingCycle: string;
+      environment?: string;
+      returnUrl?: string;
+      customerEmail?: string;
+    },
     { clientSecret?: string; sessionId?: string; url?: string }
   >(
     "stripe-checkout",
     {
       action: "create-plan-checkout",
-      planKey,
+      planKey: input.planKey,
+      billingCycle,
       environment: input.environment || "test",
       returnUrl: input.returnUrl,
       customerEmail: input.customerEmail,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -119,7 +145,7 @@ export const createCheckoutSession = createPlanCheckout;
  */
 export async function createPortalSession(
   rawInput: CreatePortalSessionInput | { data: CreatePortalSessionInput } = {},
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<{ url: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -133,7 +159,7 @@ export async function createPortalSession(
       environment: input.environment || "test",
       returnUrl: input.returnUrl,
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -163,17 +189,19 @@ export async function createPortalSession(
  */
 export async function previewAddon(
   rawInput: PreviewAddonInput | { data: PreviewAddonInput },
-  options?: EdgeInvokeOptions
-): Promise<StripeResult<{
-  prorationAmount: number;
-  currency: string;
-  nextInvoiceAmount: number;
-  nextInvoiceDate: string | null;
-  unitPrice: number;
-  quantity: number;
-  trialDays: number;
-  trialEligible: boolean;
-}>> {
+  options?: EdgeInvokeOptions,
+): Promise<
+  StripeResult<{
+    prorationAmount: number;
+    currency: string;
+    nextInvoiceAmount: number;
+    nextInvoiceDate: string | null;
+    unitPrice: number;
+    quantity: number;
+    trialDays: number;
+    trialEligible: boolean;
+  }>
+> {
   const input = unwrapInput(rawInput);
 
   const result = await invokeEdgeFunction<
@@ -196,7 +224,7 @@ export async function previewAddon(
       quantity: input.quantity,
       environment: input.environment || "test",
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -226,7 +254,7 @@ export async function previewAddon(
  */
 export async function subscribeToAddon(
   rawInput: SubscribeToAddonInput | { data: SubscribeToAddonInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<{ contractId?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -241,7 +269,7 @@ export async function subscribeToAddon(
       quantity: input.quantity,
       environment: input.environment || "test",
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -264,7 +292,7 @@ export async function subscribeToAddon(
  */
 export async function cancelAddon(
   rawInput: CancelAddonInput | { data: CancelAddonInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<Record<string, unknown>>> {
   const input = unwrapInput(rawInput);
 
@@ -278,7 +306,7 @@ export async function cancelAddon(
       contractId: input.contractId,
       environment: input.environment || "test",
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -297,7 +325,7 @@ export async function cancelAddon(
  */
 export async function reactivateAddon(
   rawInput: ReactivateAddonInput | { data: ReactivateAddonInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<Record<string, unknown>>> {
   const input = unwrapInput(rawInput);
 
@@ -311,7 +339,7 @@ export async function reactivateAddon(
       contractId: input.contractId,
       environment: input.environment || "test",
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -330,7 +358,7 @@ export async function reactivateAddon(
  */
 export async function updateAddonQuantity(
   rawInput: UpdateAddonQuantityInput | { data: UpdateAddonQuantityInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<Record<string, unknown>>> {
   const input = unwrapInput(rawInput);
 
@@ -345,7 +373,7 @@ export async function updateAddonQuantity(
       quantity: input.quantity,
       environment: input.environment || "test",
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -364,7 +392,7 @@ export async function updateAddonQuantity(
  */
 export async function adminCreateAddonStripePrice(
   rawInput: AdminCreateAddonPriceInput | { data: AdminCreateAddonPriceInput },
-  options?: EdgeInvokeOptions
+  options?: EdgeInvokeOptions,
 ): Promise<StripeResult<{ priceId?: string }>> {
   const input = unwrapInput(rawInput);
 
@@ -378,7 +406,7 @@ export async function adminCreateAddonStripePrice(
       addonId: input.addonId,
       environment: input.environment || "test",
     },
-    options
+    options,
   );
 
   if (!result.ok) {
@@ -417,13 +445,15 @@ export interface SubscribeToAddonsBatchInput {
  */
 export async function previewAddonsBatch(
   rawInput: PreviewAddonsBatchInput | { data: PreviewAddonsBatchInput },
-  options?: EdgeInvokeOptions
-): Promise<StripeResult<{
-  prorationAmount: number;
-  nextInvoiceAmount: number;
-  currency: string;
-  nextInvoiceDate: string | null;
-}>> {
+  options?: EdgeInvokeOptions,
+): Promise<
+  StripeResult<{
+    prorationAmount: number;
+    nextInvoiceAmount: number;
+    currency: string;
+    nextInvoiceDate: string | null;
+  }>
+> {
   const input = unwrapInput(rawInput);
   let totalProration = 0;
   let totalNextInvoice = 0;
@@ -431,11 +461,14 @@ export async function previewAddonsBatch(
   let nextInvoiceDate: string | null = null;
 
   for (const item of input.items || []) {
-    const res = await previewAddon({
-      addonId: item.addonId,
-      quantity: item.quantity,
-      environment: input.environment,
-    }, options);
+    const res = await previewAddon(
+      {
+        addonId: item.addonId,
+        quantity: item.quantity,
+        environment: input.environment,
+      },
+      options,
+    );
     if (!res.ok) {
       return res;
     }
@@ -459,19 +492,28 @@ export async function previewAddonsBatch(
  */
 export async function subscribeToAddonsBatch(
   rawInput: SubscribeToAddonsBatchInput | { data: SubscribeToAddonsBatchInput },
-  options?: EdgeInvokeOptions
-): Promise<StripeResult<{
-  contracts: Array<{ addonId: string; contractId: string; billingCycle: "monthly" | "annual" }>;
-}>> {
+  options?: EdgeInvokeOptions,
+): Promise<
+  StripeResult<{
+    contracts: Array<{ addonId: string; contractId: string; billingCycle: "monthly" | "annual" }>;
+  }>
+> {
   const input = unwrapInput(rawInput);
-  const contracts: Array<{ addonId: string; contractId: string; billingCycle: "monthly" | "annual" }> = [];
+  const contracts: Array<{
+    addonId: string;
+    contractId: string;
+    billingCycle: "monthly" | "annual";
+  }> = [];
 
   for (const item of input.items || []) {
-    const res = await subscribeToAddon({
-      addonId: item.addonId,
-      quantity: item.quantity,
-      environment: input.environment,
-    }, options);
+    const res = await subscribeToAddon(
+      {
+        addonId: item.addonId,
+        quantity: item.quantity,
+        environment: input.environment,
+      },
+      options,
+    );
     if (!res.ok) {
       return res;
     }
@@ -487,4 +529,3 @@ export async function subscribeToAddonsBatch(
     contracts,
   };
 }
-

@@ -7,16 +7,16 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface StripeEmbeddedCheckoutProps {
-  priceId: string;
-  quantity?: number;
+  planKey: "starter" | "pro" | "elite";
+  billingCycle: "month" | "year";
   customerEmail?: string;
   userId?: string;
   returnUrl?: string;
 }
 
 export function StripeEmbeddedCheckout({
-  priceId,
-  quantity,
+  planKey,
+  billingCycle,
   customerEmail,
   userId,
   returnUrl,
@@ -25,66 +25,87 @@ export function StripeEmbeddedCheckout({
 
   const fetchClientSecret = async (): Promise<string> => {
     try {
-      console.log("[StripeEmbeddedCheckout] 🏁 fetchClientSecret iniciado para priceId:", priceId);
+      console.log("[StripeEmbeddedCheckout] 🏁 fetchClientSecret iniciado:", {
+        planKey,
+        billingCycle,
+      });
       setError(null);
-      
-      if (!priceId) {
-        console.error("[StripeEmbeddedCheckout] ❌ Price ID ausente no componente");
-        throw new Error("Price ID is missing in StripeEmbeddedCheckout component.");
+
+      if (!planKey || !["starter", "pro", "elite"].includes(planKey)) {
+        console.error(
+          "[StripeEmbeddedCheckout] ❌ Plano inválido ou ausente no componente:",
+          planKey,
+        );
+        throw new Error("Identificador do plano inválido ou ausente.");
+      }
+
+      if (!billingCycle || !["month", "year"].includes(billingCycle)) {
+        console.error(
+          "[StripeEmbeddedCheckout] ❌ Ciclo de faturamento inválido ou ausente:",
+          billingCycle,
+        );
+        throw new Error("Ciclo de faturamento inválido ou ausente.");
       }
 
       // Obtendo o token de acesso do Supabase para autenticar a chamada do servidor
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
-      
+
       if (!token) {
         console.error("[StripeEmbeddedCheckout] ❌ Token de acesso não encontrado");
         throw new Error("Você precisa estar autenticado para realizar esta operação.");
       }
 
       console.log("[StripeEmbeddedCheckout] 📡 Invocando server function com token");
-      
-      const res = await createCheckoutSession({
-        priceId,
-        quantity,
-        customerEmail,
-        userId,
-        returnUrl: returnUrl || `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
-        environment: getStripeEnvironment(),
-      }, {
-        authToken: token,
-      });
+
+      const res = await createCheckoutSession(
+        {
+          planKey,
+          billingCycle,
+          customerEmail,
+          userId,
+          returnUrl:
+            returnUrl ||
+            `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+          environment: getStripeEnvironment(),
+        },
+        {
+          authToken: token,
+        },
+      );
 
       if (!res.ok) {
         throw new Error(res.error || "Não foi possível gerar a sessão de pagamento.");
       }
 
       const secret = res.clientSecret;
-      
+
       if (!secret) {
         console.error("[StripeEmbeddedCheckout] ❌ Erro: client_secret retornado é vazio/null");
         throw new Error("Não foi possível gerar a sessão de pagamento (secret vazio).");
       }
-      
+
       console.log("[StripeEmbeddedCheckout] ✅ Client secret obtido com sucesso");
       return secret;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[StripeEmbeddedCheckout] 💥 Erro em fetchClientSecret:", err);
-      
+
       let message = "Erro ao carregar o checkout do Stripe.";
-      
+
       if (err instanceof Response) {
         try {
           const body = await err.text();
           console.error("[StripeEmbeddedCheckout] 🔍 Erro do Servidor (Body):", body);
           message = body || `Erro do Servidor (${err.status})`;
-        } catch (e) {
+        } catch {
           message = `Erro do Servidor (${err.status})`;
         }
-      } else if (err.message) {
+      } else if (err instanceof Error) {
         message = err.message;
       }
-      
+
       setError(message);
       toast.error(message);
       throw err;
@@ -98,8 +119,8 @@ export function StripeEmbeddedCheckout({
           <p className="text-destructive font-medium mb-2">Ops! Algo deu errado.</p>
           <p className="text-sm text-muted-foreground">{error}</p>
         </div>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          onClick={() => window.location.reload()}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           Tentar novamente
@@ -114,7 +135,6 @@ export function StripeEmbeddedCheckout({
         <div className="min-h-[400px] flex flex-col items-center justify-center relative">
           <EmbeddedCheckout />
           {/* Stripe EmbeddedCheckout gerencia seu próprio carregamento */}
-
         </div>
       </EmbeddedCheckoutProvider>
     </div>

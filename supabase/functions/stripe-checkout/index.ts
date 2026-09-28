@@ -13,12 +13,22 @@ import { createStructuredLogger } from "../_shared/logging.ts";
 import { generateRequestId } from "../_shared/crypto.ts";
 import { EdgeError } from "../_shared/errors.ts";
 import { generateRateLimitKey, checkRateLimit } from "../_shared/rate-limit.ts";
-import { stripeApiRequest } from "../_shared/stripe.ts";
+import { stripeApiRequest, getTrustedStripeEnvironment } from "../_shared/stripe.ts";
+import {
+  COMMERCIAL_RULES,
+  BLOCKED_LEGACY_PRICE_IDS,
+  validatePlanCheckoutContract,
+  resolvePriceFromPlanRow,
+  validateStripePriceObject,
+  type PlanKey,
+  type BillingCycle,
+} from "../_shared/stripe-pricing.ts";
 
 export type StripeCheckoutAction =
   | {
       action: "create-plan-checkout";
       planKey: "starter" | "pro" | "elite";
+      billingCycle: "month" | "year";
       environment?: "test" | "live" | "sandbox";
       returnUrl?: string;
       customerEmail?: string;
@@ -28,6 +38,7 @@ export type StripeCheckoutAction =
       environment?: "test" | "live" | "sandbox";
       returnUrl?: string;
     };
+
 
 function buildResponse(body: Record<string, unknown>, status = 200, req?: Request): Response {
   const requestId = req?.headers?.get("x-request-id") || generateRequestId();
@@ -101,12 +112,14 @@ async function resolveAuthCaller(
  */
 async function resolveOrCreateStripeCustomer(
   userId: string,
-  email: string
+  email: string,
+  environment?: "test" | "live" | "sandbox"
 ): Promise<string> {
   try {
     // 1. Search by metadata
     const searchRes = await stripeApiRequest<{ data: Array<{ id: string; metadata?: Record<string, string> }> }>(
-      `/customers/search?query=metadata['userId']:'${userId}'&limit=1`
+      `/customers/search?query=metadata['userId']:'${userId}'&limit=1`,
+      { environment }
     );
 
     if (searchRes?.data?.length > 0) {
@@ -116,7 +129,8 @@ async function resolveOrCreateStripeCustomer(
     // 2. Search by email
     if (email) {
       const listRes = await stripeApiRequest<{ data: Array<{ id: string; metadata?: Record<string, string> }> }>(
-        `/customers?email=${encodeURIComponent(email)}&limit=1`
+        `/customers?email=${encodeURIComponent(email)}&limit=1`,
+        { environment }
       );
 
       if (listRes?.data?.length > 0) {
@@ -125,7 +139,8 @@ async function resolveOrCreateStripeCustomer(
         if (customer.metadata?.userId !== userId) {
           await stripeApiRequest(`/customers/${customer.id}`, {
             method: "POST",
-            body: { metadata: { userId } }
+            body: { metadata: { userId } },
+            environment
           });
         }
         return customer.id;
@@ -138,7 +153,8 @@ async function resolveOrCreateStripeCustomer(
       body: {
         email: email || undefined,
         metadata: { userId }
-      }
+      },
+      environment
     });
 
     return created.id;
@@ -172,19 +188,34 @@ Deno.serve(async (req: Request) => {
     // ACTION: CREATE-PLAN-CHECKOUT
     // -------------------------------------------------------------------------
     if (payload.action === "create-plan-checkout") {
-      const { planKey, environment = "test", returnUrl, customerEmail } = payload;
+      const { planKey, billingCycle, returnUrl, customerEmail } = payload;
 
-      if (!planKey || !["starter", "pro", "elite"].includes(planKey)) {
-        throw new EdgeError("INVALID_REQUEST", "Plano selecionado inválido. Escolha starter, pro ou elite.", 400);
+      // 1. Strict Contract Validation (no heuristics, no fallback to starter or month)
+      const contractVal = validatePlanCheckoutContract(planKey, billingCycle);
+      if (!contractVal.ok) {
+        throw new EdgeError("INVALID_REQUEST", contractVal.error, 400);
+      }
+
+      // 2. Strict Server-Side Trusted Environment Resolution
+      const trustedEnv = getTrustedStripeEnvironment();
+      const isLive = trustedEnv === "live";
+
+      // Prevent browser tampering across environments
+      if (payload.environment && payload.environment !== trustedEnv && !(trustedEnv === "test" && payload.environment === "sandbox")) {
+        throw new EdgeError(
+          "FORBIDDEN",
+          `Ambiente solicitado (${payload.environment}) incompatível com a configuração autorizada do servidor (${trustedEnv}).`,
+          403
+        );
       }
 
       const rateLimitKey = await generateRateLimitKey("stripe:checkout", userId, tenantId, clientIp);
       await checkRateLimit(rateLimitKey, 10, 300);
 
-      // 1. Resolve price from database plans table
+      // 3. Resolve price from database plans table with strict FAIL-CLOSED semantics
       const { data: planRow, error: planErr } = await adminClient
         .from("plans")
-        .select("id, slug, name, stripe_price_id_test, stripe_price_id_live")
+        .select("id, slug, name, stripe_price_id_test, stripe_price_id_live, stripe_yearly_price_id_test, stripe_yearly_price_id_live, stripe_product_id_test, stripe_product_id_live")
         .eq("slug", planKey)
         .eq("active", true)
         .maybeSingle();
@@ -193,12 +224,59 @@ Deno.serve(async (req: Request) => {
         throw new EdgeError("NOT_FOUND", `Plano "${planKey}" não encontrado ou inativo.`, 404);
       }
 
-      const isLive = environment === "live";
-      const priceId = isLive ? planRow.stripe_price_id_live : planRow.stripe_price_id_test;
+      const resolution = resolvePriceFromPlanRow(
+        planRow,
+        planKey as PlanKey,
+        billingCycle as BillingCycle,
+        trustedEnv
+      );
 
-      if (!priceId) {
-        throw new EdgeError("INVALID_REQUEST", `O plano ${planRow.name} não possui preço configurado para este ambiente.`, 400);
+      if (!resolution.ok) {
+        throw new EdgeError(
+          resolution.code,
+          resolution.error,
+          resolution.code === "FORBIDDEN" ? 403 : 422
+        );
       }
+
+      const priceId = resolution.priceId;
+
+      // 4. Server-Side Preflight Validation with Stripe API
+      let stripePrice: any;
+      try {
+        stripePrice = await stripeApiRequest(`/prices/${priceId}`, {
+          environment: trustedEnv
+        });
+      } catch (apiErr: any) {
+        if (apiErr instanceof EdgeError && apiErr.status === 404) {
+          throw new EdgeError("NOT_FOUND", `Preço ${priceId} não foi encontrado no catálogo do Stripe.`, 404);
+        }
+        if (apiErr instanceof EdgeError && (apiErr.status === 401 || apiErr.status === 403)) {
+          throw new EdgeError("SERVICE_UNAVAILABLE", "Credenciais de pagamento inválidas no provedor.", 503);
+        }
+        throw new EdgeError("SERVICE_UNAVAILABLE", "Indisponibilidade temporária na comunicação com a API do Stripe.", 503);
+      }
+
+      const expectedProductId = isLive
+        ? (planRow as any)?.stripe_product_id_live
+        : (planRow as any)?.stripe_product_id_test;
+
+      const priceValidation = validateStripePriceObject(
+        stripePrice,
+        planKey as PlanKey,
+        billingCycle as BillingCycle,
+        isLive,
+        expectedProductId
+      );
+
+      if (!priceValidation.ok) {
+        throw new EdgeError(
+          priceValidation.code,
+          priceValidation.error,
+          priceValidation.code === "FORBIDDEN" ? 403 : 422
+        );
+      }
+
 
       // 2. Resolve Trial remaining seconds from profile
       const { data: profile } = await adminClient
@@ -218,7 +296,7 @@ Deno.serve(async (req: Request) => {
         : undefined;
 
       // 3. Resolve Customer in Stripe
-      const customerId = await resolveOrCreateStripeCustomer(userId, customerEmail || email);
+      const customerId = await resolveOrCreateStripeCustomer(userId, customerEmail || email, trustedEnv);
 
       // 4. Safe Return URL validation
       const appUrl = Deno.env.get("APP_URL") || "https://barbex.shop";
@@ -251,14 +329,16 @@ Deno.serve(async (req: Request) => {
           tenantId,
           plan: planRow.name,
           planKey,
-          environment
+          billingCycle,
+          environment: trustedEnv
         },
         subscription_data: {
           metadata: {
             userId,
             tenantId,
             planKey,
-            environment
+            billingCycle,
+            environment: trustedEnv
           },
           ...(stripeTrialEnd && { trial_end: stripeTrialEnd })
         }
@@ -266,7 +346,8 @@ Deno.serve(async (req: Request) => {
 
       const session = await stripeApiRequest<{ id: string; client_secret: string }>("/checkout/sessions", {
         method: "POST",
-        body: sessionBody
+        body: sessionBody,
+        environment: trustedEnv
       });
 
       // 6. Audit session in saas_checkout_sessions
@@ -278,13 +359,13 @@ Deno.serve(async (req: Request) => {
           stripe_price_id: priceId,
           stripe_checkout_session_id: session.id,
           status: "pending",
-          environment
+          environment: trustedEnv
         });
       } catch (auditErr) {
         console.warn("[Stripe Checkout] Audit log insert warning:", auditErr);
       }
 
-      logger.info("Plan checkout session initialized", { action: "create-plan-checkout", planKey, durationMs: Date.now() - startTime });
+      logger.info("Plan checkout session initialized", { action: "create-plan-checkout", planKey, billingCycle, environment: trustedEnv, durationMs: Date.now() - startTime });
       return buildResponse({ ok: true, clientSecret: session.client_secret, sessionId: session.id }, 200, req);
     }
 
@@ -308,7 +389,7 @@ Deno.serve(async (req: Request) => {
 
       let customerId = sub?.stripe_customer_id;
       if (!customerId) {
-        customerId = await resolveOrCreateStripeCustomer(userId, email);
+        customerId = await resolveOrCreateStripeCustomer(userId, email, environment);
       }
 
       const appUrl = Deno.env.get("APP_URL") || "https://barbex.shop";
@@ -322,7 +403,8 @@ Deno.serve(async (req: Request) => {
         body: {
           customer: customerId,
           return_url: safeReturnUrl
-        }
+        },
+        environment
       });
 
       logger.info("Billing portal session created", { action: "create-portal-session", durationMs: Date.now() - startTime });

@@ -10,8 +10,50 @@ import { EdgeError } from "./errors.ts";
 export const STRIPE_API_VERSION = "2025-01-27.acacia";
 const STRIPE_BASE_URL = "https://api.stripe.com/v1";
 
-export function getStripeSecretKey(): string {
-  // Checks environment variables in order of specificity
+/**
+ * Resolves the trusted Stripe environment strictly from server configuration.
+ * Prevents client-controlled parameter tampering between Test and Live.
+ */
+export function getTrustedStripeEnvironment(): "test" | "live" {
+  const explicitEnv = getOptionalEnv("STRIPE_ENVIRONMENT");
+  if (explicitEnv === "live") return "live";
+  if (explicitEnv === "test" || explicitEnv === "sandbox") return "test";
+
+  const liveKey = getOptionalEnv("STRIPE_SECRET_KEY") || getOptionalEnv("STRIPE_LIVE_API_KEY");
+  if (liveKey && liveKey.startsWith("sk_live_")) {
+    return "live";
+  }
+
+  const testKey = getOptionalEnv("STRIPE_TEST_SECRET_KEY") || getOptionalEnv("STRIPE_SANDBOX_API_KEY");
+  if (testKey && testKey.startsWith("sk_test_")) {
+    return "test";
+  }
+
+  if (liveKey) return "live";
+  return "test";
+}
+
+
+export function getStripeSecretKey(environment?: "test" | "live" | "sandbox"): string {
+  if (environment === "test" || environment === "sandbox") {
+    const testKey = getOptionalEnv("STRIPE_TEST_SECRET_KEY") ||
+                    getOptionalEnv("STRIPE_SANDBOX_API_KEY");
+    if (!testKey) {
+      throw new EdgeError("SERVICE_UNAVAILABLE", "Chave de teste do Stripe (STRIPE_TEST_SECRET_KEY) não configurada.", 503);
+    }
+    return testKey;
+  }
+
+  if (environment === "live") {
+    const liveKey = getOptionalEnv("STRIPE_SECRET_KEY") ||
+                    getOptionalEnv("STRIPE_LIVE_API_KEY");
+    if (!liveKey) {
+      throw new EdgeError("SERVICE_UNAVAILABLE", "Chave de produção do Stripe (STRIPE_SECRET_KEY) não configurada.", 503);
+    }
+    return liveKey;
+  }
+
+  // Fallback for non-specific calls
   const key = getOptionalEnv("STRIPE_SECRET_KEY") ||
               getOptionalEnv("STRIPE_TEST_SECRET_KEY") ||
               getOptionalEnv("STRIPE_SANDBOX_API_KEY");
@@ -21,7 +63,19 @@ export function getStripeSecretKey(): string {
   return key;
 }
 
-export function getStripeWebhookSecret(): string {
+export function getStripeWebhookSecret(environment?: "test" | "live" | "sandbox"): string {
+  if (environment === "test" || environment === "sandbox") {
+    const testSecret = getOptionalEnv("PAYMENTS_SANDBOX_WEBHOOK_SECRET") ||
+                       getOptionalEnv("STRIPE_TEST_WEBHOOK_SECRET");
+    if (testSecret) return testSecret;
+  }
+
+  if (environment === "live") {
+    const liveSecret = getOptionalEnv("PAYMENTS_LIVE_WEBHOOK_SECRET") ||
+                       getOptionalEnv("STRIPE_WEBHOOK_SECRET");
+    if (liveSecret) return liveSecret;
+  }
+
   const secret = getOptionalEnv("STRIPE_WEBHOOK_SECRET") ||
                  getOptionalEnv("PAYMENTS_SANDBOX_WEBHOOK_SECRET") ||
                  getOptionalEnv("PAYMENTS_LIVE_WEBHOOK_SECRET");
@@ -41,9 +95,10 @@ export async function stripeApiRequest<T = any>(
     body?: Record<string, unknown> | URLSearchParams;
     idempotencyKey?: string;
     apiKey?: string;
+    environment?: "test" | "live" | "sandbox";
   } = {}
 ): Promise<T> {
-  const apiKey = options.apiKey || getStripeSecretKey();
+  const apiKey = options.apiKey || getStripeSecretKey(options.environment);
   const method = options.method || "GET";
   const url = `${STRIPE_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 

@@ -14,16 +14,43 @@ import { requireMethod } from "../_shared/validation.ts";
 import { createAdminClient } from "../_shared/supabase-admin.ts";
 import { createStructuredLogger } from "../_shared/logging.ts";
 import { verifyStripeWebhookSignature, stripeApiRequest } from "../_shared/stripe.ts";
+import { checkWebhookEventOrder, evaluateSubscriptionProfileConsistency } from "../_shared/stripe-pricing.ts";
 
-const PRICE_TO_PLAN: Record<string, string> = {
-  starter_monthly: "starter",
-  pro_monthly: "pro",
-  elite_monthly: "elite",
-  price_1TVtOWPKG6q10UjrQErPgyKO: "starter",
-  price_1TVtOVPKG6q10Ujre6zMGYpk: "pro",
-  price_1TVtgWPKG6q10UjrxRUCnyg1: "elite",
-  price_1TVsefPKG6q10UjrKpTaUe71: "elite"
+
+export interface PlanMappingInfo {
+  planKey: "starter" | "pro" | "elite";
+  billingCycle: "month" | "year";
+  legacy?: boolean;
+}
+
+export const PRICE_TO_PLAN_INFO: Record<string, PlanMappingInfo> = {
+  // Lookup keys
+  starter_monthly: { planKey: "starter", billingCycle: "month" },
+  pro_monthly: { planKey: "pro", billingCycle: "month" },
+  elite_monthly: { planKey: "elite", billingCycle: "month" },
+  starter_yearly: { planKey: "starter", billingCycle: "year" },
+  pro_yearly: { planKey: "pro", billingCycle: "year" },
+  elite_yearly: { planKey: "elite", billingCycle: "year" },
+
+  // Commercial LIVE Monthly Price IDs
+  price_1TVtOWPKG6q10UjrQErPgyKO: { planKey: "starter", billingCycle: "month" },
+  price_1TVtOVPKG6q10Ujre6zMGYpk: { planKey: "pro", billingCycle: "month" },
+  price_1TmYG0PKG6q10UjrOx8tEehr: { planKey: "elite", billingCycle: "month" },
+
+  // Commercial LIVE Yearly Price IDs
+  price_1UJDZBPKG6q10UjrQrf3rHBS: { planKey: "starter", billingCycle: "year" },
+  price_1UJDaCPKG6q10UjrWOjctNmr: { planKey: "pro", billingCycle: "year" },
+  price_1UJDX4PKG6q10UjrzkytrHAJ: { planKey: "elite", billingCycle: "year" },
+
+  // Historical/Legacy IDs (recognition preserved, blocked for new checkouts)
+  price_1TVtgWPKG6q10UjrxRUCnyg1: { planKey: "elite", billingCycle: "month", legacy: true },
+  price_1TVsefPKG6q10UjrKpTaUe71: { planKey: "elite", billingCycle: "month", legacy: true },
 };
+
+// Backward-compatible string map
+const PRICE_TO_PLAN: Record<string, string> = Object.fromEntries(
+  Object.entries(PRICE_TO_PLAN_INFO).map(([k, v]) => [k, v.planKey])
+);
 
 /**
  * Absorbs contracted add-ons that are now included in the newly upgraded SaaS plan.
@@ -37,11 +64,15 @@ async function absorbAddonsIntoPlan(
 ) {
   if (!newPriceId) return;
 
-  const col = environment === "live" ? "stripe_price_id_live" : "stripe_price_id_test";
+  const colMonthly = environment === "live" ? "stripe_price_id_live" : "stripe_price_id_test";
+  const colYearly = environment === "live" ? "stripe_yearly_price_id_live" : "stripe_yearly_price_id_test";
+  const planInfo = PRICE_TO_PLAN_INFO[newPriceId];
+  const targetSlug = planInfo?.planKey || newPriceId.replace(/_(monthly|yearly)$/, "");
+
   const { data: newPlan } = await adminClient
     .from("plans")
     .select("id, name, allowed_modules")
-    .or(`${col}.eq.${newPriceId},slug.eq.${newPriceId.replace(/_monthly$/, "")}`)
+    .or(`${colMonthly}.eq.${newPriceId},${colYearly}.eq.${newPriceId},slug.eq.${targetSlug}`)
     .eq("active", true)
     .maybeSingle();
 
@@ -148,6 +179,10 @@ Deno.serve(async (req: Request) => {
   const logger = createStructuredLogger("stripe-webhook", req);
   const startTime = Date.now();
 
+  let eventId: string | null = null;
+  let eventType: string | null = null;
+  let leaseToken: string | null = null;
+
   try {
     requireMethod(req, "POST");
 
@@ -175,8 +210,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const eventId = event?.id;
-    const eventType = event?.type;
+    eventId = event?.id || null;
+    eventType = event?.type || null;
     const livemode = Boolean(event?.livemode);
     const environment = livemode ? "live" : "test";
 
@@ -189,8 +224,8 @@ Deno.serve(async (req: Request) => {
 
     const adminClient = createAdminClient();
 
-    // 3. Atomic event claim via RPC
-    const { data: isClaimed, error: claimErr } = await adminClient.rpc("claim_stripe_event", {
+    // 3. Atomic event claim via RPC with fencing lease_token
+    const { data: claimData, error: claimErr } = await adminClient.rpc("claim_stripe_event", {
       p_event_id: eventId,
       p_event_type: eventType,
       p_environment: environment
@@ -200,9 +235,16 @@ Deno.serve(async (req: Request) => {
       console.warn("[Stripe Webhook] Error calling claim_stripe_event RPC:", claimErr);
     }
 
-    // If event was already claimed/processed, return 200 immediately
-    if (isClaimed === false) {
-      logger.info("Stripe event already processed; skipping execution", { eventId, eventType });
+    const isClaimed = typeof claimData === "boolean" ? claimData : Boolean((claimData as any)?.claimed);
+    leaseToken = typeof claimData === "object" ? (claimData as any)?.lease_token : null;
+
+    // If event was already claimed/processed or under active lease, return 200 immediately
+    if (!isClaimed) {
+      logger.info("Stripe event already processed or actively leased; skipping execution", {
+        eventId,
+        eventType,
+        reason: (claimData as any)?.reason
+      });
       return new Response(JSON.stringify({ received: true, already_processed: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -217,6 +259,29 @@ Deno.serve(async (req: Request) => {
     if (eventType === "customer.subscription.created" || eventType === "customer.subscription.updated") {
       const userId = object.metadata?.userId || object.metadata?.tenantId;
       if (userId) {
+        // Out-of-order check strictly based on event.created timestamp vs stored latest_event_timestamp
+        // (Does NOT use updated_at to prevent false rejections from local database touches)
+        const { data: existingSub } = await adminClient
+          .from("subscriptions")
+          .select("latest_event_timestamp")
+          .eq("stripe_subscription_id", object.id)
+          .maybeSingle();
+
+        const orderCheck = checkWebhookEventOrder(event.created, existingSub?.latest_event_timestamp);
+        if (orderCheck.isStale) {
+          logger.info("Out-of-order Stripe event ignored to prevent race condition/downgrade", {
+            eventId,
+            eventType,
+            eventCreated: event.created,
+            storedLatestEvent: existingSub?.latest_event_timestamp,
+            reason: orderCheck.reason,
+          });
+          return new Response(JSON.stringify({ received: true, ignored_out_of_order: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
         const items = object.items?.data || [];
         const planItem = items.find((it: any) => {
           const meta = it.price?.metadata || {};
@@ -239,8 +304,12 @@ Deno.serve(async (req: Request) => {
           p_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
           p_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
           p_cancel_at_period_end: Boolean(object.cancel_at_period_end),
-          p_environment: environment
+          p_environment: environment,
+          p_event_timestamp: event.created ? new Date(event.created * 1000).toISOString() : null
         });
+
+        // Note: Canonical profile.plan entitlement is atomically maintained by sync_subscription_atomic
+        // inside the transactional advisory lock based on all active subscriptions of user_id.
 
         await syncAddonsFromSubscription(adminClient, object, environment);
 
@@ -254,27 +323,33 @@ Deno.serve(async (req: Request) => {
     // EVENT: CUSTOMER.SUBSCRIPTION.DELETED
     // -------------------------------------------------------------------------
     else if (eventType === "customer.subscription.deleted") {
-      await adminClient
-        .from("subscriptions")
-        .update({
-          status: "canceled",
-          updated_at: new Date().toISOString()
-        })
-        .eq("stripe_subscription_id", object.id);
+      const { data: cancelResult, error: cancelErr } = await adminClient.rpc("cancel_subscription_atomic", {
+        p_stripe_subscription_id: object.id,
+        p_event_timestamp: event.created ? new Date(event.created * 1000).toISOString() : null,
+      });
 
-      await adminClient
-        .from("tenant_addons")
-        .update({
-          status: "canceled",
-          cancelled_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq("stripe_subscription_id", object.id);
-
-      const userId = object.metadata?.userId || object.metadata?.tenantId;
-      if (userId) {
-        await adminClient.from("profiles").update({ plan: "free" }).eq("id", userId);
+      if (cancelErr) {
+        logger.error("Error executing cancel_subscription_atomic RPC", { error: cancelErr.message });
+        throw new Error(`cancel_subscription_atomic failed: ${cancelErr.message}`);
       }
+
+      if (cancelResult?.ignored_out_of_order) {
+        logger.info("Out-of-order customer.subscription.deleted event ignored", {
+          eventId,
+          eventCreated: event.created,
+          subscriptionId: object.id,
+        });
+        return new Response(JSON.stringify({ received: true, ignored_out_of_order: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      logger.info("Subscription cancelled atomically with supersession protection", {
+        subscriptionId: object.id,
+        finalProfilePlan: cancelResult?.final_profile_plan,
+        userId: cancelResult?.user_id,
+      });
     }
 
     // -------------------------------------------------------------------------
@@ -322,6 +397,21 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // 4. Mark event as completed in idempotency table conditioned on lease_token
+    if (eventId && leaseToken) {
+      try {
+        const { data: completedOk, error: compErr } = await adminClient.rpc("complete_stripe_event", {
+          p_event_id: eventId,
+          p_lease_token: leaseToken
+        });
+        if (compErr || completedOk === false) {
+          logger.warn("Warning: complete_stripe_event failed or lease lost", { eventId, completedOk, compErr });
+        }
+      } catch (completeErr) {
+        console.warn("[Stripe Webhook] Error calling complete_stripe_event RPC:", completeErr);
+      }
+    }
+
     logger.info("Stripe webhook processed successfully", {
       eventId,
       eventType,
@@ -333,10 +423,25 @@ Deno.serve(async (req: Request) => {
       headers: { "Content-Type": "application/json" }
     });
   } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
     logger.error("Unexpected error processing Stripe webhook", {
       durationMs: Date.now() - startTime,
-      errorMessage: err instanceof Error ? err.message : "Unknown error"
+      errorMessage: errorMsg
     });
+
+    // Mark event as failed in idempotency table so Stripe retries can be processed, conditioned on lease_token
+    if (eventId && leaseToken) {
+      try {
+        const adminClient = createAdminClient();
+        await adminClient.rpc("fail_stripe_event", {
+          p_event_id: eventId,
+          p_lease_token: leaseToken,
+          p_error: errorMsg
+        });
+      } catch (failErr) {
+        console.warn("[Stripe Webhook] Error recording event failure:", failErr);
+      }
+    }
 
     // Return 500 so Stripe knows to retry transient failures
     return new Response(JSON.stringify({ error: "Webhook processing error" }), {

@@ -88,8 +88,12 @@ export interface Logger {
 /**
  * Creates a structured JSON logger for Edge Functions.
  */
-export function createLogger(functionName: string, requestId?: string): Logger {
-  const reqId = requestId || generateRequestId();
+export function createLogger(functionName: string, reqOrId?: Request | string): Logger {
+  const reqId = typeof reqOrId === "string"
+    ? reqOrId
+    : (reqOrId && typeof reqOrId === "object" && "headers" in reqOrId)
+      ? (reqOrId as Request).headers?.get("x-request-id") || generateRequestId()
+      : generateRequestId();
 
   function log(level: "INFO" | "WARN" | "ERROR", event: string, meta?: Record<string, unknown>) {
     const payload = {
@@ -109,3 +113,6 @@ export function createLogger(functionName: string, requestId?: string): Logger {
     error: (event, meta) => log("ERROR", event, meta)
   };
 }
+
+export const createStructuredLogger = createLogger;
+

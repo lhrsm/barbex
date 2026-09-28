@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 
-interface CheckoutOptions {
-  priceId: string;
-  quantity?: number;
+export interface CheckoutOptions {
+  planKey: "starter" | "pro" | "elite";
+  billingCycle: "month" | "year";
   customerEmail?: string;
   userId?: string;
   returnUrl?: string;
@@ -24,9 +24,7 @@ export function useStripeCheckout() {
     setOptions(null);
   }, []);
 
-  const checkoutElement = isOpen && options
-    ? <StripeEmbeddedCheckout {...options} />
-    : null;
+  const checkoutElement = isOpen && options ? <StripeEmbeddedCheckout {...options} /> : null;
 
   return { openCheckout, closeCheckout, isOpen, checkoutElement };
 }
