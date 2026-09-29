@@ -77,6 +77,7 @@ import { Route as DashboardAssistenteRouteImport } from './routes/dashboard.assi
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AgendamentoTokenRouteImport } from './routes/agendamento.$token'
+import { Route as AdminWebhooksRouteImport } from './routes/admin.webhooks'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
 import { Route as AdminUpgradeRecommendationsRouteImport } from './routes/admin.upgrade-recommendations'
 import { Route as AdminTutorialsRouteImport } from './routes/admin.tutorials'
@@ -97,6 +98,7 @@ import { Route as AdminKnowledgeBaseRouteImport } from './routes/admin.knowledge
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminBillingRouteImport } from './routes/admin.billing'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAddonsRouteImport } from './routes/admin.addons'
 import { Route as AcademyPathIdRouteImport } from './routes/academy.$pathId'
@@ -464,6 +466,11 @@ const AgendamentoTokenRoute = AgendamentoTokenRouteImport.update({
   path: '/agendamento/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWebhooksRoute = AdminWebhooksRouteImport.update({
+  id: '/webhooks',
+  path: '/webhooks',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminVouchersRoute = AdminVouchersRouteImport.update({
   id: '/vouchers',
   path: '/vouchers',
@@ -563,6 +570,11 @@ const AdminErrorsRoute = AdminErrorsRouteImport.update({
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBillingRoute = AdminBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -751,6 +763,7 @@ export interface FileRoutesByFullPath {
   '/academy/$pathId': typeof AcademyPathIdRouteWithChildren
   '/admin/addons': typeof AdminAddonsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/billing': typeof AdminBillingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/finance': typeof AdminFinanceRoute
@@ -771,6 +784,7 @@ export interface FileRoutesByFullPath {
   '/admin/tutorials': typeof AdminTutorialsRoute
   '/admin/upgrade-recommendations': typeof AdminUpgradeRecommendationsRoute
   '/admin/vouchers': typeof AdminVouchersRoute
+  '/admin/webhooks': typeof AdminWebhooksRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -861,6 +875,7 @@ export interface FileRoutesByTo {
   '/academy/$pathId': typeof AcademyPathIdRouteWithChildren
   '/admin/addons': typeof AdminAddonsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/billing': typeof AdminBillingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/finance': typeof AdminFinanceRoute
@@ -881,6 +896,7 @@ export interface FileRoutesByTo {
   '/admin/tutorials': typeof AdminTutorialsRoute
   '/admin/upgrade-recommendations': typeof AdminUpgradeRecommendationsRoute
   '/admin/vouchers': typeof AdminVouchersRoute
+  '/admin/webhooks': typeof AdminWebhooksRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -977,6 +993,7 @@ export interface FileRoutesById {
   '/academy/$pathId': typeof AcademyPathIdRouteWithChildren
   '/admin/addons': typeof AdminAddonsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/billing': typeof AdminBillingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/finance': typeof AdminFinanceRoute
@@ -997,6 +1014,7 @@ export interface FileRoutesById {
   '/admin/tutorials': typeof AdminTutorialsRoute
   '/admin/upgrade-recommendations': typeof AdminUpgradeRecommendationsRoute
   '/admin/vouchers': typeof AdminVouchersRoute
+  '/admin/webhooks': typeof AdminWebhooksRoute
   '/agendamento/$token': typeof AgendamentoTokenRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -1094,6 +1112,7 @@ export interface FileRouteTypes {
     | '/academy/$pathId'
     | '/admin/addons'
     | '/admin/analytics'
+    | '/admin/billing'
     | '/admin/dashboard'
     | '/admin/errors'
     | '/admin/finance'
@@ -1114,6 +1133,7 @@ export interface FileRouteTypes {
     | '/admin/tutorials'
     | '/admin/upgrade-recommendations'
     | '/admin/vouchers'
+    | '/admin/webhooks'
     | '/agendamento/$token'
     | '/auth/reset-password'
     | '/checkout/return'
@@ -1204,6 +1224,7 @@ export interface FileRouteTypes {
     | '/academy/$pathId'
     | '/admin/addons'
     | '/admin/analytics'
+    | '/admin/billing'
     | '/admin/dashboard'
     | '/admin/errors'
     | '/admin/finance'
@@ -1224,6 +1245,7 @@ export interface FileRouteTypes {
     | '/admin/tutorials'
     | '/admin/upgrade-recommendations'
     | '/admin/vouchers'
+    | '/admin/webhooks'
     | '/agendamento/$token'
     | '/auth/reset-password'
     | '/checkout/return'
@@ -1319,6 +1341,7 @@ export interface FileRouteTypes {
     | '/academy/$pathId'
     | '/admin/addons'
     | '/admin/analytics'
+    | '/admin/billing'
     | '/admin/dashboard'
     | '/admin/errors'
     | '/admin/finance'
@@ -1339,6 +1362,7 @@ export interface FileRouteTypes {
     | '/admin/tutorials'
     | '/admin/upgrade-recommendations'
     | '/admin/vouchers'
+    | '/admin/webhooks'
     | '/agendamento/$token'
     | '/auth/reset-password'
     | '/checkout/return'
@@ -1929,6 +1953,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendamentoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/webhooks': {
+      id: '/admin/webhooks'
+      path: '/webhooks'
+      fullPath: '/admin/webhooks'
+      preLoaderRoute: typeof AdminWebhooksRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/vouchers': {
       id: '/admin/vouchers'
       path: '/vouchers'
@@ -2067,6 +2098,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/billing': {
+      id: '/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AdminBillingRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -2301,6 +2339,7 @@ const AcademyRouteWithChildren =
 interface AdminRouteChildren {
   AdminAddonsRoute: typeof AdminAddonsRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminBillingRoute: typeof AdminBillingRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminErrorsRoute: typeof AdminErrorsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
@@ -2321,12 +2360,14 @@ interface AdminRouteChildren {
   AdminTutorialsRoute: typeof AdminTutorialsRoute
   AdminUpgradeRecommendationsRoute: typeof AdminUpgradeRecommendationsRoute
   AdminVouchersRoute: typeof AdminVouchersRoute
+  AdminWebhooksRoute: typeof AdminWebhooksRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAddonsRoute: AdminAddonsRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminBillingRoute: AdminBillingRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminErrorsRoute: AdminErrorsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
@@ -2347,6 +2388,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTutorialsRoute: AdminTutorialsRoute,
   AdminUpgradeRecommendationsRoute: AdminUpgradeRecommendationsRoute,
   AdminVouchersRoute: AdminVouchersRoute,
+  AdminWebhooksRoute: AdminWebhooksRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

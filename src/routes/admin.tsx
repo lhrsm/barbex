@@ -27,7 +27,9 @@ import {
   GraduationCap,
   Bell,
   Package,
-  Ticket
+  Ticket,
+  Receipt,
+  Terminal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,15 +40,12 @@ import { LogoutButton } from "@/components/admin/LogoutButton";
 import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
 import { AdminAiAssistant } from "@/components/admin/AdminAiAssistant";
 
-
 import { DefaultRouteError, DefaultRouteNotFound } from "@/components/route-boundaries";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     title: "Admin Console | Barbex",
-    meta: [
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminLayout,
   errorComponent: DefaultRouteError,
@@ -57,6 +56,8 @@ const adminNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/admin/dashboard" },
   { label: "Barbearias", icon: Building2, to: "/admin/tenants" },
   { label: "Assinaturas", icon: CreditCard, to: "/admin/subscriptions" },
+  { label: "Billing Ops", icon: Receipt, to: "/admin/billing" },
+  { label: "Webhooks Stripe", icon: Terminal, to: "/admin/webhooks" },
   { label: "Planos", icon: Layout, to: "/admin/plans" },
   { label: "Add-ons", icon: Package, to: "/admin/addons" },
   { label: "Receita", icon: TrendingUp, to: "/admin/finance" },
@@ -87,13 +88,13 @@ function AdminLayout() {
     if (loading) return;
 
     if (!user) {
-      console.warn('[AUTH_REDIRECT_TRACE]', {
-        source: 'AdminLayoutGuard',
-        reason: 'No session found',
+      console.warn("[AUTH_REDIRECT_TRACE]", {
+        source: "AdminLayoutGuard",
+        reason: "No session found",
         pathname: window.location.pathname,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      navigate({ to: "/auth" as any, replace: true });
+      navigate({ to: "/auth", replace: true });
       return;
     }
 
@@ -102,13 +103,13 @@ function AdminLayout() {
       return;
     }
 
-    if (role !== 'super_admin') {
-      console.warn('[AUTH_REDIRECT_TRACE]', {
-        source: 'AdminLayoutGuard',
-        reason: 'Access denied. Not super_admin',
+    if (role !== "super_admin") {
+      console.warn("[AUTH_REDIRECT_TRACE]", {
+        source: "AdminLayoutGuard",
+        reason: "Access denied. Not super_admin",
         role,
         pathname: window.location.pathname,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       toast.error("Acesso negado. Apenas super administradores.");
       navigate({ to: "/dashboard" });
@@ -119,31 +120,39 @@ function AdminLayout() {
   }, [user, loading, role, navigate]);
 
   useEffect(() => {
-    if (!user || role !== 'super_admin') return;
+    if (!user || role !== "super_admin") return;
 
     const channel = supabase
-      .channel('admin-support-notifications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        table: 'support_tickets',
-        schema: 'public'
-      }, (payload) => {
-        toast("Novo Ticket Aberto", {
-          description: payload.new.title,
-          icon: <LifeBuoy className="h-4 w-4 text-purple-500" />,
-        });
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        table: 'support_messages',
-        schema: 'public',
-        filter: 'is_admin_reply=eq.false'
-      }, () => {
-        toast("Nova Resposta no Suporte", {
-          description: "Um cliente respondeu a um chamado.",
-          icon: <MessageCircle className="h-4 w-4 text-purple-500" />,
-        });
-      })
+      .channel("admin-support-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          table: "support_tickets",
+          schema: "public",
+        },
+        (payload) => {
+          toast("Novo Ticket Aberto", {
+            description: payload.new.title,
+            icon: <LifeBuoy className="h-4 w-4 text-purple-500" />,
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          table: "support_messages",
+          schema: "public",
+          filter: "is_admin_reply=eq.false",
+        },
+        () => {
+          toast("Nova Resposta no Suporte", {
+            description: "Um cliente respondeu a um chamado.",
+            icon: <MessageCircle className="h-4 w-4 text-purple-500" />,
+          });
+        },
+      )
       .subscribe();
 
     return () => {
@@ -161,7 +170,7 @@ function AdminLayout() {
     );
   }
 
-  if (role !== 'super_admin') return null;
+  if (role !== "super_admin") return null;
 
   return (
     <div className="flex flex-col h-screen bg-black text-white selection:bg-purple-500/30">
@@ -170,23 +179,35 @@ function AdminLayout() {
       {/* Top Header */}
       <header className="h-16 flex items-center justify-between px-6 border-b border-white/10 glass bg-black/40 sticky top-0 z-40">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="md:hidden text-gray-400" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-gray-400"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-2">
             <ShieldCheck className="text-purple-500 h-6 w-6" />
-            <span className="font-bold text-lg bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Barbex Admin</span>
+            <span className="font-bold text-lg bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+              Barbex Admin
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <kbd className="hidden md:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-white/60 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
-            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+          <kbd
+            className="hidden md:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-white/60 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
+            onClick={() =>
+              document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+            }
             title="Busca rápida (⌘K)"
           >
             ⌘K
           </kbd>
           <AdminNotifications />
-          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/30 transition-colors">SUPER ADMIN</Badge>
+          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/30 transition-colors">
+            SUPER ADMIN
+          </Badge>
           <div className="hidden md:block">
             <LogoutButton />
           </div>
@@ -201,7 +222,12 @@ function AdminLayout() {
               <ShieldCheck className="text-purple-500 h-6 w-6" />
               <h1 className="font-bold text-white uppercase tracking-tighter">Barbex Admin</h1>
             </div>
-            <Button variant="ghost" size="icon" className="text-gray-400" onClick={() => setIsMobileMenuOpen(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               <X />
             </Button>
           </div>
@@ -215,7 +241,7 @@ function AdminLayout() {
                   "flex items-center gap-4 px-6 py-4 rounded-2xl text-lg font-bold transition-all",
                   pathname === item.to
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    : "text-gray-400 hover:text-white hover:bg-white/5",
                 )}
               >
                 <item.icon size={22} />
@@ -223,21 +249,20 @@ function AdminLayout() {
               </Link>
             ))}
             <div className="pt-8 mt-8 border-t border-white/10 space-y-3">
-            <div className="pt-8 mt-8 border-t border-white/10 space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-4 px-6 py-6 text-lg rounded-2xl border-white/10 bg-white/5 text-white hover:bg-purple-500/10 hover:border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.1)] transition-all duration-300"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  navigate({ to: "/dashboard" });
-                }}
-              >
-                <ChevronLeft size={22} className="text-purple-400" />
-                Voltar ao App
-              </Button>
-              <LogoutButton />
-            </div>
-
+              <div className="pt-8 mt-8 border-t border-white/10 space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-4 px-6 py-6 text-lg rounded-2xl border-white/10 bg-white/5 text-white hover:bg-purple-500/10 hover:border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.1)] transition-all duration-300"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate({ to: "/dashboard" });
+                  }}
+                >
+                  <ChevronLeft size={22} className="text-purple-400" />
+                  Voltar ao App
+                </Button>
+                <LogoutButton />
+              </div>
             </div>
           </nav>
         </div>
@@ -256,10 +281,16 @@ function AdminLayout() {
                     "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group",
                     pathname === item.to
                       ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                      : "text-gray-400 hover:text-white hover:bg-white/5",
                   )}
                 >
-                  <item.icon size={18} className={cn("transition-colors", pathname === item.to ? "text-purple-400" : "group-hover:text-pink-400")} />
+                  <item.icon
+                    size={18}
+                    className={cn(
+                      "transition-colors",
+                      pathname === item.to ? "text-purple-400" : "group-hover:text-pink-400",
+                    )}
+                  />
                   {item.label}
                 </Link>
               ))}
@@ -271,13 +302,14 @@ function AdminLayout() {
                 className="w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all duration-300 rounded-lg text-gray-400 hover:text-white hover:bg-purple-500/10 hover:shadow-[0_0_15px_rgba(168,85,247,0.1)] group"
                 onClick={() => navigate({ to: "/dashboard" })}
               >
-                <ChevronLeft size={18} className="transition-transform group-hover:-translate-x-1 text-purple-400" />
+                <ChevronLeft
+                  size={18}
+                  className="transition-transform group-hover:-translate-x-1 text-purple-400"
+                />
                 <span>Voltar ao App</span>
               </Button>
               <LogoutButton />
             </div>
-
-
           </nav>
         </aside>
 
