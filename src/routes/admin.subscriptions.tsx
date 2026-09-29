@@ -8,7 +8,6 @@ import {
   Filter,
   User,
   Store,
-  AlertTriangle,
   CheckCircle2,
   Clock,
   ShieldCheck,
@@ -27,7 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -75,10 +73,19 @@ interface SubscriptionDbRow {
   id: string;
   user_id: string | null;
   stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
   product_id: string | null;
   price_id: string | null;
   status: string;
+  billing_cycle: string | null;
+  plan_key: string | null;
+  latest_event_timestamp: string | null;
+  environment: string | null;
+  current_period_start: string | null;
   current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  created_at: string;
+  updated_at: string;
   profiles?: {
     business_name: string | null;
     whatsapp_number: string | null;
@@ -107,10 +114,36 @@ interface TenantPlanRecord {
   classification: CommercialClassification;
 }
 
+const formatPlanKey = (planKey: string | null | undefined): string => {
+  if (!planKey) return "Não informado";
+  const normalized = planKey.trim().toLowerCase();
+  if (normalized === "starter") return "Starter";
+  if (normalized === "pro" || normalized === "professional") return "Pro";
+  if (normalized === "elite") return "Elite";
+  if (normalized === "free") return "Free";
+  return planKey.toUpperCase();
+};
+
+const formatBillingCycle = (cycle: string | null | undefined): string => {
+  if (!cycle) return "Não informado";
+  const normalized = cycle.trim().toLowerCase();
+  if (normalized === "month" || normalized === "monthly") return "Mensal";
+  if (normalized === "year" || normalized === "yearly") return "Anual";
+  return cycle;
+};
+
+const formatCurrency = (val: number | null | undefined): string => {
+  if (val == null || isNaN(val)) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(val);
+};
+
 function AdminSubscriptions() {
   const [search, setSearch] = useState("");
 
-  // 1. Assinaturas Stripe canônicas da tabela subscriptions
+  // 1. Assinaturas Stripe canônicas da tabela public.subscriptions (R2E.12B / R2E.13D)
   const {
     data: stripeSubscriptions,
     isLoading: isLoadingSubs,
@@ -127,10 +160,19 @@ function AdminSubscriptions() {
           id,
           user_id,
           stripe_subscription_id,
+          stripe_customer_id,
           product_id,
           price_id,
           status,
+          billing_cycle,
+          plan_key,
+          latest_event_timestamp,
+          environment,
+          current_period_start,
           current_period_end,
+          cancel_at_period_end,
+          created_at,
+          updated_at,
           profiles:user_id (
             business_name,
             whatsapp_number,
@@ -142,7 +184,9 @@ function AdminSubscriptions() {
 
       if (error) {
         console.error("[AdminSubscriptions] Erro ao buscar assinaturas Stripe:", error);
-        throw new Error("Erro ao carregar assinaturas Stripe: " + (error.message || "Falha na consulta"));
+        throw new Error(
+          "Erro ao carregar assinaturas Stripe: " + (error.message || "Falha na consulta"),
+        );
       }
       return (data || []) as unknown as SubscriptionDbRow[];
     },
@@ -174,7 +218,9 @@ function AdminSubscriptions() {
             "id, business_name, responsible_name, display_name, email, phone, whatsapp_number, plan, trial_start, trial_end, is_internal_test_tenant",
           ),
         supabase.from("plans").select("id, name, price_monthly, tier"),
-        supabase.from("subscriptions").select("id, user_id, status, price_id, is_internal_test_tenant, current_period_end"),
+        supabase
+          .from("subscriptions")
+          .select("id, user_id, status, price_id, is_internal_test_tenant, current_period_end"),
       ]);
 
       if (bErr) {
@@ -216,7 +262,7 @@ function AdminSubscriptions() {
 
           // Classificação comercial canônica
           const shopSubs = (subs || []).filter(
-            (s: any) => s.user_id === b.owner_id || s.user_id === b.id
+            (s: { user_id?: string | null }) => s.user_id === b.owner_id || s.user_id === b.id,
           );
           const classification = classifyTenant({
             id: b.id,
@@ -283,35 +329,70 @@ function AdminSubscriptions() {
     switch (status) {
       case "active":
         return (
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-none shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+          <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
             Ativa
           </Badge>
         );
       case "trialing":
-        return <Badge className="bg-blue-500/20 text-blue-400 border-none">Trial</Badge>;
+        return (
+          <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">Em Trial</Badge>
+        );
       case "past_due":
-        return <Badge className="bg-amber-500/20 text-amber-400 border-none">Atrasada</Badge>;
+        return (
+          <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            Atrasada
+          </Badge>
+        );
       case "canceled":
-        return <Badge className="bg-rose-500/20 text-rose-400 border-none">Cancelada</Badge>;
+        return (
+          <Badge className="bg-rose-500/20 text-rose-400 border border-rose-500/30">
+            Cancelada
+          </Badge>
+        );
+      case "unpaid":
+        return (
+          <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">Não Paga</Badge>
+        );
+      case "incomplete":
+        return (
+          <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            Incompleta
+          </Badge>
+        );
+      case "incomplete_expired":
+        return (
+          <Badge className="bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Expirada</Badge>
+        );
       default:
         return (
           <Badge variant="outline" className="text-gray-400 border-white/10">
-            {status}
+            {status || "Desconhecido"}
           </Badge>
         );
     }
   };
 
+  // R2E.13D: Não filtrar apenas ativas. Todas as assinaturas Stripe retornadas pela consulta são exibidas.
   const filteredSubs = (stripeSubscriptions || []).filter((sub) => {
-    if (sub.status !== "active") return false;
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
     const biz = sub.profiles?.business_name?.toLowerCase() || "";
+    const email = sub.profiles?.email?.toLowerCase() || "";
     const stripeId = sub.stripe_subscription_id?.toLowerCase() || "";
-    return biz.includes(q) || stripeId.includes(q);
+    const planKey = sub.plan_key?.toLowerCase() || "";
+    const status = sub.status?.toLowerCase() || "";
+    return (
+      biz.includes(q) ||
+      email.includes(q) ||
+      stripeId.includes(q) ||
+      planKey.includes(q) ||
+      status.includes(q)
+    );
   });
 
   const filteredTenants = (tenantPlans || []).filter((t: TenantPlanRecord) => {
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
     return (
       t.name.toLowerCase().includes(q) ||
       t.slug.toLowerCase().includes(q) ||
@@ -320,7 +401,16 @@ function AdminSubscriptions() {
     );
   });
 
-  // Métricas de topo reconciliadas
+  // Métricas apuradas com base nos dados reais
+  const totalStripeSubs = stripeSubscriptions?.length || 0;
+  const activeStripeSubs = (stripeSubscriptions || []).filter((s) => s.status === "active").length;
+  const trialingStripeSubs = (stripeSubscriptions || []).filter(
+    (s) => s.status === "trialing",
+  ).length;
+  const delinquentOrCanceledSubs = (stripeSubscriptions || []).filter(
+    (s) => s.status === "past_due" || s.status === "unpaid" || s.status === "canceled",
+  ).length;
+
   const totalTenantsCount = tenantPlans?.length || 0;
   const commercialSubs = (tenantPlans || []).filter(
     (t) => t.classification.modality === "ASSINATURA",
@@ -340,15 +430,15 @@ function AdminSubscriptions() {
             ASSINATURAS & PLANOS
           </h2>
           <p className="text-gray-400 font-medium">
-            Reconciliação entre faturamento recorrente Stripe e planos/trials dos estabelecimentos
-            cadastrados.
+            Gestão das assinaturas Stripe (faturamento canônico) e conciliação de acessos das
+            barbearias cadastradas.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Buscar por barbearia, proprietário ou ID..."
+              placeholder="Buscar por barbearia, e-mail, plano ou ID..."
               className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl text-white"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -374,7 +464,9 @@ function AdminSubscriptions() {
               Falha ao carregar assinaturas ou estabelecimentos
             </h3>
             <p className="text-sm text-gray-400 max-w-md mt-1">
-              {(errorSubs as Error)?.message || (errorTenants as Error)?.message || "Ocorreu um erro ao consultar o banco de dados."}
+              {(errorSubs as Error)?.message ||
+                (errorTenants as Error)?.message ||
+                "Ocorreu um erro ao consultar o banco de dados."}
             </p>
           </div>
           <Button
@@ -411,15 +503,16 @@ function AdminSubscriptions() {
         <Card className="glass border-white/5 bg-white/[0.02]">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-              Assinaturas Comerciais Ativas
+              Assinaturas Stripe
             </CardDescription>
             <CardTitle className="text-3xl font-black text-emerald-400">
-              {isLoadingTenants ? "..." : commercialSubsCount}
+              {isLoadingSubs ? "..." : `${activeStripeSubs} ativas`}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Pré-lançamento comercial
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              {totalStripeSubs} registradas no banco
             </span>
           </CardContent>
         </Card>
@@ -430,12 +523,12 @@ function AdminSubscriptions() {
               MRR Comercial Efetivo
             </CardDescription>
             <CardTitle className="text-3xl font-black text-white">
-              R$ {commercialMrr.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              {formatCurrency(commercialMrr)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <span className="text-xs text-gray-400 font-medium">
-              Receita recorrente efetivamente contratada
+              {commercialSubsCount > 0 ? "Faturamento contratado" : "Nenhum faturamento recorrente"}
             </span>
           </CardContent>
         </Card>
@@ -443,40 +536,33 @@ function AdminSubscriptions() {
         <Card className="glass border-white/5 bg-white/[0.02]">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-              Planos Comerciais Contratados
+              Status Operacional Stripe
             </CardDescription>
             <CardTitle className="text-3xl font-black text-purple-400">
-              {isLoadingTenants ? "..." : commercialSubsCount}
+              {isLoadingSubs
+                ? "..."
+                : `${trialingStripeSubs} trial · ${delinquentOrCanceledSubs} pend.`}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-xs text-gray-400 font-medium flex items-center gap-1 cursor-help">
-                    <AlertCircle className="w-3.5 h-3.5 text-blue-400" /> 5 contas em teste/voucher
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 border-white/10 text-white max-w-xs">
-                  Nenhuma assinatura comercial contratada. 5 estabelecimentos cadastrados em período
-                  de teste ou voucher permanente (sem cobrança comercial).
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-purple-400" /> Monitoramento contínuo
+            </span>
           </CardContent>
         </Card>
       </div>
 
-      {/* SEÇÃO 1: ASSINATURAS STRIPE / PLANOS ATRIBUÍDOS (CATÁLOGO) */}
+      {/* SEÇÃO 1: ASSINATURAS STRIPE (public.subscriptions) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" />
-              1. Planos Atribuídos (Catálogo) — Assinaturas Comerciais
+              1. Assinaturas Stripe (Faturamento Canônico)
             </h3>
             <p className="text-sm text-gray-400">
-              Exibe somente barbearias com assinatura comercial efetivamente contratada.
+              Registros sincronizados de faturamento recorrente via webhooks autoritativos da
+              Stripe.
             </p>
           </div>
           <Badge
@@ -499,13 +585,22 @@ function AdminSubscriptions() {
                     Stripe Subscription ID
                   </TableHead>
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                    Plano / Preço
+                    Ambiente
+                  </TableHead>
+                  <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    Plano Canônico
+                  </TableHead>
+                  <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    Ciclo
                   </TableHead>
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
                     Status
                   </TableHead>
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                    Vencimento / Período
+                    Último Evento Stripe
+                  </TableHead>
+                  <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    Vigência
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -514,25 +609,39 @@ function AdminSubscriptions() {
                   Array.from({ length: 2 }).map((_, i) => (
                     <TableRow key={i} className="border-white/5">
                       <TableCell
-                        colSpan={5}
-                        className="py-6 text-center animate-pulse text-gray-500"
+                        colSpan={8}
+                        className="py-8 text-center animate-pulse text-gray-500"
                       >
-                        Carregando assinaturas comerciais...
+                        Carregando assinaturas Stripe...
                       </TableCell>
                     </TableRow>
                   ))
-                ) : filteredSubs.length === 0 ? (
+                ) : (stripeSubscriptions || []).length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-gray-400">
+                    <TableCell colSpan={8} className="text-center py-12 text-gray-400">
                       <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                         <CreditCard className="w-8 h-8 text-gray-500 mb-1" />
                         <span className="font-semibold text-white">
-                          Nenhuma barbearia possui assinatura comercial contratada no momento.
+                          Nenhuma assinatura Stripe registrada até o momento.
                         </span>
                         <p className="text-xs text-gray-400">
-                          As 5 barbearias cadastradas estão operando em períodos de teste (TRIAL) ou
-                          possuem voucher permanente (VOUCHER). Nenhuma barbearia possui plano
-                          comercial faturado no catálogo.
+                          O faturamento recorrente via Stripe está ativo. Novas assinaturas
+                          aparecerão aqui automaticamente conforme os clientes realizarem
+                          contratações.
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredSubs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12 text-gray-400">
+                      <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
+                        <Search className="w-8 h-8 text-gray-500 mb-1" />
+                        <span className="font-semibold text-white">
+                          Nenhuma assinatura corresponde aos filtros atuais.
+                        </span>
+                        <p className="text-xs text-gray-400">
+                          Tente ajustar os termos da busca para encontrar o registro desejado.
                         </p>
                       </div>
                     </TableCell>
@@ -550,10 +659,10 @@ function AdminSubscriptions() {
                           </div>
                           <div>
                             <span className="font-bold text-white text-sm block">
-                              {sub.profiles?.business_name || "Usuário SaaS"}
+                              {sub.profiles?.business_name || "Usuário Barbex"}
                             </span>
                             <span className="text-[11px] text-gray-400">
-                              {sub.profiles?.email || "Sem email"}
+                              {sub.profiles?.email || "Sem e-mail"}
                             </span>
                           </div>
                         </div>
@@ -564,12 +673,35 @@ function AdminSubscriptions() {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className="border-purple-500/30 text-purple-400 bg-purple-500/5 text-[10px] uppercase font-bold"
+                          className={cn(
+                            "text-[10px] uppercase font-bold",
+                            sub.environment === "live"
+                              ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
+                              : "border-amber-500/30 text-amber-300 bg-amber-500/10",
+                          )}
                         >
-                          {sub.product_id?.split("_").pop() || "PLANO"}
+                          {sub.environment === "live" ? "LIVE" : "SANDBOX"}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="border-purple-500/30 text-purple-400 bg-purple-500/5 text-[10px] uppercase font-bold"
+                        >
+                          {formatPlanKey(sub.plan_key)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-300">
+                        {formatBillingCycle(sub.billing_cycle)}
+                      </TableCell>
                       <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                      <TableCell className="text-xs text-gray-300 font-mono">
+                        {sub.latest_event_timestamp
+                          ? format(new Date(sub.latest_event_timestamp), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })
+                          : "—"}
+                      </TableCell>
                       <TableCell className="text-xs text-gray-300">
                         {sub.current_period_end
                           ? format(new Date(sub.current_period_end), "dd 'de' MMM, yyyy", {
@@ -603,7 +735,7 @@ function AdminSubscriptions() {
             variant="outline"
             className="border-blue-500/30 text-blue-400 bg-blue-500/10 text-xs w-fit"
           >
-            5 Barbearias Cadastradas
+            {isLoadingTenants ? "..." : `${totalTenantsCount} Barbearias Cadastradas`}
           </Badge>
         </div>
 
@@ -691,7 +823,10 @@ function AdminSubscriptions() {
                               </span>
                               {t.classification.technicalPlanName && (
                                 <span className="text-[10px] text-gray-400">
-                                  Acesso liberado: <strong className="text-gray-300 font-medium">{t.classification.technicalPlanName}</strong>
+                                  Acesso liberado:{" "}
+                                  <strong className="text-gray-300 font-medium">
+                                    {t.classification.technicalPlanName}
+                                  </strong>
                                 </span>
                               )}
                             </>
@@ -712,7 +847,10 @@ function AdminSubscriptions() {
                               </span>
                               {t.classification.technicalPlanName && (
                                 <span className="text-[10px] text-gray-400">
-                                  Acesso liberado: <strong className="text-gray-300 font-medium">{t.classification.technicalPlanName}</strong>
+                                  Acesso liberado:{" "}
+                                  <strong className="text-gray-300 font-medium">
+                                    {t.classification.technicalPlanName}
+                                  </strong>
                                 </span>
                               )}
                             </>
