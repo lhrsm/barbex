@@ -46,6 +46,7 @@ import { TrialExpiredBlock } from "@/components/subscription/TrialExpiredBlock";
 import { TrialEndingBanner } from "@/components/subscription/TrialEndingBanner";
 import { AddonPaymentFailedBanner } from "@/components/subscription/AddonPaymentFailedBanner";
 import { InternalTestingBanner } from "@/components/subscription/InternalTestingBanner";
+import { TenantSuspendedBanner } from "@/components/subscription/TenantSuspendedBanner";
 import { useBillingContext } from "@/hooks/use-billing-context";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { BarbexLogo } from "@/components/ui/barbex-logo";
@@ -572,6 +573,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
 
           <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
             <div className="max-w-[1600px] mx-auto w-full space-y-4">
+              <TenantSuspendedBanner status={(tenantProfile as any)?.status || (authProfile as any)?.status} />
               <ProfileCompletionBanner />
               <InternalTestingBannerSlot />
               <AddonPaymentFailedBanner />

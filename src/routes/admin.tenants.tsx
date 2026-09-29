@@ -20,6 +20,7 @@ import {
   Clock,
   ShieldCheck,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -46,6 +47,16 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -257,49 +268,81 @@ function AdminTenants() {
     },
   });
 
-  const updateStatusMutation = useMutation({
+  // State for Authoritative Tenant Suspension (Level 3 Confirmation)
+  const [suspendTarget, setSuspendTarget] = useState<TenantRecord | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [typedSlugConfirm, setTypedSlugConfirm] = useState("");
+
+  // State for Authoritative Tenant Reactivation (Level 2 Confirmation)
+  const [reactivateTarget, setReactivateTarget] = useState<TenantRecord | null>(null);
+  const [reactivateReason, setReactivateReason] = useState("");
+
+  const suspendMutation = useMutation({
     mutationFn: async ({
-      ownerId,
-      status,
-      tenantName,
+      tenantId,
+      reason,
     }: {
-      ownerId: string | null;
-      status: "active" | "blocked";
-      tenantName: string;
+      tenantId: string;
+      reason: string;
     }) => {
-      if (!ownerId) {
-        throw new Error("Este estabelecimento não possui proprietário vinculado no banco.");
+      const { data, error } = await (supabase.rpc as any)("admin_suspend_tenant", {
+        p_tenant_id: tenantId,
+        p_reason: reason.trim(),
+      });
+
+      if (error) {
+        throw new Error(error.message || "Falha ao suspender estabelecimento.");
       }
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          status,
-          blocked_at: status === "blocked" ? new Date().toISOString() : null,
-        })
-        .eq("id", ownerId);
-
-      if (error) throw error;
-
-      // Auditoria da ação
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("audit_logs").insert({
-          admin_id: user.id,
-          target_id: ownerId,
-          action: status === "blocked" ? "block_tenant" : "reactivate_tenant",
-          details: { status, tenant_name: tenantName },
-        });
+      if (!data?.success) {
+        throw new Error(data?.message || "Operação de suspensão recusada.");
       }
+
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["admin-tenants-canonical"] });
-      toast.success("Status da barbearia atualizado com sucesso");
+      toast.success(res?.message || "Estabelecimento suspenso com sucesso.");
+      setSuspendTarget(null);
+      setSuspendReason("");
+      setTypedSlugConfirm("");
     },
     onError: (err: Error) => {
-      toast.error("Erro ao alterar status: " + (err.message || "Falha inesperada"));
+      toast.error(err.message || "Erro ao suspender estabelecimento.");
+    },
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: async ({
+      tenantId,
+      reason,
+    }: {
+      tenantId: string;
+      reason: string;
+    }) => {
+      const { data, error } = await (supabase.rpc as any)("admin_reactivate_tenant", {
+        p_tenant_id: tenantId,
+        p_reason: reason.trim(),
+      });
+
+      if (error) {
+        throw new Error(error.message || "Falha ao reativar estabelecimento.");
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.message || "Operação de reativação recusada.");
+      }
+
+      return data;
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-tenants-canonical"] });
+      toast.success(res?.message || "Estabelecimento reativado com sucesso.");
+      setReactivateTarget(null);
+      setReactivateReason("");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Erro ao reativar estabelecimento.");
     },
   });
 
@@ -693,13 +736,10 @@ function AdminTenants() {
                                 tenant.status === "blocked" ? (
                                   <DropdownMenuItem
                                     className="rounded-xl focus:bg-emerald-500/20 text-emerald-400 cursor-pointer transition-all"
-                                    onClick={() =>
-                                      updateStatusMutation.mutate({
-                                        ownerId: tenant.owner_id,
-                                        status: "active",
-                                        tenantName: tenant.name,
-                                      })
-                                    }
+                                    onClick={() => {
+                                      setReactivateReason("");
+                                      setReactivateTarget(tenant);
+                                    }}
                                   >
                                     <Unlock className="mr-3 h-4 w-4" />
                                     <span className="font-bold text-xs">
@@ -710,13 +750,9 @@ function AdminTenants() {
                                   <DropdownMenuItem
                                     className="rounded-xl focus:bg-rose-500/20 text-rose-400 cursor-pointer transition-all"
                                     onClick={() => {
-                                      if (confirm(`BLOQUEAR ACESSO: ${tenant.name}?`)) {
-                                        updateStatusMutation.mutate({
-                                          ownerId: tenant.owner_id,
-                                          status: "blocked",
-                                          tenantName: tenant.name,
-                                        });
-                                      }
+                                      setSuspendReason("");
+                                      setTypedSlugConfirm("");
+                                      setSuspendTarget(tenant);
                                     }}
                                   >
                                     <Ban className="mr-3 h-4 w-4" />
@@ -748,11 +784,262 @@ function AdminTenants() {
             </p>
             <p className="text-xs text-gray-400 leading-relaxed font-medium">
               A listagem acima reflete os estabelecimentos canônicos registrados no cluster Supabase
-              Target. O bloqueio atua no perfil do proprietário, suspendendo o acesso administrativo
-              à barbearia sem remover dados históricos.
+              Target. As ações de suspensão e reativação operam através de RPCs autenticadas com autorização
+              estrita de Super Admin, bloqueio de concorrência e auditoria atômica append-only.
             </p>
           </div>
         </div>
+
+        {/* DIÁLOGO DE SUSPENSÃO (LEVEL 3 CONFIRMATION) */}
+        <Dialog open={!!suspendTarget} onOpenChange={(open) => !open && !suspendMutation.isPending && setSuspendTarget(null)}>
+          <DialogContent className="glass border-rose-500/30 text-white max-w-lg rounded-3xl">
+            <DialogHeader className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  <Ban className="h-6 w-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-black text-rose-400 tracking-tight">
+                    SUSPENDER ESTABELECIMENTO
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-400 text-xs mt-1">
+                    Ação administrativa com efeito operacional imediato.
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {suspendTarget && (
+              <div className="space-y-5 py-2">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Estabelecimento:</span>
+                    <span className="font-bold text-white">{suspendTarget.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Slug canônico:</span>
+                    <span className="font-mono text-purple-300 font-bold">{suspendTarget.slug}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Proprietário:</span>
+                    <span className="text-gray-300">{suspendTarget.owner_name}</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
+                  <p className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
+                    Impacto Operacional da Suspensão:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-gray-300 mt-2 text-[11px] leading-relaxed">
+                    <li>Página pública de agendamento online será desativada imediatamente (404).</li>
+                    <li>Criação de novos agendamentos e walk-ins será bloqueada.</li>
+                    <li>Dados históricos, relatórios e clientes permanecerão preservados.</li>
+                    <li>Assinatura Stripe NÃO é cancelada automaticamente (ação financeira separada).</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="suspend-confirm-slug" className="text-xs font-bold text-gray-300">
+                    Confirmação Contextual: Digite o slug <span className="font-mono text-rose-400">"{suspendTarget.slug}"</span>
+                  </Label>
+                  <Input
+                    id="suspend-confirm-slug"
+                    value={typedSlugConfirm}
+                    onChange={(e) => setTypedSlugConfirm(e.target.value)}
+                    placeholder={suspendTarget.slug}
+                    disabled={suspendMutation.isPending}
+                    className="font-mono bg-white/5 border-white/10 text-white rounded-xl focus:border-rose-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="suspend-reason" className="text-xs font-bold text-gray-300">
+                      Motivo da Suspensão (Obrigatório, 10 a 500 caracteres)
+                    </Label>
+                    <span className={cn(
+                      "text-[10px] font-mono",
+                      suspendReason.trim().length >= 10 && suspendReason.trim().length <= 500
+                        ? "text-emerald-400"
+                        : "text-gray-500"
+                    )}>
+                      {suspendReason.trim().length}/500
+                    </span>
+                  </div>
+                  <Textarea
+                    id="suspend-reason"
+                    value={suspendReason}
+                    onChange={(e) => setSuspendReason(e.target.value)}
+                    placeholder="Descreva a justificativa para auditoria e controle de governança..."
+                    disabled={suspendMutation.isPending}
+                    maxLength={500}
+                    className="bg-white/5 border-white/10 text-white rounded-xl min-h-[90px] focus:border-rose-500 text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-2">
+              <Button
+                variant="outline"
+                onClick={() => setSuspendTarget(null)}
+                disabled={suspendMutation.isPending}
+                className="rounded-xl border-white/10 hover:bg-white/10 text-gray-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={
+                  !suspendTarget ||
+                  typedSlugConfirm !== suspendTarget.slug ||
+                  suspendReason.trim().length < 10 ||
+                  suspendReason.trim().length > 500 ||
+                  suspendMutation.isPending
+                }
+                onClick={() => {
+                  if (suspendTarget) {
+                    suspendMutation.mutate({
+                      tenantId: suspendTarget.owner_id || suspendTarget.id,
+                      reason: suspendReason,
+                    });
+                  }
+                }}
+                className="rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                {suspendMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Suspendendo...
+                  </>
+                ) : (
+                  <>
+                    <Ban className="mr-2 h-4 w-4" />
+                    Confirmar Suspensão
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* DIÁLOGO DE REATIVAÇÃO (LEVEL 2 CONFIRMATION) */}
+        <Dialog open={!!reactivateTarget} onOpenChange={(open) => !open && !reactivateMutation.isPending && setReactivateTarget(null)}>
+          <DialogContent className="glass border-emerald-500/30 text-white max-w-lg rounded-3xl">
+            <DialogHeader className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <Unlock className="h-6 w-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-black text-emerald-400 tracking-tight">
+                    REATIVAR ESTABELECIMENTO
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-400 text-xs mt-1">
+                    Restaura as permissões operacionais e a visibilidade pública.
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {reactivateTarget && (
+              <div className="space-y-5 py-2">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Estabelecimento:</span>
+                    <span className="font-bold text-white">{reactivateTarget.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Slug canônico:</span>
+                    <span className="font-mono text-purple-300 font-bold">{reactivateTarget.slug}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Proprietário:</span>
+                    <span className="text-gray-300">{reactivateTarget.owner_name}</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+                  <p className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+                    Impacto Operacional da Reativação:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-gray-300 mt-2 text-[11px] leading-relaxed">
+                    <li>Página pública de agendamento online voltará a ficar acessível.</li>
+                    <li>Agendamentos e rotinas operacionais voltam ao estado ativo regular.</li>
+                    <li>Ação será registrada atomicamente no log de auditoria da plataforma.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="reactivate-reason" className="text-xs font-bold text-gray-300">
+                      Motivo da Reativação (Obrigatório, 10 a 500 caracteres)
+                    </Label>
+                    <span className={cn(
+                      "text-[10px] font-mono",
+                      reactivateReason.trim().length >= 10 && reactivateReason.trim().length <= 500
+                        ? "text-emerald-400"
+                        : "text-gray-500"
+                    )}>
+                      {reactivateReason.trim().length}/500
+                    </span>
+                  </div>
+                  <Textarea
+                    id="reactivate-reason"
+                    value={reactivateReason}
+                    onChange={(e) => setReactivateReason(e.target.value)}
+                    placeholder="Descreva a justificativa para liberação do acesso e auditoria..."
+                    disabled={reactivateMutation.isPending}
+                    maxLength={500}
+                    className="bg-white/5 border-white/10 text-white rounded-xl min-h-[90px] focus:border-emerald-500 text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-2">
+              <Button
+                variant="outline"
+                onClick={() => setReactivateTarget(null)}
+                disabled={reactivateMutation.isPending}
+                className="rounded-xl border-white/10 hover:bg-white/10 text-gray-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                disabled={
+                  !reactivateTarget ||
+                  reactivateReason.trim().length < 10 ||
+                  reactivateReason.trim().length > 500 ||
+                  reactivateMutation.isPending
+                }
+                onClick={() => {
+                  if (reactivateTarget) {
+                    reactivateMutation.mutate({
+                      tenantId: reactivateTarget.owner_id || reactivateTarget.id,
+                      reason: reactivateReason,
+                    });
+                  }
+                }}
+                className="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {reactivateMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Reativando...
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="mr-2 h-4 w-4" />
+                    Confirmar Reativação
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
