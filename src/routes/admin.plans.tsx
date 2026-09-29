@@ -15,9 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Crown, Edit2, Save, X, Check, Lock, RefreshCw, AlertCircle } from "lucide-react";
+import { Crown, Edit2, Save, X, Check, Lock, RefreshCw, AlertCircle, Power, ShieldAlert, ShieldCheck, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/plans")({
   component: AdminPlans,
@@ -131,6 +140,12 @@ function AdminPlans() {
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<Plan | null>(null);
 
+  // Estados de governança de ativação/desativação (R2E.13G.3)
+  const [deactivateTarget, setDeactivateTarget] = useState<Plan | null>(null);
+  const [deactivateReason, setDeactivateReason] = useState<string>("");
+  const [activateTarget, setActivateTarget] = useState<Plan | null>(null);
+  const [activateReason, setActivateReason] = useState<string>("");
+
   const {
     data: plans,
     isLoading,
@@ -183,34 +198,94 @@ function AdminPlans() {
     },
   });
 
-  // R2E.13D: Preços e identificadores Stripe são de autoridade canônica e somente leitura.
-  // Apenas metadados operacionais não-financeiros podem ser modificados.
-  const updateMutation = useMutation({
+  // R2E.13G.3: Mutação de metadados e catálogo via RPCs com autorização Super Admin e auditoria atômica
+  const updateMetadataMutation = useMutation({
     mutationFn: async (plan: Plan) => {
-      const payload: Record<string, unknown> = {
-        name: plan.name,
-        description: plan.description,
-        tier: plan.tier,
-        max_barbers: plan.max_barbers,
-        is_recommended: plan.is_recommended,
-        allowed_modules: plan.allowed_modules,
-        active: plan.active,
-        automation_limit: plan.automation_limit ?? 0,
-        limits: plan.limits || {},
-      };
-      const { error } = await supabase
-        .from("plans")
-        .update(payload as never)
-        .eq("id", plan.id);
-      if (error) throw error;
+      // 1. Atualiza metadados do plano
+      const { data: metaRes, error: metaErr } = await supabase.rpc(
+        "admin_update_plan_metadata" as any,
+        {
+          p_plan_id: plan.id,
+          p_name: plan.name,
+          p_description: plan.description || null,
+          p_tier: plan.tier,
+          p_max_barbers: plan.max_barbers,
+          p_is_recommended: plan.is_recommended,
+          p_automation_limit: plan.automation_limit ?? 0,
+          p_limits: plan.limits || {},
+        },
+      );
+      if (metaErr) throw metaErr;
+      const parsedMeta = metaRes as { success: boolean; message?: string; code?: string };
+      if (parsedMeta && !parsedMeta.success) {
+        throw new Error(parsedMeta.message || "Falha ao salvar metadados do plano.");
+      }
+
+      // 2. Atualiza catálogo de módulos permitidos
+      const { data: modRes, error: modErr } = await supabase.rpc(
+        "admin_set_plan_modules" as any,
+        {
+          p_plan_id: plan.id,
+          p_allowed_modules: plan.allowed_modules,
+          p_reason: "Atualização de catálogo de módulos pelo Super Admin",
+        },
+      );
+      if (modErr) throw modErr;
+      const parsedMod = modRes as { success: boolean; message?: string; code?: string };
+      if (parsedMod && !parsedMod.success) {
+        throw new Error(parsedMod.message || "Falha ao atualizar catálogo de módulos.");
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-plans-modules"] });
       qc.invalidateQueries({ queryKey: ["barbershop-plan"] });
       setEditing(null);
-      toast.success("Metadados do plano atualizados com sucesso");
+      toast.success("Metadados e módulos do plano atualizados com sucesso");
     },
     onError: (e: Error) => toast.error("Erro ao salvar: " + (e?.message || "Falha ao atualizar")),
+  });
+
+  // R2E.13G.3: Governança de ativação/desativação de planos via RPC atômico
+  const setPlanActiveMutation = useMutation({
+    mutationFn: async ({
+      planId,
+      active,
+      reason,
+    }: {
+      planId: string;
+      active: boolean;
+      reason?: string;
+    }) => {
+      const { data, error } = await supabase.rpc(
+        "admin_set_plan_active" as any,
+        {
+          p_plan_id: planId,
+          p_active: active,
+          p_reason: reason?.trim() || null,
+        },
+      );
+      if (error) throw error;
+      const parsed = data as { success: boolean; message?: string; code?: string };
+      if (parsed && !parsed.success) {
+        throw new Error(parsed.message || "Falha ao alterar disponibilidade do plano.");
+      }
+      return parsed;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans-modules"] });
+      qc.invalidateQueries({ queryKey: ["barbershop-plan"] });
+      setDeactivateTarget(null);
+      setDeactivateReason("");
+      setActivateTarget(null);
+      setActivateReason("");
+      toast.success(
+        vars.active
+          ? "Plano ativado com sucesso para novas contratações."
+          : "Plano desativado com sucesso. Assinantes existentes permanecem preservados.",
+      );
+    },
+    onError: (e: Error) =>
+      toast.error("Erro na governança do plano: " + (e?.message || "Falha na operação")),
   });
 
   useEffect(() => {
@@ -336,15 +411,46 @@ function AdminPlans() {
                       <code className="text-amber-400">{plan.slug}</code>
                     </CardDescription>
                   </div>
-                  <Badge
-                    className={
-                      plan.active
-                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                        : "bg-zinc-500/20 text-zinc-400"
-                    }
-                  >
-                    {plan.active ? "Ativo" : "Inativo"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      className={
+                        plan.active
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                          : "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
+                      }
+                    >
+                      {plan.active ? "Ativo" : "Inativo"}
+                    </Badge>
+                    {!isEditing && (
+                      plan.active ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeactivateTarget(plan);
+                            setDeactivateReason("");
+                          }}
+                          className="h-7 px-2 text-[10px] uppercase font-bold text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 rounded-lg border border-rose-500/20 gap-1"
+                        >
+                          <Power className="w-3 h-3 text-rose-400" />
+                          Desativar
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setActivateTarget(plan);
+                            setActivateReason("");
+                          }}
+                          className="h-7 px-2 text-[10px] uppercase font-bold text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/10 rounded-lg border border-emerald-500/20 gap-1"
+                        >
+                          <Power className="w-3 h-3 text-emerald-400" />
+                          Ativar
+                        </Button>
+                      )
+                    )}
+                  </div>
                 </div>
               </CardHeader>
 
@@ -613,17 +719,27 @@ function AdminPlans() {
                       variant="ghost"
                       className="flex-1 text-white/60"
                       onClick={() => setEditing(null)}
+                      disabled={updateMetadataMutation.isPending}
                     >
                       <X className="w-4 h-4 mr-1" />
                       Cancelar
                     </Button>
                     <Button
                       className="flex-1 bg-amber-500 hover:bg-amber-600 text-black font-bold"
-                      onClick={() => form && updateMutation.mutate(form)}
-                      disabled={updateMutation.isPending}
+                      onClick={() => form && updateMetadataMutation.mutate(form)}
+                      disabled={updateMetadataMutation.isPending}
                     >
-                      <Save className="w-4 h-4 mr-1" />
-                      Salvar
+                      {updateMetadataMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-1" />
+                          Salvar
+                        </>
+                      )}
                     </Button>
                   </div>
                 ) : (
@@ -656,10 +772,239 @@ function AdminPlans() {
           💡 <strong>Autoridade Canônica:</strong> A precificação mensal/anual e os identificadores
           Stripe são controlados de forma centralizada e segura pelo backend/migrations. As
           alterações permitidas nesta interface limitam-se aos metadados operacionais do plano
-          (nome, limite de barbeiros, módulos e limites). A sincronização de módulos com as
-          barbearias é executada automaticamente.
+          (nome, limite de barbeiros, módulos e limites) e à governança de disponibilidade via
+          RPCs autorizados com auditoria atômica.
         </CardContent>
       </Card>
+
+      {/* MODAL DE DESATIVAÇÃO DE PLANO (LEVEL 2 CONFIRMATION) */}
+      <Dialog
+        open={!!deactivateTarget}
+        onOpenChange={(open) => !open && !setPlanActiveMutation.isPending && setDeactivateTarget(null)}
+      >
+        <DialogContent className="glass border-rose-500/30 text-white max-w-lg rounded-3xl">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-black text-rose-400 tracking-tight">
+                  DESATIVAR PLANO COMERCIAL
+                </DialogTitle>
+                <DialogDescription className="text-gray-400 text-xs mt-1">
+                  Suspende a comercialização pública deste plano na plataforma.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {deactivateTarget && (
+            <div className="space-y-5 py-2">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Plano:</span>
+                  <span className="font-bold text-white">{deactivateTarget.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Slug canônico:</span>
+                  <span className="font-mono text-amber-300 font-bold">{deactivateTarget.slug}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Mensalidade:</span>
+                  <span className="text-white font-medium">{formatCurrency(deactivateTarget.price_monthly)}/mês</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
+                <p className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldAlert className="h-4 w-4 shrink-0 text-rose-400" />
+                  Impacto da Desativação (Contrato de Governança):
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-gray-300 mt-2 text-[11px] leading-relaxed">
+                  <li><strong>Novas compras bloqueadas:</strong> O checkout no servidor recusará novas tentativas de assinatura deste plano.</li>
+                  <li><strong>Assinantes existentes preservados:</strong> Tenants atualmente assinando este plano continuarão com suas assinaturas ativas sem interrupção.</li>
+                  <li><strong>Stripe desacoplado:</strong> Nenhuma alteração ou cancelamento de preço/assinatura é enviado à API do Stripe.</li>
+                  <li><strong>Evidência de governança:</strong> A alteração será registrada atomicamente no log de auditoria da plataforma.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="deactivate-reason" className="text-xs font-bold text-gray-300">
+                    Justificativa Operacional (Obrigatório, 10 a 500 caracteres)
+                  </Label>
+                  <span
+                    className={cn(
+                      "text-[10px] font-mono",
+                      deactivateReason.trim().length >= 10 && deactivateReason.trim().length <= 500
+                        ? "text-emerald-400"
+                        : "text-gray-500",
+                    )}
+                  >
+                    {deactivateReason.trim().length}/500
+                  </span>
+                </div>
+                <Textarea
+                  id="deactivate-reason"
+                  value={deactivateReason}
+                  onChange={(e) => setDeactivateReason(e.target.value)}
+                  placeholder="Descreva o motivo comercial/estratégico da desativação deste plano..."
+                  disabled={setPlanActiveMutation.isPending}
+                  maxLength={500}
+                  className="bg-white/5 border-white/10 text-white rounded-xl min-h-[90px] focus:border-rose-500 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeactivateTarget(null)}
+              disabled={setPlanActiveMutation.isPending}
+              className="rounded-xl border-white/10 hover:bg-white/10 text-gray-300"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                !deactivateTarget ||
+                deactivateReason.trim().length < 10 ||
+                deactivateReason.trim().length > 500 ||
+                setPlanActiveMutation.isPending
+              }
+              onClick={() => {
+                if (deactivateTarget) {
+                  setPlanActiveMutation.mutate({
+                    planId: deactivateTarget.id,
+                    active: false,
+                    reason: deactivateReason,
+                  });
+                }
+              }}
+              className="rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {setPlanActiveMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Desativando...
+                </>
+              ) : (
+                <>
+                  <Power className="mr-2 h-4 w-4" />
+                  Confirmar Desativação
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL DE ATIVAÇÃO DE PLANO (LEVEL 1 CONFIRMATION) */}
+      <Dialog
+        open={!!activateTarget}
+        onOpenChange={(open) => !open && !setPlanActiveMutation.isPending && setActivateTarget(null)}
+      >
+        <DialogContent className="glass border-emerald-500/30 text-white max-w-lg rounded-3xl">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-black text-emerald-400 tracking-tight">
+                  ATIVAR PLANO COMERCIAL
+                </DialogTitle>
+                <DialogDescription className="text-gray-400 text-xs mt-1">
+                  Restaura a disponibilidade deste plano para novas assinaturas.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {activateTarget && (
+            <div className="space-y-5 py-2">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Plano:</span>
+                  <span className="font-bold text-white">{activateTarget.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Slug canônico:</span>
+                  <span className="font-mono text-amber-300 font-bold">{activateTarget.slug}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Mensalidade:</span>
+                  <span className="text-white font-medium">{formatCurrency(activateTarget.price_monthly)}/mês</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+                <p className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+                  Impacto da Ativação:
+                </p>
+                <p className="text-gray-300 text-[11px] leading-relaxed mt-1">
+                  O plano voltará a ser exibido e selecionável no checkout da plataforma para novos clientes e upgrades.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="activate-reason" className="text-xs font-bold text-gray-300">
+                  Justificativa (Opcional)
+                </Label>
+                <Textarea
+                  id="activate-reason"
+                  value={activateReason}
+                  onChange={(e) => setActivateReason(e.target.value)}
+                  placeholder="Observação para registro de auditoria..."
+                  disabled={setPlanActiveMutation.isPending}
+                  maxLength={500}
+                  className="bg-white/5 border-white/10 text-white rounded-xl min-h-[70px] focus:border-emerald-500 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setActivateTarget(null)}
+              disabled={setPlanActiveMutation.isPending}
+              className="rounded-xl border-white/10 hover:bg-white/10 text-gray-300"
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={setPlanActiveMutation.isPending}
+              onClick={() => {
+                if (activateTarget) {
+                  setPlanActiveMutation.mutate({
+                    planId: activateTarget.id,
+                    active: true,
+                    reason: activateReason || "Ativação de plano para novas contratações",
+                  });
+                }
+              }}
+              className="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {setPlanActiveMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Ativando...
+                </>
+              ) : (
+                <>
+                  <Power className="mr-2 h-4 w-4" />
+                  Confirmar Ativação
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
