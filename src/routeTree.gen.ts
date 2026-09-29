@@ -93,12 +93,15 @@ import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminObservabilityRouteImport } from './routes/admin.observability'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminMessagesRouteImport } from './routes/admin.messages'
 import { Route as AdminLgpdRouteImport } from './routes/admin.lgpd'
 import { Route as AdminKnowledgeBaseRouteImport } from './routes/admin.knowledge-base'
+import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminBillingRouteImport } from './routes/admin.billing'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminAddonsRouteImport } from './routes/admin.addons'
 import { Route as AcademyPathIdRouteImport } from './routes/academy.$pathId'
@@ -547,6 +550,11 @@ const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMessagesRoute = AdminMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLgpdRoute = AdminLgpdRouteImport.update({
   id: '/lgpd',
   path: '/lgpd',
@@ -555,6 +563,11 @@ const AdminLgpdRoute = AdminLgpdRouteImport.update({
 const AdminKnowledgeBaseRoute = AdminKnowledgeBaseRouteImport.update({
   id: '/knowledge-base',
   path: '/knowledge-base',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHealthRoute = AdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
@@ -575,6 +588,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
 const AdminBillingRoute = AdminBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -763,12 +781,15 @@ export interface FileRoutesByFullPath {
   '/academy/$pathId': typeof AcademyPathIdRouteWithChildren
   '/admin/addons': typeof AdminAddonsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/billing': typeof AdminBillingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/knowledge-base': typeof AdminKnowledgeBaseRoute
   '/admin/lgpd': typeof AdminLgpdRoute
+  '/admin/messages': typeof AdminMessagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/observability': typeof AdminObservabilityRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -875,12 +896,15 @@ export interface FileRoutesByTo {
   '/academy/$pathId': typeof AcademyPathIdRouteWithChildren
   '/admin/addons': typeof AdminAddonsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/billing': typeof AdminBillingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/knowledge-base': typeof AdminKnowledgeBaseRoute
   '/admin/lgpd': typeof AdminLgpdRoute
+  '/admin/messages': typeof AdminMessagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/observability': typeof AdminObservabilityRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -993,12 +1017,15 @@ export interface FileRoutesById {
   '/academy/$pathId': typeof AcademyPathIdRouteWithChildren
   '/admin/addons': typeof AdminAddonsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/billing': typeof AdminBillingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/knowledge-base': typeof AdminKnowledgeBaseRoute
   '/admin/lgpd': typeof AdminLgpdRoute
+  '/admin/messages': typeof AdminMessagesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/observability': typeof AdminObservabilityRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -1112,12 +1139,15 @@ export interface FileRouteTypes {
     | '/academy/$pathId'
     | '/admin/addons'
     | '/admin/analytics'
+    | '/admin/audit'
     | '/admin/billing'
     | '/admin/dashboard'
     | '/admin/errors'
     | '/admin/finance'
+    | '/admin/health'
     | '/admin/knowledge-base'
     | '/admin/lgpd'
+    | '/admin/messages'
     | '/admin/notifications'
     | '/admin/observability'
     | '/admin/plans'
@@ -1224,12 +1254,15 @@ export interface FileRouteTypes {
     | '/academy/$pathId'
     | '/admin/addons'
     | '/admin/analytics'
+    | '/admin/audit'
     | '/admin/billing'
     | '/admin/dashboard'
     | '/admin/errors'
     | '/admin/finance'
+    | '/admin/health'
     | '/admin/knowledge-base'
     | '/admin/lgpd'
+    | '/admin/messages'
     | '/admin/notifications'
     | '/admin/observability'
     | '/admin/plans'
@@ -1341,12 +1374,15 @@ export interface FileRouteTypes {
     | '/academy/$pathId'
     | '/admin/addons'
     | '/admin/analytics'
+    | '/admin/audit'
     | '/admin/billing'
     | '/admin/dashboard'
     | '/admin/errors'
     | '/admin/finance'
+    | '/admin/health'
     | '/admin/knowledge-base'
     | '/admin/lgpd'
+    | '/admin/messages'
     | '/admin/notifications'
     | '/admin/observability'
     | '/admin/plans'
@@ -2065,6 +2101,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/messages': {
+      id: '/admin/messages'
+      path: '/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AdminMessagesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/lgpd': {
       id: '/admin/lgpd'
       path: '/lgpd'
@@ -2077,6 +2120,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge-base'
       fullPath: '/admin/knowledge-base'
       preLoaderRoute: typeof AdminKnowledgeBaseRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/health': {
+      id: '/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AdminHealthRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/finance': {
@@ -2105,6 +2155,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/admin/billing'
       preLoaderRoute: typeof AdminBillingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -2339,12 +2396,15 @@ const AcademyRouteWithChildren =
 interface AdminRouteChildren {
   AdminAddonsRoute: typeof AdminAddonsRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminAuditRoute: typeof AdminAuditRoute
   AdminBillingRoute: typeof AdminBillingRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminErrorsRoute: typeof AdminErrorsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminHealthRoute: typeof AdminHealthRoute
   AdminKnowledgeBaseRoute: typeof AdminKnowledgeBaseRoute
   AdminLgpdRoute: typeof AdminLgpdRoute
+  AdminMessagesRoute: typeof AdminMessagesRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminObservabilityRoute: typeof AdminObservabilityRoute
   AdminPlansRoute: typeof AdminPlansRoute
@@ -2367,12 +2427,15 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAddonsRoute: AdminAddonsRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminAuditRoute: AdminAuditRoute,
   AdminBillingRoute: AdminBillingRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminErrorsRoute: AdminErrorsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
+  AdminHealthRoute: AdminHealthRoute,
   AdminKnowledgeBaseRoute: AdminKnowledgeBaseRoute,
   AdminLgpdRoute: AdminLgpdRoute,
+  AdminMessagesRoute: AdminMessagesRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminObservabilityRoute: AdminObservabilityRoute,
   AdminPlansRoute: AdminPlansRoute,

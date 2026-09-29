@@ -30,6 +30,7 @@ import {
   Ticket,
   Receipt,
   Terminal,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,30 +53,66 @@ export const Route = createFileRoute("/admin")({
   notFoundComponent: DefaultRouteNotFound,
 });
 
-const adminNavItems = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/admin/dashboard" },
-  { label: "Barbearias", icon: Building2, to: "/admin/tenants" },
-  { label: "Assinaturas", icon: CreditCard, to: "/admin/subscriptions" },
-  { label: "Billing Ops", icon: Receipt, to: "/admin/billing" },
-  { label: "Webhooks Stripe", icon: Terminal, to: "/admin/webhooks" },
-  { label: "Planos", icon: Layout, to: "/admin/plans" },
-  { label: "Add-ons", icon: Package, to: "/admin/addons" },
-  { label: "Receita", icon: TrendingUp, to: "/admin/finance" },
-  { label: "Relatórios", icon: BarChart3, to: "/admin/reports" },
-  { label: "Analytics", icon: LineChartIcon, to: "/admin/analytics" },
-  { label: "Observabilidade", icon: Activity, to: "/admin/observability" },
-  { label: "Logs do Sistema", icon: History, to: "/admin/errors" },
-  { label: "Notificações", icon: Bell, to: "/admin/notifications" },
-  { label: "Status", icon: Activity, to: "/admin/status" },
-  { label: "Configurações", icon: Settings, to: "/admin/settings" },
-  { label: "Suporte", icon: LifeBuoy, to: "/admin/support" },
-  { label: "Sugestões", icon: Lightbulb, to: "/admin/suggestions" },
-  { label: "LGPD", icon: ShieldCheck, to: "/admin/lgpd" },
-  { label: "Testes RLS", icon: ShieldCheck, to: "/admin/rls-tests" },
-  { label: "Vouchers", icon: Ticket, to: "/admin/vouchers" },
-  { label: "Recomendações", icon: TrendingUp, to: "/admin/upgrade-recommendations" },
-  { label: "Tutoriais", icon: GraduationCap, to: "/admin/tutorials" },
+interface AdminNavSection {
+  title: string;
+  items: {
+    label: string;
+    icon: typeof LayoutDashboard;
+    to: string;
+  }[];
+}
+
+const adminNavSections: AdminNavSection[] = [
+  {
+    title: "Visão Geral",
+    items: [{ label: "Dashboard", icon: LayoutDashboard, to: "/admin/dashboard" }],
+  },
+  {
+    title: "Clientes & Assinaturas",
+    items: [
+      { label: "Barbearias", icon: Building2, to: "/admin/tenants" },
+      { label: "Assinaturas", icon: CreditCard, to: "/admin/subscriptions" },
+    ],
+  },
+  {
+    title: "Faturamento & Stripe",
+    items: [
+      { label: "Planos", icon: Layout, to: "/admin/plans" },
+      { label: "Billing Ops", icon: Receipt, to: "/admin/billing" },
+      { label: "Webhooks Stripe", icon: Terminal, to: "/admin/webhooks" },
+    ],
+  },
+  {
+    title: "Operações da Plataforma",
+    items: [
+      { label: "Mensagens", icon: MessageCircle, to: "/admin/messages" },
+      { label: "Saúde da Plataforma", icon: Activity, to: "/admin/health" },
+      { label: "Auditoria", icon: ShieldAlert, to: "/admin/audit" },
+    ],
+  },
+  {
+    title: "Plataforma & Módulos",
+    items: [
+      { label: "Configurações", icon: Settings, to: "/admin/settings" },
+      { label: "Add-ons", icon: Package, to: "/admin/addons" },
+      { label: "Receita", icon: TrendingUp, to: "/admin/finance" },
+      { label: "Relatórios", icon: BarChart3, to: "/admin/reports" },
+      { label: "Analytics", icon: LineChartIcon, to: "/admin/analytics" },
+      { label: "Observabilidade", icon: Activity, to: "/admin/observability" },
+      { label: "Notificações", icon: Bell, to: "/admin/notifications" },
+      { label: "Status", icon: Activity, to: "/admin/status" },
+      { label: "Suporte", icon: LifeBuoy, to: "/admin/support" },
+      { label: "Sugestões", icon: Lightbulb, to: "/admin/suggestions" },
+      { label: "LGPD", icon: ShieldCheck, to: "/admin/lgpd" },
+      { label: "Testes RLS", icon: ShieldCheck, to: "/admin/rls-tests" },
+      { label: "Vouchers", icon: Ticket, to: "/admin/vouchers" },
+      { label: "Recomendações", icon: TrendingUp, to: "/admin/upgrade-recommendations" },
+      { label: "Tutoriais", icon: GraduationCap, to: "/admin/tutorials" },
+    ],
+  },
 ];
+
+const adminNavItems = adminNavSections.flatMap((s) => s.items);
 
 function AdminLayout() {
   const { user, loading, role } = useAuth();
@@ -231,22 +268,38 @@ function AdminLayout() {
               <X />
             </Button>
           </div>
-          <nav className="p-6 space-y-3">
-            {adminNavItems.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={cn(
-                  "flex items-center gap-4 px-6 py-4 rounded-2xl text-lg font-bold transition-all",
-                  pathname === item.to
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                    : "text-gray-400 hover:text-white hover:bg-white/5",
-                )}
-              >
-                <item.icon size={22} />
-                {item.label}
-              </Link>
+          <nav className="p-6 space-y-6">
+            {adminNavSections.map((section) => (
+              <div key={section.title} className="space-y-2">
+                <div className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                  {section.title}
+                </div>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const isActive =
+                      pathname === item.to ||
+                      (item.to !== "/admin" &&
+                        item.to !== "/admin/dashboard" &&
+                        pathname.startsWith(item.to + "/"));
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-bold transition-all",
+                          isActive
+                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
+                            : "text-gray-400 hover:text-white hover:bg-white/5",
+                        )}
+                      >
+                        <item.icon size={20} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
             <div className="pt-8 mt-8 border-t border-white/10 space-y-3">
               <div className="pt-8 mt-8 border-t border-white/10 space-y-3">
@@ -271,30 +324,44 @@ function AdminLayout() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Desktop */}
         <aside className="hidden md:flex flex-col w-64 border-r border-white/10 bg-black/20 shrink-0 backdrop-blur-xl">
-          <nav className="flex-1 px-4 py-6 flex flex-col gap-1 overflow-y-auto">
-            <div className="space-y-1">
-              {adminNavItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group",
-                    pathname === item.to
-                      ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                      : "text-gray-400 hover:text-white hover:bg-white/5",
-                  )}
-                >
-                  <item.icon
-                    size={18}
-                    className={cn(
-                      "transition-colors",
-                      pathname === item.to ? "text-purple-400" : "group-hover:text-pink-400",
-                    )}
-                  />
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+          <nav className="flex-1 px-4 py-6 flex flex-col gap-5 overflow-y-auto">
+            {adminNavSections.map((section) => (
+              <div key={section.title} className="space-y-1">
+                <div className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  {section.title}
+                </div>
+                <div className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const isActive =
+                      pathname === item.to ||
+                      (item.to !== "/admin" &&
+                        item.to !== "/admin/dashboard" &&
+                        pathname.startsWith(item.to + "/"));
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-300 group",
+                          isActive
+                            ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                            : "text-gray-400 hover:text-white hover:bg-white/5",
+                        )}
+                      >
+                        <item.icon
+                          size={16}
+                          className={cn(
+                            "transition-colors",
+                            isActive ? "text-purple-400" : "group-hover:text-pink-400",
+                          )}
+                        />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
             <div className="mt-auto pt-4 border-t border-white/5 space-y-2 shrink-0">
               <Button

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Mail,
   Bell,
-  MessageSquare
+  MessageSquare,
+  ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,6 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AdminEventSubscriptions } from "@/components/admin/AdminEventSubscriptions";
 import { AdminEventTemplates } from "@/components/admin/AdminEventTemplates";
-import { PlatformContactInbox } from "@/components/admin/PlatformContactInbox";
 
 export const Route = createFileRoute("/admin/settings")({
   component: AdminSettings,
@@ -691,7 +691,28 @@ function AdminSettings() {
         </TabsContent>
 
         <TabsContent value="mensagens" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <PlatformContactInbox />
+          <Card className="glass border-white/5 rounded-3xl p-8">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                Central de Mensagens da Plataforma
+              </CardTitle>
+              <CardDescription>
+                A caixa de entrada de mensagens de contato da plataforma foi promovida para uma rota operacional de nível superior dedicada (R2E.13F).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Para gerenciar, responder, arquivar ou excluir mensagens de contato de barbearias e visitantes com suporte completo a filtros, pastas e threads de resposta, acesse a rota canônica.
+              </p>
+              <Button asChild variant="default" className="gap-2">
+                <Link to="/admin/messages">
+                  Acessar Mensagens da Plataforma (/admin/messages)
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="notificacoes" className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
