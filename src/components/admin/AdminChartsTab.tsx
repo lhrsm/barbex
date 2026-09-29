@@ -31,7 +31,7 @@ import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export function AdminChartsTab() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["admin-charts-data"],
     queryFn: async () => {
       const { data: appointments } = await supabase
@@ -83,12 +83,30 @@ export function AdminChartsTab() {
         },
       ].filter(item => item.value > 0);
 
-      // New profiles per month (mocked if data is sparse)
-      const months = ["Jan", "Fev", "Mar", "Abr", "Mai"];
-      const profilesByMonth = months.map((m, i) => ({
-        month: m,
-        count: (profiles?.filter(p => new Date(p.created_at).getMonth() === i).length || 0) + (i * 2 + 3)
-      }));
+      // Novos perfis por mês (baseado exclusivamente em profiles.created_at reais)
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      const last6Months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(currentYear, currentMonth - (5 - i), 1);
+        return {
+          monthIndex: d.getMonth(),
+          year: d.getFullYear(),
+          label: monthNames[d.getMonth()],
+        };
+      });
+
+      const profilesByMonth = last6Months.map(({ monthIndex, year, label }) => {
+        const count = profiles?.filter((p) => {
+          if (!p.created_at) return false;
+          const d = new Date(p.created_at);
+          return d.getMonth() === monthIndex && d.getFullYear() === year;
+        }).length || 0;
+        return {
+          month: label,
+          count,
+        };
+      });
 
       return {
         appointmentsByDay,
@@ -106,6 +124,14 @@ export function AdminChartsTab() {
         <Skeleton className="h-[350px] w-full" />
         <Skeleton className="h-[350px] w-full" />
         <Skeleton className="h-[350px] w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-12 text-center text-sm text-muted-foreground border border-white/5 rounded-3xl bg-white/5">
+        Indicadores analíticos indisponíveis no momento.
       </div>
     );
   }
@@ -211,8 +237,8 @@ export function AdminChartsTab() {
 
         <Card className="md:col-span-2 glass border-white/5 rounded-3xl overflow-hidden shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Crescimento Mensal de MRR</CardTitle>
-            <CardDescription className="text-gray-500">Projeção e evolução da receita recorrente global.</CardDescription>
+            <CardTitle className="text-lg font-bold">Novos Perfis por Mês</CardTitle>
+            <CardDescription className="text-gray-500">Volume mensal de novos cadastros de usuários na plataforma.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">

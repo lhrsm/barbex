@@ -15,12 +15,9 @@ import {
   Info,
   ExternalLink,
   Smartphone,
-  Webhook,
   AlertCircle,
-  ShieldAlert,
   Mail,
   Bell,
-  Clock,
   MessageSquare
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -57,7 +54,6 @@ function AdminSettings() {
     saas_logo: null,
     maintenance_mode: false,
     admin_access_level: "restricted",
-    two_factor_auth_enabled: false,
     audit_logs_enabled: true,
     public_email: "contato@barbex.shop",
     contact_email: "contato@lmstartup.com.br",
@@ -73,9 +69,6 @@ function AdminSettings() {
       youtube: "",
       twitter: "",
     },
-    payments_test_mode: false,
-    stripe_secret_key: "",
-    stripe_webhook_secret: "",
   };
 
   const { data: settings, isLoading, error: queryError } = useQuery({
@@ -92,7 +85,13 @@ function AdminSettings() {
         console.error("Supabase error fetching settings:", error);
         throw error;
       }
-      return data?.[0] || null;
+      const raw = data?.[0] || null;
+      if (raw) {
+        // Strip sensitive credentials so secrets are never held in browser memory
+        delete (raw as any).stripe_secret_key;
+        delete (raw as any).stripe_webhook_secret;
+      }
+      return raw;
     }
   });
 
@@ -119,8 +118,8 @@ function AdminSettings() {
       const targetId = settings?.id || newData?.id;
 
       if (targetId) {
-        // Atualização de registro existente
-        const { id, updated_at, ...updatePayload } = newData;
+        // Atualização de registro existente — nunca persistir credenciais sensíveis em system_settings
+        const { id, updated_at, stripe_secret_key, stripe_webhook_secret, two_factor_auth_enabled, ...updatePayload } = newData;
         const { error } = await supabase
           .from("system_settings")
           .update(updatePayload)
@@ -225,7 +224,6 @@ function AdminSettings() {
               { id: "geral", label: "Geral", icon: Globe },
               { id: "mensagens", label: "Contato da Plataforma", icon: MessageSquare },
               { id: "faturamento", label: "Faturamento", icon: CreditCard },
-              { id: "saude", label: "Saúde", icon: ShieldAlert },
               { id: "seguranca", label: "Segurança", icon: Shield },
               { id: "integracoes", label: "Integrações", icon: Share2 },
               { id: "notificacoes", label: "Notificações", icon: Bell },
@@ -586,121 +584,32 @@ function AdminSettings() {
           <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-3xl">
             <CardHeader className="p-0 mb-8">
               <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
-                <Webhook className="text-blue-400 w-5 h-5" />
-                Configurações Stripe
+                <CreditCard className="text-blue-400 w-5 h-5" />
+                Segurança & Credenciais de Faturamento
               </CardTitle>
-              <CardDescription className="text-gray-400">Credenciais para processamento de pagamentos reais.</CardDescription>
+              <CardDescription className="text-gray-400">
+                Arquitetura e custódia de credenciais Stripe da plataforma.
+              </CardDescription>
             </CardHeader>
-            <div className="space-y-8">
-              <div className="flex items-center justify-between p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10">
-                <div className="space-y-1">
-                  <p className="text-white font-bold uppercase tracking-tight text-sm italic">Modo Teste (Stripe Sandbox)</p>
-                  <p className="text-xs text-gray-500 leading-relaxed max-w-[280px]">Força o sistema a usar chaves e preços de teste, ignorando o ambiente de produção.</p>
-                </div>
-                <Switch
-                  checked={formData.payments_test_mode}
-                  onCheckedChange={(val) => setFormData({...formData, payments_test_mode: val})}
-                  className="data-[state=checked]:bg-blue-500"
-                />
+            <div className="space-y-6">
+              <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 space-y-3">
+                <p className="text-white font-bold uppercase tracking-tight text-sm flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-blue-400" />
+                  Autoridade Exclusiva do Servidor
+                </p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Conforme a arquitetura canônica (R2E.12B / R2E.13B), chaves secretas de API (<code className="text-blue-300">STRIPE_SECRET_KEY</code>) e segredos de assinatura de webhook (<code className="text-blue-300">STRIPE_WEBHOOK_SECRET</code>) residem estritamente no cofre seguro do Supabase (Vault / Edge Runtime) e não são armazenados em tabelas de configurações públicas nem manipulados via navegador.
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Stripe Secret Key</Label>
-                <div className="relative">
-                  <Input
-                    type="password"
-                    value={formData.stripe_secret_key || ""}
-                    onChange={(e) => setFormData({...formData, stripe_secret_key: e.target.value})}
-                    className="h-12 bg-white/5 border-white/10 rounded-xl pr-12"
-                    placeholder="sk_live_..."
-                  />
-                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Stripe Webhook Secret</Label>
-                <div className="relative">
-                  <Input
-                    type="password"
-                    value={formData.stripe_webhook_secret || ""}
-                    onChange={(e) => setFormData({...formData, stripe_webhook_secret: e.target.value})}
-                    className="h-12 bg-white/5 border-white/10 rounded-xl pr-12"
-                    placeholder="whsec_..."
-                  />
-                  <Webhook className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                </div>
-              </div>
-              <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex gap-3">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex gap-3">
                 <Info className="text-blue-400 w-5 h-5 shrink-0" />
-                <p className="text-xs text-blue-200/60 font-medium">
-                  Use estas chaves para integrar seu SaaS diretamente com o gateway. Nunca compartilhe estas credenciais fora do painel administrativo.
+                <p className="text-xs text-blue-200/70 font-medium">
+                  O ambiente de execução da plataforma opera em modo <strong>LIVE</strong> com preços e produtos canônicos vinculados no servidor. Alterações de credenciais devem ser realizadas exclusivamente por operador autorizado via console de infraestrutura.
                 </p>
               </div>
             </div>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="saude" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="glass border-white/5 rounded-[2.5rem] p-8">
-              <CardHeader className="p-0 mb-8">
-                <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
-                  <Bell className="text-yellow-400 w-5 h-5" />
-                  Canais de Alerta Crítico
-                </CardTitle>
-                <CardDescription className="text-gray-400">Configure para onde enviar notificações de erros de automação.</CardDescription>
-              </CardHeader>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Slack Webhook URL</Label>
-                  <Input
-                    placeholder="https://hooks.slack.com/services/..."
-                    className="h-12 bg-white/5 border-white/10 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">E-mails de Destinatários (Vírgula)</Label>
-                  <div className="relative">
-                    <Input
-                      placeholder="admin@exemplo.com, suporte@exemplo.com"
-                      className="h-12 bg-white/5 border-white/10 rounded-xl pl-12"
-                    />
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="glass border-white/5 rounded-[2.5rem] p-8">
-              <CardHeader className="p-0 mb-8">
-                <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
-                  <Clock className="text-blue-400 w-5 h-5" />
-                  Política de Deduplicação
-                </CardTitle>
-                <CardDescription className="text-gray-400">Evite spam de alertas repetidos para a mesma falha.</CardDescription>
-              </CardHeader>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Janela de Silêncio (Minutos)</Label>
-                  <Input
-                    type="number"
-                    defaultValue={60}
-                    className="h-12 bg-white/5 border-white/10 rounded-xl"
-                  />
-                  <p className="text-[10px] text-gray-500 mt-2 italic">
-                    O sistema aguardará este tempo antes de enviar outro alerta para a mesma automação e tenant.
-                  </p>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
-                  <div className="space-y-0.5">
-                    <p className="text-white font-bold text-xs uppercase">Notificar Toda Falha</p>
-                    <p className="text-[10px] text-gray-500">Desativa a deduplicação (Não Recomendado).</p>
-                  </div>
-                  <Switch className="data-[state=checked]:bg-rose-500" />
-                </div>
-              </div>
-            </Card>
-          </div>
         </TabsContent>
 
         <TabsContent value="seguranca" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -709,32 +618,21 @@ function AdminSettings() {
               <CardHeader className="p-0 mb-8">
                 <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
                   <Smartphone className="text-purple-400 w-5 h-5" />
-                  Acesso & Autenticação
+                  Políticas de Autenticação & Acesso
                 </CardTitle>
               </CardHeader>
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5">
-                  <div className="space-y-0.5">
-                    <p className="text-white font-bold text-sm uppercase italic">2FA Administrativo</p>
-                    <p className="text-xs text-gray-500">Exigir código via App para logins Super Admin.</p>
-                  </div>
-                  <Switch
-                    checked={formData.two_factor_auth_enabled}
-                    onCheckedChange={(val) => setFormData({...formData, two_factor_auth_enabled: val})}
-                    className="data-[state=checked]:bg-purple-600"
-                  />
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                  <p className="text-white font-bold text-sm uppercase italic">Controle de Identidade Centralizado</p>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Políticas de MFA (autenticação de dois fatores) e restrições de rede para contas de super administração são aplicadas diretamente no nível de identidade (Supabase Auth / Provedor de Identidade) e nas regras de borda (Cloudflare / WAF).
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Restrição de Acesso</Label>
-                  <select
-                    className="w-full h-12 bg-white/5 border-white/10 rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                    value={formData.admin_access_level}
-                    onChange={(e) => setFormData({...formData, admin_access_level: e.target.value})}
-                  >
-                    <option value="restricted" className="bg-gray-900">Apenas IPs Autorizados</option>
-                    <option value="open" className="bg-gray-900">Qualquer Localidade</option>
-                    <option value="internal" className="bg-gray-900">Rede Interna (VPN)</option>
-                  </select>
+                <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex gap-3">
+                  <Info className="text-purple-400 w-5 h-5 shrink-0" />
+                  <p className="text-xs text-purple-200/70 font-medium">
+                    Controles sem imposição no backend foram removidos para garantir a estrita integridade do painel de controle.
+                  </p>
                 </div>
               </div>
             </Card>
