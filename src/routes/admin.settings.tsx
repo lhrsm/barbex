@@ -422,13 +422,20 @@ function AdminSettings() {
               <div className="space-y-8">
                 <div className="flex items-center justify-between p-6 rounded-3xl bg-rose-500/5 border border-rose-500/10">
                   <div className="space-y-1">
-                    <p className="text-white font-bold uppercase tracking-tight text-sm">Manutenção Global</p>
-                    <p className="text-xs text-gray-500 leading-relaxed max-w-[280px]">Ative para bloquear o acesso de todos os usuários enquanto realiza atualizações críticas.</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-bold uppercase tracking-tight text-sm">Manutenção Global</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border bg-rose-500/10 border-rose-500/20 text-rose-300">
+                        Legado / Não Operacional
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed max-w-[280px]">
+                      Desacoplado de flags de módulos. A manutenção global da plataforma é gerenciada exclusivamente pelo orquestrador de infraestrutura (R2E.13G.6B).
+                    </p>
                   </div>
                   <Switch
                     checked={formData.maintenance_mode}
-                    onCheckedChange={(val) => setFormData({...formData, maintenance_mode: val})}
-                    className="data-[state=checked]:bg-rose-500"
+                    disabled={true}
+                    className="data-[state=checked]:bg-rose-500 opacity-50 cursor-not-allowed"
                   />
                 </div>
 
@@ -982,13 +989,20 @@ function AdminSettings() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5">
                   <div className="space-y-0.5">
-                    <p className="text-white font-bold text-sm uppercase italic">Logs de Atividade</p>
-                    <p className="text-xs text-gray-500">Registrar todas as ações de Super Admins no banco.</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-bold text-sm uppercase italic">Logs de Atividade</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border bg-blue-500/10 border-blue-500/20 text-blue-300">
+                        Obrigatório / Incondicional
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Auditoria de conformidade e segurança da plataforma sempre ativa. Não pode ser desativada por flag genérica.
+                    </p>
                   </div>
                   <Switch
-                    checked={formData.audit_logs_enabled}
-                    onCheckedChange={(val) => setFormData({...formData, audit_logs_enabled: val})}
-                    className="data-[state=checked]:bg-blue-600"
+                    checked={true}
+                    disabled={true}
+                    className="data-[state=checked]:bg-blue-600 opacity-50 cursor-not-allowed"
                   />
                 </div>
                 <Button variant="outline" className="w-full h-12 rounded-xl border-white/10 bg-white/5 gap-2 text-xs font-bold uppercase tracking-widest">

@@ -32,6 +32,27 @@ export const Route = createFileRoute("/api/public/hooks/review-reminders")({
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
+        // Check global module availability for whatsapp
+        const { data: globalAvail } = await supabase
+          .from("platform_module_availability")
+          .select("is_available")
+          .eq("module_key", "whatsapp")
+          .maybeSingle();
+
+        if (globalAvail && globalAvail.is_available === false) {
+          return new Response(
+            JSON.stringify({
+              skipped: true,
+              reason: "whatsapp_globally_unavailable",
+              dispatched: 0,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+
         const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
         // Reviews created (request sent) 24h+ ago, not yet submitted, no reminder yet.

@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      platform_module_availability: {
+        Row: {
+          created_at: string
+          description: string | null
+          is_available: boolean
+          module_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          is_available?: boolean
+          module_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          is_available?: boolean
+          module_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       academy_lessons: {
         Row: {
           checklist: Json | null

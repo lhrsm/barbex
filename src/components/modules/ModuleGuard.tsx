@@ -65,12 +65,40 @@ const MODULE_REQUIRED_PLAN: Record<string, { slug: string; name: string }> = {
 
 
 export function ModuleGuard({ module, title, children }: ModuleGuardProps) {
-  const { isAllowed, isEnabled, plan, isLoading, accessSource } = useModules();
+  const { isAllowed, isEnabled, isGloballyAvailable, plan, isLoading, accessSource } = useModules();
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] text-white/60">
         Carregando...
+      </div>
+    );
+  }
+
+  // Caso 0: Módulo indisponível globalmente na plataforma
+  if (!isGloballyAvailable(module)) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] px-4">
+        <div className="max-w-md w-full text-center bg-gradient-to-br from-[#0A1020] to-[#0B1426] border border-rose-500/20 rounded-2xl p-8 shadow-xl">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-rose-500/20 to-transparent border border-rose-500/30 flex items-center justify-center">
+            <Lock className="w-7 h-7 text-rose-400" />
+          </div>
+          <span className="inline-block text-[10px] font-bold px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-300 uppercase tracking-wider mb-3">
+            Manutenção da Plataforma
+          </span>
+          <h2 className="text-xl font-bold text-white mb-2">
+            {title ? `${title} Temporariamente Indisponível` : "Módulo Temporariamente Indisponível"}
+          </h2>
+          <p className="text-sm text-white/60 mb-6">
+            Este recurso foi temporariamente desativado para manutenção global pela administração da plataforma Barbex.
+            Seus dados e configurações permanecem íntegros e preservados.
+          </p>
+          <Link to="/dashboard">
+            <Button variant="outline" className="w-full border-white/10 hover:bg-white/5 text-white font-medium rounded-xl h-11">
+              Voltar ao Início
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }

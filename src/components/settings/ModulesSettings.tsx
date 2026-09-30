@@ -64,7 +64,7 @@ const PLAN_TIER: Record<string, number> = {
 };
 
 export function ModulesSettings() {
-  const { modules, plan, toggleModule, isToggling, isLoading, isAllowed } = useModules();
+  const { modules, plan, toggleModule, isToggling, isLoading, isAllowed, isGloballyAvailable } = useModules();
   const currentTier = plan ? PLAN_TIER[plan.slug] ?? 0 : 0;
 
   return (
@@ -90,28 +90,39 @@ export function ModulesSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {MODULES.map((mod) => {
             const Icon = mod.icon;
+            const isGlobal = isGloballyAvailable(mod.key);
             const allowed = isAllowed(mod.key);
             const enabled = allowed && !!modules[mod.key];
             const required = PLAN_TIER[mod.requiredPlan] ?? 1;
             const isStarterAlwaysOn = allowed && required === 1; // Incluso no plano (Starter base)
-            const lockedReason = !allowed ? `Disponível no plano ${PLAN_LABELS[mod.requiredPlan]}` : null;
+            const lockedReason = !isGlobal
+              ? "Indisponível na plataforma"
+              : !allowed
+              ? `Disponível no plano ${PLAN_LABELS[mod.requiredPlan]}`
+              : null;
 
             return (
               <div
                 key={mod.key}
                 className={`relative rounded-2xl p-4 sm:p-5 border transition-colors ${
-                  !allowed
+                  !isGlobal
+                    ? "bg-zinc-950/70 border-rose-500/20 opacity-75"
+                    : !allowed
                     ? "bg-zinc-950/60 border-white/10 opacity-80"
                     : "bg-gradient-to-br from-[#0A1020] to-[#0B1426] border-[rgba(255,184,0,.15)] hover:border-[rgba(255,184,0,.35)]"
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center border ${
-                    allowed
-                      ? "bg-gradient-to-br from-amber-500/15 to-transparent border-amber-500/25"
-                      : "bg-white/5 border-white/10"
+                    !isGlobal
+                      ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                      : allowed
+                      ? "bg-gradient-to-br from-amber-500/15 to-transparent border-amber-500/25 text-amber-400"
+                      : "bg-white/5 border-white/10 text-white/40"
                   }`}>
-                    {allowed ? (
+                    {!isGlobal ? (
+                      <Lock className="w-5 h-5 text-rose-400" />
+                    ) : allowed ? (
                       <Icon className="w-5 h-5 text-amber-400" />
                     ) : (
                       <Lock className="w-5 h-5 text-white/40" />
@@ -119,9 +130,13 @@ export function ModulesSettings() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`text-sm sm:text-base font-semibold ${allowed ? "text-white" : "text-white/60"}`}>{mod.name}</h3>
+                      <h3 className={`text-sm sm:text-base font-semibold ${!isGlobal ? "text-white/50" : allowed ? "text-white" : "text-white/60"}`}>{mod.name}</h3>
                       {lockedReason ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full border bg-white/5 border-white/15 text-white/60">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                          !isGlobal
+                            ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                            : "bg-white/5 border-white/15 text-white/60"
+                        }`}>
                           {lockedReason}
                         </span>
                       ) : isStarterAlwaysOn ? (
@@ -142,7 +157,7 @@ export function ModulesSettings() {
                   </div>
                   <Switch
                     checked={enabled}
-                    disabled={isToggling || !allowed}
+                    disabled={isToggling || !allowed || !isGlobal}
                     onCheckedChange={(v) => toggleModule(mod.key, v)}
                     className="h-6 w-11 border-white/20 data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-white/15 disabled:opacity-50"
                     thumbClassName="h-5 w-5 bg-white shadow-md data-[state=checked]:translate-x-5"
@@ -150,10 +165,10 @@ export function ModulesSettings() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-[11px]">
-                  <span className={!allowed ? "text-white/30" : enabled ? "text-emerald-400" : "text-white/40"}>
-                    {!allowed ? "🔒 Bloqueado" : enabled ? "● Ativo" : "○ Desativado"}
+                  <span className={!isGlobal ? "text-rose-400" : !allowed ? "text-white/30" : enabled ? "text-emerald-400" : "text-white/40"}>
+                    {!isGlobal ? "⚠️ Em manutenção" : !allowed ? "🔒 Bloqueado" : enabled ? "● Ativo" : "○ Desativado"}
                   </span>
-                  {!allowed && (
+                  {!allowed && isGlobal && (
                     <Button
                       asChild
                       size="sm"

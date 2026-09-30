@@ -209,6 +209,42 @@ export function useModules() {
     staleTime: 60_000,
   });
 
+  const { data: globalAvailability = {}, isLoading: loadingGlobalAvailability } = useQuery({
+    queryKey: ["platform-module-availability"],
+    queryFn: async (): Promise<Record<string, boolean>> => {
+      const { data, error } = await supabase
+        .from("platform_module_availability")
+        .select("module_key, is_available");
+      if (error) {
+        console.warn("Could not load platform_module_availability:", error.message);
+        return {};
+      }
+      const map: Record<string, boolean> = {};
+      (data || []).forEach((r) => {
+        map[r.module_key] = r.is_available;
+      });
+      return map;
+    },
+    staleTime: 60_000,
+  });
+
+  const CANONICAL_ALIASES: Record<string, string> = {
+    portal: "client_portal",
+    products: "stock",
+    store: "stock",
+    cashback: "loyalty",
+    automations: "automations_basic",
+    integrations: "api",
+    api_access: "api",
+    integrations_center: "api",
+    communications: "whatsapp",
+  };
+
+  const isGloballyAvailable = (key: string): boolean => {
+    const canonicalKey = CANONICAL_ALIASES[key] || key;
+    if (globalAvailability[canonicalKey] === false) return false;
+    return true;
+  };
 
   const modules = { ...DEFAULT_MODULES, ...(modulesData || {}) } as Record<string, boolean>;
   const planAllowed = new Set<string>([
@@ -225,6 +261,7 @@ export function useModules() {
   };
 
   const isAllowed = (key: string): boolean => {
+    if (!isGloballyAvailable(key)) return false;
     if (ALWAYS_ON.includes(key)) return true;
     // permissivo enquanto carrega — evita flicker
     if (!plan && loadingPlan) return true;
@@ -232,6 +269,7 @@ export function useModules() {
   };
 
   const isEnabled = (key: string): boolean => {
+    if (!isGloballyAvailable(key)) return false;
     if (ALWAYS_ON.includes(key)) return true;
     if (!isAllowed(key)) return false;
     return !!modules[key];
@@ -255,6 +293,7 @@ export function useModules() {
   const toggleMutation = useMutation({
     mutationFn: async ({ key, enabled }: { key: ModuleKey | string; enabled: boolean }) => {
       if (!tenantId) throw new Error("Sem barbearia");
+      if (!isGloballyAvailable(key)) throw new Error("Módulo temporariamente indisponível na plataforma");
       if (!isAllowed(key)) throw new Error("Módulo não incluso no seu plano");
       const { error } = await supabase
         .from("barbershop_modules" as any)
@@ -279,7 +318,9 @@ export function useModules() {
     accessSource,
     isAllowed,
     isEnabled,
-    isLoading: loadingModules || loadingPlan || loadingAddons,
+    isGloballyAvailable,
+    globalAvailability,
+    isLoading: loadingModules || loadingPlan || loadingAddons || loadingGlobalAvailability,
     hasUnlimitedAutomations,
     extraAutomationsFromAddons,
     addonsUsedCount,
