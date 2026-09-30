@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { withModule } from "@/components/modules/withModule";
 import { useTenant } from "@/hooks/use-tenant";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ import { CampaignCalendar } from "@/components/marketing-hub/CampaignCalendar";
 
 export const Route = createFileRoute("/marketing")({
 
-  component: MarketingPage,
+  component: withModule("campaigns", "Marketing Hub", MarketingPage),
   head: () => ({
     meta: [
       { title: "Marketing Hub Enterprise | Barbex" },

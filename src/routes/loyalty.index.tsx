@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { withModule } from "@/components/modules/withModule";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +36,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/loyalty/")({
-  component: LoyaltyDashboardPage,
+  component: withModule("loyalty", "Fidelidade", LoyaltyDashboardPage),
 });
 
 type RewardType = "free_service" | "cashback" | "credit" | "product" | "discount" | "custom";

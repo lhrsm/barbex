@@ -1,5 +1,6 @@
 import React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { withModule } from "@/components/modules/withModule";
 import { useQuery } from "@tanstack/react-query";
 import { getBIAnalyticsClient } from "@/lib/backend/client/bi";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,7 +39,7 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { KPIGrid } from "@/components/dashboard/DashboardShell";
 
 export const Route = createFileRoute("/dashboard/bi")({
-  component: BusinessIntelligencePage,
+  component: withModule("corporate_reports", "BI Executivo", BusinessIntelligencePage),
 });
 
 function BusinessIntelligencePage() {
