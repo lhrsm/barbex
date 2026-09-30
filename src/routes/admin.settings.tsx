@@ -53,6 +53,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AdminEventSubscriptions } from "@/components/admin/AdminEventSubscriptions";
 import { AdminEventTemplates } from "@/components/admin/AdminEventTemplates";
+import { GlobalFeatureGovernance } from "@/components/admin/GlobalFeatureGovernance";
 
 export const Route = createFileRoute("/admin/settings")({
   component: AdminSettings,
@@ -297,6 +298,7 @@ function AdminSettings() {
           <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-auto inline-flex gap-0.5 w-auto">
             {[
               { id: "geral", label: "Geral", icon: Globe },
+              { id: "features", label: "Recursos Globais", icon: Power },
               { id: "mensagens", label: "Contato da Plataforma", icon: MessageSquare },
               { id: "faturamento", label: "Faturamento & Políticas", icon: CreditCard },
               { id: "seguranca", label: "Segurança", icon: Shield },
@@ -1062,6 +1064,10 @@ function AdminSettings() {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="features" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <GlobalFeatureGovernance />
         </TabsContent>
 
         <TabsContent value="notificacoes" className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">

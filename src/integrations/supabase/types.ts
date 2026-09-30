@@ -20,6 +20,7 @@ export type Database = {
           description: string | null
           is_available: boolean
           module_key: string
+          unavailable_reason: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -28,6 +29,7 @@ export type Database = {
           description?: string | null
           is_available?: boolean
           module_key: string
+          unavailable_reason?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -36,6 +38,7 @@ export type Database = {
           description?: string | null
           is_available?: boolean
           module_key?: string
+          unavailable_reason?: string | null
           updated_at?: string
           updated_by?: string | null
         }
