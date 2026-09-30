@@ -21,7 +21,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   Loader2,
+  Layers,
 } from "lucide-react";
+import { TenantCapabilityModal } from "@/components/admin/TenantCapabilityModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
@@ -191,7 +193,7 @@ function AdminTenants() {
             created_at: shop.created_at,
             ownerProfile,
             assignedPlan,
-            profilePlan: profilePlan ? plansMap.get(profilePlan.toLowerCase()) : null,
+            profilePlan: profilePlan ? (plansMap.get(profilePlan.toLowerCase()) as any) : null,
             subscriptions: shopSubs,
           });
 
@@ -276,6 +278,9 @@ function AdminTenants() {
   // State for Authoritative Tenant Reactivation (Level 2 Confirmation)
   const [reactivateTarget, setReactivateTarget] = useState<TenantRecord | null>(null);
   const [reactivateReason, setReactivateReason] = useState("");
+
+  // State for Tenant Capability Governance (G.5B)
+  const [capabilityTenant, setCapabilityTenant] = useState<TenantRecord | null>(null);
 
   const suspendMutation = useMutation({
     mutationFn: async ({
@@ -730,6 +735,14 @@ function AdminTenants() {
                                 <span className="font-medium text-xs">Gestão de Planos</span>
                               </DropdownMenuItem>
 
+                              <DropdownMenuItem
+                                className="rounded-xl focus:bg-white/10 cursor-pointer transition-all"
+                                onClick={() => setCapabilityTenant(tenant)}
+                              >
+                                <Layers className="mr-3 h-4 w-4 text-purple-400" />
+                                <span className="font-medium text-xs">Módulos & Capacidades</span>
+                              </DropdownMenuItem>
+
                               <DropdownMenuSeparator className="bg-white/5 my-2" />
 
                               {tenant.owner_id ? (
@@ -1040,6 +1053,15 @@ function AdminTenants() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* GOVERNED TENANT CAPABILITY MODAL (G.5B) */}
+        <TenantCapabilityModal
+          tenantId={capabilityTenant ? (capabilityTenant.owner_id || capabilityTenant.id) : null}
+          tenantName={capabilityTenant?.name || ""}
+          tenantSlug={capabilityTenant?.slug || ""}
+          isOpen={!!capabilityTenant}
+          onClose={() => setCapabilityTenant(null)}
+        />
       </div>
     </TooltipProvider>
   );
