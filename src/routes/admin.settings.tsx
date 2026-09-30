@@ -19,7 +19,12 @@ import {
   Mail,
   Bell,
   MessageSquare,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  Clock,
+  ShieldAlert,
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +32,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -97,6 +118,26 @@ function AdminSettings() {
 
   const [formData, setFormData] = useState<any>(null);
 
+  // Consulta planos ativos elegíveis para período de teste
+  const { data: activePlans } = useQuery({
+    queryKey: ["admin-active-plans-for-trial"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plans")
+        .select("id, name, slug, active")
+        .eq("active", true)
+        .order("tier", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Estados locais para governança de política de trial
+  const [trialDaysInput, setTrialDaysInput] = useState<number>(15);
+  const [trialPlanInput, setTrialPlanInput] = useState<string>("pro");
+  const [trialConfirmOpen, setTrialConfirmOpen] = useState<boolean>(false);
+  const [trialReason, setTrialReason] = useState<string>("");
+
   useEffect(() => {
     if (settings) {
       setFormData({
@@ -107,11 +148,45 @@ function AdminSettings() {
           ...(settings.social_links || {}),
         },
       });
+
+      if ((settings as any).default_trial_days) {
+        setTrialDaysInput(Number((settings as any).default_trial_days));
+      }
+      if ((settings as any).default_trial_plan) {
+        setTrialPlanInput(String((settings as any).default_trial_plan));
+      }
     } else if (settings === null && !isLoading && !queryError) {
       // Cenário B: Tabela vazia — inicializar com valores padrão seguros
       setFormData(DEFAULT_SYSTEM_SETTINGS);
     }
   }, [settings, isLoading, queryError]);
+
+  // Mutação governada para atualização atômica de política de trial via RPC
+  const updateTrialPolicyMutation = useMutation({
+    mutationFn: async ({ days, plan, reason }: { days: number; plan: string; reason: string }) => {
+      const { data, error } = await supabase.rpc("admin_update_trial_policy", {
+        p_trial_days: days,
+        p_trial_plan: plan,
+        p_reason: reason,
+      });
+
+      if (error) throw error;
+      const res = data as any;
+      if (!res?.success) {
+        throw new Error(res?.message || "Falha ao atualizar política de trial");
+      }
+      return res;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Política de trial da plataforma atualizada com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["admin-system-settings"] });
+      setTrialConfirmOpen(false);
+      setTrialReason("");
+    },
+    onError: (err: any) => {
+      toast.error(`Erro na governança de trial: ${err.message}`);
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: async (newData: any) => {
@@ -223,7 +298,7 @@ function AdminSettings() {
             {[
               { id: "geral", label: "Geral", icon: Globe },
               { id: "mensagens", label: "Contato da Plataforma", icon: MessageSquare },
-              { id: "faturamento", label: "Faturamento", icon: CreditCard },
+              { id: "faturamento", label: "Faturamento & Políticas", icon: CreditCard },
               { id: "seguranca", label: "Segurança", icon: Shield },
               { id: "integracoes", label: "Integrações", icon: Share2 },
               { id: "notificacoes", label: "Notificações", icon: Bell },
@@ -580,8 +655,139 @@ function AdminSettings() {
           </div>
         </TabsContent>
 
-        <TabsContent value="faturamento" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-3xl">
+        <TabsContent value="faturamento" className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+          {/* 1. POLÍTICA DE PERÍODO DE TESTE (TRIAL DA PLATAFORMA) */}
+          <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-4xl border-purple-500/20">
+            <CardHeader className="p-0 mb-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
+                    <Calendar className="text-purple-400 w-5 h-5" />
+                    Política de Período de Teste (Trial)
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-xs mt-1">
+                    Defina a duração padrão e o plano inicial concedido automaticamente a novas barbearias cadastradas na plataforma.
+                  </CardDescription>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
+                  Novos Cadastros
+                </div>
+              </div>
+            </CardHeader>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="trial-days-input" className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                    Duração Padrão do Teste (Dias)
+                  </Label>
+                  <Input
+                    id="trial-days-input"
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={trialDaysInput}
+                    onChange={(e) => setTrialDaysInput(Math.max(1, Math.min(90, parseInt(e.target.value) || 1)))}
+                    className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50 text-white font-mono text-sm"
+                  />
+                  <p className="text-[11px] text-gray-500 px-1">
+                    Intervalo permitido: 1 a 90 dias. Padrão canônico da plataforma: 15 dias.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="trial-plan-select" className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                    Plano Comercial Concedido no Trial
+                  </Label>
+                  <Select
+                    value={trialPlanInput}
+                    onValueChange={(val) => setTrialPlanInput(val)}
+                  >
+                    <SelectTrigger id="trial-plan-select" className="h-12 bg-white/5 border-white/10 rounded-xl text-white font-medium">
+                      <SelectValue placeholder="Selecione o plano de teste" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                      {activePlans && activePlans.length > 0 ? (
+                        activePlans.map((p) => (
+                          <SelectItem key={p.slug} value={p.slug} className="cursor-pointer hover:bg-white/10">
+                            {p.name} ({p.slug.toUpperCase()})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="starter">Starter (STARTER)</SelectItem>
+                          <SelectItem value="pro">Pro (PRO)</SelectItem>
+                          <SelectItem value="elite">Elite (ELITE)</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-gray-500 px-1">
+                    Apenas planos ativos no catálogo comercial podem ser selecionados para o trial.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 space-y-2">
+                <p className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-amber-300">
+                  <ShieldAlert className="h-4 w-4 shrink-0" />
+                  Contrato de Não-Retroatividade:
+                </p>
+                <p className="text-[11px] text-gray-300 leading-relaxed">
+                  A alteração desta política <strong>aplica-se exclusivamente a novos cadastros</strong> de barbearias. Contas que já possuem período de teste em vigor mantêm sua data de término original sem recálculo retroativo. Nenhuma alteração é enviada à API do Stripe.
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  onClick={() => setTrialConfirmOpen(true)}
+                  disabled={updateTrialPolicyMutation.isPending}
+                  className="rounded-xl font-bold bg-purple-600 hover:bg-purple-700 text-white gap-2 text-xs uppercase tracking-wider h-10 px-5 shadow-[0_0_16px_rgba(168,85,247,0.3)]"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Salvar Política de Trial
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* 2. GOVERNANÇA DE PERÍODO DE GRAÇA (GRACE PERIOD) - FACTUAL E NÃO-DECORATIVO */}
+          <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-4xl border-blue-500/20">
+            <CardHeader className="p-0 mb-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
+                    <Clock className="text-blue-400 w-5 h-5" />
+                    Governança de Período de Graça (Grace Period)
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-xs mt-1">
+                    Janela temporal de tolerância para faturas vencidas e inadimplência temporária (past_due).
+                  </CardDescription>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
+                  Planejamento Arquitetural (G.4)
+                </div>
+              </div>
+            </CardHeader>
+
+            <div className="space-y-4">
+              <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-300 uppercase tracking-wider">
+                  <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                  Status da Operação em Tempo de Execução:
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Conforme a análise forense do R2E.13G.4, assinaturas com status <code className="text-amber-300 bg-white/5 px-1.5 py-0.5 rounded">past_due</code> mantêm o acesso operacional garantido enquanto o Stripe executa seus ciclos de retentativa de cobrança (Smart Retries).
+                </p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  A ativação de uma janela de tolerância com bloqueio automático no servidor (entitlement cutoff) permanece <strong>planejada</strong> e aguarda o provisionamento de timestamp imutável de transição de inadimplência na tabela de assinaturas. Controles decorativos sem autoridade real no servidor foram deliberadamente omitidos.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 3. SEGURANÇA & CREDENCIAIS DE FATURAMENTO (CARD PREEXISTENTE PRESERVADO) */}
+          <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-4xl">
             <CardHeader className="p-0 mb-8">
               <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
                 <CreditCard className="text-blue-400 w-5 h-5" />
@@ -610,6 +816,135 @@ function AdminSettings() {
               </div>
             </div>
           </Card>
+
+          {/* MODAL DE CONFIRMAÇÃO NÍVEL 2: POLÍTICA DE TRIAL */}
+          <Dialog
+            open={trialConfirmOpen}
+            onOpenChange={(open) => !open && !updateTrialPolicyMutation.isPending && setTrialConfirmOpen(false)}
+          >
+            <DialogContent className="glass border-purple-500/30 text-white max-w-lg rounded-3xl">
+              <DialogHeader className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                    <ShieldAlert className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl font-black text-purple-300 tracking-tight">
+                      CONFIRMAR POLÍTICA DE TRIAL
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400 text-xs mt-1">
+                      Governança da plataforma: requer justificativa operacional obrigatória.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-5 py-2">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Duração Atual:</span>
+                    <span className="text-white font-mono font-bold">
+                      {(settings as any)?.default_trial_days || 15} dias
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Nova Duração:</span>
+                    <span className="text-purple-300 font-mono font-bold">
+                      {trialDaysInput} dias
+                    </span>
+                  </div>
+                  <div className="border-t border-white/5 my-1" />
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Plano Atual:</span>
+                    <span className="text-white font-mono uppercase font-bold">
+                      {(settings as any)?.default_trial_plan || "pro"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Novo Plano:</span>
+                    <span className="text-purple-300 font-mono uppercase font-bold">
+                      {trialPlanInput}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 space-y-1">
+                  <p className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-purple-400" />
+                    Impacto da Modificação:
+                  </p>
+                  <p className="text-gray-300 text-[11px] leading-relaxed mt-1">
+                    Esta política afetará <strong>apenas novas contas</strong> criadas após a confirmação. Contas com período de teste em vigor mantêm seu prazo original. A mutação e a justificativa serão registradas atomicamente no log de auditoria da plataforma.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="trial-policy-reason" className="text-xs font-bold text-gray-300">
+                      Justificativa Operacional (Obrigatório, 10 a 500 caracteres)
+                    </Label>
+                    <span
+                      className={cn(
+                        "text-[10px] font-mono",
+                        trialReason.trim().length >= 10 && trialReason.trim().length <= 500
+                          ? "text-emerald-400"
+                          : "text-gray-500",
+                      )}
+                    >
+                      {trialReason.trim().length}/500
+                    </span>
+                  </div>
+                  <Textarea
+                    id="trial-policy-reason"
+                    value={trialReason}
+                    onChange={(e) => setTrialReason(e.target.value)}
+                    placeholder="Descreva a razão comercial/estratégica para a alteração da política de trial..."
+                    disabled={updateTrialPolicyMutation.isPending}
+                    maxLength={500}
+                    className="bg-white/5 border-white/10 text-white rounded-xl min-h-[90px] focus:border-purple-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0 mt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setTrialConfirmOpen(false)}
+                  disabled={updateTrialPolicyMutation.isPending}
+                  className="rounded-xl border-white/10 hover:bg-white/10 text-gray-300"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  disabled={
+                    trialReason.trim().length < 10 ||
+                    trialReason.trim().length > 500 ||
+                    updateTrialPolicyMutation.isPending
+                  }
+                  onClick={() => {
+                    updateTrialPolicyMutation.mutate({
+                      days: trialDaysInput,
+                      plan: trialPlanInput,
+                      reason: trialReason,
+                    });
+                  }}
+                  className="rounded-xl font-bold bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {updateTrialPolicyMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Gravando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Confirmar e Gravar Política
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="seguranca" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
