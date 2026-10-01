@@ -8222,8 +8222,11 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string | null
           environment: string
+          grace_ends_at: string | null
           id: string
           is_internal_test_tenant: boolean
+          past_due_since: string | null
+          payment_failed_at: string | null
           price_id: string
           product_id: string
           status: string
@@ -8241,8 +8244,11 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           environment?: string
+          grace_ends_at?: string | null
           id?: string
           is_internal_test_tenant?: boolean
+          past_due_since?: string | null
+          payment_failed_at?: string | null
           price_id: string
           product_id: string
           status?: string
@@ -8260,8 +8266,11 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           environment?: string
+          grace_ends_at?: string | null
           id?: string
           is_internal_test_tenant?: boolean
+          past_due_since?: string | null
+          payment_failed_at?: string | null
           price_id?: string
           product_id?: string
           status?: string
@@ -8411,6 +8420,7 @@ export type Database = {
           admin_access_level: string | null
           audit_logs_enabled: boolean | null
           contact_email: string | null
+          grace_period_days: number
           id: string
           integrations: Json | null
           main_url: string | null
@@ -8432,6 +8442,7 @@ export type Database = {
           admin_access_level?: string | null
           audit_logs_enabled?: boolean | null
           contact_email?: string | null
+          grace_period_days?: number
           id?: string
           integrations?: Json | null
           main_url?: string | null
@@ -8453,6 +8464,7 @@ export type Database = {
           admin_access_level?: string | null
           audit_logs_enabled?: boolean | null
           contact_email?: string | null
+          grace_period_days?: number
           id?: string
           integrations?: Json | null
           main_url?: string | null
@@ -10065,6 +10077,20 @@ export type Database = {
       }
     }
     Functions: {
+      admin_update_grace_policy: {
+        Args: {
+          p_grace_period_days: number
+          p_reason: string
+        }
+        Returns: Json
+      }
+      record_subscription_payment_failed: {
+        Args: {
+          p_stripe_subscription_id: string
+          p_event_timestamp?: string | null
+        }
+        Returns: Json
+      }
       _compute_consume_quantity: {
         Args: { _service_name: string }
         Returns: number

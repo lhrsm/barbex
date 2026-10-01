@@ -84,6 +84,9 @@ interface SubscriptionDbRow {
   current_period_start: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean | null;
+  past_due_since?: string | null;
+  grace_ends_at?: string | null;
+  payment_failed_at?: string | null;
   created_at: string;
   updated_at: string;
   profiles?: {
@@ -171,6 +174,9 @@ function AdminSubscriptions() {
           current_period_start,
           current_period_end,
           cancel_at_period_end,
+          past_due_since,
+          grace_ends_at,
+          payment_failed_at,
           created_at,
           updated_at,
           profiles:user_id (
@@ -597,6 +603,9 @@ function AdminSubscriptions() {
                     Status
                   </TableHead>
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    Carência (Grace)
+                  </TableHead>
+                  <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
                     Último Evento Stripe
                   </TableHead>
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
@@ -609,7 +618,7 @@ function AdminSubscriptions() {
                   Array.from({ length: 2 }).map((_, i) => (
                     <TableRow key={i} className="border-white/5">
                       <TableCell
-                        colSpan={8}
+                        colSpan={9}
                         className="py-8 text-center animate-pulse text-gray-500"
                       >
                         Carregando assinaturas Stripe...
@@ -618,7 +627,7 @@ function AdminSubscriptions() {
                   ))
                 ) : (stripeSubscriptions || []).length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-gray-400">
+                    <TableCell colSpan={9} className="text-center py-12 text-gray-400">
                       <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                         <CreditCard className="w-8 h-8 text-gray-500 mb-1" />
                         <span className="font-semibold text-white">
@@ -634,7 +643,7 @@ function AdminSubscriptions() {
                   </TableRow>
                 ) : filteredSubs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-gray-400">
+                    <TableCell colSpan={9} className="text-center py-12 text-gray-400">
                       <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                         <Search className="w-8 h-8 text-gray-500 mb-1" />
                         <span className="font-semibold text-white">
@@ -695,6 +704,42 @@ function AdminSubscriptions() {
                         {formatBillingCycle(sub.billing_cycle)}
                       </TableCell>
                       <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                      <TableCell className="text-xs">
+                        {sub.status === "past_due" ? (
+                          sub.grace_ends_at ? (
+                            new Date(sub.grace_ends_at) > new Date() ? (
+                              <div className="space-y-0.5">
+                                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px]">
+                                  IN_GRACE
+                                </Badge>
+                                <span className="text-[10px] text-gray-400 block font-mono">
+                                  Até {format(new Date(sub.grace_ends_at), "dd/MM HH:mm")}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <Badge className="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px]">
+                                  EXPIRED
+                                </Badge>
+                                <span className="text-[10px] text-rose-400 block font-mono">
+                                  Expirou {format(new Date(sub.grace_ends_at), "dd/MM HH:mm")}
+                                </span>
+                              </div>
+                            )
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-gray-500 border-white/10 text-[10px]"
+                            >
+                              SEM DADOS
+                            </Badge>
+                          )
+                        ) : (
+                          <span className="text-gray-500 text-[10px] font-mono">
+                            NOT_APPLICABLE
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs text-gray-300 font-mono">
                         {sub.latest_event_timestamp
                           ? format(new Date(sub.latest_event_timestamp), "dd/MM/yyyy HH:mm", {

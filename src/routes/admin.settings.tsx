@@ -24,9 +24,16 @@ import {
   Clock,
   ShieldAlert,
   CheckCircle2,
-  Loader2
+  Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,15 +100,16 @@ function AdminSettings() {
     },
   };
 
-  const { data: settings, isLoading, error: queryError } = useQuery({
+  const {
+    data: settings,
+    isLoading,
+    error: queryError,
+  } = useQuery({
     queryKey: ["admin-system-settings"],
     queryFn: async () => {
       console.log("Fetching system settings...");
       // Fetch settings with a simple select to avoid maybeSingle issues if data is inconsistent
-      const { data, error } = await supabase
-        .from("system_settings")
-        .select("*")
-        .limit(1);
+      const { data, error } = await supabase.from("system_settings").select("*").limit(1);
 
       if (error) {
         console.error("Supabase error fetching settings:", error);
@@ -114,7 +122,7 @@ function AdminSettings() {
         delete (raw as any).stripe_webhook_secret;
       }
       return raw;
-    }
+    },
   });
 
   const [formData, setFormData] = useState<any>(null);
@@ -139,6 +147,11 @@ function AdminSettings() {
   const [trialConfirmOpen, setTrialConfirmOpen] = useState<boolean>(false);
   const [trialReason, setTrialReason] = useState<string>("");
 
+  // Estados locais para governança de política de carência para inadimplência (R2E.14B)
+  const [graceDaysInput, setGraceDaysInput] = useState<number>(7);
+  const [graceConfirmOpen, setGraceConfirmOpen] = useState<boolean>(false);
+  const [graceReason, setGraceReason] = useState<string>("");
+
   useEffect(() => {
     if (settings) {
       setFormData({
@@ -155,6 +168,12 @@ function AdminSettings() {
       }
       if ((settings as any).default_trial_plan) {
         setTrialPlanInput(String((settings as any).default_trial_plan));
+      }
+      if (
+        (settings as any).grace_period_days !== undefined &&
+        (settings as any).grace_period_days !== null
+      ) {
+        setGraceDaysInput(Number((settings as any).grace_period_days));
       }
     } else if (settings === null && !isLoading && !queryError) {
       // Cenário B: Tabela vazia — inicializar com valores padrão seguros
@@ -189,13 +208,46 @@ function AdminSettings() {
     },
   });
 
+  // Mutação governada para atualização atômica do período de carência via RPC (R2E.14B)
+  const updateGracePolicyMutation = useMutation({
+    mutationFn: async ({ days, reason }: { days: number; reason: string }) => {
+      const { data, error } = await supabase.rpc("admin_update_grace_policy", {
+        p_grace_period_days: days,
+        p_reason: reason,
+      });
+
+      if (error) throw error;
+      const res = data as any;
+      if (!res?.ok && !res?.success) {
+        throw new Error(res?.error || res?.message || "Falha ao atualizar período de carência");
+      }
+      return res;
+    },
+    onSuccess: () => {
+      toast.success("Período de carência para inadimplência atualizado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["admin-system-settings"] });
+      setGraceConfirmOpen(false);
+      setGraceReason("");
+    },
+    onError: (err: any) => {
+      toast.error(`Erro na governança de carência: ${err.message}`);
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async (newData: any) => {
       const targetId = settings?.id || newData?.id;
 
       if (targetId) {
         // Atualização de registro existente — nunca persistir credenciais sensíveis em system_settings
-        const { id, updated_at, stripe_secret_key, stripe_webhook_secret, two_factor_auth_enabled, ...updatePayload } = newData;
+        const {
+          id,
+          updated_at,
+          stripe_secret_key,
+          stripe_webhook_secret,
+          two_factor_auth_enabled,
+          ...updatePayload
+        } = newData;
         const { error } = await supabase
           .from("system_settings")
           .update(updatePayload)
@@ -223,9 +275,7 @@ function AdminSettings() {
         } else {
           // Insere o primeiro registro da plataforma
           const { id, updated_at, ...insertPayload } = newData;
-          const { error } = await supabase
-            .from("system_settings")
-            .insert([insertPayload]);
+          const { error } = await supabase.from("system_settings").insert([insertPayload]);
 
           if (error) throw error;
         }
@@ -238,14 +288,16 @@ function AdminSettings() {
     },
     onError: (error: any) => {
       toast.error("Erro ao salvar configurações: " + (error?.message || "Erro desconhecido"));
-    }
+    },
   });
 
   if (isLoading) {
     return (
       <div className="p-20 flex flex-col items-center justify-center gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-        <p className="text-gray-500 font-black italic uppercase tracking-widest">Acessando Núcleo do Sistema...</p>
+        <p className="text-gray-500 font-black italic uppercase tracking-widest">
+          Acessando Núcleo do Sistema...
+        </p>
       </div>
     );
   }
@@ -279,8 +331,12 @@ function AdminSettings() {
     <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white italic uppercase truncate">Configurações da Plataforma</h2>
-          <p className="text-gray-400 font-medium text-sm truncate">Gerencie identidade pública, comunicação e informações institucionais do Barbex.</p>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white italic uppercase truncate">
+            Configurações da Plataforma
+          </h2>
+          <p className="text-gray-400 font-medium text-sm truncate">
+            Gerencie identidade pública, comunicação e informações institucionais do Barbex.
+          </p>
         </div>
         <Button
           onClick={handleSave}
@@ -319,7 +375,10 @@ function AdminSettings() {
           </TabsList>
         </div>
 
-        <TabsContent value="geral" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <TabsContent
+          value="geral"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="glass border-white/5 rounded-[2.5rem] p-8">
               <CardHeader className="p-0 mb-8">
@@ -330,27 +389,37 @@ function AdminSettings() {
               </CardHeader>
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Nome do SaaS</Label>
+                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                    Nome do SaaS
+                  </Label>
                   <Input
                     value={formData.saas_name}
-                    onChange={(e) => setFormData({...formData, saas_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, saas_name: e.target.value })}
                     className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">URL Principal</Label>
+                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                    URL Principal
+                  </Label>
                   <Input
                     value={formData.main_url}
-                    onChange={(e) => setFormData({...formData, main_url: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, main_url: e.target.value })}
                     className="h-12 bg-white/5 border-white/10 rounded-xl"
                   />
                 </div>
                 <div className="space-y-4">
-                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">Logo do SaaS</Label>
+                  <Label className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                    Logo do SaaS
+                  </Label>
                   <div className="flex flex-col gap-4">
                     {formData.saas_logo && (
                       <div className="w-32 h-32 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center p-4">
-                        <img src={formData.saas_logo} alt="Logo preview" className="max-w-full max-h-full object-contain" />
+                        <img
+                          src={formData.saas_logo}
+                          alt="Logo preview"
+                          className="max-w-full max-h-full object-contain"
+                        />
                       </div>
                     )}
                     <div className="flex gap-4">
@@ -363,29 +432,29 @@ function AdminSettings() {
                           const file = e.target.files?.[0];
                           if (!file) return;
 
-                          const fileExt = file.name.split('.').pop();
+                          const fileExt = file.name.split(".").pop();
                           const filePath = `saas-logo-${Math.random()}.${fileExt}`;
 
                           toast.promise(
                             (async () => {
                               const { data, error } = await supabase.storage
-                                .from('system-assets')
+                                .from("system-assets")
                                 .upload(filePath, file);
 
                               if (error) throw error;
 
-                              const { data: { publicUrl } } = supabase.storage
-                                .from('system-assets')
-                                .getPublicUrl(filePath);
+                              const {
+                                data: { publicUrl },
+                              } = supabase.storage.from("system-assets").getPublicUrl(filePath);
 
                               setFormData({ ...formData, saas_logo: publicUrl });
                               return publicUrl;
                             })(),
                             {
-                              loading: 'Enviando logo...',
-                              success: 'Logo enviada com sucesso!',
-                              error: (err) => `Erro ao enviar: ${err.message}`
-                            }
+                              loading: "Enviando logo...",
+                              success: "Logo enviada com sucesso!",
+                              error: (err) => `Erro ao enviar: ${err.message}`,
+                            },
                           );
                         }}
                       />
@@ -402,7 +471,7 @@ function AdminSettings() {
                       {formData.saas_logo && (
                         <Button
                           variant="ghost"
-                          onClick={() => setFormData({...formData, saas_logo: null})}
+                          onClick={() => setFormData({ ...formData, saas_logo: null })}
                           className="h-12 px-4 rounded-xl text-rose-500 hover:bg-rose-500/10"
                         >
                           Remover
@@ -425,13 +494,16 @@ function AdminSettings() {
                 <div className="flex items-center justify-between p-6 rounded-3xl bg-rose-500/5 border border-rose-500/10">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-bold uppercase tracking-tight text-sm">Manutenção Global</p>
+                      <p className="text-white font-bold uppercase tracking-tight text-sm">
+                        Manutenção Global
+                      </p>
                       <span className="text-[10px] px-2 py-0.5 rounded-full border bg-rose-500/10 border-rose-500/20 text-rose-300">
                         Legado / Não Operacional
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 leading-relaxed max-w-[280px]">
-                      Desacoplado de flags de módulos. A manutenção global da plataforma é gerenciada exclusivamente pelo orquestrador de infraestrutura (R2E.13G.6B).
+                      Desacoplado de flags de módulos. A manutenção global da plataforma é
+                      gerenciada exclusivamente pelo orquestrador de infraestrutura (R2E.13G.6B).
                     </p>
                   </div>
                   <Switch
@@ -442,9 +514,12 @@ function AdminSettings() {
                 </div>
 
                 <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10 space-y-4">
-                  <p className="text-amber-400 text-[10px] uppercase font-black tracking-widest">Aviso Importante</p>
+                  <p className="text-amber-400 text-[10px] uppercase font-black tracking-widest">
+                    Aviso Importante
+                  </p>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    A URL principal define o domínio de redirecionamento para checkouts e e-mails transacionais. Certifique-se de que o SSL está ativo no domínio configurado.
+                    A URL principal define o domínio de redirecionamento para checkouts e e-mails
+                    transacionais. Certifique-se de que o SSL está ativo no domínio configurado.
                   </p>
                 </div>
               </div>
@@ -458,7 +533,9 @@ function AdminSettings() {
                   Landing Institucional & Contato Público
                 </CardTitle>
                 <CardDescription className="text-gray-400 text-xs">
-                  Configure as informações públicas, canais de atendimento e redes sociais exibidos na página principal (barbex.shop). Campos não preenchidos não serão exibidos na landing.
+                  Configure as informações públicas, canais de atendimento e redes sociais exibidos
+                  na página principal (barbex.shop). Campos não preenchidos não serão exibidos na
+                  landing.
                 </CardDescription>
               </CardHeader>
 
@@ -478,7 +555,7 @@ function AdminSettings() {
                       type="email"
                       placeholder="Ex: contato@barbex.shop"
                       value={formData.public_email || ""}
-                      onChange={(e) => setFormData({...formData, public_email: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, public_email: e.target.value })}
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                     <p className="text-[11px] text-gray-500 px-1">
@@ -493,7 +570,7 @@ function AdminSettings() {
                     <Input
                       placeholder="Ex: (11) 3000-0000"
                       value={formData.phone || ""}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -505,7 +582,9 @@ function AdminSettings() {
                     <Input
                       placeholder="Ex: 5511999999999 ou (11) 99999-9999"
                       value={formData.whatsapp_number || ""}
-                      onChange={(e) => setFormData({...formData, whatsapp_number: e.target.value})}
+                      onChange={(e) =>
+                        setFormData({ ...formData, whatsapp_number: e.target.value })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -517,7 +596,7 @@ function AdminSettings() {
                     <Input
                       placeholder="Ex: Av. Paulista, 1000 - São Paulo/SP"
                       value={formData.address || ""}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -539,7 +618,9 @@ function AdminSettings() {
                       <Switch
                         id="has_contact_form"
                         checked={formData.has_contact_form ?? true}
-                        onCheckedChange={(checked) => setFormData({ ...formData, has_contact_form: checked })}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, has_contact_form: checked })
+                        }
                       />
                     </div>
 
@@ -552,11 +633,16 @@ function AdminSettings() {
                         type="email"
                         placeholder="Ex: leads@barbex.shop ou atendimento@barbex.shop"
                         value={formData.contact_email || ""}
-                        onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                        onChange={(e) =>
+                          setFormData({ ...formData, contact_email: e.target.value })
+                        }
                         className="h-12 bg-white/5 border-purple-500/30 rounded-xl focus:ring-purple-500/20"
                       />
                       <p className="text-[11px] text-gray-400 px-1 leading-relaxed">
-                        Este endereço receberá as mensagens enviadas pelo formulário de contato da landing institucional do Barbex. Este e-mail <strong>não será exibido publicamente</strong>; será utilizado somente para receber mensagens do formulário.
+                        Este endereço receberá as mensagens enviadas pelo formulário de contato da
+                        landing institucional do Barbex. Este e-mail{" "}
+                        <strong>não será exibido publicamente</strong>; será utilizado somente para
+                        receber mensagens do formulário.
                       </p>
                     </div>
                   </div>
@@ -576,10 +662,15 @@ function AdminSettings() {
                     <Input
                       placeholder="@barbex.shop ou URL completa"
                       value={formData.social_links?.instagram || ""}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        social_links: { ...(formData.social_links || {}), instagram: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          social_links: {
+                            ...(formData.social_links || {}),
+                            instagram: e.target.value,
+                          },
+                        })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -591,10 +682,15 @@ function AdminSettings() {
                     <Input
                       placeholder="barbex.shop ou URL completa"
                       value={formData.social_links?.facebook || ""}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        social_links: { ...(formData.social_links || {}), facebook: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          social_links: {
+                            ...(formData.social_links || {}),
+                            facebook: e.target.value,
+                          },
+                        })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -606,10 +702,15 @@ function AdminSettings() {
                     <Input
                       placeholder="@barbex.shop ou URL completa"
                       value={formData.social_links?.tiktok || ""}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        social_links: { ...(formData.social_links || {}), tiktok: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          social_links: {
+                            ...(formData.social_links || {}),
+                            tiktok: e.target.value,
+                          },
+                        })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -621,10 +722,15 @@ function AdminSettings() {
                     <Input
                       placeholder="https://linkedin.com/company/barbex ou barbex"
                       value={formData.social_links?.linkedin || ""}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        social_links: { ...(formData.social_links || {}), linkedin: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          social_links: {
+                            ...(formData.social_links || {}),
+                            linkedin: e.target.value,
+                          },
+                        })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -636,10 +742,15 @@ function AdminSettings() {
                     <Input
                       placeholder="@barbex ou URL completa"
                       value={formData.social_links?.youtube || ""}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        social_links: { ...(formData.social_links || {}), youtube: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          social_links: {
+                            ...(formData.social_links || {}),
+                            youtube: e.target.value,
+                          },
+                        })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -651,10 +762,15 @@ function AdminSettings() {
                     <Input
                       placeholder="@barbex ou URL completa"
                       value={formData.social_links?.twitter || ""}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        social_links: { ...(formData.social_links || {}), twitter: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          social_links: {
+                            ...(formData.social_links || {}),
+                            twitter: e.target.value,
+                          },
+                        })
+                      }
                       className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50"
                     />
                   </div>
@@ -664,7 +780,10 @@ function AdminSettings() {
           </div>
         </TabsContent>
 
-        <TabsContent value="faturamento" className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+        <TabsContent
+          value="faturamento"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8"
+        >
           {/* 1. POLÍTICA DE PERÍODO DE TESTE (TRIAL DA PLATAFORMA) */}
           <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-4xl border-purple-500/20">
             <CardHeader className="p-0 mb-6">
@@ -675,7 +794,8 @@ function AdminSettings() {
                     Política de Período de Teste (Trial)
                   </CardTitle>
                   <CardDescription className="text-gray-400 text-xs mt-1">
-                    Defina a duração padrão e o plano inicial concedido automaticamente a novas barbearias cadastradas na plataforma.
+                    Defina a duração padrão e o plano inicial concedido automaticamente a novas
+                    barbearias cadastradas na plataforma.
                   </CardDescription>
                 </div>
                 <div className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
@@ -687,7 +807,10 @@ function AdminSettings() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="trial-days-input" className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                  <Label
+                    htmlFor="trial-days-input"
+                    className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1"
+                  >
                     Duração Padrão do Teste (Dias)
                   </Label>
                   <Input
@@ -696,7 +819,9 @@ function AdminSettings() {
                     min={1}
                     max={90}
                     value={trialDaysInput}
-                    onChange={(e) => setTrialDaysInput(Math.max(1, Math.min(90, parseInt(e.target.value) || 1)))}
+                    onChange={(e) =>
+                      setTrialDaysInput(Math.max(1, Math.min(90, parseInt(e.target.value) || 1)))
+                    }
                     className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-purple-500/50 text-white font-mono text-sm"
                   />
                   <p className="text-[11px] text-gray-500 px-1">
@@ -705,20 +830,27 @@ function AdminSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="trial-plan-select" className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1">
+                  <Label
+                    htmlFor="trial-plan-select"
+                    className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1"
+                  >
                     Plano Comercial Concedido no Trial
                   </Label>
-                  <Select
-                    value={trialPlanInput}
-                    onValueChange={(val) => setTrialPlanInput(val)}
-                  >
-                    <SelectTrigger id="trial-plan-select" className="h-12 bg-white/5 border-white/10 rounded-xl text-white font-medium">
+                  <Select value={trialPlanInput} onValueChange={(val) => setTrialPlanInput(val)}>
+                    <SelectTrigger
+                      id="trial-plan-select"
+                      className="h-12 bg-white/5 border-white/10 rounded-xl text-white font-medium"
+                    >
                       <SelectValue placeholder="Selecione o plano de teste" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-white/10 text-white">
                       {activePlans && activePlans.length > 0 ? (
                         activePlans.map((p) => (
-                          <SelectItem key={p.slug} value={p.slug} className="cursor-pointer hover:bg-white/10">
+                          <SelectItem
+                            key={p.slug}
+                            value={p.slug}
+                            className="cursor-pointer hover:bg-white/10"
+                          >
                             {p.name} ({p.slug.toUpperCase()})
                           </SelectItem>
                         ))
@@ -743,7 +875,10 @@ function AdminSettings() {
                   Contrato de Não-Retroatividade:
                 </p>
                 <p className="text-[11px] text-gray-300 leading-relaxed">
-                  A alteração desta política <strong>aplica-se exclusivamente a novos cadastros</strong> de barbearias. Contas que já possuem período de teste em vigor mantêm sua data de término original sem recálculo retroativo. Nenhuma alteração é enviada à API do Stripe.
+                  A alteração desta política{" "}
+                  <strong>aplica-se exclusivamente a novos cadastros</strong> de barbearias. Contas
+                  que já possuem período de teste em vigor mantêm sua data de término original sem
+                  recálculo retroativo. Nenhuma alteração é enviada à API do Stripe.
                 </p>
               </div>
 
@@ -760,37 +895,76 @@ function AdminSettings() {
             </div>
           </Card>
 
-          {/* 2. GOVERNANÇA DE PERÍODO DE GRAÇA (GRACE PERIOD) - FACTUAL E NÃO-DECORATIVO */}
+          {/* 2. GOVERNANÇA DE PERÍODO DE GRAÇA (GRACE PERIOD) - R2E.14B ATIVO */}
           <Card className="glass border-white/5 rounded-[2.5rem] p-8 max-w-4xl border-blue-500/20">
             <CardHeader className="p-0 mb-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <CardTitle className="text-xl font-bold text-white italic tracking-tight uppercase flex items-center gap-2">
                     <Clock className="text-blue-400 w-5 h-5" />
-                    Governança de Período de Graça (Grace Period)
+                    Período de Carência para Inadimplência
                   </CardTitle>
                   <CardDescription className="text-gray-400 text-xs mt-1">
-                    Janela temporal de tolerância para faturas vencidas e inadimplência temporária (past_due).
+                    Janela temporal de tolerância para faturas vencidas e inadimplência temporária
+                    (past_due) exclusivamente para assinantes pagantes.
                   </CardDescription>
                 </div>
                 <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 font-mono text-[10px] uppercase font-bold tracking-wider shrink-0">
-                  Planejamento Arquitetural (G.4)
+                  {(settings as any)?.grace_period_days ?? 7} Dias Vigentes
                 </div>
               </div>
             </CardHeader>
 
-            <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="grace-days-input"
+                  className="text-gray-400 text-[10px] uppercase font-bold tracking-widest px-1"
+                >
+                  Dias de Carência na Inadimplência (1 a 30 dias)
+                </Label>
+                <Input
+                  id="grace-days-input"
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={graceDaysInput}
+                  onChange={(e) =>
+                    setGraceDaysInput(Math.max(1, Math.min(30, parseInt(e.target.value) || 1)))
+                  }
+                  className="h-12 bg-white/5 border-white/10 rounded-xl focus:ring-blue-500/50 text-white font-mono text-sm max-w-xs"
+                />
+                <p className="text-[11px] text-gray-500 px-1">
+                  Intervalo permitido: 1 a 30 dias. Padrão canônico da plataforma: 7 dias.
+                </p>
+              </div>
+
+              {/* Explicação estrita em português distinguindo Trial de Grace */}
+              <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-blue-300 uppercase tracking-wider">
                   <Info className="w-4 h-4 text-blue-400 shrink-0" />
-                  Status da Operação em Tempo de Execução:
+                  Isolamento Rigoroso entre Teste Gratuito e Carência:
                 </div>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  Conforme a análise forense do R2E.13G.4, assinaturas com status <code className="text-amber-300 bg-white/5 px-1.5 py-0.5 rounded">past_due</code> mantêm o acesso operacional garantido enquanto o Stripe executa seus ciclos de retentativa de cobrança (Smart Retries).
+                  Aplica-se somente a assinantes pagantes cuja renovação não pôde ser cobrada. Não
+                  altera nem estende o período de teste gratuito de 15 dias.
                 </p>
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  A ativação de uma janela de tolerância com bloqueio automático no servidor (entitlement cutoff) permanece <strong>planejada</strong> e aguarda o provisionamento de timestamp imutável de transição de inadimplência na tabela de assinaturas. Controles decorativos sem autoridade real no servidor foram deliberadamente omitidos.
+                  Tenants no período de teste gratuito que não contratarem uma assinatura comercial
+                  têm o acesso encerrado ao final dos 15 dias sem receber carência (15 dias de teste
+                  nunca se tornam 22 dias).
                 </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  onClick={() => setGraceConfirmOpen(true)}
+                  disabled={updateGracePolicyMutation.isPending}
+                  className="rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white gap-2 text-xs uppercase tracking-wider h-10 px-5 shadow-[0_0_16px_rgba(59,130,246,0.3)]"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Salvar Período de Carência
+                </Button>
               </div>
             </div>
           </Card>
@@ -813,14 +987,21 @@ function AdminSettings() {
                   Autoridade Exclusiva do Servidor
                 </p>
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  Conforme a arquitetura canônica (R2E.12B / R2E.13B), chaves secretas de API (<code className="text-blue-300">STRIPE_SECRET_KEY</code>) e segredos de assinatura de webhook (<code className="text-blue-300">STRIPE_WEBHOOK_SECRET</code>) residem estritamente no cofre seguro do Supabase (Vault / Edge Runtime) e não são armazenados em tabelas de configurações públicas nem manipulados via navegador.
+                  Conforme a arquitetura canônica (R2E.12B / R2E.13B), chaves secretas de API (
+                  <code className="text-blue-300">STRIPE_SECRET_KEY</code>) e segredos de assinatura
+                  de webhook (<code className="text-blue-300">STRIPE_WEBHOOK_SECRET</code>) residem
+                  estritamente no cofre seguro do Supabase (Vault / Edge Runtime) e não são
+                  armazenados em tabelas de configurações públicas nem manipulados via navegador.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex gap-3">
                 <Info className="text-blue-400 w-5 h-5 shrink-0" />
                 <p className="text-xs text-blue-200/70 font-medium">
-                  O ambiente de execução da plataforma opera em modo <strong>LIVE</strong> com preços e produtos canônicos vinculados no servidor. Alterações de credenciais devem ser realizadas exclusivamente por operador autorizado via console de infraestrutura.
+                  O ambiente de execução da plataforma opera em modo <strong>LIVE</strong> com
+                  preços e produtos canônicos vinculados no servidor. Alterações de credenciais
+                  devem ser realizadas exclusivamente por operador autorizado via console de
+                  infraestrutura.
                 </p>
               </div>
             </div>
@@ -829,7 +1010,9 @@ function AdminSettings() {
           {/* MODAL DE CONFIRMAÇÃO NÍVEL 2: POLÍTICA DE TRIAL */}
           <Dialog
             open={trialConfirmOpen}
-            onOpenChange={(open) => !open && !updateTrialPolicyMutation.isPending && setTrialConfirmOpen(false)}
+            onOpenChange={(open) =>
+              !open && !updateTrialPolicyMutation.isPending && setTrialConfirmOpen(false)
+            }
           >
             <DialogContent className="glass border-purple-500/30 text-white max-w-lg rounded-3xl">
               <DialogHeader className="space-y-3">
@@ -883,13 +1066,19 @@ function AdminSettings() {
                     Impacto da Modificação:
                   </p>
                   <p className="text-gray-300 text-[11px] leading-relaxed mt-1">
-                    Esta política afetará <strong>apenas novas contas</strong> criadas após a confirmação. Contas com período de teste em vigor mantêm seu prazo original. A mutação e a justificativa serão registradas atomicamente no log de auditoria da plataforma.
+                    Esta política afetará <strong>apenas novas contas</strong> criadas após a
+                    confirmação. Contas com período de teste em vigor mantêm seu prazo original. A
+                    mutação e a justificativa serão registradas atomicamente no log de auditoria da
+                    plataforma.
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="trial-policy-reason" className="text-xs font-bold text-gray-300">
+                    <Label
+                      htmlFor="trial-policy-reason"
+                      className="text-xs font-bold text-gray-300"
+                    >
                       Justificativa Operacional (Obrigatório, 10 a 500 caracteres)
                     </Label>
                     <span
@@ -954,9 +1143,133 @@ function AdminSettings() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* MODAL DE CONFIRMAÇÃO NÍVEL 2: PERÍODO DE CARÊNCIA (R2E.14B) */}
+          <Dialog
+            open={graceConfirmOpen}
+            onOpenChange={(open) =>
+              !open && !updateGracePolicyMutation.isPending && setGraceConfirmOpen(false)
+            }
+          >
+            <DialogContent className="glass border-blue-500/30 text-white max-w-lg rounded-3xl">
+              <DialogHeader className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    <ShieldAlert className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl font-black text-blue-300 tracking-tight">
+                      CONFIRMAR PERÍODO DE CARÊNCIA
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400 text-xs mt-1">
+                      Governança da plataforma: requer justificativa operacional obrigatória.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-5 py-2">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Duração Atual de Carência:</span>
+                    <span className="text-white font-mono font-bold">
+                      {(settings as any)?.grace_period_days || 7} dias
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Nova Duração de Carência:</span>
+                    <span className="text-blue-300 font-mono font-bold">{graceDaysInput} dias</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 space-y-1">
+                  <p className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-400" />
+                    Impacto da Modificação:
+                  </p>
+                  <p className="text-gray-300 text-[11px] leading-relaxed mt-1">
+                    Esta política afetará <strong>novos episódios de inadimplência</strong> gerados
+                    após a confirmação. Episódios já em curso mantêm seu prazo de expiração
+                    (grace_ends_at) imutável. A mutação e a justificativa serão registradas
+                    atomicamente no log de auditoria da plataforma.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label
+                      htmlFor="grace-policy-reason"
+                      className="text-xs font-bold text-gray-300"
+                    >
+                      Justificativa Operacional (Obrigatório, 10 a 500 caracteres)
+                    </Label>
+                    <span
+                      className={cn(
+                        "text-[10px] font-mono",
+                        graceReason.trim().length >= 10 && graceReason.trim().length <= 500
+                          ? "text-emerald-400"
+                          : "text-gray-500",
+                      )}
+                    >
+                      {graceReason.trim().length}/500
+                    </span>
+                  </div>
+                  <Textarea
+                    id="grace-policy-reason"
+                    value={graceReason}
+                    onChange={(e) => setGraceReason(e.target.value)}
+                    placeholder="Descreva a razão comercial/estratégica para a alteração do período de carência..."
+                    disabled={updateGracePolicyMutation.isPending}
+                    maxLength={500}
+                    className="bg-white/5 border-white/10 text-white rounded-xl min-h-[90px] focus:border-blue-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0 mt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setGraceConfirmOpen(false)}
+                  disabled={updateGracePolicyMutation.isPending}
+                  className="rounded-xl border-white/10 hover:bg-white/10 text-gray-300"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  disabled={
+                    graceReason.trim().length < 10 ||
+                    graceReason.trim().length > 500 ||
+                    updateGracePolicyMutation.isPending
+                  }
+                  onClick={() => {
+                    updateGracePolicyMutation.mutate({
+                      days: graceDaysInput,
+                      reason: graceReason,
+                    });
+                  }}
+                  className="rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {updateGracePolicyMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Gravando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Confirmar e Gravar Política
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
-        <TabsContent value="seguranca" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <TabsContent
+          value="seguranca"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="glass border-white/5 rounded-[2.5rem] p-8">
               <CardHeader className="p-0 mb-8">
@@ -967,15 +1280,21 @@ function AdminSettings() {
               </CardHeader>
               <div className="space-y-6">
                 <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
-                  <p className="text-white font-bold text-sm uppercase italic">Controle de Identidade Centralizado</p>
+                  <p className="text-white font-bold text-sm uppercase italic">
+                    Controle de Identidade Centralizado
+                  </p>
                   <p className="text-xs text-gray-400 leading-relaxed">
-                    Políticas de MFA (autenticação de dois fatores) e restrições de rede para contas de super administração são aplicadas diretamente no nível de identidade (Supabase Auth / Provedor de Identidade) e nas regras de borda (Cloudflare / WAF).
+                    Políticas de MFA (autenticação de dois fatores) e restrições de rede para contas
+                    de super administração são aplicadas diretamente no nível de identidade
+                    (Supabase Auth / Provedor de Identidade) e nas regras de borda (Cloudflare /
+                    WAF).
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex gap-3">
                   <Info className="text-purple-400 w-5 h-5 shrink-0" />
                   <p className="text-xs text-purple-200/70 font-medium">
-                    Controles sem imposição no backend foram removidos para garantir a estrita integridade do painel de controle.
+                    Controles sem imposição no backend foram removidos para garantir a estrita
+                    integridade do painel de controle.
                   </p>
                 </div>
               </div>
@@ -992,13 +1311,16 @@ function AdminSettings() {
                 <div className="flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-bold text-sm uppercase italic">Logs de Atividade</p>
+                      <p className="text-white font-bold text-sm uppercase italic">
+                        Logs de Atividade
+                      </p>
                       <span className="text-[10px] px-2 py-0.5 rounded-full border bg-blue-500/10 border-blue-500/20 text-blue-300">
                         Obrigatório / Incondicional
                       </span>
                     </div>
                     <p className="text-xs text-gray-500">
-                      Auditoria de conformidade e segurança da plataforma sempre ativa. Não pode ser desativada por flag genérica.
+                      Auditoria de conformidade e segurança da plataforma sempre ativa. Não pode ser
+                      desativada por flag genérica.
                     </p>
                   </div>
                   <Switch
@@ -1007,7 +1329,10 @@ function AdminSettings() {
                     className="data-[state=checked]:bg-blue-600 opacity-50 cursor-not-allowed"
                   />
                 </div>
-                <Button variant="outline" className="w-full h-12 rounded-xl border-white/10 bg-white/5 gap-2 text-xs font-bold uppercase tracking-widest">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 rounded-xl border-white/10 bg-white/5 gap-2 text-xs font-bold uppercase tracking-widest"
+                >
                   <ExternalLink size={14} /> Exportar Relatório de Auditoria
                 </Button>
               </div>
@@ -1015,25 +1340,67 @@ function AdminSettings() {
           </div>
         </TabsContent>
 
-        <TabsContent value="integracoes" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <TabsContent
+          value="integracoes"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { name: "WhatsApp (Z-API)", status: "Conectado", icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png", color: "text-emerald-400" },
-              { name: "E-mail (Resend)", status: "Ativo", icon: "https://avatars.githubusercontent.com/u/104191638?s=200&v=4", color: "text-white" },
-              { name: "OpenAI (IA)", status: "Configurado", icon: "https://openai.com/favicon.ico", color: "text-purple-400" },
-              { name: "Google Analytics", status: "Inativo", icon: "https://www.gstatic.com/analytics-suite/header/suite/v2/ic_analytics.svg", color: "text-gray-500" },
+              {
+                name: "WhatsApp (Z-API)",
+                status: "Conectado",
+                icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
+                color: "text-emerald-400",
+              },
+              {
+                name: "E-mail (Resend)",
+                status: "Ativo",
+                icon: "https://avatars.githubusercontent.com/u/104191638?s=200&v=4",
+                color: "text-white",
+              },
+              {
+                name: "OpenAI (IA)",
+                status: "Configurado",
+                icon: "https://openai.com/favicon.ico",
+                color: "text-purple-400",
+              },
+              {
+                name: "Google Analytics",
+                status: "Inativo",
+                icon: "https://www.gstatic.com/analytics-suite/header/suite/v2/ic_analytics.svg",
+                color: "text-gray-500",
+              },
             ].map((integ, i) => (
-              <Card key={i} className="glass border-white/5 rounded-3xl p-6 group hover:border-white/10 transition-all">
+              <Card
+                key={i}
+                className="glass border-white/5 rounded-3xl p-6 group hover:border-white/10 transition-all"
+              >
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center p-2 group-hover:scale-110 transition-transform">
-                    <img src={integ.icon} alt={integ.name} className="w-full h-full object-contain" />
+                    <img
+                      src={integ.icon}
+                      alt={integ.name}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm uppercase tracking-tighter">{integ.name}</h4>
-                    <span className={cn("text-[10px] font-black uppercase tracking-widest", integ.color)}>{integ.status}</span>
+                    <h4 className="font-bold text-white text-sm uppercase tracking-tighter">
+                      {integ.name}
+                    </h4>
+                    <span
+                      className={cn(
+                        "text-[10px] font-black uppercase tracking-widest",
+                        integ.color,
+                      )}
+                    >
+                      {integ.status}
+                    </span>
                   </div>
                 </div>
-                <Button variant="ghost" className="w-full rounded-xl bg-white/5 text-[10px] font-bold uppercase tracking-widest border border-white/5 group-hover:border-purple-500/30">
+                <Button
+                  variant="ghost"
+                  className="w-full rounded-xl bg-white/5 text-[10px] font-bold uppercase tracking-widest border border-white/5 group-hover:border-purple-500/30"
+                >
                   Gerenciar Conexão
                 </Button>
               </Card>
@@ -1041,7 +1408,10 @@ function AdminSettings() {
           </div>
         </TabsContent>
 
-        <TabsContent value="mensagens" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <TabsContent
+          value="mensagens"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+        >
           <Card className="glass border-white/5 rounded-3xl p-8">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -1049,12 +1419,15 @@ function AdminSettings() {
                 Central de Mensagens da Plataforma
               </CardTitle>
               <CardDescription>
-                A caixa de entrada de mensagens de contato da plataforma foi promovida para uma rota operacional de nível superior dedicada (R2E.13F).
+                A caixa de entrada de mensagens de contato da plataforma foi promovida para uma rota
+                operacional de nível superior dedicada (R2E.13F).
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Para gerenciar, responder, arquivar ou excluir mensagens de contato de barbearias e visitantes com suporte completo a filtros, pastas e threads de resposta, acesse a rota canônica.
+                Para gerenciar, responder, arquivar ou excluir mensagens de contato de barbearias e
+                visitantes com suporte completo a filtros, pastas e threads de resposta, acesse a
+                rota canônica.
               </p>
               <Button asChild variant="default" className="gap-2">
                 <Link to="/admin/messages">
@@ -1066,11 +1439,17 @@ function AdminSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="features" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <TabsContent
+          value="features"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+        >
           <GlobalFeatureGovernance />
         </TabsContent>
 
-        <TabsContent value="notificacoes" className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+        <TabsContent
+          value="notificacoes"
+          className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6"
+        >
           <AdminEventSubscriptions />
           <AdminEventTemplates />
         </TabsContent>

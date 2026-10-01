@@ -566,6 +566,21 @@ async function handleInvoicePaymentFailed(invoice: any, env: StripeEnv) {
   }
 
   const profile = userId ? await loadProfileForUser(userId) : null;
+
+  if (invoice?.subscription) {
+    try {
+      const eventTimestamp = invoice.created
+        ? new Date(invoice.created * 1000).toISOString()
+        : new Date().toISOString();
+      await getSupabase().rpc("record_subscription_payment_failed", {
+        p_stripe_subscription_id: String(invoice.subscription),
+        p_event_timestamp: eventTimestamp,
+      });
+    } catch (subErr) {
+      console.warn("[Webhook] Failed to record subscription payment failed timestamp:", subErr);
+    }
+  }
+
   await fireAdminEvent({
     event_key: "subscription.payment_failed",
     title: "Falha no pagamento da assinatura",

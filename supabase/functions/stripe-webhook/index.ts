@@ -395,6 +395,21 @@ Deno.serve(async (req: Request) => {
         invoiceId: object.id,
         attemptCount: object.attempt_count
       });
+
+      if (object.subscription) {
+        try {
+          const eventTimestamp = event?.created ? new Date(event.created * 1000).toISOString() : null;
+          await adminClient.rpc("record_subscription_payment_failed", {
+            p_stripe_subscription_id: object.subscription,
+            p_event_timestamp: eventTimestamp,
+          });
+        } catch (pfErr) {
+          logger.warn("Failed to record subscription payment failed timestamp", {
+            subscriptionId: object.subscription,
+            error: pfErr,
+          });
+        }
+      }
     }
 
     // 4. Mark event as completed in idempotency table conditioned on lease_token
