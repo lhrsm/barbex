@@ -22,6 +22,7 @@ export interface SendEmailOptions {
   templateData: Record<string, unknown>;
   subject?: string;
   html?: string;
+  text?: string;
   tenantId?: string;
   userId?: string;
 }
@@ -43,7 +44,11 @@ export function escapeHtml(str: unknown): string {
 /**
  * Builds HTML template for team invitations.
  */
-function buildInvitationHtml(data: { barbershopName?: string; role?: string; inviteUrl?: string }): { subject: string; html: string } {
+function buildInvitationHtml(data: {
+  barbershopName?: string;
+  role?: string;
+  inviteUrl?: string;
+}): { subject: string; html: string } {
   const shop = escapeHtml(data.barbershopName || "Barbex");
   const role = escapeHtml(data.role || "Membro da Equipe");
   const inviteUrl = data.inviteUrl || "https://barbex.shop";
@@ -86,7 +91,10 @@ function buildInvitationHtml(data: { barbershopName?: string; role?: string; inv
 /**
  * Builds HTML template for staff verification code.
  */
-function buildVerificationCodeHtml(data: { code?: string; userName?: string }): { subject: string; html: string } {
+function buildVerificationCodeHtml(data: { code?: string; userName?: string }): {
+  subject: string;
+  html: string;
+} {
   const code = escapeHtml(data.code || "000000");
   const userName = escapeHtml(data.userName || "Colaborador");
   const subject = `Seu código de verificação Barbex: ${code}`;
@@ -127,7 +135,13 @@ function buildVerificationCodeHtml(data: { code?: string; userName?: string }): 
 /**
  * Builds HTML template for Admin Digest.
  */
-function buildAdminDigestHtml(data: { period?: string; summaryText?: string; newTenants?: number; newAppointments?: number; criticalEvents?: number }): { subject: string; html: string } {
+function buildAdminDigestHtml(data: {
+  period?: string;
+  summaryText?: string;
+  newTenants?: number;
+  newAppointments?: number;
+  criticalEvents?: number;
+}): { subject: string; html: string } {
   const period = data.period === "weekly" ? "Semanal" : "Diário";
   const subject = `📊 Barbex — Relatório ${period} de Atividades`;
   const summary = escapeHtml(data.summaryText || "Resumo operacional da plataforma.");
@@ -174,7 +188,12 @@ function buildAdminDigestHtml(data: { period?: string; summaryText?: string; new
 /**
  * Builds HTML template for Review Requests.
  */
-function buildReviewRequestHtml(data: { customerName?: string; barbershopName?: string; barberName?: string; reviewLink?: string }): { subject: string; html: string } {
+function buildReviewRequestHtml(data: {
+  customerName?: string;
+  barbershopName?: string;
+  barberName?: string;
+  reviewLink?: string;
+}): { subject: string; html: string } {
   const customerName = escapeHtml(data.customerName || "Cliente");
   const barbershopName = escapeHtml(data.barbershopName || "nossa barbearia");
   const reviewLink = data.reviewLink || "https://barbex.shop";
@@ -216,11 +235,18 @@ function buildReviewRequestHtml(data: { customerName?: string; barbershopName?: 
 /**
  * Builds HTML template for Subscription Reminders.
  */
-function buildSubscriptionReminderHtml(data: { planName?: string; dueDate?: string; actionUrl?: string; message?: string }): { subject: string; html: string } {
+function buildSubscriptionReminderHtml(data: {
+  planName?: string;
+  dueDate?: string;
+  actionUrl?: string;
+  message?: string;
+}): { subject: string; html: string } {
   const planName = escapeHtml(data.planName || "Plano Barbex");
   const dueDate = escapeHtml(data.dueDate || "em breve");
   const actionUrl = data.actionUrl || "https://barbex.shop/admin";
-  const customMessage = escapeHtml(data.message || `Lembramos que a renovação do seu ${planName} está prevista para ${dueDate}.`);
+  const customMessage = escapeHtml(
+    data.message || `Lembramos que a renovação do seu ${planName} está prevista para ${dueDate}.`,
+  );
   const subject = `Aviso sobre sua assinatura ${planName} — Barbex`;
   const html = `
 <!DOCTYPE html>
@@ -259,7 +285,11 @@ function buildSubscriptionReminderHtml(data: { planName?: string; dueDate?: stri
 /**
  * Builds HTML template for System Notifications.
  */
-function buildSystemNotificationHtml(data: { title?: string; message?: string; actionUrl?: string }): { subject: string; html: string } {
+function buildSystemNotificationHtml(data: {
+  title?: string;
+  message?: string;
+  actionUrl?: string;
+}): { subject: string; html: string } {
   const title = escapeHtml(data.title || "Notificação do Sistema");
   const message = escapeHtml(data.message || "Aviso importante sobre sua conta.");
   const actionUrl = data.actionUrl || "https://barbex.shop";
@@ -301,7 +331,9 @@ function buildSystemNotificationHtml(data: { title?: string; message?: string; a
  * Sends a transactional email using Resend API.
  * In development / mock mode, logs safely without making live HTTP requests if RESEND_API_KEY is absent.
  */
-export async function sendEmail(options: SendEmailOptions): Promise<{ id: string; success: boolean }> {
+export async function sendEmail(
+  options: SendEmailOptions,
+): Promise<{ id: string; success: boolean }> {
   const apiKey = getOptionalEnv("RESEND_API_KEY");
 
   let subject = options.subject || "Notificação Barbex";
@@ -352,12 +384,18 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ id: string
       break;
     }
     default:
-      throw new EdgeError("BAD_REQUEST", `Template de email desconhecido: ${options.templateKey}`, 400);
+      throw new EdgeError(
+        "BAD_REQUEST",
+        `Template de email desconhecido: ${options.templateKey}`,
+        400,
+      );
   }
 
   // Mock mode when RESEND_API_KEY is not configured or in test mode
   if (!apiKey || apiKey === "mock" || apiKey === "test_key") {
-    console.log(`[Resend Mock] Email to ${options.recipient} | Subject: "${subject}" | Template: ${options.templateKey}`);
+    console.log(
+      `[Resend Mock] Email to ${options.recipient} | Subject: "${subject}" | Template: ${options.templateKey}`,
+    );
     return { id: `mock_msg_${Date.now()}`, success: true };
   }
 
@@ -367,27 +405,40 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ id: string
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         from: fromAddress,
         to: [options.recipient],
         subject,
-        html
-      })
+        html,
+        ...(options.text ? { text: options.text } : {}),
+      }),
     });
 
     if (!res.ok) {
       const errBody = await res.text();
       console.error(`[Resend Error] Status: ${res.status}, Body: ${errBody}`);
       if (res.status === 429) {
-        throw new EdgeError("RATE_LIMIT_EXCEEDED", "Limite de taxa do provedor de e-mail excedido.", 429);
+        throw new EdgeError(
+          "RATE_LIMIT_EXCEEDED",
+          "Limite de taxa do provedor de e-mail excedido.",
+          429,
+        );
       }
       if (res.status >= 400 && res.status < 500) {
-        throw new EdgeError("BAD_REQUEST", `Falha de validação do provedor de e-mail (${res.status}).`, 400);
+        throw new EdgeError(
+          "BAD_REQUEST",
+          `Falha de validação do provedor de e-mail (${res.status}).`,
+          400,
+        );
       }
-      throw new EdgeError("SERVICE_UNAVAILABLE", "Falha transitória no envio do e-mail transacional.", 503);
+      throw new EdgeError(
+        "SERVICE_UNAVAILABLE",
+        "Falha transitória no envio do e-mail transacional.",
+        503,
+      );
     }
 
     const data = await res.json();
@@ -395,7 +446,10 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ id: string
   } catch (err: unknown) {
     if (err instanceof EdgeError) throw err;
     console.error(`[Resend Exception] Error sending email: ${err}`);
-    throw new EdgeError("SERVICE_UNAVAILABLE", "Serviço de e-mail temporariamente indisponível.", 503);
+    throw new EdgeError(
+      "SERVICE_UNAVAILABLE",
+      "Serviço de e-mail temporariamente indisponível.",
+      503,
+    );
   }
 }
-

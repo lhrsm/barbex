@@ -6,16 +6,25 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { createSuccessResponse, createErrorResponse } from "../_shared/response.ts";
+import { jsonSuccess, jsonError } from "../_shared/response.ts";
 import { createLogger } from "../_shared/logging.ts";
-import { EdgeError } from "../_shared/errors.ts";
+import { EdgeError, sanitizeError } from "../_shared/errors.ts";
 import { getOptionalEnv } from "../_shared/env.ts";
 import { createAdminClient } from "../_shared/supabase-admin.ts";
 import { extractBearerToken } from "../_shared/auth.ts";
 import { sendEmail, EmailTemplateKey } from "../_shared/resend.ts";
-import { sendWebPushNotification, PushSubscriptionData, PushNotificationPayload } from "../_shared/push.ts";
+import {
+  sendWebPushNotification,
+  PushSubscriptionData,
+  PushNotificationPayload,
+} from "../_shared/push.ts";
+import {
+  dispatchDunningNotification,
+  DunningNotificationRecord,
+} from "../_shared/dunning-email.ts";
 
 const MAX_JOBS_PER_RUN = 10;
+const MAX_DUNNING_PER_RUN = 5;
 const MAX_EXECUTION_MS = 25000;
 
 interface BackgroundJobRecord {
@@ -34,7 +43,7 @@ interface BackgroundJobRecord {
 
 serve(async (req: Request) => {
   const origin = req.headers.get("origin");
-  const corsHeaders = getCorsHeaders(origin);
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -50,8 +59,10 @@ serve(async (req: Request) => {
 
     // 1. Service-to-Service Authentication (Closed Fail-Safe)
     const bearerToken = extractBearerToken(req);
-    const cronSecretHeader = req.headers.get("x-cron-secret") || req.headers.get("x-internal-secret");
-    const configuredCronSecret = getOptionalEnv("CRON_WORKER_SECRET") || getOptionalEnv("CRON_SECRET");
+    const cronSecretHeader =
+      req.headers.get("x-cron-secret") || req.headers.get("x-internal-secret");
+    const configuredCronSecret =
+      getOptionalEnv("CRON_WORKER_SECRET") || getOptionalEnv("CRON_SECRET");
     const serviceRoleKey = getOptionalEnv("SUPABASE_SERVICE_ROLE_KEY");
 
     let isAuthorized = false;
@@ -67,7 +78,7 @@ serve(async (req: Request) => {
     if (!isAuthorized) {
       logger.warn("unauthorized_cron_worker_invocation", {
         hasBearer: !!bearerToken,
-        hasCronSecret: !!cronSecretHeader
+        hasCronSecret: !!cronSecretHeader,
       });
       throw new EdgeError("UNAUTHORIZED", "Acesso não autorizado ao worker de background.", 401);
     }
@@ -97,16 +108,19 @@ serve(async (req: Request) => {
 
     if (autoReconcile) {
       try {
-        const { data: recData, error: recErr } = await adminClient.rpc("reconcile_stuck_background_jobs", {
-          p_timeout_minutes: 15
-        });
+        const { data: recData, error: recErr } = await adminClient.rpc(
+          "reconcile_stuck_background_jobs",
+          {
+            p_timeout_minutes: 15,
+          },
+        );
         if (!recErr && recData && recData.length > 0) {
           repairedStuckCount = recData[0].repaired_count || 0;
           failedStuckCount = recData[0].failed_count || 0;
           if (repairedStuckCount > 0 || failedStuckCount > 0) {
             logger.info("stuck_jobs_reconciled", {
               repaired: repairedStuckCount,
-              failed: failedStuckCount
+              failed: failedStuckCount,
             });
           }
         }
@@ -123,6 +137,9 @@ serve(async (req: Request) => {
     const jobResults: Array<{ jobId: string; queue: string; status: string; error?: string }> = [];
 
     while (processedCount < MAX_JOBS_PER_RUN) {
+      if (queueFilter === "dunning") {
+        break;
+      }
       const elapsed = performance.now() - startTime;
       if (elapsed >= MAX_EXECUTION_MS) {
         logger.info("worker_loop_time_budget_reached", { elapsedMs: elapsed, processedCount });
@@ -130,10 +147,13 @@ serve(async (req: Request) => {
       }
 
       // Claim next job atomically using FOR UPDATE SKIP LOCKED
-      const { data: claimedJobs, error: claimErr } = await adminClient.rpc("claim_next_background_job", {
-        p_worker_id: workerId,
-        p_queue_name: queueFilter || null
-      });
+      const { data: claimedJobs, error: claimErr } = await adminClient.rpc(
+        "claim_next_background_job",
+        {
+          p_worker_id: workerId,
+          p_queue_name: queueFilter || null,
+        },
+      );
 
       if (claimErr) {
         logger.error("job_claim_rpc_error", { error: claimErr.message });
@@ -158,7 +178,7 @@ serve(async (req: Request) => {
           jobId: job.id,
           queue: job.queue_name,
           attempt: job.attempts,
-          tenantId: job.tenant_id
+          tenantId: job.tenant_id,
         });
 
         // 4. Queue Dispatch Router
@@ -167,7 +187,9 @@ serve(async (req: Request) => {
             const payload = job.payload || {};
             if (!payload.recipient || !payload.templateKey) {
               isPermanentFailure = true;
-              throw new Error("Payload inválido para email_notification: recipient e templateKey são obrigatórios.");
+              throw new Error(
+                "Payload inválido para email_notification: recipient e templateKey são obrigatórios.",
+              );
             }
 
             await sendEmail({
@@ -176,7 +198,7 @@ serve(async (req: Request) => {
               templateData: payload.templateData || {},
               subject: payload.subject,
               tenantId: job.tenant_id || undefined,
-              userId: payload.userId
+              userId: payload.userId,
             });
             jobSuccess = true;
             break;
@@ -186,12 +208,14 @@ serve(async (req: Request) => {
             const payload = job.payload || {};
             if (!payload.subscription || !payload.notification) {
               isPermanentFailure = true;
-              throw new Error("Payload inválido para push_notification: subscription e notification são obrigatórios.");
+              throw new Error(
+                "Payload inválido para push_notification: subscription e notification são obrigatórios.",
+              );
             }
 
             const pushRes = await sendWebPushNotification(
               payload.subscription as PushSubscriptionData,
-              payload.notification as PushNotificationPayload
+              payload.notification as PushNotificationPayload,
             );
 
             if (!pushRes.success && !pushRes.stale) {
@@ -205,12 +229,14 @@ serve(async (req: Request) => {
             const payload = job.payload || {};
             if (!payload.phone || !payload.message) {
               isPermanentFailure = true;
-              throw new Error("Payload inválido para whatsapp_notification: phone e message são obrigatórios.");
+              throw new Error(
+                "Payload inválido para whatsapp_notification: phone e message são obrigatórios.",
+              );
             }
             // Z-API dispatch simulation / adapter
             logger.info("worker_whatsapp_dispatched", {
               tenantId: job.tenant_id,
-              phonePrefix: String(payload.phone).slice(0, 4) + "..."
+              phonePrefix: String(payload.phone).slice(0, 4) + "...",
             });
             jobSuccess = true;
             break;
@@ -235,7 +261,9 @@ serve(async (req: Request) => {
             logger.info("worker_addons_reconcile_cycle", { tenantId: job.tenant_id });
             const { data: rows, error: rowErr } = await adminClient
               .from("tenant_addons")
-              .select("id, tenant_id, environment, stripe_subscription_id, stripe_subscription_item_id, status")
+              .select(
+                "id, tenant_id, environment, stripe_subscription_id, stripe_subscription_item_id, status",
+              )
               .in("status", ["active", "trialing", "past_due"])
               .not("stripe_subscription_item_id", "is", null)
               .limit(500);
@@ -253,9 +281,12 @@ serve(async (req: Request) => {
               for (const r of rows) {
                 checked++;
                 try {
-                  const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${r.stripe_subscription_id}`, {
-                    headers: { Authorization: `Bearer ${stripeKey}` },
-                  });
+                  const subResp = await fetch(
+                    `https://api.stripe.com/v1/subscriptions/${r.stripe_subscription_id}`,
+                    {
+                      headers: { Authorization: `Bearer ${stripeKey}` },
+                    },
+                  );
 
                   if (subResp.status === 404) {
                     await adminClient
@@ -269,7 +300,9 @@ serve(async (req: Request) => {
 
                   if (subResp.ok) {
                     const sub = await subResp.json();
-                    const item = sub.items?.data?.find((it: any) => it.id === r.stripe_subscription_item_id);
+                    const item = sub.items?.data?.find(
+                      (it: any) => it.id === r.stripe_subscription_item_id,
+                    );
                     if (!item) {
                       await adminClient
                         .from("tenant_addons")
@@ -283,8 +316,10 @@ serve(async (req: Request) => {
                     const periodEnd = item.current_period_end || sub.current_period_end;
                     const patch: Record<string, any> = {};
                     if (sub.status && sub.status !== r.status) patch.status = sub.status;
-                    if (periodEnd) patch.current_period_end = new Date(periodEnd * 1000).toISOString();
-                    if (typeof sub.cancel_at_period_end === "boolean") patch.cancel_at_period_end = sub.cancel_at_period_end;
+                    if (periodEnd)
+                      patch.current_period_end = new Date(periodEnd * 1000).toISOString();
+                    if (typeof sub.cancel_at_period_end === "boolean")
+                      patch.cancel_at_period_end = sub.cancel_at_period_end;
 
                     if (Object.keys(patch).length > 0) {
                       await adminClient.from("tenant_addons").update(patch).eq("id", r.id);
@@ -293,13 +328,20 @@ serve(async (req: Request) => {
                     }
                   }
                 } catch (e: any) {
-                  logger.warn("worker_addons_reconcile_item_failed", { id: r.id, error: String(e) });
+                  logger.warn("worker_addons_reconcile_item_failed", {
+                    id: r.id,
+                    error: String(e),
+                  });
                 }
               }
             }
 
             if (fixed > 0) {
-              logger.info("worker_addons_reconcile_drifts_fixed", { checked, fixed, driftsCount: drifts.length });
+              logger.info("worker_addons_reconcile_drifts_fixed", {
+                checked,
+                fixed,
+                driftsCount: drifts.length,
+              });
               try {
                 await adminClient.functions.invoke("emit-admin-event", {
                   body: {
@@ -342,7 +384,10 @@ serve(async (req: Request) => {
                   body: { ...args, action_url: "/admin/tenants" },
                 });
               } catch (e: any) {
-                logger.warn("worker_risk_scan_emit_warning", { event: args.event_key, error: String(e) });
+                logger.warn("worker_risk_scan_emit_warning", {
+                  event: args.event_key,
+                  error: String(e),
+                });
               }
             };
 
@@ -366,13 +411,13 @@ serve(async (req: Request) => {
               .gte("trial_end", now.toISOString())
               .lte("trial_end", in3d.toISOString());
 
-            for (const t of (trials || [])) {
+            for (const t of trials || []) {
               if (await wasEmitted("subscription.trial_ending", t.id, days1ago.toISOString())) {
                 continue;
               }
               const daysLeft = Math.max(
                 0,
-                Math.ceil((new Date(t.trial_end).getTime() - now.getTime()) / 86_400_000)
+                Math.ceil((new Date(t.trial_end).getTime() - now.getTime()) / 86_400_000),
               );
               await emitEvent({
                 event_key: "subscription.trial_ending",
@@ -391,7 +436,7 @@ serve(async (req: Request) => {
               .select("id, business_name, email")
               .in("role", ["admin", "shop_owner"]);
 
-            for (const t of (tenants || [])) {
+            for (const t of tenants || []) {
               if (await wasEmitted("tenant.inactive", t.id, days8ago.toISOString())) {
                 continue;
               }
@@ -414,7 +459,10 @@ serve(async (req: Request) => {
               }
             }
 
-            logger.info("worker_admin_risk_scan_completed", { trialEnding: trialCount, inactive: inactiveCount });
+            logger.info("worker_admin_risk_scan_completed", {
+              trialEnding: trialCount,
+              inactive: inactiveCount,
+            });
             jobSuccess = true;
             break;
           }
@@ -456,7 +504,7 @@ serve(async (req: Request) => {
           queue: job.queue_name,
           attempt: job.attempts,
           error: jobErrorMessage,
-          isPermanent: isPermanentFailure
+          isPermanent: isPermanentFailure,
         });
       }
 
@@ -470,7 +518,7 @@ serve(async (req: Request) => {
         // Try RPC complete_background_job
         const { error: compErr } = await adminClient.rpc("complete_background_job", {
           p_job_id: job.id,
-          p_worker_id: workerId
+          p_worker_id: workerId,
         });
 
         if (compErr) {
@@ -483,7 +531,7 @@ serve(async (req: Request) => {
               locked_at: null,
               locked_by: null,
               last_error: null,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .eq("id", job.id)
             .eq("locked_by", workerId);
@@ -492,7 +540,7 @@ serve(async (req: Request) => {
         logger.info("job_completed_success", {
           jobId: job.id,
           queue: job.queue_name,
-          durationMs: jobDurationMs
+          durationMs: jobDurationMs,
         });
       } else {
         const attempts = job.attempts || 1;
@@ -502,10 +550,20 @@ serve(async (req: Request) => {
 
         if (willRetry) {
           retriedCount++;
-          jobResults.push({ jobId: job.id, queue: job.queue_name, status: "retry", error: jobErrorMessage || undefined });
+          jobResults.push({
+            jobId: job.id,
+            queue: job.queue_name,
+            status: "retry",
+            error: jobErrorMessage || undefined,
+          });
         } else {
           failedCount++;
-          jobResults.push({ jobId: job.id, queue: job.queue_name, status: "failed", error: jobErrorMessage || undefined });
+          jobResults.push({
+            jobId: job.id,
+            queue: job.queue_name,
+            status: "failed",
+            error: jobErrorMessage || undefined,
+          });
         }
 
         // Try RPC fail_background_job
@@ -513,13 +571,15 @@ serve(async (req: Request) => {
           p_job_id: job.id,
           p_worker_id: workerId,
           p_error: jobErrorMessage || "Erro na execução do background job.",
-          p_retry_delay_seconds: isPermanentFailure ? 0 : backoffSeconds
+          p_retry_delay_seconds: isPermanentFailure ? 0 : backoffSeconds,
         });
 
         if (failErr) {
           // Fallback direct update with lock check
           const newStatus = willRetry ? "retry" : "failed";
-          const nextRun = willRetry ? new Date(Date.now() + backoffSeconds * 1000).toISOString() : null;
+          const nextRun = willRetry
+            ? new Date(Date.now() + backoffSeconds * 1000).toISOString()
+            : null;
 
           await adminClient
             .from("background_jobs")
@@ -529,10 +589,122 @@ serve(async (req: Request) => {
               last_error: jobErrorMessage || "Erro na execução do background job.",
               locked_at: null,
               locked_by: null,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .eq("id", job.id)
             .eq("locked_by", workerId);
+        }
+      }
+    }
+
+    // 5. Dunning Reminder Scanner & Dispatcher (R2E.15C.4: Scan-Before-Drain)
+    let dunningProcessed = 0;
+    let dunningSent = 0;
+    let dunningCanceled = 0;
+    let dunningFailed = 0;
+    let dunningRetried = 0;
+    const dunningResults: Array<{ id: string; status: string; type: string; error?: string }> = [];
+
+    interface DunningScanSummary {
+      ok: boolean;
+      scanned_at?: string;
+      enqueued_initial?: number;
+      enqueued_three_day?: number;
+      enqueued_one_day?: number;
+      enqueued_expired?: number;
+      error?: string;
+    }
+    let dunningScanResult: DunningScanSummary | null = null;
+
+    const shouldProcessDunning = !queueFilter || queueFilter === "dunning" || queueFilter === "all";
+
+    if (shouldProcessDunning) {
+      // Step A: Scan & Enqueue Due Dunning Intents (PostgreSQL Authority)
+      try {
+        const { data: scanData, error: scanErr } = await adminClient.rpc(
+          "scan_and_enqueue_dunning_reminders",
+        );
+        if (scanErr) {
+          logger.error("dunning_scanner_rpc_error", { error: scanErr.message });
+          dunningScanResult = { ok: false, error: scanErr.message };
+        } else {
+          dunningScanResult = scanData as DunningScanSummary;
+          logger.info("dunning_scanner_completed", { scanResult: dunningScanResult });
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        logger.error("dunning_scanner_fatal_error", { error: errMsg });
+        dunningScanResult = { ok: false, error: errMsg };
+      }
+
+      // Step B: Bounded Drain Loop (R2E.15C.3)
+      while (dunningProcessed < MAX_DUNNING_PER_RUN) {
+        const elapsed = performance.now() - startTime;
+        if (elapsed >= MAX_EXECUTION_MS - 3000) {
+          logger.info("dunning_time_budget_reached", { elapsedMs: elapsed, dunningProcessed });
+          break;
+        }
+
+        const { data: claimedDunning, error: claimErr } = await adminClient.rpc(
+          "claim_next_dunning_notification",
+          {
+            p_worker_id: workerId,
+            p_lease_seconds: 300,
+          },
+        );
+
+        if (claimErr) {
+          logger.error("dunning_claim_rpc_error", { error: claimErr.message });
+          break;
+        }
+
+        if (!claimedDunning || claimedDunning.length === 0) {
+          break;
+        }
+
+        const dunningRec = claimedDunning[0] as DunningNotificationRecord;
+        dunningProcessed++;
+
+        logger.info("dunning_processing_start", {
+          dunningId: dunningRec.id,
+          notificationType: dunningRec.notification_type,
+          attempt: dunningRec.attempt_count,
+          tenantId: dunningRec.tenant_id,
+        });
+
+        const dispatchRes = await dispatchDunningNotification(adminClient, dunningRec);
+
+        if (dispatchRes.status === "sent") {
+          dunningSent++;
+          dunningResults.push({
+            id: dunningRec.id,
+            status: "sent",
+            type: dunningRec.notification_type,
+          });
+        } else if (dispatchRes.status === "canceled") {
+          dunningCanceled++;
+          dunningResults.push({
+            id: dunningRec.id,
+            status: "canceled",
+            type: dunningRec.notification_type,
+            error: dispatchRes.reason,
+          });
+        } else if (dispatchRes.status === "retry") {
+          dunningRetried++;
+          dunningResults.push({
+            id: dunningRec.id,
+            status: "retry",
+            type: dunningRec.notification_type,
+            error: dispatchRes.error,
+          });
+        } else {
+          dunningFailed++;
+          dunningResults.push({
+            id: dunningRec.id,
+            status: "failed",
+            type: dunningRec.notification_type,
+            error: dispatchRes.error,
+          });
         }
       }
     }
@@ -546,10 +718,16 @@ serve(async (req: Request) => {
       failed: failedCount,
       retried: retriedCount,
       repairedStuck: repairedStuckCount,
-      durationMs: totalDurationMs
+      dunningScan: dunningScanResult,
+      dunningProcessed,
+      dunningSent,
+      dunningCanceled,
+      dunningFailed,
+      dunningRetried,
+      durationMs: totalDurationMs,
     });
 
-    return createSuccessResponse(
+    return jsonSuccess(
       {
         workerId,
         processed: processedCount,
@@ -557,19 +735,29 @@ serve(async (req: Request) => {
         failed: failedCount,
         retried: retriedCount,
         repairedStuck: repairedStuckCount,
+        dunning: {
+          scanned: dunningScanResult,
+          processed: dunningProcessed,
+          sent: dunningSent,
+          canceled: dunningCanceled,
+          failed: dunningFailed,
+          retried: dunningRetried,
+          results: dunningResults,
+        },
         durationMs: totalDurationMs,
-        results: jobResults
+        results: jobResults,
       },
-      corsHeaders
+      200,
+      req,
     );
-
   } catch (error: unknown) {
     const totalDurationMs = Math.round(performance.now() - startTime);
     logger.error("cron_worker_fatal_error", {
       error: error instanceof Error ? error.message : String(error),
-      durationMs: totalDurationMs
+      durationMs: totalDurationMs,
     });
 
-    return createErrorResponse(error, corsHeaders);
+    const sanitized = sanitizeError(error);
+    return jsonError(sanitized.code, sanitized.message, sanitized.status, req);
   }
 });
