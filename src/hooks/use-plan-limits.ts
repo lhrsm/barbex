@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./use-tenant";
 import { startOfMonth, endOfMonth, differenceInDays } from "date-fns";
+import { resolveDelinquencyState, type DelinquencyResolution } from "@/lib/delinquency";
 
 export type PlanType = "starter" | "pro" | "elite" | "free";
 
@@ -23,7 +24,7 @@ export const PLAN_LIMITS = {
     monthlyAppointments: Infinity,
     whatsappConnections: 1,
     automations: 3,
-    price: 59.90,
+    price: 59.9,
   },
   pro: {
     barbers: 10,
@@ -32,7 +33,7 @@ export const PLAN_LIMITS = {
     monthlyAppointments: Infinity,
     whatsappConnections: 2,
     automations: 8,
-    price: 99.90,
+    price: 99.9,
   },
   elite: {
     barbers: Infinity,
@@ -41,14 +42,18 @@ export const PLAN_LIMITS = {
     monthlyAppointments: Infinity,
     whatsappConnections: Infinity,
     automations: Infinity,
-    price: 149.90,
+    price: 149.9,
   },
 };
 
 export function usePlanLimits() {
   const { tenantId } = useTenant();
 
-  const { data, isLoading: queryLoading, refetch } = useQuery({
+  const {
+    data,
+    isLoading: queryLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["plan-limits", tenantId],
     queryFn: async () => {
       if (!tenantId) return null;
@@ -64,15 +69,29 @@ export function usePlanLimits() {
           .maybeSingle(),
         supabase
           .from("subscriptions")
-          .select("status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id")
+          .select(
+            "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, past_due_since, grace_ends_at, payment_failed_at",
+          )
           .eq("user_id", tenantId)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
         Promise.allSettled([
-          supabase.from("barbers").select("*", { count: "exact", head: true }).eq("tenant_id", tenantId).eq("active", true),
-          supabase.from("services").select("*", { count: "exact", head: true }).eq("tenant_id", tenantId).eq("active", true),
-          supabase.from("products").select("*", { count: "exact", head: true }).eq("user_id", tenantId).eq("active", true),
+          supabase
+            .from("barbers")
+            .select("*", { count: "exact", head: true })
+            .eq("tenant_id", tenantId)
+            .eq("active", true),
+          supabase
+            .from("services")
+            .select("*", { count: "exact", head: true })
+            .eq("tenant_id", tenantId)
+            .eq("active", true),
+          supabase
+            .from("products")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", tenantId)
+            .eq("active", true),
           supabase
             .from("appointments")
             .select("*", { count: "exact", head: true })
@@ -80,7 +99,10 @@ export function usePlanLimits() {
             .neq("status", "cancelled")
             .gte("start_time", monthStart)
             .lte("start_time", monthEnd),
-          supabase.from("whatsapp_instances").select("*", { count: "exact", head: true }).eq("tenant_id", tenantId),
+          supabase
+            .from("whatsapp_instances")
+            .select("*", { count: "exact", head: true })
+            .eq("tenant_id", tenantId),
         ]),
       ]);
 
@@ -111,15 +133,22 @@ export function usePlanLimits() {
         cancelAtPeriodEnd: boolean;
         stripeCustomerId: string | null;
         priceId: string | null;
+        pastDueSince: string | null;
+        graceEndsAt: string | null;
+        paymentFailedAt: string | null;
       } | null = null;
 
       if (subRes.data) {
+        const rawSub = subRes.data as Record<string, unknown>;
         subData = {
           status: subRes.data.status || null,
           currentPeriodEnd: subRes.data.current_period_end || null,
           cancelAtPeriodEnd: !!subRes.data.cancel_at_period_end,
           stripeCustomerId: subRes.data.stripe_customer_id || null,
           priceId: subRes.data.price_id || null,
+          pastDueSince: (rawSub.past_due_since as string) || null,
+          graceEndsAt: (rawSub.grace_ends_at as string) || null,
+          paymentFailedAt: (rawSub.payment_failed_at as string) || null,
         };
 
         const isSubscribed = ["active", "trialing", "past_due"].includes(subRes.data.status || "");
@@ -193,11 +222,21 @@ export function usePlanLimits() {
     : 0;
 
   const subStatus = (subscription?.status || "").toLowerCase();
-  const hasActiveSubscription =
-    ["active", "paid", "trialing", "past_due"].includes(subStatus) || (plan && plan !== "free");
+  const delinquency = resolveDelinquencyState(subscription);
 
+  // A subscription is active if status is active/paid/trialing, or past_due strictly within Grace.
+  const isSubscriptionActive =
+    ["active", "paid", "trialing"].includes(subStatus) ||
+    (subStatus === "past_due" && delinquency.isInGrace);
+
+  // Plan grants access only if NOT delinquent with expired Grace
+  const hasPlanAccess = !delinquency.isGraceExpired && !!plan && plan !== "free";
+
+  const hasActiveSubscription = isSubscriptionActive || hasPlanAccess;
   const isTrialValid = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
   const canAccess = hasActiveSubscription || isTrialValid;
+  const isTrialExpired = !hasActiveSubscription && !!trialEndsAt && !isTrialValid;
+  const isGraceExpired = delinquency.isGraceExpired;
   const isExpired = !canAccess;
 
   const checkLimit = (type: keyof typeof usage) => {
@@ -232,6 +271,10 @@ export function usePlanLimits() {
     trialDaysRemaining,
     trialEndsAt,
     isTrial: isTrialValid,
+    isTrialExpired,
+    isInGrace: delinquency.isInGrace,
+    isGraceExpired,
+    delinquency,
     isExpired,
     subscription,
     checkLimit,

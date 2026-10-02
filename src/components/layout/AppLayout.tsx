@@ -1,12 +1,11 @@
-
 import { useState, useEffect, useId, useCallback, memo } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { 
-  Calendar, 
-  Users, 
-  Scissors, 
-  UserRound, 
-  CircleDollarSign, 
+import {
+  Calendar,
+  Users,
+  Scissors,
+  UserRound,
+  CircleDollarSign,
   LayoutDashboard,
   BarChart3,
   LogOut,
@@ -37,12 +36,14 @@ import {
   Sparkles,
   Activity,
   TrendingUp,
-  Crown
+  Crown,
 } from "lucide-react";
 import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { NotificationsCenter } from "@/components/notifications/NotificationsCenter";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 import { TrialExpiredBlock } from "@/components/subscription/TrialExpiredBlock";
+import { GraceExpiredBlock } from "@/components/subscription/GraceExpiredBlock";
+import { GracePeriodBanner } from "@/components/subscription/GracePeriodBanner";
 import { TrialEndingBanner } from "@/components/subscription/TrialEndingBanner";
 import { AddonPaymentFailedBanner } from "@/components/subscription/AddonPaymentFailedBanner";
 import { InternalTestingBanner } from "@/components/subscription/InternalTestingBanner";
@@ -50,7 +51,6 @@ import { TenantSuspendedBanner } from "@/components/subscription/TenantSuspended
 import { useBillingContext } from "@/hooks/use-billing-context";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { BarbexLogo } from "@/components/ui/barbex-logo";
-
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,13 +77,22 @@ interface NavItem {
   permission?: PermissionKey;
 }
 
-
 const defaultNavItems: NavItem[] = [
   { label: "Painel", icon: LayoutDashboard, to: "/dashboard", permission: "dashboard:view" },
-  { label: "Comando", icon: Activity, to: "/dashboard/centro-de-comando", permission: "command_center:view" },
+  {
+    label: "Comando",
+    icon: Activity,
+    to: "/dashboard/centro-de-comando",
+    permission: "command_center:view",
+  },
   { label: "KPIs", icon: BarChart3, to: "/kpis", permission: "dashboard:view" },
   { label: "BI Executivo", icon: TrendingUp, to: "/dashboard/bi", permission: "dashboard:view" },
-  { label: "Assistente", icon: Sparkles, to: "/dashboard/assistente", permission: "dashboard:view" },
+  {
+    label: "Assistente",
+    icon: Sparkles,
+    to: "/dashboard/assistente",
+    permission: "dashboard:view",
+  },
   { label: "Radar Op.", icon: Radar, to: "/operational-insights", permission: "dashboard:view" },
   { label: "Inteligência", icon: Radar, to: "/intelligence", permission: "dashboard:view" },
   { label: "Marketing", icon: Megaphone, to: "/marketing", permission: "marketing:view" },
@@ -93,27 +102,78 @@ const defaultNavItems: NavItem[] = [
   { label: "Barbeiros", icon: UserRound, to: "/barbers", permission: "professionals:view" },
   { label: "Serviços", icon: Scissors, to: "/services", permission: "settings:manage" },
   { label: "Financeiro", icon: CircleDollarSign, to: "/finances", permission: "finances:view" },
-  { label: "Comissões", icon: CircleDollarSign, to: "/commissions", module: "commissions", permission: "finances:view" },
-  { label: "Produtos", icon: ShoppingBag, to: "/products", module: "products", permission: "settings:manage" },
-  { label: "Automações", icon: MessageSquare, to: "/automations", module: "automations", permission: "marketing:manage" },
-  { label: "Campanhas", icon: Megaphone, to: "/campaigns", module: "campaigns", permission: "marketing:manage" },
-  { label: "Central de Integrações", icon: Share2, to: "/dashboard/integracoes", module: "integrations_center", permission: "integrations:manage" },
-  { label: "Segurança", icon: ShieldCheck, to: "/dashboard/settings/security" as any, permission: "security:manage" },
+  {
+    label: "Comissões",
+    icon: CircleDollarSign,
+    to: "/commissions",
+    module: "commissions",
+    permission: "finances:view",
+  },
+  {
+    label: "Produtos",
+    icon: ShoppingBag,
+    to: "/products",
+    module: "products",
+    permission: "settings:manage",
+  },
+  {
+    label: "Automações",
+    icon: MessageSquare,
+    to: "/automations",
+    module: "automations",
+    permission: "marketing:manage",
+  },
+  {
+    label: "Campanhas",
+    icon: Megaphone,
+    to: "/campaigns",
+    module: "campaigns",
+    permission: "marketing:manage",
+  },
+  {
+    label: "Central de Integrações",
+    icon: Share2,
+    to: "/dashboard/integracoes",
+    module: "integrations_center",
+    permission: "integrations:manage",
+  },
+  {
+    label: "Segurança",
+    icon: ShieldCheck,
+    to: "/dashboard/settings/security" as any,
+    permission: "security:manage",
+  },
   { label: "Equipe", icon: Users, to: "/dashboard/usuarios", permission: "users:manage" },
 
-  { label: "Integrações", icon: Share2, to: "/integrations", module: "integrations", permission: "integrations:manage" },
+  {
+    label: "Integrações",
+    icon: Share2,
+    to: "/integrations",
+    module: "integrations",
+    permission: "integrations:manage",
+  },
   { label: "Academia", icon: GraduationCap, to: "/academy" },
   { label: "Tutoriais", icon: BookOpen, to: "/tutorials", module: "tutorials" },
   { label: "Suporte", icon: Headset, to: "/support", module: "support" },
   { label: "Clube Barbex", icon: Crown, to: "/subscriptions", module: "subscriptions" },
   { label: "Fidelidade", icon: Gift, to: "/loyalty", permission: "marketing:view" },
   { label: "Avaliações", icon: MessageSquare, to: "/reviews", permission: "marketing:view" },
-  { label: "Omnichannel", icon: MessageSquare, to: "/dashboard/communications", module: "communications", permission: "marketing:view" },
+  {
+    label: "Omnichannel",
+    icon: MessageSquare,
+    to: "/dashboard/communications",
+    module: "communications",
+    permission: "marketing:view",
+  },
 
-  { label: "Minha Assinatura", icon: CreditCard, to: "/subscription", permission: "settings:manage" },
+  {
+    label: "Minha Assinatura",
+    icon: CreditCard,
+    to: "/subscription",
+    permission: "settings:manage",
+  },
   { label: "Configurações", icon: Settings, to: "/settings", permission: "settings:manage" },
 ];
-
 
 const barberNavItems = (slug: string) => [
   { label: "Dashboard", icon: Layout, to: `/${slug}/profissional` },
@@ -124,24 +184,44 @@ const barberNavItems = (slug: string) => [
   { label: "Perfil", icon: User, to: `/${slug}/profissional?tab=profile` },
 ];
 
-
 export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const instanceId = useId().replace(/:/g, "");
-  const { tenantProfile, isImpersonating, stopImpersonation, tenantId, isLoading: tenantLoading } = useTenant();
-  const { role: authRole, user: authUser, identity: authIdentity, loading: authLoading, profile: authProfile } = useAuth();
+  const {
+    tenantProfile,
+    isImpersonating,
+    stopImpersonation,
+    tenantId,
+    isLoading: tenantLoading,
+  } = useTenant();
+  const {
+    role: authRole,
+    user: authUser,
+    identity: authIdentity,
+    loading: authLoading,
+    profile: authProfile,
+  } = useAuth();
   const { session, loading: profLoading, logout: profLogout } = useProfessionalAuth();
-  const { isExpired, isTrial, subscription, plan, trialEndsAt, loading: planLoading } = usePlanLimits();
+  const {
+    isExpired,
+    isTrial,
+    isTrialExpired,
+    isGraceExpired,
+    isInGrace,
+    subscription,
+    plan,
+    trialEndsAt,
+    loading: planLoading,
+  } = usePlanLimits();
   const navigate = useNavigate();
   const state = useRouterState();
   const pathname = state.location.pathname;
 
   const user = authUser || (session ? { id: session.barber_id } : null);
-  const role = authRole || (session ? 'barber' : null);
+  const role = authRole || (session ? "barber" : null);
   const loading = authLoading || profLoading;
-
 
   const slug = tenantProfile?.slug || session?.tenant_slug || authProfile?.slug || "general";
 
@@ -160,28 +240,28 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const getDisplayName = () => {
     // If we're loading and don't have a profile yet, show nothing (loading state is handled in JSX)
     if (loading && !authProfile) return "";
-    
+
     // 1. HARD OVERRIDE for the target user (louisdabahia@gmail.com)
     // This handles the immediate issue where metadata/profile might be out of sync.
-    if (authUser?.email === 'louisdabahia@gmail.com') {
+    if (authUser?.email === "louisdabahia@gmail.com") {
       return "LOUIS";
     }
 
     // 2. Normal Priority: responsible_name (Nome de exibição), full_name, Auth Metadata, Email prefix
-    const rawName = 
+    const rawName =
       authProfile?.responsible_name ||
-      authProfile?.full_name || 
+      authProfile?.full_name ||
       (authUser?.user_metadata as any)?.responsible_name ||
       (authUser?.user_metadata as any)?.display_name ||
       (authUser?.user_metadata as any)?.full_name ||
       (authUser?.user_metadata as any)?.name ||
-      (authProfile as any)?.email?.split('@')[0] ||
-      authUser?.email?.split('@')[0];
+      (authProfile as any)?.email?.split("@")[0] ||
+      authUser?.email?.split("@")[0];
 
     if (!rawName) return "";
-    
+
     const stringName = String(rawName).trim();
-    
+
     // Extract first name and enforce uppercase
     const firstName = stringName.split(/\s+/)[0];
     return firstName.toUpperCase();
@@ -190,18 +270,23 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const { isEnabled: isModuleEnabled } = useModules();
   const { hasPermission } = usePermissions();
 
-  const resolvedBarberSlug = tenantProfile?.slug || session?.tenant_slug || (slug !== 'general' ? slug : '');
-  const rawNav = role === 'barber' || role === 'professional' ? (resolvedBarberSlug ? [...barberNavItems(resolvedBarberSlug)] : []) : [...defaultNavItems];
+  const resolvedBarberSlug =
+    tenantProfile?.slug || session?.tenant_slug || (slug !== "general" ? slug : "");
+  const rawNav =
+    role === "barber" || role === "professional"
+      ? resolvedBarberSlug
+        ? [...barberNavItems(resolvedBarberSlug)]
+        : []
+      : [...defaultNavItems];
   const navItems = rawNav.filter((item: NavItem) => {
     const moduleEnabled = !item.module || isModuleEnabled(item.module);
     const permissionGranted = !item.permission || hasPermission(item.permission);
     return moduleEnabled && permissionGranted;
   });
 
-  if (role === 'super_admin') {
+  if (role === "super_admin") {
     navItems.push({ label: "Admin SaaS", icon: ShieldCheck, to: "/admin/dashboard" });
   }
-
 
   useEffect(() => {
     // PROTEÇÃO CRÍTICA: Não agir enquanto estiver em loading ou hidratando
@@ -211,74 +296,108 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
 
     // Se não há usuário e a rota não é pública, redirecionar para login
     // Rotas com guards dedicados (ex: /profissional e /portal) não devem ser ejetadas pelo AppLayout
-    const isPublicPath = pathname === "/auth" || pathname === "/" || pathname.endsWith("/portal") || pathname.includes("/agendamento/") || pathname.includes("/review/") || pathname.endsWith("/profissional");
-    
+    const isPublicPath =
+      pathname === "/auth" ||
+      pathname === "/" ||
+      pathname.endsWith("/portal") ||
+      pathname.includes("/agendamento/") ||
+      pathname.includes("/review/") ||
+      pathname.endsWith("/profissional");
+
     if (!user && !isPublicPath) {
-      console.warn('[AUTH_REDIRECT_TRACE] No session found on protected path:', {
+      console.warn("[AUTH_REDIRECT_TRACE] No session found on protected path:", {
         pathname,
-        source: 'AppLayout Guard'
+        source: "AppLayout Guard",
       });
       navigate({ to: "/auth", search: { redirect: pathname } as any, replace: true });
       return;
     }
 
     // Redirect by role
-    if (user && !pathname.startsWith('/auth') && (pathname === '/dashboard' || pathname === '/dashboard/')) {
-      console.log('[AUTH_REDIRECT_TRACE] User found on /dashboard, resolving role redirect:', role);
-      if (role === 'super_admin' && !isImpersonating) {
+    if (
+      user &&
+      !pathname.startsWith("/auth") &&
+      (pathname === "/dashboard" || pathname === "/dashboard/")
+    ) {
+      console.log("[AUTH_REDIRECT_TRACE] User found on /dashboard, resolving role redirect:", role);
+      if (role === "super_admin" && !isImpersonating) {
         navigate({ to: "/admin/dashboard", replace: true });
-      } else if (role === 'reception' || role === 'receptionist') {
+      } else if (role === "reception" || role === "receptionist") {
         navigate({ to: "/reception", replace: true });
-      } else if (role === 'professional' || role === 'barber') {
-        const targetBarberSlug = authIdentity?.tenantSlug || tenantProfile?.slug || session?.tenant_slug || (slug !== 'general' ? slug : null);
+      } else if (role === "professional" || role === "barber") {
+        const targetBarberSlug =
+          authIdentity?.tenantSlug ||
+          tenantProfile?.slug ||
+          session?.tenant_slug ||
+          (slug !== "general" ? slug : null);
         if (targetBarberSlug) {
           navigate({ to: `/${targetBarberSlug}/profissional` as any, replace: true });
         } else {
           navigate({ to: "/auth", replace: true });
         }
-      } else if (role === 'client' || role === 'customer') {
-        const targetClientSlug = authIdentity?.tenantSlug || tenantProfile?.slug || (slug !== 'general' ? slug : null);
+      } else if (role === "client" || role === "customer") {
+        const targetClientSlug =
+          authIdentity?.tenantSlug || tenantProfile?.slug || (slug !== "general" ? slug : null);
         if (targetClientSlug) {
           navigate({ to: `/${targetClientSlug}/portal` as any, replace: true });
         } else {
           navigate({ to: "/auth", replace: true });
         }
-      } else if (role === 'unknown') {
+      } else if (role === "unknown") {
         navigate({ to: "/auth", replace: true });
       }
     }
-  }, [pathname, navigate, role, user, loading, authLoading, tenantLoading, isImpersonating, slug, tenantProfile, session, authIdentity]);
-
+  }, [
+    pathname,
+    navigate,
+    role,
+    user,
+    loading,
+    authLoading,
+    tenantLoading,
+    isImpersonating,
+    slug,
+    tenantProfile,
+    session,
+    authIdentity,
+  ]);
 
   useEffect(() => {
-    if (!user || role === 'super_admin') return;
+    if (!user || role === "super_admin") return;
 
     const channel = supabase
       .channel(`tenant-support-notifications-${instanceId}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        table: 'ticket_messages',
-        schema: 'public',
-        filter: 'sender_type=eq.super_admin'
-
-      }, () => {
-        toast("Resposta do Suporte", {
-          description: "Sua solicitação de suporte recebeu uma nova resposta.",
-          icon: <LifeBuoy className="h-4 w-4 text-primary" />,
-        });
-      })
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        table: 'support_tickets',
-        schema: 'public'
-      }, (payload) => {
-        if (payload.new.barbershop_id === tenantId) {
-          toast("Status do Ticket Atualizado", {
-            description: `Seu chamado "${payload.new.title}" agora está ${payload.new.status}.`,
-            icon: <CheckCircle2 className="h-4 w-4 text-primary" />,
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          table: "ticket_messages",
+          schema: "public",
+          filter: "sender_type=eq.super_admin",
+        },
+        () => {
+          toast("Resposta do Suporte", {
+            description: "Sua solicitação de suporte recebeu uma nova resposta.",
+            icon: <LifeBuoy className="h-4 w-4 text-primary" />,
           });
-        }
-      })
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          table: "support_tickets",
+          schema: "public",
+        },
+        (payload) => {
+          if (payload.new.barbershop_id === tenantId) {
+            toast("Status do Ticket Atualizado", {
+              description: `Seu chamado "${payload.new.title}" agora está ${payload.new.status}.`,
+              icon: <CheckCircle2 className="h-4 w-4 text-primary" />,
+            });
+          }
+        },
+      )
       .subscribe();
 
     return () => {
@@ -303,48 +422,74 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
     }
   }, [session, profLogout, navigate, pathname]);
 
-
   const isSubscriptionPage = pathname === "/subscription";
-  
-  // Condição mestre de bloqueio visual:
-  // Só exibimos a tela de bloqueio se o trial acabou e não há plano/assinatura detectada.
-  // IMPORTANTE: isExpired já vem com essa lógica do hook usePlanLimits.
-  const isProfissionalRoute = pathname.includes('/profissional');
-  // Só decide bloqueio depois que TUDO carregou: auth, tenant, plano e assinatura.
-  // Sem isso, plan='free' inicial faz isExpired=true durante 1 frame e mostra "Trial expirado".
+  const isSupportPage = pathname === "/support" || pathname.startsWith("/support");
+  const isProfissionalRoute = pathname.includes("/profissional");
   const accessReady = !loading && !tenantLoading && !planLoading && !!tenantId;
-  const shouldBlock = accessReady && isExpired && !isSubscriptionPage && !isProfissionalRoute && role !== 'super_admin';
 
+  // Condições de bloqueio visual:
+  // 1. Trial grátis expirou (sem assinatura paga contratada)
+  const shouldBlockTrial =
+    accessReady &&
+    isTrialExpired &&
+    !isSubscriptionPage &&
+    !isProfissionalRoute &&
+    role !== "super_admin";
+  // 2. Período de carência (Grace Period) expirou para assinatura inadimplente
+  const shouldBlockGrace =
+    accessReady &&
+    isGraceExpired &&
+    !isSubscriptionPage &&
+    !isSupportPage &&
+    !isProfissionalRoute &&
+    role !== "super_admin";
 
   // [DEBUG_SSR_HYDRATION] Forcing hydration check logs
   useEffect(() => {
-    console.log("[DASHBOARD_BOOT_TRACE] AppLayout: Hydrated", { 
-      loading, 
+    console.log("[DASHBOARD_BOOT_TRACE] AppLayout: Hydrated", {
+      loading,
       authLoading,
       tenantId,
       accessReady,
-      isExpired
+      isExpired,
+      isTrialExpired,
+      isGraceExpired,
+      isInGrace,
     });
-  }, [loading, authLoading, tenantId, accessReady, isExpired]);
+  }, [
+    loading,
+    authLoading,
+    tenantId,
+    accessReady,
+    isExpired,
+    isTrialExpired,
+    isGraceExpired,
+    isInGrace,
+  ]);
 
-  if (!user && (loading || authLoading) && typeof window !== 'undefined') {
+  if (!user && (loading || authLoading) && typeof window !== "undefined") {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#05070d] flex-col gap-4">
         <div className="h-12 w-12 rounded-full border-4 border-gold/10 border-t-gold animate-spin" />
-        <p className="text-gold/60 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Barbex Premium</p>
+        <p className="text-gold/60 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">
+          Barbex Premium
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-screen bg-[#05070d] text-white">
-      {shouldBlock && <TrialExpiredBlock />}
+      {shouldBlockTrial && <TrialExpiredBlock />}
+      {shouldBlockGrace && <GraceExpiredBlock onLogout={handleLogout} />}
       <OnboardingModal />
       {isImpersonating && (
         <div className="bg-amber-500 text-white px-4 py-2 flex items-center justify-between text-sm font-medium z-[60]">
           <div className="flex items-center gap-2">
             <Eye size={16} />
-            <span>Modo Visualização: Você está acessando <strong>{businessName}</strong></span>
+            <span>
+              Modo Visualização: Você está acessando <strong>{businessName}</strong>
+            </span>
           </div>
           <Button
             variant="secondary"
@@ -361,28 +506,49 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
       {/* Mobile Top Header */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gold/10 bg-[#0b0f17] sticky top-0 z-40">
         <div className="flex items-center gap-3 overflow-hidden">
-          <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="sm" shape="circle" className="shrink-0 border border-gold/20" />
+          <TenantBrandLogo
+            tenantIdOrSlug={tenantId}
+            shop={tenantProfile}
+            size="sm"
+            shape="circle"
+            className="shrink-0 border border-gold/20"
+          />
           <p className="text-xl font-black text-white truncate tracking-tight">{businessName}</p>
         </div>
         <div className="flex items-center gap-1">
           <NotificationsCenter />
-          {role === 'super_admin' && <AdminNotifications />}
-          <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-white">
+          {role === "super_admin" && <AdminNotifications />}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-white"
+          >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>
         </div>
       </header>
-
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 bg-[#05070d] md:hidden overflow-auto">
           <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#0b0f17]">
             <div className="flex items-center gap-3 overflow-hidden">
-              <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="sm" shape="circle" className="shrink-0 border border-gold/20" />
+              <TenantBrandLogo
+                tenantIdOrSlug={tenantId}
+                shop={tenantProfile}
+                size="sm"
+                shape="circle"
+                className="shrink-0 border border-gold/20"
+              />
               <p className="text-xl font-black text-white truncate">{businessName}</p>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} className="text-white">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-white"
+            >
               <X />
             </Button>
           </div>
@@ -398,12 +564,13 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
                 <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_35%,rgba(255,255,255,0.55)_50%,transparent_65%)] translate-x-[-120%] group-active:translate-x-[120%] transition-transform duration-700" />
                 <ExternalLink size={16} className="relative" />
                 <span className="relative">Ver Página Pública</span>
-
               </a>
             )}
             <div className="space-y-3 flex-1 pt-2">
               {navItems.map((item) => {
-                const isActive = pathname === item.to || (item.to !== "/dashboard" && pathname.startsWith(item.to));
+                const isActive =
+                  pathname === item.to ||
+                  (item.to !== "/dashboard" && pathname.startsWith(item.to));
                 return (
                   <Link
                     key={item.to}
@@ -413,10 +580,13 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
                       "flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-black transition-all text-white",
                       isActive
                         ? "bg-gold/15 ring-1 ring-inset ring-gold/50 shadow-[0_0_20px_rgba(212,175,55,0.18)]"
-                        : "hover:bg-white/5"
+                        : "hover:bg-white/5",
                     )}
                   >
-                    <item.icon size={24} className={isActive ? "text-gold" : "text-zinc-500 group-hover:text-gold"} />
+                    <item.icon
+                      size={24}
+                      className={isActive ? "text-gold" : "text-zinc-500 group-hover:text-gold"}
+                    />
                     <span className="text-white">{item.label}</span>
                   </Link>
                 );
@@ -476,10 +646,10 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
             </div>
           </div>
 
-
           <nav className="flex-1 px-4 space-y-2 overflow-y-auto pt-4">
             {navItems.map((item) => {
-              const isActive = pathname === item.to || (item.to !== "/dashboard" && pathname.startsWith(item.to));
+              const isActive =
+                pathname === item.to || (item.to !== "/dashboard" && pathname.startsWith(item.to));
               return (
                 <Link
                   key={item.to}
@@ -488,16 +658,19 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
                     "group flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 relative overflow-hidden text-white",
                     isActive
                       ? "bg-gold/15 ring-1 ring-inset ring-gold/50 shadow-[0_0_20px_rgba(212,175,55,0.18)]"
-                      : "hover:bg-white/5"
+                      : "hover:bg-white/5",
                   )}
                 >
                   {isActive && (
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gold rounded-r-full" />
                   )}
-                  <item.icon size={20} className={cn(
-                    "transition-transform duration-300 group-hover:scale-110",
-                    isActive ? "text-gold" : "text-gold/60 group-hover:text-gold"
-                  )} />
+                  <item.icon
+                    size={20}
+                    className={cn(
+                      "transition-transform duration-300 group-hover:scale-110",
+                      isActive ? "text-gold" : "text-gold/60 group-hover:text-gold",
+                    )}
+                  />
                   <span className="text-white">{item.label}</span>
                 </Link>
               );
@@ -524,7 +697,6 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
               </span>
             </div>
           </div>
-
         </aside>
 
         {/* Main content area */}
@@ -533,7 +705,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
           <header className="hidden md:flex h-24 items-center justify-between px-8 border-b border-gold/10 bg-[#0b0f17] shrink-0">
             <div className="flex items-center gap-6">
               <BarbexLogo size="md" showText={false} className="h-16 w-auto" markClassName="h-16" />
-              
+
               <div className="flex flex-col justify-center border-l border-white/10 pl-6 h-12">
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-black tracking-tighter text-white italic">
@@ -545,12 +717,14 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
                     <span className="text-xl font-black tracking-tighter text-gold italic uppercase">
                       {getDisplayName()}
                     </span>
-                  ) : (
-                    null
-                  )}
+                  ) : null}
                 </div>
                 <span className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.1em] mt-0.5">
-                  {currentTime.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                  {currentTime.toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "long",
+                  })}
                 </span>
               </div>
             </div>
@@ -567,16 +741,19 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
                 </Button>
               )}
               <NotificationsCenter />
-              {role === 'super_admin' && <AdminNotifications />}
+              {role === "super_admin" && <AdminNotifications />}
             </div>
           </header>
 
           <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8">
             <div className="max-w-[1600px] mx-auto w-full space-y-4">
-              <TenantSuspendedBanner status={(tenantProfile as any)?.status || (authProfile as any)?.status} />
+              <TenantSuspendedBanner
+                status={(tenantProfile as any)?.status || (authProfile as any)?.status}
+              />
               <ProfileCompletionBanner />
               <InternalTestingBannerSlot />
               <AddonPaymentFailedBanner />
+              <GracePeriodBanner />
               <TrialEndingBanner />
               {children}
             </div>
@@ -584,10 +761,7 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
 
-      <EditProfileModal
-        isOpen={isEditProfileOpen}
-        onClose={() => setIsEditProfileOpen(false)}
-      />
+      <EditProfileModal isOpen={isEditProfileOpen} onClose={() => setIsEditProfileOpen(false)} />
     </div>
   );
 });

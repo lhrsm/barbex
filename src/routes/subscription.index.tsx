@@ -28,6 +28,7 @@ import {
   Scale,
   X,
   ArrowDownCircle,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -94,12 +95,29 @@ function SubscriptionComponent() {
     isTrial,
     loading: planLoading,
     subscription,
+    delinquency,
+    refresh,
   } = planLimits;
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = checkout;
   const { ctx: billing, isInternalTesting } = useBillingContext();
 
   const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const isPortalReturn =
+    typeof window !== "undefined" && window.location.search.includes("portal_return=true");
+
+  const handleManualRefresh = async () => {
+    setRefreshingStatus(true);
+    try {
+      await refresh();
+      toast.success("Status da assinatura atualizado.");
+    } catch (e: any) {
+      toast.error("Não foi possível atualizar o status agora.");
+    } finally {
+      setRefreshingStatus(false);
+    }
+  };
   const [compareOpen, setCompareOpen] = useState(false);
   const [downgradeTarget, setDowngradeTarget] = useState<PlanType | null>(null);
   const [billingCycle, setBillingCycle] = useState<"month" | "year">("month");
@@ -376,20 +394,75 @@ function SubscriptionComponent() {
             </div>
           )}
 
-          {subscription?.status === "past_due" && (
+          {isPortalReturn && (
             <StatusBanner
-              tone="amber"
-              icon={AlertTriangle}
-              title="Pagamento Pendente"
-              desc="Houve um problema com a última cobrança. Atualize sua forma de pagamento."
+              tone="sky"
+              icon={Clock}
+              title="Estamos verificando a atualização da sua assinatura"
+              desc="Se você realizou o pagamento ou atualizou seu cartão no Portal Stripe, o processamento pode levar alguns instantes. Clique para checar novamente."
             >
               <Button
                 size="sm"
-                onClick={handleManageSubscription}
-                className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
+                disabled={refreshingStatus}
+                onClick={handleManualRefresh}
+                className="bg-sky-500 hover:bg-sky-400 text-black font-bold"
               >
-                <CreditCard className="w-4 h-4 mr-2" /> Atualizar Cartão
+                <RefreshCw className={cn("w-4 h-4 mr-2", refreshingStatus && "animate-spin")} />
+                Atualizar status
               </Button>
+            </StatusBanner>
+          )}
+
+          {subscription?.status === "past_due" && delinquency?.isInGrace && (
+            <StatusBanner
+              tone="amber"
+              icon={AlertTriangle}
+              title="Pagamento Pendente — Período de Regularização Ativo"
+              desc={`Não foi possível renovar sua assinatura. Seu acesso continua disponível até ${delinquency.deadlineDisplay || "o prazo limite"} (horário de Brasília). Regularize o pagamento para evitar a interrupção dos recursos do seu plano.`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                {delinquency.countdownDisplay && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    {delinquency.countdownDisplay}
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleManageSubscription}
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" /> Regularizar no Portal Stripe
+                </Button>
+              </div>
+            </StatusBanner>
+          )}
+
+          {subscription?.status === "past_due" && delinquency?.isGraceExpired && (
+            <StatusBanner
+              tone="red"
+              icon={ShieldAlert}
+              title="Assinatura Pendente — Período de Carência Encerrado"
+              desc={`O prazo de regularização terminou${delinquency.deadlineDisplay ? ` em ${delinquency.deadlineDisplay}` : ""}. Os recursos do plano estão temporariamente indisponíveis. Regularize seu pagamento para restaurar o acesso.`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleManageSubscription}
+                  className="bg-red-500 hover:bg-red-400 text-white font-bold"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" /> Regularizar no Portal Stripe
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={refreshingStatus}
+                  onClick={handleManualRefresh}
+                  className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white"
+                >
+                  <RefreshCw className={cn("w-4 h-4 mr-1.5", refreshingStatus && "animate-spin")} />
+                  Atualizar status
+                </Button>
+              </div>
             </StatusBanner>
           )}
           {subscription?.status === "unpaid" && (
