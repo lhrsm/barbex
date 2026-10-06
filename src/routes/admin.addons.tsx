@@ -189,75 +189,78 @@ function AdminAddonsPage() {
 
         <TabsContent value="catalog" className="mt-4">
           <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-white/5 text-white/60 text-xs uppercase">
-                <tr>
-                  <th className="text-left px-4 py-3">Nome</th>
-                  <th className="text-left px-4 py-3">Categoria</th>
-                  <th className="text-left px-4 py-3">Módulo Canônico</th>
-                  <th className="text-right px-4 py-3">Preço</th>
-                  <th className="text-center px-4 py-3">Plano mín.</th>
-                  <th className="text-center px-4 py-3">Stripe</th>
-                  <th className="text-center px-4 py-3">Ativo</th>
-                  <th className="text-right px-4 py-3">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
-                )}
-                {addons.map((a) => (
-                  <tr key={a.id} className="border-t border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-white">{a.name}</div>
-                      <div className="text-xs text-white/40">{a.addon_key}</div>
-                    </td>
-                    <td className="px-4 py-3 text-white/70">{CATEGORIES[a.category] ?? a.category}</td>
-                    <td className="px-4 py-3 text-white/60 text-xs font-mono">
-                      {a.canonical_module_key ? (
-                        <span className="text-emerald-400 font-semibold">{a.canonical_module_key}</span>
-                      ) : (
-                        <span className="text-amber-400/80 italic">{a.module_key} (legado)</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-white font-semibold">
-                      R$ {Number(a.monthly_price).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className="border-white/20 text-white/70 text-[10px]">
-                        {a.minimum_plan ?? "—"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {a.stripe_price_id_live ? (
-                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">Live</Badge>
-                      ) : a.stripe_price_id_test ? (
-                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px]">Test</Badge>
-                      ) : (
-                        <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px]">Pendente</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Switch
-                        checked={a.is_active}
-                        onCheckedChange={(v) => toggleActive.mutate({ id: a.id, is_active: v })}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button size="sm" variant="ghost" className="text-white/70 hover:text-white" onClick={() => setEditing(a)}>
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[760px]">
+                <thead className="bg-white/5 text-white/60 text-xs uppercase">
+                  <tr>
+                    <th className="text-left px-4 py-3">Nome</th>
+                    <th className="text-left px-4 py-3">Categoria</th>
+                    <th className="text-left px-4 py-3">Módulo Canônico</th>
+                    <th className="text-right px-4 py-3">Preço</th>
+                    <th className="text-center px-4 py-3">Plano mín.</th>
+                    <th className="text-center px-4 py-3">Stripe</th>
+                    <th className="text-center px-4 py-3">Ativo</th>
+                    <th className="text-right px-4 py-3">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {isLoading && (
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-white/50">Carregando...</td></tr>
+                  )}
+                  {addons.map((a) => (
+                    <tr key={a.id} className="border-t border-white/5 hover:bg-white/[0.02]">
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-white">{a.name}</div>
+                        <div className="text-xs text-white/40">{a.addon_key}</div>
+                      </td>
+                      <td className="px-4 py-3 text-white/70">{CATEGORIES[a.category] ?? a.category}</td>
+                      <td className="px-4 py-3 text-white/60 text-xs font-mono">
+                        {a.canonical_module_key ? (
+                          <span className="text-emerald-400 font-semibold">{a.canonical_module_key}</span>
+                        ) : (
+                          <span className="text-amber-400/80 italic">{a.module_key} (legado)</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-white font-semibold">
+                        R$ {Number(a.monthly_price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge variant="outline" className="border-white/20 text-white/70 text-[10px]">
+                          {a.minimum_plan ?? "—"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {a.stripe_price_id_live ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">Live</Badge>
+                        ) : a.stripe_price_id_test ? (
+                          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px]">Test</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px]">Pendente</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Switch
+                          checked={a.is_active}
+                          onCheckedChange={(v) => toggleActive.mutate({ id: a.id, is_active: v })}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button size="sm" variant="ghost" className="text-white/70 hover:text-white" onClick={() => setEditing(a)}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </TabsContent>
 
         <TabsContent value="contracts" className="mt-4">
           <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
               <thead className="bg-white/5 text-white/60 text-xs uppercase">
                 <tr>
                   <th className="text-left px-4 py-3">Barbearia</th>
@@ -293,6 +296,7 @@ function AdminAddonsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

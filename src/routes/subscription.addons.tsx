@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { useModules } from "@/hooks/use-modules";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowLeft, Check, Package, Sparkles, ShoppingBag, CreditCard, Wallet, Trophy, Ticket, TrendingUp, BarChart3, Percent, Zap, Infinity as InfinityIcon, Code, Plug, Palette, LucideIcon, ShoppingCart, Plus } from "lucide-react";
+import { ArrowUpRight, ArrowLeft, Check, Package, Sparkles, ShoppingBag, CreditCard, Wallet, Trophy, Ticket, TrendingUp, BarChart3, Percent, Zap, Infinity as InfinityIcon, Code, Plug, Palette, LucideIcon, ShoppingCart, Plus, Loader2 } from "lucide-react";
 import { DefaultRouteError, DefaultRouteNotFound } from "@/components/route-boundaries";
 import { SubscribeAddonDialog } from "@/components/subscription/SubscribeAddonDialog";
 import { AddonsCartDrawer, type CartLine } from "@/components/subscription/AddonsCartDrawer";
@@ -59,11 +61,105 @@ interface Addon {
 }
 
 function AddonsCatalog() {
+  const { user, loading: authLoading, initialized: authInitialized } = useAuth();
+  const { tenantId, isLoading: tenantLoading } = useTenant();
   const { plan, activeAddons, addonsUsedCount, addonsLimit, canAddMoreAddons, isAllowed } = useModules();
   const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
   const [cartLines, setCartLines] = useState<CartLine[]>([]);
   const [cartCycle, setCartCycle] = useState<BillingCycle>("monthly");
   const [cartOpen, setCartOpen] = useState(false);
+
+  // 1. Owner Resolution (Fail-Closed: Policy 4.13 & Section 16)
+  const { data: barbershop, isLoading: loadingBarbershop } = useQuery({
+    queryKey: ["barbershop-owner-check", tenantId],
+    queryFn: async () => {
+      if (!tenantId) return null;
+      const { data, error } = await supabase
+        .from("barbershops")
+        .select("id, owner_id")
+        .eq("id", tenantId)
+        .maybeSingle();
+      if (error) {
+        console.warn("Could not load barbershop owner:", error.message);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
+
+  const isOwnerLoading = authLoading || !authInitialized || tenantLoading || (!!tenantId && loadingBarbershop);
+  const isOwner = Boolean(
+    !isOwnerLoading &&
+    user?.id &&
+    barbershop?.owner_id &&
+    barbershop.owner_id === user.id
+  );
+
+  // 2. Base Subscription Cycle Resolution (Policy 4.3 MATCH_BASE_SUBSCRIPTION)
+  const { data: baseSub, isLoading: loadingBaseSub } = useQuery({
+    queryKey: ["tenant-base-subscription-cycle", tenantId],
+    queryFn: async () => {
+      if (!tenantId) return null;
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id, status, plan_key, billing_cycle")
+        .eq("user_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        console.warn("Could not load base subscription cycle:", error.message);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
+
+  const cycleResolution = useMemo((): {
+    status: "loading" | "valid" | "unknown";
+    cycle: BillingCycle | null;
+    rawCycle: string | null;
+    reason?: string;
+  } => {
+    if (tenantLoading || loadingBaseSub) {
+      return { status: "loading", cycle: null, rawCycle: null };
+    }
+    if (
+      !baseSub?.stripe_subscription_id ||
+      !["active", "trialing", "past_due"].includes(baseSub.status || "")
+    ) {
+      return {
+        status: "unknown",
+        cycle: null,
+        rawCycle: null,
+        reason: "no_active_subscription",
+      };
+    }
+    const raw = String(baseSub.billing_cycle || "").toLowerCase().trim();
+    if (raw === "year" || raw === "annual" || raw === "yearly") {
+      return { status: "valid", cycle: "annual", rawCycle: raw };
+    }
+    if (raw === "month" || raw === "monthly") {
+      return { status: "valid", cycle: "monthly", rawCycle: raw };
+    }
+    return {
+      status: "unknown",
+      cycle: null,
+      rawCycle: raw || null,
+      reason: "invalid_cycle",
+    };
+  }, [tenantLoading, loadingBaseSub, baseSub]);
+
+  // Converge cart cycle immediately whenever authoritative cycle resolves
+  useEffect(() => {
+    if (cycleResolution.status === "valid" && cycleResolution.cycle && cartCycle !== cycleResolution.cycle) {
+      setCartCycle(cycleResolution.cycle);
+    }
+  }, [cycleResolution, cartCycle]);
 
   const { data: addons = [], isLoading } = useQuery({
     queryKey: ["public-addons"],
@@ -91,6 +187,14 @@ function AddonsCatalog() {
   const cartCount = cartLines.length;
 
   const addToCart = (a: Addon) => {
+    if (isOwnerLoading || !isOwner) {
+      toast.error("Somente o proprietário pode contratar add-ons.");
+      return;
+    }
+    if (cycleResolution.status !== "valid") {
+      toast.error("É necessário ter uma assinatura ativa para contratar add-ons.");
+      return;
+    }
     if (cartIds.has(a.id)) {
       toast.info(`${a.name} já está no carrinho`);
       return;
@@ -235,10 +339,16 @@ function AddonsCatalog() {
 
                     <div className="mt-auto flex items-end justify-between pt-3 border-t border-white/10">
                       <div>
-                        <div className="text-[10px] text-white/40 uppercase">a partir de</div>
+                        <div className="text-[10px] text-white/40 uppercase">
+                          {cycleResolution.status === "valid" && cycleResolution.cycle === "annual" ? "plano anual" : "a partir de"}
+                        </div>
                         <div className="text-xl font-bold text-white">
-                          R$ {Number(a.monthly_price).toFixed(2)}
-                          <span className="text-xs text-white/50 font-normal">/mês</span>
+                          R$ {cycleResolution.status === "valid" && cycleResolution.cycle === "annual"
+                            ? Number(a.annual_price ?? a.monthly_price * 10).toFixed(2)
+                            : Number(a.monthly_price).toFixed(2)}
+                          <span className="text-xs text-white/50 font-normal">
+                            {cycleResolution.status === "valid" && cycleResolution.cycle === "annual" ? "/ano" : "/mês"}
+                          </span>
                         </div>
                       </div>
                       {isInPlan ? (
@@ -261,6 +371,40 @@ function AddonsCatalog() {
                         <Button size="sm" disabled className="bg-white/10 text-white/40 cursor-not-allowed">
                           Não elegível
                         </Button>
+                      ) : isOwnerLoading || cycleResolution.status === "loading" ? (
+                        <Button size="sm" disabled className="bg-white/5 text-white/40 border border-white/10 cursor-not-allowed text-xs">
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Verificando...
+                        </Button>
+                      ) : !isOwner ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            size="sm"
+                            disabled
+                            className="bg-white/5 text-white/40 border border-white/10 cursor-not-allowed text-xs"
+                            aria-disabled="true"
+                          >
+                            Contratar
+                          </Button>
+                          <span className="text-[10px] text-amber-300/80 text-right font-medium max-w-[170px] leading-tight">
+                            Somente o proprietário pode contratar add-ons.
+                          </span>
+                        </div>
+                      ) : cycleResolution.status === "unknown" ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            size="sm"
+                            disabled
+                            className="bg-white/5 text-white/40 border border-white/10 cursor-not-allowed text-xs"
+                            aria-disabled="true"
+                          >
+                            Contratar
+                          </Button>
+                          <span className="text-[10px] text-amber-300/80 text-right font-medium max-w-[170px] leading-tight">
+                            {cycleResolution.reason === "no_active_subscription"
+                              ? "Requer assinatura ativa para contratar add-ons."
+                              : "Ciclo de cobrança não identificado."}
+                          </span>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <Button
@@ -315,6 +459,9 @@ function AddonsCatalog() {
         open={!!selectedAddon}
         onOpenChange={(o) => !o && setSelectedAddon(null)}
         addon={selectedAddon}
+        isOwner={isOwner}
+        isOwnerLoading={isOwnerLoading}
+        cycleResolution={cycleResolution}
       />
 
       <AddonsCartDrawer
@@ -326,6 +473,9 @@ function AddonsCatalog() {
         onRemove={removeFromCart}
         onQuantityChange={updateQty}
         onClear={() => setCartLines([])}
+        isOwner={isOwner}
+        isOwnerLoading={isOwnerLoading}
+        cycleResolution={cycleResolution}
       />
 
       {cartCount > 0 && !cartOpen && (

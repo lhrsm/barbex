@@ -52,16 +52,26 @@ export type CartLine = {
   quantity: number;
 };
 
+export type CycleResolutionState = {
+  status: "loading" | "valid" | "unknown";
+  cycle: BillingCycle | null;
+  rawCycle: string | null;
+  reason?: string;
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   lines: CartLine[];
   cycle: BillingCycle;
-  onCycleChange: (c: BillingCycle) => void;
+  onCycleChange?: (c: BillingCycle) => void;
   onRemove: (id: string) => void;
   onQuantityChange: (id: string, qty: number) => void;
   onClear: () => void;
   onCheckoutSuccess?: () => void;
+  isOwner?: boolean;
+  isOwnerLoading?: boolean;
+  cycleResolution?: CycleResolutionState;
 }
 
 const brl = (v: number) =>
@@ -77,6 +87,9 @@ export function AddonsCartDrawer({
   onQuantityChange,
   onClear,
   onCheckoutSuccess,
+  isOwner = false,
+  isOwnerLoading = false,
+  cycleResolution,
 }: Props) {
   const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
@@ -84,13 +97,24 @@ export function AddonsCartDrawer({
     try { return getStripeEnvironment(); } catch { return "sandbox" as const; }
   })();
 
+  const effectiveCycle: BillingCycle =
+    cycleResolution?.status === "valid" && cycleResolution.cycle
+      ? cycleResolution.cycle
+      : cycle;
+
+  useEffect(() => {
+    if (cycleResolution?.status === "valid" && cycleResolution.cycle && cycle !== cycleResolution.cycle) {
+      onCycleChange?.(cycleResolution.cycle);
+    }
+  }, [cycleResolution, cycle, onCycleChange]);
+
   const cart = useMemo(
     () => lines.map((l) => ({
       addon_id: l.addon.id,
       quantity: l.quantity,
-      billing_cycle: cycle,
+      billing_cycle: effectiveCycle,
     })),
-    [lines, cycle],
+    [lines, effectiveCycle],
   );
 
   const localMonthlySubtotal = useMemo(
@@ -98,14 +122,14 @@ export function AddonsCartDrawer({
     [lines],
   );
   const localAnnualSubtotal = useMemo(
-    () => lines.reduce((s, l) => s + Number(l.addon.annual_price ?? l.addon.monthly_price * 12) * l.quantity, 0),
+    () => lines.reduce((s, l) => s + Number(l.addon.annual_price ?? l.addon.monthly_price * 10) * l.quantity, 0),
     [lines],
   );
 
   const projected = useQuery({
-    queryKey: ["addon-cart-projected", cart, cycle],
+    queryKey: ["addon-cart-projected", cart, effectiveCycle],
     queryFn: async () => {
-      const r = await computeProjectedTotals({ data: { cart, cycle } });
+      const r = await computeProjectedTotals({ data: { cart, cycle: effectiveCycle } });
       if ("error" in r) throw new Error(r.error);
       return r;
     },
@@ -132,7 +156,7 @@ export function AddonsCartDrawer({
           items: cart.map((c) => ({
             addonId: c.addon_id,
             quantity: c.quantity,
-            billingCycle: cycle,
+            billingCycle: effectiveCycle,
           })),
           environment: env,
         },
@@ -140,12 +164,20 @@ export function AddonsCartDrawer({
       if (!(r as any).ok) throw new Error((r as any).error);
       return r;
     },
-    enabled: open && cart.length > 0,
+    enabled: open && cart.length > 0 && isOwner === true && cycleResolution?.status === "valid",
     staleTime: 20_000,
   });
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+    if (isOwnerLoading || !isOwner) {
+      toast.error("Somente o proprietário pode contratar add-ons.");
+      return;
+    }
+    if (cycleResolution?.status !== "valid") {
+      toast.error("É necessário ter uma assinatura ativa para contratar add-ons.");
+      return;
+    }
     setSubmitting(true);
     try {
       const r = await subscribeToAddonsBatch({
@@ -153,7 +185,7 @@ export function AddonsCartDrawer({
           items: cart.map((c) => ({
             addonId: c.addon_id,
             quantity: c.quantity,
-            billingCycle: cycle,
+            billingCycle: effectiveCycle,
           })),
           environment: env,
         },
@@ -228,35 +260,43 @@ export function AddonsCartDrawer({
         </SheetHeader>
 
         <div className="mt-5 space-y-5">
-          {/* Ciclo */}
+          {/* Ciclo de cobrança (autoritativo / travado ao plano) */}
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
             <div className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2">
               Ciclo de cobrança
             </div>
-            <ToggleGroup
-              type="single"
-              value={cycle}
-              onValueChange={(v) => v && onCycleChange(v as BillingCycle)}
-              className="grid grid-cols-2 gap-2"
-            >
-              <ToggleGroupItem
-                value="monthly"
-                className="data-[state=on]:bg-amber-500/20 data-[state=on]:text-amber-200 data-[state=on]:border-amber-500/40 border border-white/10 text-white/70 text-xs"
-              >
-                Mensal · {brl(localMonthlySubtotal)}
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="annual"
-                className="data-[state=on]:bg-amber-500/20 data-[state=on]:text-amber-200 data-[state=on]:border-amber-500/40 border border-white/10 text-white/70 text-xs"
-              >
-                Anual · {brl(localAnnualSubtotal)}
-              </ToggleGroupItem>
-            </ToggleGroup>
-            {cycle === "annual" && localAnnualSubtotal < localMonthlySubtotal * 12 && (
-              <p className="text-[11px] text-emerald-300 mt-2 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Economia de {brl(localMonthlySubtotal * 12 - localAnnualSubtotal)} no anual
-              </p>
+            {cycleResolution?.status === "loading" ? (
+              <div className="flex items-center gap-2 text-white/60 text-xs py-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Verificando ciclo da assinatura...
+              </div>
+            ) : cycleResolution?.status === "unknown" ? (
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 text-xs text-amber-200">
+                {cycleResolution.reason === "no_active_subscription"
+                  ? "Assinatura principal não encontrada ou em período de teste. Requer assinatura ativa."
+                  : "Ciclo de cobrança da assinatura principal não identificado."}
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-amber-500/20 text-amber-200 border-amber-500/40 text-xs px-2.5 py-0.5 font-semibold">
+                      {effectiveCycle === "annual" ? "Anual" : "Mensal"} · {brl(effectiveCycle === "annual" ? localAnnualSubtotal : localMonthlySubtotal)}
+                    </Badge>
+                    <span className="text-[11px] text-white/50">
+                      (vinculado ao seu plano)
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-white/40 mt-2">
+                  Os add-ons seguem o ciclo de cobrança do seu plano principal.
+                </p>
+                {effectiveCycle === "annual" && localAnnualSubtotal < localMonthlySubtotal * 12 && (
+                  <p className="text-[11px] text-emerald-300 mt-2 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Economia de {brl(localMonthlySubtotal * 12 - localAnnualSubtotal)} no plano anual
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -268,8 +308,8 @@ export function AddonsCartDrawer({
           ) : (
             <ul className="space-y-2">
               {lines.map((l) => {
-                const price = cycle === "annual"
-                  ? Number(l.addon.annual_price ?? l.addon.monthly_price * 12)
+                const price = effectiveCycle === "annual"
+                  ? Number(l.addon.annual_price ?? l.addon.monthly_price * 10)
                   : Number(l.addon.monthly_price);
                 return (
                   <li
@@ -430,14 +470,28 @@ export function AddonsCartDrawer({
 
         <SheetFooter className="mt-6 flex-col gap-2 sm:flex-col">
           <Button
-            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold h-11"
-            disabled={submitting || lines.length === 0}
+            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold h-11 disabled:opacity-50"
+            disabled={
+              submitting ||
+              lines.length === 0 ||
+              isOwnerLoading ||
+              !isOwner ||
+              cycleResolution?.status !== "valid"
+            }
             onClick={handleCheckout}
           >
             {submitting ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...</>
+            ) : isOwnerLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verificando autorização...</>
+            ) : !isOwner ? (
+              <>Somente o proprietário pode contratar add-ons</>
+            ) : cycleResolution?.status === "loading" ? (
+              <>Carregando informações da assinatura...</>
+            ) : cycleResolution?.status !== "valid" ? (
+              <>Requer assinatura ativa para contratar</>
             ) : (
-              <>Confirmar contratação · {brl(localMonthlySubtotal)}/{cycle === "annual" ? "mês equivalente" : "mês"}</>
+              <>Confirmar contratação · {brl(effectiveCycle === "annual" ? localAnnualSubtotal : localMonthlySubtotal)}/{effectiveCycle === "annual" ? "ano" : "mês"}</>
             )}
           </Button>
           <Button variant="outline" className="w-full border-white/10 bg-white/[0.03]" onClick={() => onOpenChange(false)}>

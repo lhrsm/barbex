@@ -7,6 +7,7 @@ import { getStripeEnvironment } from "@/lib/stripe";
 import { Loader2, Check, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import type { BillingCycle } from "@/lib/addons-engine.functions";
 
 interface Props {
   open: boolean;
@@ -16,12 +17,29 @@ interface Props {
     name: string;
     description: string | null;
     monthly_price: number;
+    annual_price?: number | null;
     benefits?: string[];
   } | null;
   onSuccess?: () => void;
+  isOwner?: boolean;
+  isOwnerLoading?: boolean;
+  cycleResolution?: {
+    status: "loading" | "valid" | "unknown";
+    cycle: BillingCycle | null;
+    rawCycle: string | null;
+    reason?: string;
+  };
 }
 
-export function SubscribeAddonDialog({ open, onOpenChange, addon, onSuccess }: Props) {
+export function SubscribeAddonDialog({
+  open,
+  onOpenChange,
+  addon,
+  onSuccess,
+  isOwner = false,
+  isOwnerLoading = false,
+  cycleResolution,
+}: Props) {
   const [submitting, setSubmitting] = useState(false);
   const qc = useQueryClient();
   const env = (() => { try { return getStripeEnvironment(); } catch { return "sandbox" as const; } })();
@@ -40,6 +58,14 @@ export function SubscribeAddonDialog({ open, onOpenChange, addon, onSuccess }: P
 
   const handleConfirm = async () => {
     if (!addon) return;
+    if (isOwnerLoading || !isOwner) {
+      toast.error("Somente o proprietário pode contratar add-ons.");
+      return;
+    }
+    if (cycleResolution?.status !== "valid") {
+      toast.error("É necessário ter uma assinatura ativa para contratar add-ons.");
+      return;
+    }
     setSubmitting(true);
     try {
       const r = await subscribeToAddon({ data: { addonId: addon.id, environment: env } });
@@ -117,6 +143,8 @@ export function SubscribeAddonDialog({ open, onOpenChange, addon, onSuccess }: P
                   <span className="text-white/60">
                     {preview.trialEligible
                       ? `Preço após ${preview.trialDays} dias de trial`
+                      : cycleResolution?.cycle === "annual"
+                      ? "Preço anual a partir do próximo ciclo"
                       : "Preço mensal a partir do próximo ciclo"}
                   </span>
                   <span className="font-bold text-emerald-400">
@@ -144,11 +172,29 @@ export function SubscribeAddonDialog({ open, onOpenChange, addon, onSuccess }: P
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={submitting || loadingPreview || !!previewError}
-            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold"
+            disabled={
+              submitting ||
+              loadingPreview ||
+              !!previewError ||
+              isOwnerLoading ||
+              !isOwner ||
+              cycleResolution?.status !== "valid"
+            }
+            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold disabled:opacity-50"
           >
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Confirmar contratação
+            {submitting ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Contratando...</>
+            ) : isOwnerLoading ? (
+              "Verificando autorização..."
+            ) : !isOwner ? (
+              "Somente o proprietário pode contratar add-ons"
+            ) : cycleResolution?.status === "loading" ? (
+              "Carregando informações da assinatura..."
+            ) : cycleResolution?.status !== "valid" ? (
+              "Requer assinatura ativa"
+            ) : (
+              "Confirmar contratação"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
