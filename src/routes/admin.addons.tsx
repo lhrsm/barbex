@@ -30,11 +30,13 @@ interface Addon {
   description: string | null;
   category: string;
   module_key: string;
+  canonical_module_key: string | null;
   monthly_price: number;
   currency: string;
   stripe_price_id_test: string | null;
   stripe_price_id_live: string | null;
   minimum_plan: string | null;
+  eligible_plan_keys: string[] | null;
   max_quantity: number;
   trial_days: number;
   is_active: boolean;
@@ -192,7 +194,7 @@ function AdminAddonsPage() {
                 <tr>
                   <th className="text-left px-4 py-3">Nome</th>
                   <th className="text-left px-4 py-3">Categoria</th>
-                  <th className="text-left px-4 py-3">Module</th>
+                  <th className="text-left px-4 py-3">Módulo Canônico</th>
                   <th className="text-right px-4 py-3">Preço</th>
                   <th className="text-center px-4 py-3">Plano mín.</th>
                   <th className="text-center px-4 py-3">Stripe</th>
@@ -211,7 +213,13 @@ function AdminAddonsPage() {
                       <div className="text-xs text-white/40">{a.addon_key}</div>
                     </td>
                     <td className="px-4 py-3 text-white/70">{CATEGORIES[a.category] ?? a.category}</td>
-                    <td className="px-4 py-3 text-white/60 text-xs font-mono">{a.module_key}</td>
+                    <td className="px-4 py-3 text-white/60 text-xs font-mono">
+                      {a.canonical_module_key ? (
+                        <span className="text-emerald-400 font-semibold">{a.canonical_module_key}</span>
+                      ) : (
+                        <span className="text-amber-400/80 italic">{a.module_key} (legado)</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right text-white font-semibold">
                       R$ {Number(a.monthly_price).toFixed(2)}
                     </td>
@@ -221,21 +229,12 @@ function AdminAddonsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {a.stripe_price_id_test || a.stripe_price_id_live ? (
-                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">OK</Badge>
+                      {a.stripe_price_id_live ? (
+                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">Live</Badge>
+                      ) : a.stripe_price_id_test ? (
+                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px]">Test</Badge>
                       ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={creatingStripeId === a.id}
-                          onClick={() => createStripeMut.mutate({ addonId: a.id, environment: getStripeEnvironment() })}
-                          className="relative overflow-hidden h-7 text-[10px] border-gold/40 bg-gold/10 text-gold hover:bg-gold/20 hover:text-[#FFD700] hover:border-gold/60 hover:shadow-[0_0_16px_rgba(212,175,55,0.25)] transition-all duration-300 group"
-                        >
-                          <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-gold/20 to-transparent transition-transform duration-700 ease-in-out" />
-                          {creatingStripeId === a.id
-                            ? <Loader2 className="w-3 h-3 animate-spin relative z-10" />
-                            : <><Zap className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform duration-300 relative z-10" /> <span className="relative z-10">Criar no Stripe</span></>}
-                        </Button>
+                        <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px]">Pendente</Badge>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">

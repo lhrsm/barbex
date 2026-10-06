@@ -46,9 +46,13 @@ interface Addon {
   category: string;
   icon: string | null;
   module_key: string;
+  canonical_module_key: string | null;
   monthly_price: number;
   annual_price: number | null;
   minimum_plan: string | null;
+  eligible_plan_keys: string[] | null;
+  stripe_price_id_test: string | null;
+  stripe_price_id_live: string | null;
   benefits: string[];
   max_quantity: number;
   sort_order: number;
@@ -66,7 +70,7 @@ function AddonsCatalog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("saas_addons" as any)
-        .select("id, addon_key, name, description, category, icon, module_key, monthly_price, annual_price, minimum_plan, benefits, max_quantity, sort_order")
+        .select("id, addon_key, name, description, category, icon, module_key, canonical_module_key, monthly_price, annual_price, minimum_plan, eligible_plan_keys, stripe_price_id_test, stripe_price_id_live, benefits, max_quantity, sort_order")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
@@ -174,7 +178,11 @@ function AddonsCatalog() {
               {list.map((a) => {
                 const Icon = ICON_MAP[a.icon ?? "Package"] ?? Package;
                 const isContracted = contractedIds.has(a.id);
-                const isInPlan = isAllowed(a.module_key) && !isContracted;
+                const effectiveModuleKey = a.canonical_module_key || a.module_key;
+                const isInPlan = isAllowed(effectiveModuleKey) && !isContracted;
+                const isConfiguredInStripe = Boolean(a.stripe_price_id_live || a.stripe_price_id_test);
+                const isEligibleForPlan = !a.eligible_plan_keys || !plan?.slug || a.eligible_plan_keys.includes(plan.slug);
+
                 return (
                   <div
                     key={a.id}
@@ -198,6 +206,16 @@ function AddonsCatalog() {
                       {isInPlan && (
                         <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[10px]">
                           Incluído no plano
+                        </Badge>
+                      )}
+                      {!isContracted && !isInPlan && !isConfiguredInStripe && (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]">
+                          Em breve
+                        </Badge>
+                      )}
+                      {!isContracted && !isInPlan && isConfiguredInStripe && !isEligibleForPlan && (
+                        <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/30 text-[10px]">
+                          Requer upgrade
                         </Badge>
                       )}
                     </div>
@@ -235,6 +253,14 @@ function AddonsCatalog() {
                             Gerenciar
                           </Button>
                         </Link>
+                      ) : !isConfiguredInStripe ? (
+                        <Button size="sm" disabled className="bg-white/10 text-white/40 cursor-not-allowed">
+                          Indisponível
+                        </Button>
+                      ) : !isEligibleForPlan ? (
+                        <Button size="sm" disabled className="bg-white/10 text-white/40 cursor-not-allowed">
+                          Não elegível
+                        </Button>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <Button

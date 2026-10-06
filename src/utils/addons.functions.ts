@@ -147,17 +147,69 @@ export const subscribeToAddon = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Result<{ addonContractId: string }>> => {
     const { supabase: sb, userId } = context as any;
     try {
+      // 1. Owner authority check (Policy 4.13 & Section 16)
+      const { data: barbershop } = await sb.from("barbershops")
+        .select("id, owner_id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const isOwner = barbershop ? barbershop.owner_id === userId : true;
+      if (!isOwner) {
+        return { ok: false, error: "Apenas o proprietário pode contratar add-ons." };
+      }
+
       const { data: addon } = await sb.from("saas_addons" as any)
         .select("*").eq("id", data.addonId).maybeSingle();
       if (!addon) return { ok: false, error: "Add-on não encontrado" };
       if (!(addon as any).is_active) return { ok: false, error: "Add-on desativado" };
 
-      const priceId = (addon as any)[priceIdField(data.environment)];
-      if (!priceId) {
-        return { ok: false, error: "Este módulo ainda não está disponível para contratação. O administrador precisa configurá-lo no Stripe." };
+      // 2. Base subscription authority & grace evaluation (Policy 4.10)
+      const { data: sub } = await sb.from("subscriptions")
+        .select("stripe_subscription_id, stripe_customer_id, status, plan_key, billing_cycle, past_due_since, grace_ends_at")
+        .eq("user_id", userId).eq("environment", data.environment)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+
+      if (!sub?.stripe_subscription_id || !["active", "trialing", "past_due"].includes(sub.status)) {
+        return { ok: false, error: "Você precisa ter uma assinatura ativa (Starter, Pro ou Elite) para contratar add-ons." };
       }
 
-      // Já contratado?
+      if (sub.status === "past_due") {
+        const graceEndsAt = sub.grace_ends_at ? new Date(sub.grace_ends_at).getTime() : 0;
+        if (!sub.past_due_since || graceEndsAt < Date.now()) {
+          return { ok: false, error: "Período de tolerância expirado. Regularize sua assinatura antes de contratar add-ons." };
+        }
+      }
+
+      // 3. Billing cycle matching (Policy 4.3 MATCH_BASE_SUBSCRIPTION)
+      const isAnnual = sub.billing_cycle === "year" || sub.billing_cycle === "annual" || sub.billing_cycle === "yearly";
+      const normalizedCycle = isAnnual ? "year" : "month";
+
+      // 4. Plan eligibility & non-overlap (Policy 4.4, 4.5, 4.6)
+      const eligiblePlans: string[] = (addon as any).eligible_plan_keys || ["starter", "pro", "elite"];
+      if (sub.plan_key && !eligiblePlans.includes(sub.plan_key)) {
+        return { ok: false, error: "Este módulo não é elegível para o plano atual da sua assinatura." };
+      }
+
+      if ((addon as any).canonical_module_key) {
+        const { data: planRow } = await sb.from("plans")
+          .select("allowed_modules")
+          .eq("slug", sub.plan_key)
+          .eq("active", true)
+          .maybeSingle();
+
+        const allowedList: string[] = planRow?.allowed_modules || [];
+        if (allowedList.includes((addon as any).canonical_module_key)) {
+          return { ok: false, error: "Este módulo já está incluso no seu plano atual." };
+        }
+      }
+
+      // 5. Voucher isolation (Policy 4.8)
+      const { data: hasVoucher } = await sb.rpc("has_active_internal_voucher", { _tenant_id: userId });
+      if (hasVoucher) {
+        return { ok: false, error: "Seu estabelecimento possui um voucher ativo com acesso completo concedido." };
+      }
+
+      // 6. Already contracted check
       const { data: existing } = await sb.from("tenant_addons" as any)
         .select("id, status")
         .eq("tenant_id", userId)
@@ -167,13 +219,16 @@ export const subscribeToAddon = createServerFn({ method: "POST" })
         .maybeSingle();
       if (existing) return { ok: false, error: "Você já contratou este módulo." };
 
-      const { data: sub } = await sb.from("subscriptions")
-        .select("stripe_subscription_id, stripe_customer_id")
-        .eq("user_id", userId).eq("environment", data.environment)
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      // 7. Resolve price ID strictly server-authoritative (P2-B fail-closed)
+      let priceId: string | null = null;
+      if (data.environment === "live") {
+        priceId = isAnnual ? (addon as any).stripe_price_id_annual_live : (addon as any).stripe_price_id_live;
+      } else {
+        priceId = isAnnual ? (addon as any).stripe_price_id_annual_test : (addon as any).stripe_price_id_test;
+      }
 
-      if (!sub?.stripe_subscription_id) {
-        return { ok: false, error: "Você precisa ter uma assinatura ativa (Starter, Pro ou Elite) para contratar add-ons." };
+      if (!priceId) {
+        return { ok: false, error: "Este módulo ainda não está disponível para contratação. O administrador precisa configurá-lo no Stripe." };
       }
 
       const stripe = await createStripeClient(data.environment);
@@ -186,12 +241,13 @@ export const subscribeToAddon = createServerFn({ method: "POST" })
         subscription: sub.stripe_subscription_id as string,
         price: priceId,
         quantity: qty,
-        proration_behavior: trialEligible ? "none" : "create_prorations",
+        proration_behavior: "create_prorations",
         metadata: {
           is_addon: "true",
           addon_id: data.addonId,
           addon_key: (addon as any).addon_key,
           userId,
+          billing_cycle: normalizedCycle,
           ...(trialEligible && { trial_ends_at: new Date(Date.now() + trialDays * 86400_000).toISOString() }),
         },
       };
@@ -202,6 +258,8 @@ export const subscribeToAddon = createServerFn({ method: "POST" })
         ? new Date(Date.now() + trialDays * 86400_000).toISOString()
         : null;
 
+      const unitPrice = Number(isAnnual && (addon as any).annual_price ? (addon as any).annual_price : (addon as any).monthly_price ?? 0);
+
       const { data: inserted, error: insErr } = await sb.from("tenant_addons" as any)
         .insert({
           tenant_id: userId,
@@ -209,14 +267,14 @@ export const subscribeToAddon = createServerFn({ method: "POST" })
           environment: data.environment,
           status: trialEligible ? "trialing" : "active",
           quantity: qty,
-          unit_price: Number((addon as any).monthly_price ?? 0),
+          unit_price: unitPrice,
           currency: (addon as any).currency ?? "BRL",
           stripe_subscription_id: sub.stripe_subscription_id,
           stripe_subscription_item_id: item.id,
           starts_at: new Date().toISOString(),
           trial_ends_at: trialEndsAt,
           trial_used: trialEligible,
-          metadata: { added_via: "self_service", trial_at_signup: trialEligible },
+          metadata: { added_via: "self_service", trial_at_signup: trialEligible, billing_cycle: normalizedCycle },
         } as any)
         .select("id").single();
 

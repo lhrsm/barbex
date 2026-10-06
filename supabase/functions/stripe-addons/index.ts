@@ -59,7 +59,7 @@ function buildResponse(body: Record<string, unknown>, status = 200, req?: Reques
 async function resolveAuthCaller(
   req: Request,
   adminClient: ReturnType<typeof createAdminClient>
-): Promise<{ userId: string; tenantId: string; callerRole: string }> {
+): Promise<{ userId: string; tenantId: string; callerRole: string; isOwner: boolean }> {
   const token = extractBearerToken(req);
   if (!token) {
     throw new EdgeError("UNAUTHORIZED", "Token de autenticação ausente ou inválido.", 401);
@@ -82,16 +82,29 @@ async function resolveAuthCaller(
   }
 
   const effectiveTenantId = profile.tenant_id || profile.id;
-  const isPrivileged = ["super_admin", "admin", "tenant_admin", "shop_owner"].includes(profile.role || "");
+
+  // Verify owner authority (Policy 4.13 & Section 16)
+  const { data: barbershop } = await adminClient
+    .from("barbershops")
+    .select("id, owner_id")
+    .eq("id", effectiveTenantId)
+    .maybeSingle();
+
+  const isOwner = barbershop
+    ? barbershop.owner_id === userId
+    : (profile.tenant_id === null || profile.id === userId);
+
+  const isPrivileged = ["super_admin", "admin", "tenant_admin", "shop_owner"].includes(profile.role || "") || isOwner;
 
   if (!isPrivileged) {
-    throw new EdgeError("FORBIDDEN", "Apenas administradores podem gerenciar módulos adicionais.", 403);
+    throw new EdgeError("FORBIDDEN", "Apenas administradores podem acessar módulos adicionais.", 403);
   }
 
   return {
     userId,
     tenantId: effectiveTenantId,
-    callerRole: profile.role || "admin"
+    callerRole: profile.role || "admin",
+    isOwner
   };
 }
 
@@ -113,7 +126,14 @@ Deno.serve(async (req: Request) => {
       throw new EdgeError("INVALID_REQUEST", "Ação não especificada ou inválida.", 400);
     }
 
-    const { userId, tenantId, callerRole } = await resolveAuthCaller(req, adminClient);
+    const { userId, tenantId, callerRole, isOwner } = await resolveAuthCaller(req, adminClient);
+
+    // Enforce owner-only financial authority for mutations (Policy 4.13 & Section 16)
+    if (["subscribe", "cancel", "reactivate", "update-quantity", "batch-subscribe"].includes(payload.action)) {
+      if (!isOwner) {
+        throw new EdgeError("FORBIDDEN", "Apenas o proprietário do estabelecimento pode gerenciar cobranças de add-ons.", 403);
+      }
+    }
 
     // -------------------------------------------------------------------------
     // ACTION: PREVIEW
@@ -132,22 +152,39 @@ Deno.serve(async (req: Request) => {
         throw new EdgeError("NOT_FOUND", "Add-on não encontrado.", 404);
       }
 
-      const priceField = environment === "live" ? "stripe_price_id_live" : "stripe_price_id_test";
-      const priceId = addon[priceField];
+      // Check base subscription to determine billing cycle
+      const { data: sub } = await adminClient
+        .from("subscriptions")
+        .select("stripe_subscription_id, billing_cycle")
+        .eq("user_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const isAnnual = sub?.billing_cycle === "year" || sub?.billing_cycle === "annual" || sub?.billing_cycle === "yearly";
+      const targetEnv = environment === "live" ? "live" : "test";
+      let priceId: string | null = null;
+      if (targetEnv === "live") {
+        priceId = isAnnual ? addon.stripe_price_id_annual_live : addon.stripe_price_id_live;
+      } else {
+        priceId = isAnnual ? addon.stripe_price_id_annual_test : addon.stripe_price_id_test;
+      }
+
       if (!priceId) {
         throw new EdgeError("INVALID_REQUEST", "Módulo ainda não configurado no Stripe.", 400);
       }
 
-      const monthlyPrice = Number(addon.monthly_price || 0);
-      const subtotal = monthlyPrice * cleanQty;
+      const unitPrice = Number(isAnnual && addon.annual_price ? addon.annual_price : addon.monthly_price || 0);
+      const subtotal = unitPrice * cleanQty;
 
       return buildResponse({
         ok: true,
-        unitPrice: monthlyPrice,
+        unitPrice,
         quantity: cleanQty,
         subtotal,
         currency: addon.currency || "BRL",
-        addonName: addon.name
+        addonName: addon.name,
+        billingCycle: isAnnual ? "year" : "month"
       }, 200, req);
     }
 
@@ -161,7 +198,7 @@ Deno.serve(async (req: Request) => {
       const rateLimitKey = await generateRateLimitKey("stripe:addon_sub", addonId, tenantId, clientIp);
       await checkRateLimit(rateLimitKey, 10, 300);
 
-      // 1. Verify addon existence
+      // 1. Verify addon existence & active state
       const { data: addon, error: addErr } = await adminClient
         .from("saas_addons")
         .select("*")
@@ -173,13 +210,57 @@ Deno.serve(async (req: Request) => {
         throw new EdgeError("NOT_FOUND", "Add-on não encontrado ou inativo.", 404);
       }
 
-      const priceField = environment === "live" ? "stripe_price_id_live" : "stripe_price_id_test";
-      const priceId = addon[priceField];
-      if (!priceId) {
-        throw new EdgeError("INVALID_REQUEST", "Módulo ainda não configurado no Stripe.", 400);
+      // 2. Base subscription authority & grace evaluation (P2-C & Policy 4.10)
+      const { data: sub } = await adminClient
+        .from("subscriptions")
+        .select("stripe_subscription_id, stripe_customer_id, status, plan_key, billing_cycle, past_due_since, grace_ends_at")
+        .eq("user_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!sub?.stripe_subscription_id || !["active", "trialing", "past_due"].includes(sub.status)) {
+        throw new EdgeError("FORBIDDEN", "É necessário possuir uma assinatura ativa para contratar add-ons.", 403);
       }
 
-      // 2. Check if already contracted
+      if (sub.status === "past_due") {
+        const graceEndsAt = sub.grace_ends_at ? new Date(sub.grace_ends_at).getTime() : 0;
+        if (!sub.past_due_since || graceEndsAt < Date.now()) {
+          throw new EdgeError("FORBIDDEN", "Período de tolerância expirado. Regularize sua assinatura antes de contratar add-ons.", 403);
+        }
+      }
+
+      // 3. Billing cycle matching (Policy 4.3 MATCH_BASE_SUBSCRIPTION)
+      const isAnnual = sub.billing_cycle === "year" || sub.billing_cycle === "annual" || sub.billing_cycle === "yearly";
+      const normalizedCycle = isAnnual ? "year" : "month";
+
+      // 4. Plan eligibility & non-overlap (Policy 4.4, 4.5, 4.6)
+      const eligiblePlans: string[] = addon.eligible_plan_keys || ["starter", "pro", "elite"];
+      if (sub.plan_key && !eligiblePlans.includes(sub.plan_key)) {
+        throw new EdgeError("CONFLICT", "Este módulo não é elegível para o plano atual do seu estabelecimento.", 409);
+      }
+
+      if (addon.canonical_module_key) {
+        const { data: planRow } = await adminClient
+          .from("plans")
+          .select("allowed_modules")
+          .eq("slug", sub.plan_key)
+          .eq("active", true)
+          .maybeSingle();
+
+        const allowedList: string[] = planRow?.allowed_modules || [];
+        if (allowedList.includes(addon.canonical_module_key)) {
+          throw new EdgeError("CONFLICT", "Este módulo já está incluso no seu plano atual.", 409);
+        }
+      }
+
+      // 5. Voucher isolation (Policy 4.8)
+      const { data: hasVoucher } = await adminClient.rpc("has_active_internal_voucher", { _tenant_id: tenantId });
+      if (hasVoucher) {
+        throw new EdgeError("CONFLICT", "Seu estabelecimento possui um voucher ativo com acesso completo concedido.", 409);
+      }
+
+      // 6. Check if already contracted
       const { data: existingContract } = await adminClient
         .from("tenant_addons")
         .select("id, status")
@@ -192,20 +273,20 @@ Deno.serve(async (req: Request) => {
         throw new EdgeError("CONFLICT", "Este módulo já está contratado para seu estabelecimento.", 409);
       }
 
-      // 3. Find active base SaaS subscription
-      const { data: sub } = await adminClient
-        .from("subscriptions")
-        .select("stripe_subscription_id, stripe_customer_id")
-        .eq("user_id", tenantId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!sub?.stripe_subscription_id) {
-        throw new EdgeError("FORBIDDEN", "É necessário possuir uma assinatura ativa para contratar add-ons.", 403);
+      // 7. Resolve price ID strictly server-authoritative (P2-B fail-closed)
+      const targetEnv = environment === "live" ? "live" : "test";
+      let priceId: string | null = null;
+      if (targetEnv === "live") {
+        priceId = isAnnual ? addon.stripe_price_id_annual_live : addon.stripe_price_id_live;
+      } else {
+        priceId = isAnnual ? addon.stripe_price_id_annual_test : addon.stripe_price_id_test;
       }
 
-      // 4. Create Stripe Subscription Item
+      if (!priceId) {
+        throw new EdgeError("INVALID_REQUEST", "Módulo ainda não configurado no Stripe.", 400);
+      }
+
+      // 8. Create Stripe Subscription Item with proration
       const subscriptionItem = await stripeApiRequest<{ id: string }>("/subscription_items", {
         method: "POST",
         body: {
@@ -217,21 +298,23 @@ Deno.serve(async (req: Request) => {
             is_addon: "true",
             addon_id: addonId,
             addon_key: addon.addon_key,
-            tenantId
+            tenantId,
+            billing_cycle: normalizedCycle
           }
         }
       });
 
-      // 5. Insert tenant_addons record
+      // 9. Insert tenant_addons record
+      const unitPrice = Number(isAnnual && addon.annual_price ? addon.annual_price : addon.monthly_price || 0);
       const { data: inserted, error: insErr } = await adminClient
         .from("tenant_addons")
         .insert({
           tenant_id: tenantId,
           addon_id: addonId,
-          environment,
+          environment: targetEnv,
           status: "active",
           quantity: cleanQty,
-          unit_price: Number(addon.monthly_price || 0),
+          unit_price: unitPrice,
           currency: addon.currency || "BRL",
           stripe_subscription_id: sub.stripe_subscription_id,
           stripe_subscription_item_id: subscriptionItem.id,

@@ -130,18 +130,22 @@ async function syncAddonsFromSubscription(
   if (!userId) return;
 
   const items = subscription.items?.data || [];
+  const currentStripeItemIds = new Set<string>();
+
   for (const item of items) {
     const price = item.price || {};
     const meta = price.metadata || {};
-    const isAddon = meta.is_addon === "true" || (price.lookup_key || "").startsWith("addon_");
+    const isAddon = meta.commercial_type === "addon" || meta.is_addon === "true" || (price.lookup_key || "").startsWith("addon_");
     if (!isAddon) continue;
 
-    const addonKey = meta.addon_key || (price.lookup_key || "").replace(/^addon_/, "").replace(/_monthly$/, "");
+    currentStripeItemIds.add(item.id);
+
+    const addonKey = meta.addon_key || (price.lookup_key || "").replace(/^addon_/, "").replace(/_monthly$/, "").replace(/_annual$/, "");
     if (!addonKey) continue;
 
     const { data: addon } = await adminClient
       .from("saas_addons")
-      .select("id, monthly_price, currency")
+      .select("id, monthly_price, annual_price, currency")
       .eq("addon_key", addonKey)
       .maybeSingle();
 
@@ -169,6 +173,30 @@ async function syncAddonsFromSubscription(
       },
       { onConflict: "stripe_subscription_item_id" }
     );
+  }
+
+  // P2-D: WEBHOOK MISSING-ITEM PRUNING (Snapshot Reconciliation)
+  // Identify tenant_addons belonging to this subscription that no longer exist in Stripe items snapshot
+  const { data: existingContracts } = await adminClient
+    .from("tenant_addons")
+    .select("id, stripe_subscription_item_id, status")
+    .eq("stripe_subscription_id", subscription.id)
+    .in("status", ["active", "trialing", "past_due"]);
+
+  if (existingContracts && existingContracts.length > 0) {
+    for (const contract of existingContracts) {
+      if (contract.stripe_subscription_item_id && !currentStripeItemIds.has(contract.stripe_subscription_item_id)) {
+        await adminClient
+          .from("tenant_addons")
+          .update({
+            status: "cancelled",
+            cancelled_at: new Date().toISOString(),
+            cancel_at_period_end: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", contract.id);
+      }
+    }
   }
 }
 
