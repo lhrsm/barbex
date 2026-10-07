@@ -65,12 +65,13 @@ function buildResponse(body: Record<string, unknown>, status = 200, req?: Reques
 }
 
 /**
- * Resolves authenticated tenant owner / admin caller.
+ * Resolves authenticated tenant owner caller.
+ * Enforces canonical financial owner authority: barbershops.owner_id === auth.uid()
  */
 async function resolveAuthCaller(
   req: Request,
   adminClient: ReturnType<typeof createAdminClient>
-): Promise<{ userId: string; tenantId: string; email: string; callerRole: string }> {
+): Promise<{ userId: string; tenantId: string; email: string; callerRole: string; isOwner: boolean }> {
   const token = extractBearerToken(req);
   if (!token) {
     throw new EdgeError("UNAUTHORIZED", "Token de autenticação ausente ou inválido.", 401);
@@ -93,17 +94,65 @@ async function resolveAuthCaller(
   }
 
   const effectiveTenantId = profile.tenant_id || profile.id;
-  const isPrivileged = ["super_admin", "admin", "tenant_admin", "shop_owner"].includes(profile.role || "");
+  if (!effectiveTenantId) {
+    throw new EdgeError("FORBIDDEN", "Tenant não identificado.", 403);
+  }
 
-  if (!isPrivileged) {
-    throw new EdgeError("FORBIDDEN", "Apenas administradores e proprietários podem gerenciar assinaturas.", 403);
+  // Resolve canonical barbershop ownership
+  let barbershop: { id: string; owner_id: string | null } | null = null;
+
+  if (profile.tenant_id) {
+    const { data: shopById } = await adminClient
+      .from("barbershops")
+      .select("id, owner_id")
+      .eq("id", profile.tenant_id)
+      .maybeSingle();
+
+    if (shopById) {
+      barbershop = shopById;
+    } else {
+      const { data: shopByOwner } = await adminClient
+        .from("barbershops")
+        .select("id, owner_id")
+        .eq("owner_id", profile.tenant_id)
+        .maybeSingle();
+      barbershop = shopByOwner;
+    }
+  } else {
+    const { data: shopByOwner } = await adminClient
+      .from("barbershops")
+      .select("id, owner_id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+
+    if (shopByOwner) {
+      barbershop = shopByOwner;
+    } else {
+      const { data: shopById } = await adminClient
+        .from("barbershops")
+        .select("id, owner_id")
+        .eq("id", userId)
+        .maybeSingle();
+      barbershop = shopById;
+    }
+  }
+
+  if (!barbershop) {
+    throw new EdgeError("FORBIDDEN", "Barbearia não encontrada ou não vinculada ao usuário.", 403);
+  }
+
+  // Canonical owner authority: barbershops.owner_id === auth.uid()
+  const isOwner = barbershop.owner_id === userId;
+  if (!isOwner) {
+    throw new EdgeError("FORBIDDEN", "Apenas o proprietário do estabelecimento pode gerenciar assinaturas.", 403);
   }
 
   return {
     userId,
-    tenantId: effectiveTenantId,
+    tenantId: barbershop.id || effectiveTenantId,
     email: profile.email || user.email || "",
-    callerRole: profile.role || "admin"
+    callerRole: profile.role || "barber",
+    isOwner: true
   };
 }
 
