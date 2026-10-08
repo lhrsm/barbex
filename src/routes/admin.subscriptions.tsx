@@ -13,7 +13,9 @@ import {
   ShieldCheck,
   AlertCircle,
   RefreshCw,
+  Settings2,
 } from "lucide-react";
+import { AdminSubscriptionOperationsModal } from "@/components/admin/AdminSubscriptionOperationsModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -145,6 +147,15 @@ const formatCurrency = (val: number | null | undefined): string => {
 
 function AdminSubscriptions() {
   const [search, setSearch] = useState("");
+  const [operationsModal, setOperationsModal] = useState<{
+    isOpen: boolean;
+    tenantId: string;
+    tenantName: string;
+  }>({
+    isOpen: false,
+    tenantId: "",
+    tenantName: "",
+  });
 
   // 1. Assinaturas Stripe canônicas da tabela public.subscriptions (R2E.12B / R2E.13D)
   const {
@@ -611,6 +622,9 @@ function AdminSubscriptions() {
                   <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
                     Vigência
                   </TableHead>
+                  <TableHead className="text-right text-gray-400 font-bold uppercase tracking-widest text-[10px] pr-8">
+                    Ações
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -618,7 +632,7 @@ function AdminSubscriptions() {
                   Array.from({ length: 2 }).map((_, i) => (
                     <TableRow key={i} className="border-white/5">
                       <TableCell
-                        colSpan={9}
+                        colSpan={10}
                         className="py-8 text-center animate-pulse text-gray-500"
                       >
                         Carregando assinaturas Stripe...
@@ -627,7 +641,7 @@ function AdminSubscriptions() {
                   ))
                 ) : (stripeSubscriptions || []).length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-gray-400">
+                    <TableCell colSpan={10} className="text-center py-12 text-gray-400">
                       <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                         <CreditCard className="w-8 h-8 text-gray-500 mb-1" />
                         <span className="font-semibold text-white">
@@ -643,7 +657,7 @@ function AdminSubscriptions() {
                   </TableRow>
                 ) : filteredSubs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-gray-400">
+                    <TableCell colSpan={10} className="text-center py-12 text-gray-400">
                       <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                         <Search className="w-8 h-8 text-gray-500 mb-1" />
                         <span className="font-semibold text-white">
@@ -753,6 +767,23 @@ function AdminSubscriptions() {
                               locale: ptBR,
                             })
                           : "Sem data"}
+                      </TableCell>
+                      <TableCell className="text-right pr-8">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setOperationsModal({
+                              isOpen: true,
+                              tenantId: sub.user_id || "",
+                              tenantName: sub.profiles?.business_name || "Assinante Barbex",
+                            })
+                          }
+                          className="h-8 px-2.5 border-purple-500/30 text-purple-300 hover:bg-purple-500/10 text-xs font-bold gap-1.5"
+                        >
+                          <Settings2 className="w-3.5 h-3.5" />
+                          Operações
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -955,14 +986,32 @@ function AdminSubscriptions() {
                         )}
                       </TableCell>
 
-                      {/* Estado Stripe */}
+                      {/* Estado Stripe & Ações */}
                       <TableCell className="text-right pr-8">
-                        <Badge
-                          variant="outline"
-                          className="border-gray-700 text-gray-400 bg-transparent text-[10px]"
-                        >
-                          Sem Assinatura Stripe
-                        </Badge>
+                        <div className="flex items-center justify-end gap-2">
+                          <Badge
+                            variant="outline"
+                            className="border-gray-700 text-gray-400 bg-transparent text-[10px]"
+                          >
+                            {t.classification.modality === "ASSINATURA"
+                              ? "Stripe Ativo"
+                              : "Sem Assinatura"}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setOperationsModal({
+                                isOpen: true,
+                                tenantId: t.id,
+                                tenantName: t.name,
+                              })
+                            }
+                            className="h-7 px-2 text-gray-400 hover:text-white hover:bg-white/10 text-xs font-medium"
+                          >
+                            Gerenciar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -972,6 +1021,18 @@ function AdminSubscriptions() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Operações Financeiras e Suporte Privilegiado */}
+      <AdminSubscriptionOperationsModal
+        isOpen={operationsModal.isOpen}
+        onClose={() => setOperationsModal((prev) => ({ ...prev, isOpen: false }))}
+        tenantId={operationsModal.tenantId}
+        tenantName={operationsModal.tenantName}
+        onSuccess={() => {
+          refetchSubs();
+          refetchTenants();
+        }}
+      />
     </div>
   );
 }
