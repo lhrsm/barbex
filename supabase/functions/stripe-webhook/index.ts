@@ -440,6 +440,42 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // -------------------------------------------------------------------------
+    // EVENT: CHARGE.REFUNDED
+    // -------------------------------------------------------------------------
+    else if (eventType === "charge.refunded") {
+      const chargeId = object?.id;
+      const paymentIntentId = object?.payment_intent;
+      const refundsList = object?.refunds?.data || [];
+      const latestRefund = refundsList[0];
+
+      logger.info("Charge refunded event received", {
+        chargeId,
+        paymentIntentId,
+        amountRefunded: object?.amount_refunded,
+        refundsCount: refundsList.length,
+      });
+
+      if (paymentIntentId) {
+        // Reconcile stripe_refund_operations ledger idempotently
+        // Does NOT modify subscription status or profile plan (CANCEL != REFUND)
+        try {
+          await adminClient
+            .from("stripe_refund_operations")
+            .update({
+              status: "succeeded",
+              stripe_charge_id: chargeId,
+              stripe_refund_id: latestRefund?.id || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("stripe_payment_intent_id", paymentIntentId)
+            .eq("status", "pending");
+        } catch (refundSyncErr) {
+          logger.warn("Warning reconciling stripe_refund_operations:", refundSyncErr);
+        }
+      }
+    }
+
     // 4. Mark event as completed in idempotency table conditioned on lease_token
     if (eventId && leaseToken) {
       try {
