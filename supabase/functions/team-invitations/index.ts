@@ -79,7 +79,23 @@ async function resolveAdminCaller(
     throw new EdgeError("FORBIDDEN", "Perfil de usuário não encontrado.", 403);
   }
 
-  const effectiveTenantId = profile.tenant_id || profile.id;
+  let effectiveTenantId = profile.tenant_id;
+  if (!effectiveTenantId) {
+    const { data: ownedShop } = await adminClient
+      .from("barbershops")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+
+    if (ownedShop?.id) {
+      effectiveTenantId = ownedShop.id;
+    }
+  }
+
+  if (!effectiveTenantId) {
+    throw new EdgeError("FORBIDDEN", "Tenant não identificado para o administrador.", 403);
+  }
+
   const isPrivileged = profile.role === "super_admin" || profile.role === "admin" || profile.role === "tenant_admin" || profile.role === "shop_owner";
 
   if (!isPrivileged) {
@@ -420,11 +436,21 @@ Deno.serve(async (req: Request) => {
         return buildResponse({ ok: true, valid: false }, 200, req);
       }
 
-      const { data: tenantProfile } = await adminClient
-        .from("profiles")
-        .select("business_name, display_name")
+      const { data: barbershop } = await adminClient
+        .from("barbershops")
+        .select("name")
         .eq("id", invite.tenant_id)
         .maybeSingle();
+
+      let barbershopName = barbershop?.name;
+      if (!barbershopName) {
+        const { data: tenantProfile } = await adminClient
+          .from("profiles")
+          .select("business_name, display_name")
+          .eq("id", invite.tenant_id)
+          .maybeSingle();
+        barbershopName = tenantProfile?.business_name || tenantProfile?.display_name || "Barbearia";
+      }
 
       return buildResponse(
         {
@@ -432,7 +458,7 @@ Deno.serve(async (req: Request) => {
           valid: true,
           email: invite.email,
           role: invite.role,
-          barbershopName: tenantProfile?.business_name || tenantProfile?.display_name || "Barbearia",
+          barbershopName,
           expiresAt: invite.expires_at
         },
         200,

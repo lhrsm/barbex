@@ -85,8 +85,18 @@ export async function resolveUserTenantAndRole(userId: string): Promise<{ tenant
     return { tenantId: null, role: null };
   }
 
+  let tenantId = data.tenant_id;
+  if (!tenantId) {
+    const { data: ownedShop } = await adminClient
+      .from("barbershops")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+    tenantId = ownedShop?.id || null;
+  }
+
   return {
-    tenantId: data.tenant_id || data.id,
+    tenantId,
     role: data.role || null
   };
 }

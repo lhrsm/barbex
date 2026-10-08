@@ -104,7 +104,23 @@ async function resolveAdminCaller(
     throw new EdgeError("FORBIDDEN", "Perfil de usuário não encontrado.", 403);
   }
 
-  const effectiveTenantId = profile.tenant_id || profile.id;
+  let effectiveTenantId = profile.tenant_id;
+  if (!effectiveTenantId) {
+    const { data: ownedShop } = await adminClient
+      .from("barbershops")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+
+    if (ownedShop?.id) {
+      effectiveTenantId = ownedShop.id;
+    }
+  }
+
+  if (!effectiveTenantId) {
+    throw new EdgeError("FORBIDDEN", "Tenant não identificado para o administrador.", 403);
+  }
+
   const isPrivileged = ["super_admin", "admin", "tenant_admin", "shop_owner"].includes(profile.role || "");
 
   if (!isPrivileged) {
