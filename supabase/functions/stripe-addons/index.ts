@@ -81,18 +81,39 @@ async function resolveAuthCaller(
     throw new EdgeError("FORBIDDEN", "Perfil de usuário não encontrado.", 403);
   }
 
-  const effectiveTenantId = profile.tenant_id || profile.id;
+  // Canonical tenant & barbershop resolution: strictly authoritative tenant or owned barbershop
+  let barbershop: { id: string; owner_id: string | null } | null = null;
 
-  // Verify owner authority (Policy 4.13 & Section 16)
-  const { data: barbershop } = await adminClient
-    .from("barbershops")
-    .select("id, owner_id")
-    .eq("id", effectiveTenantId)
-    .maybeSingle();
+  if (profile.tenant_id) {
+    const { data: shopById } = await adminClient
+      .from("barbershops")
+      .select("id, owner_id")
+      .eq("id", profile.tenant_id)
+      .maybeSingle();
 
-  const isOwner = barbershop
-    ? barbershop.owner_id === userId
-    : (profile.tenant_id === null || profile.id === userId);
+    if (shopById) {
+      barbershop = shopById;
+    }
+  } else {
+    // If profile.tenant_id is null, resolve barbershop strictly by owner_id
+    const { data: shopByOwner } = await adminClient
+      .from("barbershops")
+      .select("id, owner_id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+
+    if (shopByOwner) {
+      barbershop = shopByOwner;
+    }
+  }
+
+  if (!barbershop) {
+    throw new EdgeError("FORBIDDEN", "Barbearia não encontrada ou não vinculada ao usuário.", 403);
+  }
+
+  // Canonical owner authority: strictly barbershops.owner_id === auth.uid()
+  // No implicit user_id === tenant_id collapse, no fallback to role or profile.id
+  const isOwner = barbershop.owner_id === userId;
 
   const isPrivileged = ["super_admin", "admin", "tenant_admin", "shop_owner"].includes(profile.role || "") || isOwner;
 
@@ -102,7 +123,7 @@ async function resolveAuthCaller(
 
   return {
     userId,
-    tenantId: effectiveTenantId,
+    tenantId: barbershop.id,
     callerRole: profile.role || "admin",
     isOwner
   };

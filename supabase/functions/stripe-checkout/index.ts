@@ -93,12 +93,7 @@ async function resolveAuthCaller(
     throw new EdgeError("FORBIDDEN", "Perfil de usuário não encontrado.", 403);
   }
 
-  const effectiveTenantId = profile.tenant_id || profile.id;
-  if (!effectiveTenantId) {
-    throw new EdgeError("FORBIDDEN", "Tenant não identificado.", 403);
-  }
-
-  // Resolve canonical barbershop ownership
+  // Canonical tenant & barbershop resolution: strictly authoritative tenant or owned barbershop
   let barbershop: { id: string; owner_id: string | null } | null = null;
 
   if (profile.tenant_id) {
@@ -110,15 +105,9 @@ async function resolveAuthCaller(
 
     if (shopById) {
       barbershop = shopById;
-    } else {
-      const { data: shopByOwner } = await adminClient
-        .from("barbershops")
-        .select("id, owner_id")
-        .eq("owner_id", profile.tenant_id)
-        .maybeSingle();
-      barbershop = shopByOwner;
     }
   } else {
+    // If profile.tenant_id is null, resolve barbershop strictly by owner_id
     const { data: shopByOwner } = await adminClient
       .from("barbershops")
       .select("id, owner_id")
@@ -127,13 +116,6 @@ async function resolveAuthCaller(
 
     if (shopByOwner) {
       barbershop = shopByOwner;
-    } else {
-      const { data: shopById } = await adminClient
-        .from("barbershops")
-        .select("id, owner_id")
-        .eq("id", userId)
-        .maybeSingle();
-      barbershop = shopById;
     }
   }
 
@@ -142,6 +124,7 @@ async function resolveAuthCaller(
   }
 
   // Canonical owner authority: barbershops.owner_id === auth.uid()
+  // No implicit user_id === tenant_id collapse, no fallback to role
   const isOwner = barbershop.owner_id === userId;
   if (!isOwner) {
     throw new EdgeError("FORBIDDEN", "Apenas o proprietário do estabelecimento pode gerenciar assinaturas.", 403);
@@ -149,7 +132,7 @@ async function resolveAuthCaller(
 
   return {
     userId,
-    tenantId: barbershop.id || effectiveTenantId,
+    tenantId: barbershop.id,
     email: profile.email || user.email || "",
     callerRole: profile.role || "barber",
     isOwner: true

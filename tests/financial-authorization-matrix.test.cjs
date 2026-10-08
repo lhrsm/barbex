@@ -55,14 +55,12 @@ class StripeAddonsEdgeSimulator {
       throw err;
     }
 
-    const row = runPsqlJson(`
-      SELECT json_build_object(
-        'profile', (SELECT row_to_json(p) FROM public.profiles p WHERE p.id = '${userId}'),
-        'barbershop', (SELECT row_to_json(b) FROM public.barbershops b WHERE b.id = COALESCE((SELECT tenant_id FROM public.profiles WHERE id = '${userId}'), '${userId}'))
-      );
+    const profile = runPsqlJson(`
+      SELECT row_to_json(p) FROM (
+        SELECT id, role, tenant_id FROM public.profiles WHERE id = '${userId}'
+      ) p;
     `);
 
-    const profile = row?.profile;
     if (!profile) {
       const err = new Error("Perfil de usuário não encontrado.");
       err.status = 403;
@@ -70,12 +68,30 @@ class StripeAddonsEdgeSimulator {
       throw err;
     }
 
-    const effectiveTenantId = profile.tenant_id || profile.id;
-    const barbershop = row?.barbershop;
+    // Canonical tenant & barbershop resolution: strictly authoritative tenant or owned barbershop
+    let barbershop = null;
+    if (profile.tenant_id) {
+      barbershop = runPsqlJson(`
+        SELECT row_to_json(b) FROM (
+          SELECT id, owner_id FROM public.barbershops WHERE id = '${profile.tenant_id}'
+        ) b;
+      `);
+    } else {
+      barbershop = runPsqlJson(`
+        SELECT row_to_json(b) FROM (
+          SELECT id, owner_id FROM public.barbershops WHERE owner_id = '${userId}'
+        ) b;
+      `);
+    }
 
-    const isOwner = barbershop
-      ? barbershop.owner_id === userId
-      : (profile.tenant_id === null || profile.id === userId);
+    if (!barbershop) {
+      const err = new Error("Barbearia não encontrada ou não vinculada ao usuário.");
+      err.status = 403;
+      err.code = "FORBIDDEN";
+      throw err;
+    }
+
+    const isOwner = barbershop.owner_id === userId;
 
     const isPrivileged = ["super_admin", "admin", "tenant_admin", "shop_owner"].includes(profile.role || "") || isOwner;
 
@@ -88,7 +104,7 @@ class StripeAddonsEdgeSimulator {
 
     return {
       userId,
-      tenantId: effectiveTenantId,
+      tenantId: barbershop.id,
       callerRole: profile.role || "admin",
       isOwner
     };

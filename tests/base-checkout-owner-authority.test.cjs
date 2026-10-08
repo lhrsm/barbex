@@ -70,15 +70,7 @@ class StripeCheckoutEdgeSimulator {
       throw err;
     }
 
-    const effectiveTenantId = profile.tenant_id || profile.id;
-    if (!effectiveTenantId) {
-      const err = new Error("Tenant não identificado.");
-      err.status = 403;
-      err.code = "FORBIDDEN";
-      throw err;
-    }
-
-    // 2. Resolve canonical barbershop ownership
+    // Canonical tenant & barbershop resolution: strictly authoritative tenant or owned barbershop
     let barbershop = null;
 
     if (profile.tenant_id) {
@@ -87,28 +79,13 @@ class StripeCheckoutEdgeSimulator {
           SELECT id, owner_id FROM public.barbershops WHERE id = '${profile.tenant_id}'
         ) b;
       `);
-
-      if (!barbershop) {
-        barbershop = runPsqlJson(`
-          SELECT row_to_json(b) FROM (
-            SELECT id, owner_id FROM public.barbershops WHERE owner_id = '${profile.tenant_id}'
-          ) b;
-        `);
-      }
     } else {
+      // If profile.tenant_id is null, resolve barbershop strictly by owner_id
       barbershop = runPsqlJson(`
         SELECT row_to_json(b) FROM (
           SELECT id, owner_id FROM public.barbershops WHERE owner_id = '${userId}'
         ) b;
       `);
-
-      if (!barbershop) {
-        barbershop = runPsqlJson(`
-          SELECT row_to_json(b) FROM (
-            SELECT id, owner_id FROM public.barbershops WHERE id = '${userId}'
-          ) b;
-        `);
-      }
     }
 
     if (!barbershop) {
@@ -118,7 +95,8 @@ class StripeCheckoutEdgeSimulator {
       throw err;
     }
 
-    // 3. Canonical owner authority: barbershops.owner_id === auth.uid()
+    // Canonical owner authority: barbershops.owner_id === auth.uid()
+    // No implicit user_id === tenant_id collapse, no fallback to role
     const isOwner = barbershop.owner_id === userId;
     if (!isOwner) {
       const err = new Error("Apenas o proprietário do estabelecimento pode gerenciar assinaturas.");
@@ -129,7 +107,7 @@ class StripeCheckoutEdgeSimulator {
 
     return {
       userId,
-      tenantId: barbershop.id || effectiveTenantId,
+      tenantId: barbershop.id,
       email: profile.email || "",
       callerRole: profile.role || "barber",
       isOwner: true
