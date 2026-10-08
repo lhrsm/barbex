@@ -1,6 +1,6 @@
 /**
  * Classificação Canônica de Acesso e Assinaturas — Barbex Super Admin
- * 
+ *
  * Regra de negócio estrita (R2E.9):
  * 1. Não confundir plano técnico/catálogo, trial, voucher e assinatura comercial.
  * 2. Barbearias de teste NÃO são assinantes comerciais.
@@ -11,7 +11,7 @@
 
 export const LM_BARBERSHOP_ID = "c54ac1ac-49be-4505-b7a4-d257ed023f08";
 
-export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "OUTRO";
+export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "FREE" | "OUTRO";
 
 export type TenantTrialStatus = "EM VIGÊNCIA" | "EXPIRADO" | "SEM EXPIRAÇÃO" | "NÃO APLICÁVEL";
 
@@ -80,12 +80,17 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
 
   // Resolução do plano técnico para apuração de funcionalidades/catálogo
   const technicalPlan = input.assignedPlan || input.profilePlan || null;
-  const technicalPlanName = technicalPlan?.name || (input.ownerProfile?.plan ? input.ownerProfile.plan.toUpperCase() : null);
+  const technicalPlanName =
+    technicalPlan?.name ||
+    (input.ownerProfile?.plan ? input.ownerProfile.plan.toUpperCase() : null);
   const catalogNominalAmount = technicalPlan ? Number(technicalPlan.price_monthly) || 0 : 0;
 
   // 1. Verificação de Assinatura Comercial Contratada
   const activePaidSub = (input.subscriptions || []).find(
-    (s) => s.status === "active" && !s.is_internal_test_tenant && !isPermanentVoucher
+    (s) =>
+      (s.status === "active" || s.status === "past_due") &&
+      !s.is_internal_test_tenant &&
+      !isPermanentVoucher,
   );
 
   if (activePaidSub) {
@@ -118,7 +123,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       modality: "VOUCHER",
       trialStatus: "SEM EXPIRAÇÃO",
       commercialPlanName: null, // Proibido exibir como plano comercial
-      technicalPlanName,        // Referência técnica para liberação de módulos
+      technicalPlanName, // Referência técnica para liberação de módulos
       contractedMonthlyAmount: 0, // Não gera MRR
       catalogNominalAmount,
       isPermanentVoucher: true,
@@ -130,7 +135,30 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     };
   }
 
-  // 3. Verificação de Trial
+  // 3. Verificação de Plano Gratuito (Free) sem trial
+  const isProfileFree = input.ownerProfile?.plan?.toLowerCase() === "free";
+  const hasNoTrial = !input.ownerProfile?.trial_end && !input.ownerProfile?.trial_start;
+  if (isProfileFree && hasNoTrial) {
+    return {
+      tenantId: input.id,
+      tenantName: input.name,
+      slug: input.slug,
+      modality: "FREE",
+      trialStatus: "NÃO APLICÁVEL",
+      commercialPlanName: null,
+      technicalPlanName: "FREE",
+      contractedMonthlyAmount: 0,
+      catalogNominalAmount: 0,
+      isPermanentVoucher: false,
+      trialStart: null,
+      trialEnd: null,
+      statusBadgeVariant: "gray",
+      statusLabel: "PLANO GRATUITO",
+      explanation: "Acesso permanente ao plano Free básico (sem cobrança recorrente)",
+    };
+  }
+
+  // 4. Verificação de Trial
   const trialStart = input.ownerProfile?.trial_start || input.created_at || null;
   const trialEnd = input.ownerProfile?.trial_end || null;
 
@@ -151,7 +179,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     modality: "TRIAL",
     trialStatus,
     commercialPlanName: null, // Proibido exibir como plano comercial
-    technicalPlanName,        // Referência técnica para liberação de módulos
+    technicalPlanName, // Referência técnica para liberação de módulos
     contractedMonthlyAmount: 0, // Não gera MRR
     catalogNominalAmount,
     isPermanentVoucher: false,
