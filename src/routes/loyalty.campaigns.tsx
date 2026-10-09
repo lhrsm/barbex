@@ -3,11 +3,23 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { withModule } from "@/components/modules/withModule";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Loader2, Layers, Pause, Play, Copy, Trash2, Edit, ListChecks } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Loader2,
+  Layers,
+  Pause,
+  Play,
+  Copy,
+  Trash2,
+  Edit,
+  ListChecks,
+} from "lucide-react";
 
 export const Route = createFileRoute("/loyalty/campaigns")({
   component: withModule("loyalty", "Campanhas de Fidelidade", CampaignsPage),
@@ -22,6 +34,8 @@ const STATUS_BADGES: Record<string, { label: string; cls: string }> = {
 
 function CampaignsPage() {
   const { user } = useAuth();
+  const { tenantId } = useTenant();
+  const effectiveTenantId = tenantId || user?.id;
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,11 +46,11 @@ function CampaignsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      if (!user) return;
+      if (!user || !effectiveTenantId) return;
       const { data, error } = await supabase
         .from("loyalty_campaigns" as any)
         .select("*")
-        .eq("tenant_id", user.id)
+        .eq("tenant_id", effectiveTenantId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       setCampaigns((data as any) || []);
@@ -83,7 +97,10 @@ function CampaignsPage() {
 
   async function remove(c: any) {
     if (!confirm(`Excluir "${c.name}"?`)) return;
-    const { error } = await supabase.from("loyalty_campaigns" as any).delete().eq("id", c.id);
+    const { error } = await supabase
+      .from("loyalty_campaigns" as any)
+      .delete()
+      .eq("id", c.id);
     if (error) toast.error(error.message);
     else {
       toast.success("Excluída");
@@ -108,7 +125,9 @@ function CampaignsPage() {
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl md:text-3xl font-black truncate">Minhas Campanhas</h1>
-                <p className="text-sm text-zinc-400">Gerencie todas as campanhas de fidelidade ativas e em rascunho.</p>
+                <p className="text-sm text-zinc-400">
+                  Gerencie todas as campanhas de fidelidade ativas e em rascunho.
+                </p>
               </div>
             </div>
             <Link
@@ -122,7 +141,14 @@ function CampaignsPage() {
           {loadError && (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-300 flex items-center justify-between gap-3">
               <span>Não foi possível carregar as campanhas.</span>
-              <Button size="sm" variant="outline" onClick={load} className="border-red-500/40 text-red-200 hover:text-white">Tentar novamente</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={load}
+                className="border-red-500/40 text-red-200 hover:text-white"
+              >
+                Tentar novamente
+              </Button>
             </div>
           )}
 
@@ -158,7 +184,10 @@ function CampaignsPage() {
                         <h3 className="text-lg font-bold text-white truncate">{c.name}</h3>
                         <Badge className={`text-[10px] font-bold border ${s.cls}`}>{s.label}</Badge>
                         {c.category && (
-                          <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-400 capitalize">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-zinc-700 text-zinc-400 capitalize"
+                          >
                             {c.category}
                           </Badge>
                         )}
@@ -173,25 +202,40 @@ function CampaignsPage() {
                         onClick={() => toggleStatus(c)}
                         className="inline-flex items-center justify-center gap-1.5 h-[38px] px-[14px] rounded-[10px] text-[13px] font-bold bg-gradient-to-br from-[#F5C542] to-[#D4A017] text-[#050505] shadow-[0_4px_14px_-4px_rgba(245,197,66,0.5)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-4px_rgba(245,197,66,0.7)] transition-all duration-200"
                       >
-                        {c.status === "active" ? <><Pause className="h-3.5 w-3.5" />Pausar</> : <><Play className="h-3.5 w-3.5" />Ativar</>}
+                        {c.status === "active" ? (
+                          <>
+                            <Pause className="h-3.5 w-3.5" />
+                            Pausar
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-3.5 w-3.5" />
+                            Ativar
+                          </>
+                        )}
                       </button>
                       <button
-                        onClick={() => navigate({ to: "/loyalty/campaigns/$id", params: { id: c.id } } as any)}
+                        onClick={() =>
+                          navigate({ to: "/loyalty/campaigns/$id", params: { id: c.id } } as any)
+                        }
                         className="inline-flex items-center justify-center gap-1.5 h-[38px] px-[14px] rounded-[10px] text-[13px] font-bold bg-white/[0.04] border border-[#F5C542]/35 text-white hover:bg-white/[0.08] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-4px_rgba(245,197,66,0.35)] transition-all duration-200"
                       >
-                        <Edit className="h-3.5 w-3.5" />Editar
+                        <Edit className="h-3.5 w-3.5" />
+                        Editar
                       </button>
                       <button
                         onClick={() => duplicate(c)}
                         className="inline-flex items-center justify-center gap-1.5 h-[38px] px-[14px] rounded-[10px] text-[13px] font-bold bg-white/[0.04] border border-[#F5C542]/35 text-white hover:bg-white/[0.08] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-4px_rgba(245,197,66,0.35)] transition-all duration-200"
                       >
-                        <Copy className="h-3.5 w-3.5" />Duplicar
+                        <Copy className="h-3.5 w-3.5" />
+                        Duplicar
                       </button>
                       <button
                         onClick={() => remove(c)}
                         className="inline-flex items-center justify-center gap-1.5 h-[38px] px-[14px] rounded-[10px] text-[13px] font-bold bg-red-500/10 border border-red-500/35 text-red-400 hover:bg-red-500/15 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-4px_rgba(239,68,68,0.4)] transition-all duration-200"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />Excluir
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Excluir
                       </button>
                     </div>
                   </div>

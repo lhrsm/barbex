@@ -1,17 +1,18 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -22,7 +23,25 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { UserPlus, UserRound, Phone, Mail, AlertTriangle, Upload, Loader2, Star, Crown, Copy, Trash2, Clock, Pencil, BarChart3, RefreshCcw, Search, Filter } from "lucide-react";
+import {
+  UserPlus,
+  UserRound,
+  Phone,
+  Mail,
+  AlertTriangle,
+  Upload,
+  Loader2,
+  Star,
+  Crown,
+  Copy,
+  Trash2,
+  Clock,
+  Pencil,
+  BarChart3,
+  RefreshCcw,
+  Search,
+  Filter,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,17 +57,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PayCommissionDialog } from "@/components/commissions/PayCommissionDialog";
 import { BarberPerformanceDialog } from "@/components/barbers/BarberPerformanceDialog";
 import { ProfessionalTimeOffDialog } from "@/components/barbers/ProfessionalTimeOffDialog";
-
-
 
 export const Route = createFileRoute("/barbers")({
   component: BarbersComponent,
@@ -61,7 +73,7 @@ const DEFAULT_WORKING_HOURS = {
   thursday: { enabled: true, start: "09:00", end: "19:00" },
   friday: { enabled: true, start: "09:00", end: "19:00" },
   saturday: { enabled: true, start: "09:00", end: "14:00" },
-  sunday: { enabled: false, start: "09:00", end: "14:00" }
+  sunday: { enabled: false, start: "09:00", end: "14:00" },
 };
 
 const DAY_LABELS: Record<string, string> = {
@@ -71,11 +83,13 @@ const DAY_LABELS: Record<string, string> = {
   thursday: "Quinta",
   friday: "Sexta",
   saturday: "Sábado",
-  sunday: "Domingo"
+  sunday: "Domingo",
 };
 
 function BarbersComponent() {
   const { user, loading: authLoading, role } = useAuth();
+  const { tenantId } = useTenant();
+  const effectiveTenantId = tenantId || user?.id;
   const navigate = useNavigate();
   const { plan, limits, usage, checkLimit, refresh: refreshLimits } = usePlanLimits();
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -87,34 +101,33 @@ function BarbersComponent() {
   const [editingBarber, setEditingBarber] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  
+
   // Delete Confirmation State
   const [barberToDelete, setBarberToDelete] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const [newBarber, setNewBarber] = useState({ 
-    name: "", 
-    phone: "", 
-    email: "", 
-    avatar_url: "", 
-    category: "Proprietário", 
+  const [newBarber, setNewBarber] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    avatar_url: "",
+    category: "Proprietário",
     commission_rate: 0,
     commission_type: "percentage",
     commission_fixed_value: 0,
     commission_bonus_value: 0,
     monthly_goal: 0,
-    working_hours: DEFAULT_WORKING_HOURS
+    working_hours: DEFAULT_WORKING_HOURS,
   });
   const [uploading, setUploading] = useState(false);
   const [performanceBarber, setPerformanceBarber] = useState<any>(null);
   const [timeOffBarber, setTimeOffBarber] = useState<any>(null);
   const [isTimeOffDialogOpen, setIsTimeOffDialogOpen] = useState(false);
-
 
   const canAddBarber = checkLimit("barbers");
 
@@ -124,17 +137,17 @@ function BarbersComponent() {
       return;
     }
 
-    if (!authLoading && user && role === 'super_admin') {
+    if (!authLoading && user && role === "super_admin") {
       navigate({ to: "/admin" });
       return;
     }
   }, [user, authLoading, role, navigate]);
 
   useEffect(() => {
-    if (user && role !== 'super_admin') {
+    if (user && role !== "super_admin" && effectiveTenantId) {
       fetchData();
     }
-  }, [user, role]);
+  }, [user, role, effectiveTenantId]);
 
   async function fetchData() {
     setIsLoading(true);
@@ -149,11 +162,11 @@ function BarbersComponent() {
   }
 
   async function fetchServices() {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     const { data, error } = await supabase
       .from("services")
       .select("*")
-      .eq("tenant_id", user.id)
+      .eq("tenant_id", effectiveTenantId)
       .eq("active", true)
       .order("name");
     if (error) throw error;
@@ -161,17 +174,19 @@ function BarbersComponent() {
   }
 
   async function fetchBarbers() {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     const { data, error } = await supabase
       .from("barbers")
-      .select(`
+      .select(
+        `
         *,
         barber_services(service_id),
         appointments:appointments!appointments_barber_id_fkey(count)
-      `)
-      .eq("tenant_id", user.id)
+      `,
+      )
+      .eq("tenant_id", effectiveTenantId)
       .order("name");
-    
+
     if (error) {
       console.error(error);
       throw error;
@@ -181,13 +196,13 @@ function BarbersComponent() {
       const summaries = await Promise.all(
         list.map(async (barber: any) => {
           const { data: summary } = await supabase.rpc("get_barber_commission_summary", {
-            p_tenant_id: user.id,
+            p_tenant_id: effectiveTenantId,
             p_barber_id: barber.id,
             p_start_date: undefined,
             p_end_date: undefined,
           });
           return [barber.id, summary || {}] as const;
-        })
+        }),
       );
       setCommissionSummaries(Object.fromEntries(summaries));
     }
@@ -208,10 +223,7 @@ function BarbersComponent() {
   }
 
   async function handleDeleteBarber(id: string) {
-    const { error } = await supabase
-      .from("barbers")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("barbers").delete().eq("id", id);
 
     if (error) {
       toast.error("Erro ao excluir barbeiro");
@@ -226,14 +238,16 @@ function BarbersComponent() {
 
   const filteredBarbers = useMemo(() => {
     return barbers.filter((barber) => {
-      const matchesSearch = barber.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          barber.phone?.includes(searchQuery) ||
-                          barber.email?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || 
-                          (statusFilter === "active" && barber.active) ||
-                          (statusFilter === "inactive" && !barber.active);
-      
+      const matchesSearch =
+        barber.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        barber.phone?.includes(searchQuery) ||
+        barber.email?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && barber.active) ||
+        (statusFilter === "inactive" && !barber.active);
+
       const matchesCategory = categoryFilter === "all" || barber.category === categoryFilter;
 
       return matchesSearch && matchesStatus && matchesCategory;
@@ -244,66 +258,82 @@ function BarbersComponent() {
     e.preventDefault();
     if (!user) return;
 
-    console.log('--- START ADD BARBER ---');
-    console.log('NEW BARBER DATA:', newBarber);
-    console.log('SELECTED SERVICES:', selectedServices);
+    console.log("--- START ADD BARBER ---");
+    console.log("NEW BARBER DATA:", newBarber);
+    console.log("SELECTED SERVICES:", selectedServices);
 
-    const { data: barber, error: barberError } = await supabase.from("barbers").insert({
-      ...newBarber,
-      tenant_id: user.id,
-      user_id: user.id,
-      active: true,
-    }).select().single();
+    const { data: barber, error: barberError } = await supabase
+      .from("barbers")
+      .insert({
+        ...newBarber,
+        tenant_id: effectiveTenantId,
+        user_id: user.id,
+        active: true,
+      })
+      .select()
+      .single();
 
     if (barberError) {
-      console.error('INSERT BARBER ERROR:', barberError);
+      console.error("INSERT BARBER ERROR:", barberError);
       toast.error(`Erro ao adicionar barbeiro: ${barberError.message}`);
       return;
     }
 
-    console.log('BARBER CREATED SUCCESSFULLY:', barber);
-    console.log('BARBER ID:', barber?.id);
+    console.log("BARBER CREATED SUCCESSFULLY:", barber);
+    console.log("BARBER ID:", barber?.id);
 
     if (selectedServices.length > 0) {
-      const servicesPayload = selectedServices.map(serviceId => ({
+      const servicesPayload = selectedServices.map((serviceId) => ({
         barber_id: barber.id,
         service_id: serviceId,
         tenant_id: user.id,
-        user_id: user.id
+        user_id: user.id,
       }));
 
-      console.log('SERVICES PAYLOAD:', servicesPayload);
-      
+      console.log("SERVICES PAYLOAD:", servicesPayload);
+
       const { data: servicesResult, error: servicesError } = await supabase
         .from("barber_services")
         .insert(servicesPayload)
         .select();
 
-      console.log('SERVICES INSERT RESULT:', servicesResult);
+      console.log("SERVICES INSERT RESULT:", servicesResult);
 
       if (servicesError) {
-        console.error('INSERT SERVICES ERROR:', servicesError);
+        console.error("INSERT SERVICES ERROR:", servicesError);
         toast.error(`Barbeiro criado, mas erro ao vincular serviços: ${servicesError.message}`);
       } else if (!servicesResult || servicesResult.length === 0) {
-        console.error('INSERT SERVICES FAILED: No data returned');
+        console.error("INSERT SERVICES FAILED: No data returned");
         toast.error("Erro silencioso ao vincular serviços. Verifique os logs.");
       } else {
-        console.log('SERVICES LINKED SUCCESSFULLY');
+        console.log("SERVICES LINKED SUCCESSFULLY");
       }
     } else {
-      console.warn('NO SERVICES SELECTED');
+      console.warn("NO SERVICES SELECTED");
       toast.warning("Barbeiro criado sem serviços vinculados.");
     }
 
     toast.success("Barbeiro cadastrado com sucesso!");
     setIsAddDialogOpen(false);
-    setNewBarber({ name: "", phone: "", email: "", avatar_url: "", category: "Proprietário", commission_rate: 0, commission_type: "percentage", commission_fixed_value: 0, commission_bonus_value: 0, monthly_goal: 0, working_hours: DEFAULT_WORKING_HOURS });
+    setNewBarber({
+      name: "",
+      phone: "",
+      email: "",
+      avatar_url: "",
+      category: "Proprietário",
+      commission_rate: 0,
+      commission_type: "percentage",
+      commission_fixed_value: 0,
+      commission_bonus_value: 0,
+      monthly_goal: 0,
+      working_hours: DEFAULT_WORKING_HOURS,
+    });
     setSelectedServices([]);
-    
+
     // Invalidate Caches
     const queryClient = (window as any).queryClient;
     if (queryClient) {
-      console.log('INVALIDATING QUERIES');
+      console.log("INVALIDATING QUERIES");
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
       queryClient.invalidateQueries({ queryKey: ["barber-services"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -311,15 +341,15 @@ function BarbersComponent() {
 
     fetchBarbers();
     refreshLimits();
-    console.log('--- END ADD BARBER ---');
+    console.log("--- END ADD BARBER ---");
   }
 
   async function handleUpdateBarber(e: React.FormEvent) {
     e.preventDefault();
     if (!editingBarber || !user) return;
 
-    console.log('--- START UPDATE BARBER ---');
-    console.log('UPDATING BARBER ID:', editingBarber.id);
+    console.log("--- START UPDATE BARBER ---");
+    console.log("UPDATING BARBER ID:", editingBarber.id);
 
     const payload = {
       name: editingBarber.name,
@@ -328,7 +358,7 @@ function BarbersComponent() {
       avatar_url: editingBarber.avatar_url,
       category: editingBarber.category,
       commission_rate: editingBarber.commission_rate,
-      commission_type: editingBarber.commission_type ?? 'percentage',
+      commission_type: editingBarber.commission_type ?? "percentage",
       commission_fixed_value: editingBarber.commission_fixed_value ?? 0,
       commission_bonus_value: editingBarber.commission_bonus_value ?? 0,
       monthly_goal: editingBarber.monthly_goal ?? 0,
@@ -338,10 +368,10 @@ function BarbersComponent() {
       pix_qr_code_url: editingBarber.pix_qr_code_url ?? null,
 
       accepts_tips: editingBarber.accepts_tips ?? true,
-      active: editingBarber.active
+      active: editingBarber.active,
     };
 
-    console.log('UPDATE PAYLOAD:', payload);
+    console.log("UPDATE PAYLOAD:", payload);
 
     const { data: updateResult, error: updateError } = await supabase
       .from("barbers")
@@ -350,59 +380,59 @@ function BarbersComponent() {
       .select();
 
     if (updateError) {
-      console.error('UPDATE BARBER ERROR:', updateError);
+      console.error("UPDATE BARBER ERROR:", updateError);
       toast.error(`Erro ao atualizar barbeiro: ${updateError.message}`);
       return;
     }
 
     if (!updateResult || updateResult.length === 0) {
-      console.error('UPDATE FAILED: No rows affected');
+      console.error("UPDATE FAILED: No rows affected");
       toast.error("Erro ao salvar: O registro não foi encontrado ou não foi alterado.");
       return;
     }
 
-    console.log('BARBER UPDATED SUCCESSFULLY:', updateResult);
+    console.log("BARBER UPDATED SUCCESSFULLY:", updateResult);
 
     // Sync Services: Delete and Re-insert
-    console.log('SYNCING SERVICES FOR BARBER:', editingBarber.id);
-    console.log('SELECTED SERVICES:', selectedServices);
+    console.log("SYNCING SERVICES FOR BARBER:", editingBarber.id);
+    console.log("SELECTED SERVICES:", selectedServices);
 
     const { error: deleteError } = await supabase
       .from("barber_services")
       .delete()
       .eq("barber_id", editingBarber.id);
-    
+
     if (deleteError) {
-      console.error('DELETE OLD SERVICES ERROR:', deleteError);
+      console.error("DELETE OLD SERVICES ERROR:", deleteError);
       toast.error(`Erro ao limpar serviços antigos: ${deleteError.message}`);
       // We continue to try inserting new ones even if delete failed (though it might cause duplicates if RLS is weird)
     } else {
-      console.log('OLD SERVICES DELETED');
+      console.log("OLD SERVICES DELETED");
     }
 
     if (selectedServices.length > 0) {
-      const servicesPayload = selectedServices.map(serviceId => ({
+      const servicesPayload = selectedServices.map((serviceId) => ({
         barber_id: editingBarber.id,
         service_id: serviceId,
         tenant_id: user.id,
-        user_id: user.id
+        user_id: user.id,
       }));
 
-      console.log('INSERTING SERVICES PAYLOAD:', servicesPayload);
-      
+      console.log("INSERTING SERVICES PAYLOAD:", servicesPayload);
+
       const { data: servicesResult, error: servicesError } = await supabase
         .from("barber_services")
         .insert(servicesPayload)
         .select();
-      
+
       if (servicesError) {
-        console.error('INSERT SERVICES ERROR:', servicesError);
+        console.error("INSERT SERVICES ERROR:", servicesError);
         toast.error(`Barbeiro atualizado, mas erro ao vincular serviços: ${servicesError.message}`);
       } else if (!servicesResult || servicesResult.length === 0) {
-        console.error('INSERT SERVICES FAILED: No data returned');
+        console.error("INSERT SERVICES FAILED: No data returned");
         toast.error("Erro silencioso ao vincular serviços. Verifique os logs.");
       } else {
-        console.log('SERVICES LINKED SUCCESSFULLY:', servicesResult);
+        console.log("SERVICES LINKED SUCCESSFULLY:", servicesResult);
       }
     } else {
       console.warn("NO SERVICES SELECTED");
@@ -413,19 +443,19 @@ function BarbersComponent() {
     setIsEditDialogOpen(false);
     setEditingBarber(null);
     setSelectedServices([]);
-    
+
     // Invalidate Caches
     const queryClient = (window as any).queryClient;
     if (queryClient) {
-      console.log('INVALIDATING QUERIES');
+      console.log("INVALIDATING QUERIES");
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
       queryClient.invalidateQueries({ queryKey: ["barber-services"] });
       queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
     }
-    
+
     fetchBarbers();
-    console.log('--- END UPDATE BARBER ---');
+    console.log("--- END UPDATE BARBER ---");
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) {
@@ -434,19 +464,19 @@ function BarbersComponent() {
 
     try {
       setUploading(true);
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${user?.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('barber-avatars')
+        .from("barber-avatars")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('barber-avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("barber-avatars").getPublicUrl(filePath);
 
       if (isEdit) {
         setEditingBarber({ ...editingBarber, avatar_url: publicUrl });
@@ -466,11 +496,15 @@ function BarbersComponent() {
     if (!file || !editingBarber) return;
     try {
       setUploading(true);
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const filePath = `${user?.id}/pix-qr-${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('barber-avatars').upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from("barber-avatars")
+        .upload(filePath, file);
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('barber-avatars').getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("barber-avatars").getPublicUrl(filePath);
       setEditingBarber({ ...editingBarber, pix_qr_code_url: publicUrl });
       toast.success("QR Code enviado com sucesso!");
     } catch (error: any) {
@@ -480,25 +514,28 @@ function BarbersComponent() {
     }
   }
 
-
   async function handleDuplicateBarber(barber: any) {
     if (!user) return;
-    
+
     if (usage.barbers >= limits.barbers) {
       toast.error(`Limite atingido! Seu plano permite apenas ${limits.barbers} profissionais.`);
       return;
     }
 
-    const { data: newBarberData, error } = await supabase.from("barbers").insert({
-      name: `${barber.name} (Cópia)`,
-      phone: barber.phone,
-      email: barber.email,
-      avatar_url: barber.avatar_url,
-      category: barber.category,
-      commission_rate: barber.commission_rate,
-      tenant_id: user.id,
-      user_id: user.id,
-    }).select().single();
+    const { data: newBarberData, error } = await supabase
+      .from("barbers")
+      .insert({
+        name: `${barber.name} (Cópia)`,
+        phone: barber.phone,
+        email: barber.email,
+        avatar_url: barber.avatar_url,
+        category: barber.category,
+        commission_rate: barber.commission_rate,
+        tenant_id: user.id,
+        user_id: user.id,
+      })
+      .select()
+      .single();
 
     if (error) {
       toast.error("Erro ao duplicar barbeiro");
@@ -509,7 +546,7 @@ function BarbersComponent() {
           barber_id: newBarberData.id,
           service_id: bs.service_id,
           tenant_id: user.id,
-          user_id: user.id
+          user_id: user.id,
         }));
         await supabase.from("barber_services").insert(links);
       }
@@ -531,7 +568,7 @@ function BarbersComponent() {
               <h2 className="text-3xl font-bold tracking-tight text-white">Profissionais</h2>
               <p className="text-muted-foreground text-sm">Cadastre os barbeiros da sua equipe.</p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 flex-1 max-w-2xl">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 h-4 w-4" />
@@ -542,7 +579,7 @@ function BarbersComponent() {
                   className="pl-10 bg-[#0b0f17] border-amber-500/10 focus:border-amber-500/30 text-white h-11 rounded-xl"
                 />
               </div>
-              
+
               <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[130px] bg-[#0b0f17] border-amber-500/10 text-white h-11 rounded-xl">
@@ -571,8 +608,8 @@ function BarbersComponent() {
 
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                className="gap-2 w-full xl:w-auto h-[48px] px-8 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] border-none shrink-0" 
+              <Button
+                className="gap-2 w-full xl:w-auto h-[48px] px-8 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] border-none shrink-0"
                 variant={canAddBarber ? "default" : "secondary"}
                 onClick={() => {
                   setSelectedServices([]);
@@ -588,28 +625,37 @@ function BarbersComponent() {
                   <DialogHeader>
                     <DialogTitle>Adicionar Novo Barbeiro</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={(e) => {
-                    if (selectedServices.length === 0) {
-                      e.preventDefault();
-                      toast.error("Selecione pelo menos um serviço para o profissional.");
-                      return;
-                    }
-                    handleAddBarber(e);
-                  }} className="space-y-4 pt-4">
+                  <form
+                    onSubmit={(e) => {
+                      if (selectedServices.length === 0) {
+                        e.preventDefault();
+                        toast.error("Selecione pelo menos um serviço para o profissional.");
+                        return;
+                      }
+                      handleAddBarber(e);
+                    }}
+                    className="space-y-4 pt-4"
+                  >
                     <div className="space-y-2">
                       <Label htmlFor="avatar">Foto do Profissional</Label>
                       <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16">
                           {newBarber.avatar_url ? (
-                            <img src={newBarber.avatar_url} alt="Preview" className="h-full w-full object-cover" />
+                            <img
+                              src={newBarber.avatar_url}
+                              alt="Preview"
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
-                            <AvatarFallback><Upload size={20} className="text-muted-foreground" /></AvatarFallback>
+                            <AvatarFallback>
+                              <Upload size={20} className="text-muted-foreground" />
+                            </AvatarFallback>
                           )}
                         </Avatar>
                         <div className="flex-1">
-                          <Input 
-                            id="avatar" 
-                            type="file" 
+                          <Input
+                            id="avatar"
+                            type="file"
                             accept="image/*"
                             onChange={(e) => handleFileUpload(e, false)}
                             disabled={uploading}
@@ -623,24 +669,26 @@ function BarbersComponent() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome do Profissional</Label>
-                      <Input 
-                        id="name" 
+                      <Input
+                        id="name"
                         placeholder="João Silva"
-                        value={newBarber.name} 
-                        onChange={(e) => setNewBarber({...newBarber, name: e.target.value})} 
-                        required 
+                        value={newBarber.name}
+                        onChange={(e) => setNewBarber({ ...newBarber, name: e.target.value })}
+                        required
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="category">Categoria</Label>
-                        <Select 
-                          value={newBarber.category} 
-                          onValueChange={(value) => setNewBarber({
-                            ...newBarber, 
-                            category: value,
-                            commission_rate: value === 'Freelancer' ? 50 : 0
-                          })}
+                        <Select
+                          value={newBarber.category}
+                          onValueChange={(value) =>
+                            setNewBarber({
+                              ...newBarber,
+                              category: value,
+                              commission_rate: value === "Freelancer" ? 50 : 0,
+                            })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione" />
@@ -651,61 +699,99 @@ function BarbersComponent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      {newBarber.category === 'Freelancer' && (
+                      {newBarber.category === "Freelancer" && (
                         <div className="space-y-2 md:col-span-2 border rounded p-3">
                           <Label>Comissão</Label>
                           <div className="grid grid-cols-2 gap-2">
                             <Select
                               value={newBarber.commission_type}
-                              onValueChange={(v) => setNewBarber({ ...newBarber, commission_type: v })}
+                              onValueChange={(v) =>
+                                setNewBarber({ ...newBarber, commission_type: v })
+                              }
                             >
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="percentage">Percentual (%)</SelectItem>
                                 <SelectItem value="fixed">Valor fixo (R$/atendimento)</SelectItem>
                                 <SelectItem value="hybrid">Híbrido (% + bônus)</SelectItem>
                               </SelectContent>
                             </Select>
-                            {(newBarber.commission_type === 'percentage' || newBarber.commission_type === 'hybrid') && (
-                              <Input type="number" placeholder="% sobre serviço" value={newBarber.commission_rate}
-                                onChange={(e) => setNewBarber({ ...newBarber, commission_rate: Number(e.target.value) })} />
+                            {(newBarber.commission_type === "percentage" ||
+                              newBarber.commission_type === "hybrid") && (
+                              <Input
+                                type="number"
+                                placeholder="% sobre serviço"
+                                value={newBarber.commission_rate}
+                                onChange={(e) =>
+                                  setNewBarber({
+                                    ...newBarber,
+                                    commission_rate: Number(e.target.value),
+                                  })
+                                }
+                              />
                             )}
-                            {newBarber.commission_type === 'fixed' && (
-                              <Input type="number" placeholder="R$ por atendimento" value={newBarber.commission_fixed_value}
-                                onChange={(e) => setNewBarber({ ...newBarber, commission_fixed_value: Number(e.target.value) })} />
+                            {newBarber.commission_type === "fixed" && (
+                              <Input
+                                type="number"
+                                placeholder="R$ por atendimento"
+                                value={newBarber.commission_fixed_value}
+                                onChange={(e) =>
+                                  setNewBarber({
+                                    ...newBarber,
+                                    commission_fixed_value: Number(e.target.value),
+                                  })
+                                }
+                              />
                             )}
-                            {newBarber.commission_type === 'hybrid' && (
-                              <Input type="number" placeholder="Bônus R$ por atendimento" value={newBarber.commission_bonus_value}
-                                onChange={(e) => setNewBarber({ ...newBarber, commission_bonus_value: Number(e.target.value) })} />
+                            {newBarber.commission_type === "hybrid" && (
+                              <Input
+                                type="number"
+                                placeholder="Bônus R$ por atendimento"
+                                value={newBarber.commission_bonus_value}
+                                onChange={(e) =>
+                                  setNewBarber({
+                                    ...newBarber,
+                                    commission_bonus_value: Number(e.target.value),
+                                  })
+                                }
+                              />
                             )}
-                            <Input type="number" placeholder="Meta mensal R$" value={newBarber.monthly_goal}
-                              onChange={(e) => setNewBarber({ ...newBarber, monthly_goal: Number(e.target.value) })} />
+                            <Input
+                              type="number"
+                              placeholder="Meta mensal R$"
+                              value={newBarber.monthly_goal}
+                              onChange={(e) =>
+                                setNewBarber({ ...newBarber, monthly_goal: Number(e.target.value) })
+                              }
+                            />
                           </div>
                         </div>
                       )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Telefone</Label>
-                      <Input 
-                        id="phone" 
+                      <Input
+                        id="phone"
                         placeholder="(00) 00000-0000"
-                        value={newBarber.phone} 
-                        onChange={(e) => setNewBarber({...newBarber, phone: e.target.value})} 
+                        value={newBarber.phone}
+                        onChange={(e) => setNewBarber({ ...newBarber, phone: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email (Opcional)</Label>
-                      <Input 
-                        id="email" 
+                      <Input
+                        id="email"
                         type="email"
-                        value={newBarber.email} 
-                        onChange={(e) => setNewBarber({...newBarber, email: e.target.value})} 
+                        value={newBarber.email}
+                        onChange={(e) => setNewBarber({ ...newBarber, email: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Serviços Prestados</Label>
                       <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
-                        {services.map(service => (
+                        {services.map((service) => (
                           <div key={service.id} className="flex items-center space-x-2">
                             <input
                               type="checkbox"
@@ -715,12 +801,19 @@ function BarbersComponent() {
                                 if (e.target.checked) {
                                   setSelectedServices([...selectedServices, service.id]);
                                 } else {
-                                  setSelectedServices(selectedServices.filter(id => id !== service.id));
+                                  setSelectedServices(
+                                    selectedServices.filter((id) => id !== service.id),
+                                  );
                                 }
                               }}
                               className="rounded border-gray-300"
                             />
-                            <label htmlFor={`new-service-${service.id}`} className="text-xs truncate">{service.name}</label>
+                            <label
+                              htmlFor={`new-service-${service.id}`}
+                              className="text-xs truncate"
+                            >
+                              {service.name}
+                            </label>
                           </div>
                         ))}
                       </div>
@@ -735,58 +828,82 @@ function BarbersComponent() {
                           <div key={day} className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Checkbox 
+                                <Checkbox
                                   id={`day-${day}`}
-                                  checked={newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS]?.enabled}
+                                  checked={
+                                    newBarber.working_hours[
+                                      day as keyof typeof DEFAULT_WORKING_HOURS
+                                    ]?.enabled
+                                  }
                                   onCheckedChange={(checked) => {
                                     setNewBarber({
                                       ...newBarber,
                                       working_hours: {
                                         ...newBarber.working_hours,
                                         [day]: {
-                                          ...(newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS] || DEFAULT_WORKING_HOURS[day as keyof typeof DEFAULT_WORKING_HOURS]),
-                                          enabled: checked === true
-                                        }
-                                      }
+                                          ...(newBarber.working_hours[
+                                            day as keyof typeof DEFAULT_WORKING_HOURS
+                                          ] ||
+                                            DEFAULT_WORKING_HOURS[
+                                              day as keyof typeof DEFAULT_WORKING_HOURS
+                                            ]),
+                                          enabled: checked === true,
+                                        },
+                                      },
                                     });
                                   }}
                                 />
-                                <Label htmlFor={`day-${day}`} className="text-sm font-medium">{label}</Label>
+                                <Label htmlFor={`day-${day}`} className="text-sm font-medium">
+                                  {label}
+                                </Label>
                               </div>
-                              {newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS]?.enabled && (
+                              {newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS]
+                                ?.enabled && (
                                 <div className="flex items-center gap-2">
-                                  <Input 
-                                    type="time" 
+                                  <Input
+                                    type="time"
                                     className="h-8 w-24 text-xs"
-                                    value={newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS]?.start}
+                                    value={
+                                      newBarber.working_hours[
+                                        day as keyof typeof DEFAULT_WORKING_HOURS
+                                      ]?.start
+                                    }
                                     onChange={(e) => {
                                       setNewBarber({
                                         ...newBarber,
                                         working_hours: {
                                           ...newBarber.working_hours,
                                           [day]: {
-                                            ...newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS],
-                                            start: e.target.value
-                                          }
-                                        }
+                                            ...newBarber.working_hours[
+                                              day as keyof typeof DEFAULT_WORKING_HOURS
+                                            ],
+                                            start: e.target.value,
+                                          },
+                                        },
                                       });
                                     }}
                                   />
                                   <span className="text-xs text-muted-foreground">às</span>
-                                  <Input 
-                                    type="time" 
+                                  <Input
+                                    type="time"
                                     className="h-8 w-24 text-xs"
-                                    value={newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS]?.end}
+                                    value={
+                                      newBarber.working_hours[
+                                        day as keyof typeof DEFAULT_WORKING_HOURS
+                                      ]?.end
+                                    }
                                     onChange={(e) => {
                                       setNewBarber({
                                         ...newBarber,
                                         working_hours: {
                                           ...newBarber.working_hours,
                                           [day]: {
-                                            ...newBarber.working_hours[day as keyof typeof DEFAULT_WORKING_HOURS],
-                                            end: e.target.value
-                                          }
-                                        }
+                                            ...newBarber.working_hours[
+                                              day as keyof typeof DEFAULT_WORKING_HOURS
+                                            ],
+                                            end: e.target.value,
+                                          },
+                                        },
                                       });
                                     }}
                                   />
@@ -798,7 +915,12 @@ function BarbersComponent() {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full bg-gold text-black hover:bg-[#B8962E] hover:scale-105 hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] transition-all h-12 rounded-xl font-bold uppercase tracking-tight">Salvar Barbeiro</Button>
+                    <Button
+                      type="submit"
+                      className="w-full bg-gold text-black hover:bg-[#B8962E] hover:scale-105 hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] transition-all h-12 rounded-xl font-bold uppercase tracking-tight"
+                    >
+                      Salvar Barbeiro
+                    </Button>
                   </form>
                 </>
               ) : (
@@ -807,7 +929,8 @@ function BarbersComponent() {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Limite Atingido</AlertTitle>
                     <AlertDescription>
-                      Seu plano atual permite apenas 1 profissional. Faça o upgrade para o plano Pro para adicionar mais.
+                      Seu plano atual permite apenas 1 profissional. Faça o upgrade para o plano Pro
+                      para adicionar mais.
                     </AlertDescription>
                   </Alert>
                   <Button className="w-full" asChild>
@@ -835,7 +958,10 @@ function BarbersComponent() {
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="p-6 border border-amber-500/10 rounded-[20px] bg-[#0b0f17] space-y-4">
+              <div
+                key={i}
+                className="p-6 border border-amber-500/10 rounded-[20px] bg-[#0b0f17] space-y-4"
+              >
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-20 w-20 rounded-full bg-slate-800" />
                   <div className="flex-1 space-y-2">
@@ -859,7 +985,9 @@ function BarbersComponent() {
               <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 shadow-[0_0_30px_rgba(239,68,68,0.12)]">
                 <AlertTriangle size={34} className="text-red-400" />
               </div>
-              <h3 className="text-xl font-black text-white mb-2 tracking-tight">Ops! Algo deu errado</h3>
+              <h3 className="text-xl font-black text-white mb-2 tracking-tight">
+                Ops! Algo deu errado
+              </h3>
               <p className="text-muted-foreground mb-7 max-w-md text-sm leading-relaxed">{error}</p>
               <Button
                 onClick={() => fetchData()}
@@ -878,206 +1006,226 @@ function BarbersComponent() {
             filteredBarbers.map((barber) => {
               const summary = commissionSummaries[barber.id] || {};
               const pendingCommission = Number(summary.commission_pending || 0);
-              const pendingCount = pendingCommission > 0 ? Number(summary.pending_count || summary.completed_appointments || 0) : 0;
+              const pendingCount =
+                pendingCommission > 0
+                  ? Number(summary.pending_count || summary.completed_appointments || 0)
+                  : 0;
 
               return (
-              <div 
-                key={barber.id} 
-                className="group relative p-6 border border-amber-500/20 rounded-[20px] bg-[#0b0f17] shadow-xl hover:border-amber-500/50 transition-all duration-500 hover:-translate-y-1 flex flex-col justify-between"
-              >
-                <div className="absolute top-4 right-4 z-10">
-                  <Badge 
-                    onClick={() => handleToggleStatus(barber)}
-                    className={`cursor-pointer transition-all hover:scale-105 ${
-                      barber.active 
-                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/20' 
-                        : 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/20'
-                    }`}
-                  >
-                    {barber.active ? 'Ativo' : 'Inativo'}
-                  </Badge>
-                </div>
+                <div
+                  key={barber.id}
+                  className="group relative p-6 border border-amber-500/20 rounded-[20px] bg-[#0b0f17] shadow-xl hover:border-amber-500/50 transition-all duration-500 hover:-translate-y-1 flex flex-col justify-between"
+                >
+                  <div className="absolute top-4 right-4 z-10">
+                    <Badge
+                      onClick={() => handleToggleStatus(barber)}
+                      className={`cursor-pointer transition-all hover:scale-105 ${
+                        barber.active
+                          ? "bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/20"
+                          : "bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/20"
+                      }`}
+                    >
+                      {barber.active ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
 
-                <div>
-                  <div className="flex items-start gap-5 mb-6">
-                    <div className="relative">
-                      <Avatar className="h-20 w-20 border-2 border-amber-500/30 ring-4 ring-amber-500/5 transition-transform duration-500 group-hover:scale-105">
-                        {barber.avatar_url ? (
-                          <img src={barber.avatar_url} alt={barber.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <AvatarFallback className="bg-amber-500/10 text-amber-500 text-xl font-bold">
-                            {typeof barber.name === 'string' ? barber.name.substring(0, 2).toUpperCase() : "??"}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="absolute -bottom-1 -right-1 bg-[#0b0f17] p-1 rounded-full">
-                        <div className="flex items-center gap-1 bg-amber-500 px-1.5 py-0.5 rounded-full text-[10px] font-black text-black">
-                          <Star size={10} fill="currentColor" />
-                          {barber.average_rating || "5.0"}
+                  <div>
+                    <div className="flex items-start gap-5 mb-6">
+                      <div className="relative">
+                        <Avatar className="h-20 w-20 border-2 border-amber-500/30 ring-4 ring-amber-500/5 transition-transform duration-500 group-hover:scale-105">
+                          {barber.avatar_url ? (
+                            <img
+                              src={barber.avatar_url}
+                              alt={barber.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <AvatarFallback className="bg-amber-500/10 text-amber-500 text-xl font-bold">
+                              {typeof barber.name === "string"
+                                ? barber.name.substring(0, 2).toUpperCase()
+                                : "??"}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="absolute -bottom-1 -right-1 bg-[#0b0f17] p-1 rounded-full">
+                          <div className="flex items-center gap-1 bg-amber-500 px-1.5 py-0.5 rounded-full text-[10px] font-black text-black">
+                            <Star size={10} fill="currentColor" />
+                            {barber.average_rating || "5.0"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0 pt-1">
+                        <h3 className="font-bold text-xl text-white truncate group-hover:text-amber-400 transition-colors">
+                          {barber.name}
+                        </h3>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold tracking-wider uppercase py-0 ${
+                              barber.category === "Freelancer"
+                                ? "border-blue-500/30 text-blue-400 bg-blue-500/5"
+                                : "border-purple-500/30 text-purple-400 bg-purple-500/5"
+                            }`}
+                          >
+                            {barber.category}
+                          </Badge>
+                          {barber.category === "Freelancer" && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-bold tracking-wider uppercase py-0 border-orange-500/30 text-orange-400 bg-orange-500/5"
+                            >
+                              {barber.commission_rate}% Comis.
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex-1 min-w-0 pt-1">
-                      <h3 className="font-bold text-xl text-white truncate group-hover:text-amber-400 transition-colors">{barber.name}</h3>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <Badge variant="outline" className={`text-[10px] font-bold tracking-wider uppercase py-0 ${
-                          barber.category === 'Freelancer' 
-                            ? 'border-blue-500/30 text-blue-400 bg-blue-500/5' 
-                            : 'border-purple-500/30 text-purple-400 bg-purple-500/5'
-                        }`}>
-                          {barber.category}
-                        </Badge>
-                        {barber.category === 'Freelancer' && (
-                          <Badge variant="outline" className="text-[10px] font-bold tracking-wider uppercase py-0 border-orange-500/30 text-orange-400 bg-orange-500/5">
-                            {barber.commission_rate}% Comis.
-                          </Badge>
-                        )}
+
+                    <div className="space-y-3 mb-8 px-1">
+                      <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
+                        <div className="p-1.5 rounded-lg bg-white/5">
+                          <Phone size={14} className="text-amber-500/70" />
+                        </div>
+                        <span className="truncate">{barber.phone || "Não informado"}</span>
                       </div>
+                      <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
+                        <div className="p-1.5 rounded-lg bg-white/5">
+                          <Mail size={14} className="text-amber-500/70" />
+                        </div>
+                        <span className="truncate">{barber.email || "Não informado"}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
+                        <div className="p-1.5 rounded-lg bg-white/5">
+                          <BarChart3 size={14} className="text-amber-500/70" />
+                        </div>
+                        <span>{barber.appointments?.[0]?.count || 0} Atendimentos</span>
+                      </div>
+                      {pendingCommission > 0 && (
+                        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-yellow-400">
+                            Comissão pendente
+                          </p>
+                          <p className="text-lg font-black text-white mt-1">
+                            R$ {pendingCommission.toFixed(2)}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="space-y-3 mb-8 px-1">
-                    <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
-                      <div className="p-1.5 rounded-lg bg-white/5">
-                        <Phone size={14} className="text-amber-500/70" />
-                      </div>
-                      <span className="truncate">{barber.phone || "Não informado"}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
-                      <div className="p-1.5 rounded-lg bg-white/5">
-                        <Mail size={14} className="text-amber-500/70" />
-                      </div>
-                      <span className="truncate">{barber.email || "Não informado"}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
-                      <div className="p-1.5 rounded-lg bg-white/5">
-                        <BarChart3 size={14} className="text-amber-500/70" />
-                      </div>
-                      <span>{barber.appointments?.[0]?.count || 0} Atendimentos</span>
-                    </div>
-                    {pendingCommission > 0 && (
-                      <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Comissão pendente</p>
-                        <p className="text-lg font-black text-white mt-1">R$ {pendingCommission.toFixed(2)}</p>
-                      </div>
+                  <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5">
+                    {pendingCommission > 0 && user?.id && (
+                      <PayCommissionDialog
+                        tenantId={user.id}
+                        barberId={barber.id}
+                        barberName={barber.name}
+                        pendingAmount={pendingCommission}
+                        pendingCount={pendingCount}
+                        triggerClassName="flex-1"
+                        onPaid={fetchBarbers}
+                      />
                     )}
-                  </div>
-                </div>
+                    <div className="w-full">
+                      <Button
+                        className="w-full h-12 relative overflow-hidden group/perf rounded-xl bg-gradient-to-r from-gold to-[#F0D67B] text-black font-black uppercase tracking-wider text-sm border border-gold shadow-[0_6px_20px_-6px_rgba(212,175,55,0.7)] hover:shadow-[0_10px_28px_-8px_rgba(212,175,55,0.95)] transition-all duration-300"
+                        onClick={() => setPerformanceBarber(barber)}
+                      >
+                        <span className="absolute inset-0 -translate-x-full group-hover/perf:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                        <BarChart3 size={18} className="mr-2" />
+                        Ver desempenho
+                      </Button>
+                    </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5">
-                  {pendingCommission > 0 && user?.id && (
-                    <PayCommissionDialog
-                      tenantId={user.id}
-                      barberId={barber.id}
-                      barberName={barber.name}
-                      pendingAmount={pendingCommission}
-                      pendingCount={pendingCount}
-                      triggerClassName="flex-1"
-                      onPaid={fetchBarbers}
-                    />
-                  )}
-                  <div className="w-full">
-                    <Button
-                      className="w-full h-12 relative overflow-hidden group/perf rounded-xl bg-gradient-to-r from-gold to-[#F0D67B] text-black font-black uppercase tracking-wider text-sm border border-gold shadow-[0_6px_20px_-6px_rgba(212,175,55,0.7)] hover:shadow-[0_10px_28px_-8px_rgba(212,175,55,0.95)] transition-all duration-300"
-                      onClick={() => setPerformanceBarber(barber)}
-                    >
-                      <span className="absolute inset-0 -translate-x-full group-hover/perf:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                      <BarChart3 size={18} className="mr-2" />
-                      Ver desempenho
-                    </Button>
-                  </div>
-
-
-                  
-                  <div className="flex items-center gap-1">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 text-white/40 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
-                            onClick={() => {
-                              setEditingBarber(barber);
-                              setSelectedServices(barber.barber_services?.map((bs: any) => bs.service_id) || []);
-                              setIsEditDialogOpen(true);
-                            }}
-                          >
-                            <Pencil size={18} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Editar informações do profissional</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 text-white/40 hover:text-amber-400 hover:bg-amber-400/10 rounded-xl transition-all"
-                            onClick={() => {
-                              setTimeOffBarber(barber);
-                              setIsTimeOffDialogOpen(true);
-                            }}
-                          >
-                            <Clock size={18} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Gerenciar folgas e ausências</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {plan !== 'free' && (
+                    <div className="flex items-center gap-1">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-10 w-10 text-white/40 hover:text-amber-400 hover:bg-amber-400/10 rounded-xl transition-all"
-                              onClick={() => handleDuplicateBarber(barber)}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 text-white/40 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
+                              onClick={() => {
+                                setEditingBarber(barber);
+                                setSelectedServices(
+                                  barber.barber_services?.map((bs: any) => bs.service_id) || [],
+                                );
+                                setIsEditDialogOpen(true);
+                              }}
                             >
-                              <Copy size={18} />
+                              <Pencil size={18} />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Duplicar este profissional</p>
+                            <p>Editar informações do profissional</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    )}
 
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 text-white/40 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
-                            onClick={() => {
-                              setBarberToDelete(barber);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 size={18} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Remover profissional permanentemente</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 text-white/40 hover:text-amber-400 hover:bg-amber-400/10 rounded-xl transition-all"
+                              onClick={() => {
+                                setTimeOffBarber(barber);
+                                setIsTimeOffDialogOpen(true);
+                              }}
+                            >
+                              <Clock size={18} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Gerenciar folgas e ausências</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      {plan !== "free" && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 text-white/40 hover:text-amber-400 hover:bg-amber-400/10 rounded-xl transition-all"
+                                onClick={() => handleDuplicateBarber(barber)}
+                              >
+                                <Copy size={18} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Duplicar este profissional</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 text-white/40 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                              onClick={() => {
+                                setBarberToDelete(barber);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 size={18} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remover profissional permanentemente</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </div>
                 </div>
-              </div>
               );
             })
           )}
@@ -1088,28 +1236,37 @@ function BarbersComponent() {
               <DialogTitle>Editar Profissional</DialogTitle>
             </DialogHeader>
             {editingBarber && (
-              <form onSubmit={(e) => {
-                if (selectedServices.length === 0) {
-                  e.preventDefault();
-                  toast.error("Selecione pelo menos um serviço para o profissional.");
-                  return;
-                }
-                handleUpdateBarber(e);
-              }} className="space-y-4 pt-4">
+              <form
+                onSubmit={(e) => {
+                  if (selectedServices.length === 0) {
+                    e.preventDefault();
+                    toast.error("Selecione pelo menos um serviço para o profissional.");
+                    return;
+                  }
+                  handleUpdateBarber(e);
+                }}
+                className="space-y-4 pt-4"
+              >
                 <div className="space-y-2">
                   <Label htmlFor="edit_avatar">Foto do Profissional</Label>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
                       {editingBarber.avatar_url ? (
-                        <img src={editingBarber.avatar_url} alt="Preview" className="h-full w-full object-cover" />
+                        <img
+                          src={editingBarber.avatar_url}
+                          alt="Preview"
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
-                        <AvatarFallback><Upload size={20} className="text-muted-foreground" /></AvatarFallback>
+                        <AvatarFallback>
+                          <Upload size={20} className="text-muted-foreground" />
+                        </AvatarFallback>
                       )}
                     </Avatar>
                     <div className="flex-1">
-                      <Input 
-                        id="edit_avatar" 
-                        type="file" 
+                      <Input
+                        id="edit_avatar"
+                        type="file"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, true)}
                         disabled={uploading}
@@ -1123,24 +1280,27 @@ function BarbersComponent() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit_name">Nome do Profissional</Label>
-                  <Input 
-                    id="edit_name" 
+                  <Input
+                    id="edit_name"
                     placeholder="João Silva"
-                    value={editingBarber.name} 
-                    onChange={(e) => setEditingBarber({...editingBarber, name: e.target.value})} 
-                    required 
+                    value={editingBarber.name}
+                    onChange={(e) => setEditingBarber({ ...editingBarber, name: e.target.value })}
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit_category">Categoria</Label>
-                    <Select 
-                      value={editingBarber.category} 
-                      onValueChange={(value) => setEditingBarber({
-                        ...editingBarber, 
-                        category: value,
-                        commission_rate: value === 'Freelancer' ? (editingBarber.commission_rate || 50) : 0
-                      })}
+                    <Select
+                      value={editingBarber.category}
+                      onValueChange={(value) =>
+                        setEditingBarber({
+                          ...editingBarber,
+                          category: value,
+                          commission_rate:
+                            value === "Freelancer" ? editingBarber.commission_rate || 50 : 0,
+                        })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -1151,55 +1311,96 @@ function BarbersComponent() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {editingBarber.category === 'Freelancer' && (
+                  {editingBarber.category === "Freelancer" && (
                     <div className="space-y-2 md:col-span-2 border rounded p-3">
                       <Label>Comissão</Label>
                       <div className="grid grid-cols-2 gap-2">
                         <Select
-                          value={editingBarber.commission_type ?? 'percentage'}
-                          onValueChange={(v) => setEditingBarber({ ...editingBarber, commission_type: v })}
+                          value={editingBarber.commission_type ?? "percentage"}
+                          onValueChange={(v) =>
+                            setEditingBarber({ ...editingBarber, commission_type: v })
+                          }
                         >
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="percentage">Percentual (%)</SelectItem>
                             <SelectItem value="fixed">Valor fixo (R$/atendimento)</SelectItem>
                             <SelectItem value="hybrid">Híbrido (% + bônus)</SelectItem>
                           </SelectContent>
                         </Select>
-                        {((editingBarber.commission_type ?? 'percentage') === 'percentage' || editingBarber.commission_type === 'hybrid') && (
-                          <Input type="number" placeholder="% sobre serviço" value={editingBarber.commission_rate ?? 0}
-                            onChange={(e) => setEditingBarber({ ...editingBarber, commission_rate: Number(e.target.value) })} />
+                        {((editingBarber.commission_type ?? "percentage") === "percentage" ||
+                          editingBarber.commission_type === "hybrid") && (
+                          <Input
+                            type="number"
+                            placeholder="% sobre serviço"
+                            value={editingBarber.commission_rate ?? 0}
+                            onChange={(e) =>
+                              setEditingBarber({
+                                ...editingBarber,
+                                commission_rate: Number(e.target.value),
+                              })
+                            }
+                          />
                         )}
-                        {editingBarber.commission_type === 'fixed' && (
-                          <Input type="number" placeholder="R$ por atendimento" value={editingBarber.commission_fixed_value ?? 0}
-                            onChange={(e) => setEditingBarber({ ...editingBarber, commission_fixed_value: Number(e.target.value) })} />
+                        {editingBarber.commission_type === "fixed" && (
+                          <Input
+                            type="number"
+                            placeholder="R$ por atendimento"
+                            value={editingBarber.commission_fixed_value ?? 0}
+                            onChange={(e) =>
+                              setEditingBarber({
+                                ...editingBarber,
+                                commission_fixed_value: Number(e.target.value),
+                              })
+                            }
+                          />
                         )}
-                        {editingBarber.commission_type === 'hybrid' && (
-                          <Input type="number" placeholder="Bônus R$ por atendimento" value={editingBarber.commission_bonus_value ?? 0}
-                            onChange={(e) => setEditingBarber({ ...editingBarber, commission_bonus_value: Number(e.target.value) })} />
+                        {editingBarber.commission_type === "hybrid" && (
+                          <Input
+                            type="number"
+                            placeholder="Bônus R$ por atendimento"
+                            value={editingBarber.commission_bonus_value ?? 0}
+                            onChange={(e) =>
+                              setEditingBarber({
+                                ...editingBarber,
+                                commission_bonus_value: Number(e.target.value),
+                              })
+                            }
+                          />
                         )}
-                        <Input type="number" placeholder="Meta mensal R$" value={editingBarber.monthly_goal ?? 0}
-                          onChange={(e) => setEditingBarber({ ...editingBarber, monthly_goal: Number(e.target.value) })} />
+                        <Input
+                          type="number"
+                          placeholder="Meta mensal R$"
+                          value={editingBarber.monthly_goal ?? 0}
+                          onChange={(e) =>
+                            setEditingBarber({
+                              ...editingBarber,
+                              monthly_goal: Number(e.target.value),
+                            })
+                          }
+                        />
                       </div>
                     </div>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit_phone">Telefone</Label>
-                  <Input 
-                    id="edit_phone" 
+                  <Input
+                    id="edit_phone"
                     placeholder="(00) 00000-0000"
-                    value={editingBarber.phone || ""} 
-                    onChange={(e) => setEditingBarber({...editingBarber, phone: e.target.value})} 
+                    value={editingBarber.phone || ""}
+                    onChange={(e) => setEditingBarber({ ...editingBarber, phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit_email">Email (Opcional)</Label>
-                  <Input 
-                    id="edit_email" 
+                  <Input
+                    id="edit_email"
                     type="email"
-                    value={editingBarber.email || ""} 
-                    onChange={(e) => setEditingBarber({...editingBarber, email: e.target.value})} 
+                    value={editingBarber.email || ""}
+                    onChange={(e) => setEditingBarber({ ...editingBarber, email: e.target.value })}
                   />
                 </div>
 
@@ -1212,12 +1413,18 @@ function BarbersComponent() {
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label htmlFor="edit_pix_type" className="text-xs">Tipo da chave</Label>
+                      <Label htmlFor="edit_pix_type" className="text-xs">
+                        Tipo da chave
+                      </Label>
                       <Select
                         value={editingBarber.pix_key_type || ""}
-                        onValueChange={(v) => setEditingBarber({ ...editingBarber, pix_key_type: v })}
+                        onValueChange={(v) =>
+                          setEditingBarber({ ...editingBarber, pix_key_type: v })
+                        }
                       >
-                        <SelectTrigger id="edit_pix_type"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                        <SelectTrigger id="edit_pix_type">
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cpf">CPF</SelectItem>
                           <SelectItem value="cnpj">CNPJ</SelectItem>
@@ -1232,7 +1439,9 @@ function BarbersComponent() {
                         <input
                           type="checkbox"
                           checked={editingBarber.accepts_tips ?? true}
-                          onChange={(e) => setEditingBarber({ ...editingBarber, accepts_tips: e.target.checked })}
+                          onChange={(e) =>
+                            setEditingBarber({ ...editingBarber, accepts_tips: e.target.checked })
+                          }
                           className="h-4 w-4 accent-gold"
                         />
                         Aceita gorjetas digitais
@@ -1242,16 +1451,26 @@ function BarbersComponent() {
                   <Input
                     placeholder="Chave PIX"
                     value={editingBarber.pix_key || ""}
-                    onChange={(e) => setEditingBarber({ ...editingBarber, pix_key: e.target.value })}
+                    onChange={(e) =>
+                      setEditingBarber({ ...editingBarber, pix_key: e.target.value })
+                    }
                   />
                   <div className="space-y-2 pt-1">
-                    <Label htmlFor="edit_pix_qr" className="text-xs">QR Code do PIX (imagem)</Label>
+                    <Label htmlFor="edit_pix_qr" className="text-xs">
+                      QR Code do PIX (imagem)
+                    </Label>
                     <div className="flex items-center gap-3">
                       <div className="h-20 w-20 shrink-0 rounded-lg border border-gold/30 bg-black/20 overflow-hidden flex items-center justify-center">
                         {editingBarber.pix_qr_code_url ? (
-                          <img src={editingBarber.pix_qr_code_url} alt="QR Code PIX do profissional" className="h-full w-full object-contain" />
+                          <img
+                            src={editingBarber.pix_qr_code_url}
+                            alt="QR Code PIX do profissional"
+                            className="h-full w-full object-contain"
+                          />
                         ) : (
-                          <span className="text-[9px] text-muted-foreground text-center px-1">Sem QR Code</span>
+                          <span className="text-[9px] text-muted-foreground text-center px-1">
+                            Sem QR Code
+                          </span>
                         )}
                       </div>
                       <div className="flex-1 space-y-2">
@@ -1269,7 +1488,9 @@ function BarbersComponent() {
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs text-red-400 hover:text-red-300"
-                            onClick={() => setEditingBarber({ ...editingBarber, pix_qr_code_url: null })}
+                            onClick={() =>
+                              setEditingBarber({ ...editingBarber, pix_qr_code_url: null })
+                            }
                           >
                             Remover QR Code
                           </Button>
@@ -1279,11 +1500,10 @@ function BarbersComponent() {
                   </div>
                 </div>
 
-
                 <div className="space-y-2">
                   <Label>Serviços Prestados</Label>
                   <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
-                    {services.map(service => (
+                    {services.map((service) => (
                       <div key={service.id} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -1293,12 +1513,16 @@ function BarbersComponent() {
                             if (e.target.checked) {
                               setSelectedServices([...selectedServices, service.id]);
                             } else {
-                              setSelectedServices(selectedServices.filter(id => id !== service.id));
+                              setSelectedServices(
+                                selectedServices.filter((id) => id !== service.id),
+                              );
                             }
                           }}
                           className="rounded border-gray-300"
                         />
-                        <label htmlFor={`edit-service-${service.id}`} className="text-xs truncate">{service.name}</label>
+                        <label htmlFor={`edit-service-${service.id}`} className="text-xs truncate">
+                          {service.name}
+                        </label>
                       </div>
                     ))}
                   </div>
@@ -1310,12 +1534,14 @@ function BarbersComponent() {
                   </Label>
                   <div className="space-y-3 p-3 border rounded-md">
                     {Object.entries(DAY_LABELS).map(([day, label]) => {
-                      const dayConfig = (editingBarber.working_hours?.[day]) || DEFAULT_WORKING_HOURS[day as keyof typeof DEFAULT_WORKING_HOURS];
+                      const dayConfig =
+                        editingBarber.working_hours?.[day] ||
+                        DEFAULT_WORKING_HOURS[day as keyof typeof DEFAULT_WORKING_HOURS];
                       return (
                         <div key={day} className="flex flex-col gap-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Checkbox 
+                              <Checkbox
                                 id={`edit-day-${day}`}
                                 checked={dayConfig.enabled}
                                 onCheckedChange={(checked) => {
@@ -1325,18 +1551,20 @@ function BarbersComponent() {
                                       ...(editingBarber.working_hours || DEFAULT_WORKING_HOURS),
                                       [day]: {
                                         ...dayConfig,
-                                        enabled: checked === true
-                                      }
-                                    }
+                                        enabled: checked === true,
+                                      },
+                                    },
                                   });
                                 }}
                               />
-                              <Label htmlFor={`edit-day-${day}`} className="text-sm font-medium">{label}</Label>
+                              <Label htmlFor={`edit-day-${day}`} className="text-sm font-medium">
+                                {label}
+                              </Label>
                             </div>
                             {dayConfig.enabled && (
                               <div className="flex items-center gap-2">
-                                <Input 
-                                  type="time" 
+                                <Input
+                                  type="time"
                                   className="h-8 w-24 text-xs"
                                   value={dayConfig.start}
                                   onChange={(e) => {
@@ -1346,15 +1574,15 @@ function BarbersComponent() {
                                         ...(editingBarber.working_hours || DEFAULT_WORKING_HOURS),
                                         [day]: {
                                           ...dayConfig,
-                                          start: e.target.value
-                                        }
-                                      }
+                                          start: e.target.value,
+                                        },
+                                      },
                                     });
                                   }}
                                 />
                                 <span className="text-xs text-muted-foreground">às</span>
-                                <Input 
-                                  type="time" 
+                                <Input
+                                  type="time"
                                   className="h-8 w-24 text-xs"
                                   value={dayConfig.end}
                                   onChange={(e) => {
@@ -1364,9 +1592,9 @@ function BarbersComponent() {
                                         ...(editingBarber.working_hours || DEFAULT_WORKING_HOURS),
                                         [day]: {
                                           ...dayConfig,
-                                          end: e.target.value
-                                        }
-                                      }
+                                          end: e.target.value,
+                                        },
+                                      },
                                     });
                                   }}
                                 />
@@ -1379,7 +1607,12 @@ function BarbersComponent() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-gold text-black hover:bg-[#B8962E] hover:scale-105 hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] transition-all h-12 rounded-xl font-bold uppercase tracking-tight">Salvar Alterações</Button>
+                <Button
+                  type="submit"
+                  className="w-full bg-gold text-black hover:bg-[#B8962E] hover:scale-105 hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] transition-all h-12 rounded-xl font-bold uppercase tracking-tight"
+                >
+                  Salvar Alterações
+                </Button>
               </form>
             )}
           </DialogContent>
@@ -1393,15 +1626,16 @@ function BarbersComponent() {
                 Confirmar Exclusão
               </AlertDialogTitle>
               <AlertDialogDescription className="text-white/60">
-                Você tem certeza que deseja excluir o profissional <span className="text-white font-semibold">{barberToDelete?.name}</span>?
-                Esta ação não pode ser desfeita e removerá todos os dados vinculados a este barbeiro.
+                Você tem certeza que deseja excluir o profissional{" "}
+                <span className="text-white font-semibold">{barberToDelete?.name}</span>? Esta ação
+                não pode ser desfeita e removerá todos os dados vinculados a este barbeiro.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6">
               <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/5 hover:text-white rounded-xl">
                 Cancelar
               </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => barberToDelete && handleDeleteBarber(barberToDelete.id)}
                 className="bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl border-none"
               >
@@ -1423,10 +1657,7 @@ function BarbersComponent() {
           onOpenChange={setIsTimeOffDialogOpen}
           professional={timeOffBarber}
         />
-
-
       </div>
     </AppLayout>
   );
 }
-

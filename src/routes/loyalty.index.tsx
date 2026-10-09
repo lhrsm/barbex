@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { withModule } from "@/components/modules/withModule";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -11,8 +12,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -84,6 +97,8 @@ function emptySubscriptionReward(tenantId: string): Partial<SubscriptionReward> 
 
 function LoyaltyDashboardPage() {
   const { user, loading } = useAuth();
+  const { tenantId } = useTenant();
+  const effectiveTenantId = tenantId || user?.id;
   const [settings, setSettings] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [closeCustomers, setCloseCustomers] = useState<any[]>([]);
@@ -96,37 +111,50 @@ function LoyaltyDashboardPage() {
   const [editingReward, setEditingReward] = useState<Partial<SubscriptionReward> | null>(null);
 
   useEffect(() => {
-    if (!loading && user) load();
-  }, [loading, user]);
+    if (!loading && user && effectiveTenantId) load();
+  }, [loading, user, effectiveTenantId]);
 
   async function load() {
-    if (!user) return;
+    if (!user || !effectiveTenantId) return;
     setLoadingData(true);
     try {
-      const [profRes, settingsRes, custRes, rewardsRes, subscriptionRewardsRes, subscriptionHistoryRes] = await Promise.all([
+      const [
+        profRes,
+        settingsRes,
+        custRes,
+        rewardsRes,
+        subscriptionRewardsRes,
+        subscriptionHistoryRes,
+      ] = await Promise.all([
         supabase.from("profiles").select("loyalty_mode").eq("id", user.id).maybeSingle(),
-        supabase.from("loyalty_settings" as any).select("*").eq("tenant_id", user.id).maybeSingle(),
+        supabase
+          .from("loyalty_settings" as any)
+          .select("*")
+          .eq("tenant_id", effectiveTenantId)
+          .maybeSingle(),
         supabase
           .from("customers")
           .select("id, name, phone, loyalty_points")
-          .eq("user_id", user.id)
+          .eq("tenant_id", effectiveTenantId)
           .order("loyalty_points", { ascending: false })
           .limit(20),
         supabase
           .from("loyalty_rewards" as any)
           .select("*")
-          .eq("tenant_id", user.id)
+          .eq("tenant_id", effectiveTenantId)
           .order("earned_at", { ascending: false })
           .limit(200),
         supabase
           .from("subscription_loyalty_rewards" as any)
           .select("*")
-          .eq("tenant_id", user.id)
+          .eq("tenant_id", effectiveTenantId)
           .order("months_required", { ascending: true }),
         supabase
           .from("subscription_loyalty_history" as any)
-          .select("*, reward:subscription_loyalty_rewards(description, months_required, reward_type), customer:customers(name, phone)")
-          .eq("tenant_id", user.id)
+          .select(
+            "*, reward:subscription_loyalty_rewards(description, months_required, reward_type), customer:customers(name, phone)",
+          )
+          .eq("tenant_id", effectiveTenantId)
           .order("granted_at", { ascending: false })
           .limit(50),
       ]);
@@ -149,7 +177,11 @@ function LoyaltyDashboardPage() {
     if (error) return toast.error("Erro: " + error.message);
     const granted = (data as any)?.granted ?? 0;
     const notified = (data as any)?.notified ?? 0;
-    toast.success(granted > 0 ? `${granted} liberada(s) · ${notified} WhatsApp enfileirado(s)` : "Nenhuma recompensa nova");
+    toast.success(
+      granted > 0
+        ? `${granted} liberada(s) · ${notified} WhatsApp enfileirado(s)`
+        : "Nenhuma recompensa nova",
+    );
     load();
   }
 
@@ -165,8 +197,8 @@ function LoyaltyDashboardPage() {
   }
 
   function openNewSubscriptionReward() {
-    if (!user) return;
-    setEditingReward(emptySubscriptionReward(user.id));
+    if (!user || !effectiveTenantId) return;
+    setEditingReward(emptySubscriptionReward(effectiveTenantId));
     setRewardDialogOpen(true);
   }
 
@@ -176,12 +208,16 @@ function LoyaltyDashboardPage() {
   }
 
   async function saveSubscriptionReward() {
-    if (!editingReward || !user) return;
+    if (!editingReward || !user || !effectiveTenantId) return;
     if (!editingReward.description?.trim()) return toast.error("Informe a descrição da recompensa");
-    if (!editingReward.months_required || editingReward.months_required < 1) return toast.error("Meses requeridos deve ser maior que 0");
-    const payload: any = { ...editingReward, tenant_id: user.id };
+    if (!editingReward.months_required || editingReward.months_required < 1)
+      return toast.error("Meses requeridos deve ser maior que 0");
+    const payload: any = { ...editingReward, tenant_id: effectiveTenantId };
     const { error } = editingReward.id
-      ? await supabase.from("subscription_loyalty_rewards" as any).update(payload).eq("id", editingReward.id)
+      ? await supabase
+          .from("subscription_loyalty_rewards" as any)
+          .update(payload)
+          .eq("id", editingReward.id)
       : await supabase.from("subscription_loyalty_rewards" as any).insert(payload);
     if (error) return toast.error("Erro ao salvar: " + error.message);
     toast.success("Recompensa salva");
@@ -192,7 +228,10 @@ function LoyaltyDashboardPage() {
 
   async function removeSubscriptionReward(id: string) {
     if (!confirm("Excluir esta recompensa?")) return;
-    const { error } = await supabase.from("subscription_loyalty_rewards" as any).delete().eq("id", id);
+    const { error } = await supabase
+      .from("subscription_loyalty_rewards" as any)
+      .delete()
+      .eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Recompensa excluída");
     load();
@@ -215,15 +254,13 @@ function LoyaltyDashboardPage() {
 
   const grantedMonth = rewards.filter((r: any) => new Date(r.earned_at) >= monthStart);
   const redeemedMonth = rewards.filter(
-    (r: any) => r.status === "redeemed" && r.redeemed_at && new Date(r.redeemed_at) >= monthStart
+    (r: any) => r.status === "redeemed" && r.redeemed_at && new Date(r.redeemed_at) >= monthStart,
   );
   const totalSavings = rewards
     .filter((r: any) => r.status === "redeemed")
     .reduce((sum: number, r: any) => sum + Number(r.barbershop_cost || 0), 0);
 
-  const closeToReward = closeCustomers
-    .filter((c: any) => (c.loyalty_points || 0) > 0)
-    .slice(0, 10);
+  const closeToReward = closeCustomers.filter((c: any) => (c.loyalty_points || 0) > 0).slice(0, 10);
 
   const moduleActive = !!(settings as any)?.enabled;
 
@@ -251,9 +288,7 @@ function LoyaltyDashboardPage() {
           <h2 className="text-xl font-black uppercase italic tracking-wider text-white">
             Carregando Fidelidade
           </h2>
-          <p className="text-sm text-slate-400 mt-2 max-w-sm">
-            Estamos preparando seu painel.
-          </p>
+          <p className="text-sm text-slate-400 mt-2 max-w-sm">Estamos preparando seu painel.</p>
         </div>
       </AppLayout>
     );
@@ -274,15 +309,30 @@ function LoyaltyDashboardPage() {
           </div>
           <div className="-mx-1 -my-2 px-1 py-2 overflow-x-auto overflow-y-visible">
             <div className="flex gap-2 min-w-max py-1">
-              <LoyaltyNavButton to="/loyalty/templates" icon={<Sparkles className="h-4 w-4" />} label="Templates Premium" />
-              <LoyaltyNavButton to="/loyalty/campaigns" icon={<ListChecks className="h-4 w-4" />} label="Minhas Campanhas" />
-              <LoyaltyNavButton to="/loyalty/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" />
-              <LoyaltyNavButton to="/settings" search={{ tab: "loyalty" }} icon={<Settings className="h-4 w-4" />} label="Configurar" />
+              <LoyaltyNavButton
+                to="/loyalty/templates"
+                icon={<Sparkles className="h-4 w-4" />}
+                label="Templates Premium"
+              />
+              <LoyaltyNavButton
+                to="/loyalty/campaigns"
+                icon={<ListChecks className="h-4 w-4" />}
+                label="Minhas Campanhas"
+              />
+              <LoyaltyNavButton
+                to="/loyalty/dashboard"
+                icon={<LayoutDashboard className="h-4 w-4" />}
+                label="Dashboard"
+              />
+              <LoyaltyNavButton
+                to="/settings"
+                search={{ tab: "loyalty" }}
+                icon={<Settings className="h-4 w-4" />}
+                label="Configurar"
+              />
             </div>
           </div>
         </div>
-
-
 
         {loadingData ? (
           <Card className="bg-[#0b0f17] border border-[#1f2937] text-white">
@@ -291,17 +341,23 @@ function LoyaltyDashboardPage() {
               <p className="text-sm text-slate-400">Carregando dados da fidelidade...</p>
             </CardContent>
           </Card>
-        ) : !moduleActive && (
-          <Card className="bg-amber-500/5 border-amber-500/30 text-amber-200">
-            <CardContent className="p-5">
-              <p className="text-sm font-bold uppercase tracking-wider">
-                Programa de fidelidade desativado.
-              </p>
-              <p className="text-xs mt-1 text-amber-200/70">
-                Ative em <Link to="/settings" className="underline">Configurações → Fidelidade</Link> para começar a gerar recompensas.
-              </p>
-            </CardContent>
-          </Card>
+        ) : (
+          !moduleActive && (
+            <Card className="bg-amber-500/5 border-amber-500/30 text-amber-200">
+              <CardContent className="p-5">
+                <p className="text-sm font-bold uppercase tracking-wider">
+                  Programa de fidelidade desativado.
+                </p>
+                <p className="text-xs mt-1 text-amber-200/70">
+                  Ative em{" "}
+                  <Link to="/settings" className="underline">
+                    Configurações → Fidelidade
+                  </Link>{" "}
+                  para começar a gerar recompensas.
+                </p>
+              </CardContent>
+            </Card>
+          )
         )}
 
         {/* Aviso: separação Fidelidade Tradicional x Premium */}
@@ -315,8 +371,9 @@ function LoyaltyDashboardPage() {
                 Fidelidade Premium é separada
               </p>
               <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
-                Esta página gerencia a <strong>fidelidade tradicional</strong> (por número de atendimentos).
-                Assinantes premium possuem regras próprias por tempo de assinatura dentro desta mesma central. Cálculos nunca se misturam.
+                Esta página gerencia a <strong>fidelidade tradicional</strong> (por número de
+                atendimentos). Assinantes premium possuem regras próprias por tempo de assinatura
+                dentro desta mesma central. Cálculos nunca se misturam.
               </p>
             </div>
           </CardContent>
@@ -329,7 +386,8 @@ function LoyaltyDashboardPage() {
                 <Crown className="h-5 w-5 text-gold" /> Fidelidade Premium dos Assinantes
               </CardTitle>
               <CardDescription className="text-slate-400 mt-1">
-                Recompensas por tempo de assinatura, separadas da fidelidade tradicional por atendimentos.
+                Recompensas por tempo de assinatura, separadas da fidelidade tradicional por
+                atendimentos.
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -355,16 +413,38 @@ function LoyaltyDashboardPage() {
               const today = new Date();
               today.setHours(0, 0, 0, 0);
               const todayIso = today.toISOString();
-              const grantedToday = subscriptionHistory.filter((h: any) => h.granted_at && h.granted_at >= todayIso).length;
+              const grantedToday = subscriptionHistory.filter(
+                (h: any) => h.granted_at && h.granted_at >= todayIso,
+              ).length;
               const pending = subscriptionHistory.filter((h: any) => !h.notification_sent).length;
               const notified = subscriptionHistory.filter((h: any) => h.notification_sent).length;
               const failures = subscriptionHistory.filter((h: any) => h.notification_error).length;
               return (
                 <div className="grid grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <PremiumKpi icon={<Sparkles className="w-4 h-4 text-amber-400" />} label="Liberadas hoje" value={grantedToday} tone="amber" />
-                  <PremiumKpi icon={<Clock className="w-4 h-4 text-sky-400" />} label="Pendentes envio" value={pending} tone="sky" />
-                  <PremiumKpi icon={<Send className="w-4 h-4 text-emerald-400" />} label="WhatsApp enviados" value={notified} tone="emerald" />
-                  <PremiumKpi icon={<AlertTriangle className="w-4 h-4 text-red-400" />} label="Falhas envio" value={failures} tone="red" />
+                  <PremiumKpi
+                    icon={<Sparkles className="w-4 h-4 text-amber-400" />}
+                    label="Liberadas hoje"
+                    value={grantedToday}
+                    tone="amber"
+                  />
+                  <PremiumKpi
+                    icon={<Clock className="w-4 h-4 text-sky-400" />}
+                    label="Pendentes envio"
+                    value={pending}
+                    tone="sky"
+                  />
+                  <PremiumKpi
+                    icon={<Send className="w-4 h-4 text-emerald-400" />}
+                    label="WhatsApp enviados"
+                    value={notified}
+                    tone="emerald"
+                  />
+                  <PremiumKpi
+                    icon={<AlertTriangle className="w-4 h-4 text-red-400" />}
+                    label="Falhas envio"
+                    value={failures}
+                    tone="red"
+                  />
                 </div>
               );
             })()}
@@ -372,11 +452,18 @@ function LoyaltyDashboardPage() {
             {subscriptionRewards.length === 0 ? (
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-8 text-center">
                 <Sparkles className="w-10 h-10 text-amber-500/60 mx-auto mb-3" />
-                <h3 className="text-base font-semibold text-white mb-2">Nenhuma recompensa premium configurada</h3>
+                <h3 className="text-base font-semibold text-white mb-2">
+                  Nenhuma recompensa premium configurada
+                </h3>
                 <p className="text-sm text-zinc-400 mb-5 max-w-md mx-auto">
-                  Crie recompensas escalonadas. Ex.: 3 meses → hidratação grátis · 6 meses → barba grátis · 12 meses → kit premium.
+                  Crie recompensas escalonadas. Ex.: 3 meses → hidratação grátis · 6 meses → barba
+                  grátis · 12 meses → kit premium.
                 </p>
-                <Button onClick={openNewSubscriptionReward} size="sm" className="bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold">
+                <Button
+                  onClick={openNewSubscriptionReward}
+                  size="sm"
+                  className="bg-gradient-to-br from-amber-500 to-amber-600 text-black font-bold"
+                >
                   <Plus className="w-3.5 h-3.5 mr-1.5" /> Criar primeira recompensa
                 </Button>
               </div>
@@ -386,7 +473,9 @@ function LoyaltyDashboardPage() {
                   <div
                     key={reward.id}
                     className={`relative rounded-2xl border bg-gradient-to-br from-zinc-950 to-zinc-900/50 p-5 transition-all ${
-                      reward.active ? "border-amber-500/30 shadow-[0_4px_24px_rgba(245,158,11,0.08)]" : "border-zinc-800 opacity-60"
+                      reward.active
+                        ? "border-amber-500/30 shadow-[0_4px_24px_rgba(245,158,11,0.08)]"
+                        : "border-zinc-800 opacity-60"
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -401,7 +490,10 @@ function LoyaltyDashboardPage() {
                           </span>
                         </div>
                       </div>
-                      <Switch checked={reward.active} onCheckedChange={() => toggleSubscriptionReward(reward)} />
+                      <Switch
+                        checked={reward.active}
+                        onCheckedChange={() => toggleSubscriptionReward(reward)}
+                      />
                     </div>
 
                     <Badge className={`mb-3 ${TYPE_COLOR[reward.reward_type]}`} variant="outline">
@@ -417,10 +509,20 @@ function LoyaltyDashboardPage() {
                     )}
 
                     <div className="flex gap-2 pt-3 border-t border-zinc-800">
-                      <Button variant="outline" size="sm" className="flex-1 border-zinc-800 hover:border-amber-500/40" onClick={() => openEditSubscriptionReward(reward)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-zinc-800 hover:border-amber-500/40"
+                        onClick={() => openEditSubscriptionReward(reward)}
+                      >
                         <Pencil className="w-3 h-3 mr-1" /> Editar
                       </Button>
-                      <Button variant="outline" size="sm" className="border-zinc-800 hover:border-red-500/40 hover:text-red-400" onClick={() => removeSubscriptionReward(reward.id)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-zinc-800 hover:border-red-500/40 hover:text-red-400"
+                        onClick={() => removeSubscriptionReward(reward.id)}
+                      >
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
@@ -432,34 +534,58 @@ function LoyaltyDashboardPage() {
             <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900/40 p-5">
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <History className="w-5 h-5 shrink-0 text-amber-400" />
-                <h3 className="text-lg font-bold text-white break-words">Recompensas Premium Concedidas</h3>
-                <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 md:ml-auto" variant="outline">
+                <h3 className="text-lg font-bold text-white break-words">
+                  Recompensas Premium Concedidas
+                </h3>
+                <Badge
+                  className="bg-amber-500/10 text-amber-400 border-amber-500/30 md:ml-auto"
+                  variant="outline"
+                >
                   {subscriptionHistory.filter((h) => h.status === "granted").length} pendentes
                 </Badge>
               </div>
               {subscriptionHistory.length === 0 ? (
                 <p className="text-sm text-zinc-500 text-center py-7">
-                  Nenhuma recompensa concedida ainda. Clique em <strong className="text-amber-400">Sincronizar</strong> para processar assinantes.
+                  Nenhuma recompensa concedida ainda. Clique em{" "}
+                  <strong className="text-amber-400">Sincronizar</strong> para processar assinantes.
                 </p>
               ) : (
                 <div className="space-y-2">
                   {subscriptionHistory.map((historyItem) => (
-                    <div key={historyItem.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                    <div
+                      key={historyItem.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-zinc-950/60 border border-zinc-800"
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-white truncate">{historyItem.customer?.name || "Cliente"}</span>
+                          <span className="text-sm font-semibold text-white truncate">
+                            {historyItem.customer?.name || "Cliente"}
+                          </span>
                           <Badge
                             variant="outline"
-                            className={historyItem.status === "redeemed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]" : "bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]"}
+                            className={
+                              historyItem.status === "redeemed"
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]"
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]"
+                            }
                           >
                             {historyItem.status === "redeemed" ? "Resgatado" : "Pendente"}
                           </Badge>
                         </div>
-                        <p className="text-xs text-zinc-400 truncate">{historyItem.reward?.months_required}m · {historyItem.reward?.description}</p>
-                        <p className="text-[10px] text-zinc-500">Concedido em {new Date(historyItem.granted_at).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-xs text-zinc-400 truncate">
+                          {historyItem.reward?.months_required}m · {historyItem.reward?.description}
+                        </p>
+                        <p className="text-[10px] text-zinc-500">
+                          Concedido em{" "}
+                          {new Date(historyItem.granted_at).toLocaleDateString("pt-BR")}
+                        </p>
                       </div>
                       {historyItem.status === "granted" && (
-                        <Button size="sm" onClick={() => redeemSubscriptionReward(historyItem.id)} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <Button
+                          size="sm"
+                          onClick={() => redeemSubscriptionReward(historyItem.id)}
+                          className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        >
                           <CheckCircle2 className="w-3 h-3 mr-1" /> Resgatar
                         </Button>
                       )}
@@ -470,8 +596,6 @@ function LoyaltyDashboardPage() {
             </div>
           </CardContent>
         </Card>
-
-
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -504,15 +628,17 @@ function LoyaltyDashboardPage() {
               Clientes próximos da recompensa
             </CardTitle>
             <CardDescription className="text-slate-400">
-              Meta atual: <span className="text-[#ea580c] font-bold">{target} atendimentos</span> — Benefício:{" "}
-              <span className="text-[#ea580c] font-bold">{benefitDesc}</span>
+              Meta atual: <span className="text-[#ea580c] font-bold">{target} atendimentos</span> —
+              Benefício: <span className="text-[#ea580c] font-bold">{benefitDesc}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loadingData ? (
               <p className="text-sm text-slate-500">Carregando...</p>
             ) : closeToReward.length === 0 ? (
-              <p className="text-sm text-slate-500 italic">Nenhum cliente acumulando pontos ainda.</p>
+              <p className="text-sm text-slate-500 italic">
+                Nenhum cliente acumulando pontos ainda.
+              </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {closeToReward.map((c: any) => {
@@ -531,7 +657,10 @@ function LoyaltyDashboardPage() {
                             {remaining === 0 ? "Recompensa liberada" : `Faltam ${remaining}`}
                           </p>
                         </div>
-                        <Badge variant="outline" className="border-[#ea580c]/40 text-[#ea580c] font-bold shrink-0">
+                        <Badge
+                          variant="outline"
+                          className="border-[#ea580c]/40 text-[#ea580c] font-bold shrink-0"
+                        >
                           {pct}%
                         </Badge>
                       </div>
@@ -596,17 +725,17 @@ function LoyaltyDashboardPage() {
                         r.status === "available"
                           ? "border-emerald-500/40 text-emerald-400"
                           : r.status === "redeemed"
-                          ? "border-amber-500/40 text-amber-400"
-                          : "border-slate-500/40 text-slate-400"
+                            ? "border-amber-500/40 text-amber-400"
+                            : "border-slate-500/40 text-slate-400"
                       }
                     >
                       {r.status === "available"
                         ? "Disponível"
                         : r.status === "redeemed"
-                        ? "Usada"
-                        : r.status === "expired"
-                        ? "Expirada"
-                        : r.status}
+                          ? "Usada"
+                          : r.status === "expired"
+                            ? "Expirada"
+                            : r.status}
                     </Badge>
                   </div>
                 ))}
@@ -632,31 +761,54 @@ function LoyaltyDashboardPage() {
                   type="number"
                   min={1}
                   value={editingReward.months_required ?? 1}
-                  onChange={(e) => setEditingReward({ ...editingReward, months_required: parseInt(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    setEditingReward({
+                      ...editingReward,
+                      months_required: parseInt(e.target.value) || 1,
+                    })
+                  }
                   className="bg-zinc-900 border-zinc-800 text-white mt-1"
                 />
               </div>
               <div>
                 <Label className="text-zinc-300">Tipo de recompensa</Label>
-                <Select value={editingReward.reward_type || "free_service"} onValueChange={(value) => setEditingReward({ ...editingReward, reward_type: value as RewardType })}>
+                <Select
+                  value={editingReward.reward_type || "free_service"}
+                  onValueChange={(value) =>
+                    setEditingReward({ ...editingReward, reward_type: value as RewardType })
+                  }
+                >
                   <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(TYPE_LABEL).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>{value}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {value}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-zinc-300">Valor {editingReward.reward_type === "cashback" || editingReward.reward_type === "discount" ? "(%)" : "(R$)"}</Label>
+                <Label className="text-zinc-300">
+                  Valor{" "}
+                  {editingReward.reward_type === "cashback" ||
+                  editingReward.reward_type === "discount"
+                    ? "(%)"
+                    : "(R$)"}
+                </Label>
                 <Input
                   type="number"
                   min={0}
                   step="0.01"
                   value={editingReward.reward_value ?? 0}
-                  onChange={(e) => setEditingReward({ ...editingReward, reward_value: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setEditingReward({
+                      ...editingReward,
+                      reward_value: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   className="bg-zinc-900 border-zinc-800 text-white mt-1"
                 />
               </div>
@@ -665,19 +817,35 @@ function LoyaltyDashboardPage() {
                 <Textarea
                   placeholder="Ex.: Hidratação capilar grátis após 3 meses como assinante"
                   value={editingReward.description || ""}
-                  onChange={(e) => setEditingReward({ ...editingReward, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditingReward({ ...editingReward, description: e.target.value })
+                  }
                   className="bg-zinc-900 border-zinc-800 text-white mt-1 min-h-[80px]"
                 />
               </div>
               <div className="flex items-center justify-between pt-2">
                 <Label className="text-zinc-300">Recompensa ativa</Label>
-                <Switch checked={!!editingReward.active} onCheckedChange={(value) => setEditingReward({ ...editingReward, active: value })} />
+                <Switch
+                  checked={!!editingReward.active}
+                  onCheckedChange={(value) => setEditingReward({ ...editingReward, active: value })}
+                />
               </div>
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setRewardDialogOpen(false)} className="border-zinc-800">Cancelar</Button>
-            <Button onClick={saveSubscriptionReward} className="bg-gradient-to-br from-amber-500 to-amber-600 text-black font-semibold">Salvar</Button>
+            <Button
+              variant="outline"
+              onClick={() => setRewardDialogOpen(false)}
+              className="border-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={saveSubscriptionReward}
+              className="bg-gradient-to-br from-amber-500 to-amber-600 text-black font-semibold"
+            >
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -723,7 +891,6 @@ function KpiCard({ label, value, icon }: { label: string; value: any; icon: Reac
   return (
     <Card className="bg-[#0b0f17] border border-[#1f2937] text-white">
       <CardContent className="p-5 flex items-center justify-between">
-
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
           <p className="text-2xl font-black italic mt-1">{value}</p>
@@ -736,7 +903,17 @@ function KpiCard({ label, value, icon }: { label: string; value: any; icon: Reac
   );
 }
 
-function PremiumKpi({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "amber" | "sky" | "emerald" | "red" }) {
+function PremiumKpi({
+  label,
+  value,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  tone: "amber" | "sky" | "emerald" | "red";
+}) {
   const tones = {
     amber: "border-amber-500/30 bg-amber-500/5 text-amber-300",
     sky: "border-sky-500/30 bg-sky-500/5 text-sky-300",

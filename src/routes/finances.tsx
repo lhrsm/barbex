@@ -7,7 +7,9 @@ import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { useEffect, useState, useMemo, Suspense, lazy } from "react";
 import { useTenant } from "@/hooks/use-tenant";
 import { TenantBrandLogo } from "@/components/branding/TenantBrandLogo";
-const ErpCenter = lazy(() => import("@/components/finances/erp/ErpCenter").then((m) => ({ default: m.ErpCenter })));
+const ErpCenter = lazy(() =>
+  import("@/components/finances/erp/ErpCenter").then((m) => ({ default: m.ErpCenter })),
+);
 
 import { useFinancesFilters } from "@/hooks/use-finances-filters";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,8 +39,6 @@ import { HelpDrawer } from "@/components/help-center/HelpDrawer";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { HelpCircle } from "lucide-react";
 
-
-
 export const Route = createFileRoute("/finances")({
   component: () => (
     <PermissionGuard permission="finances:view">
@@ -49,20 +49,30 @@ export const Route = createFileRoute("/finances")({
   notFoundComponent: DefaultRouteNotFound,
 });
 
-
 const financesHelpConfig = {
-  moduleKey: 'finances',
-  routePath: '/finances',
-  title: 'Gestão Financeira ERP',
-  summary: 'Tenha controle total sobre suas receitas, despesas, comissões e fluxo de caixa com análise preditiva.',
-  videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  moduleKey: "finances",
+  routePath: "/finances",
+  title: "Gestão Financeira ERP",
+  summary:
+    "Tenha controle total sobre suas receitas, despesas, comissões e fluxo de caixa com análise preditiva.",
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
   faqs: [
-    { question: 'Como exportar DRE?', answer: 'Acesse a aba Visão Gerencial e utilize o botão Exportar no topo da página.' },
-    { question: 'Como funciona o cálculo de comissão?', answer: 'As comissões são calculadas automaticamente com base no percentual definido no perfil do barbeiro.' }
+    {
+      question: "Como exportar DRE?",
+      answer: "Acesse a aba Visão Gerencial e utilize o botão Exportar no topo da página.",
+    },
+    {
+      question: "Como funciona o cálculo de comissão?",
+      answer:
+        "As comissões são calculadas automaticamente com base no percentual definido no perfil do barbeiro.",
+    },
   ],
   commonIssues: [
-    { issue: 'Valor incorreto no fechamento', solution: 'Verifique se existem agendamentos pendentes de pagamento no dia anterior.' }
-  ]
+    {
+      issue: "Valor incorreto no fechamento",
+      solution: "Verifique se existem agendamentos pendentes de pagamento no dia anterior.",
+    },
+  ],
 };
 
 function FinancesComponent() {
@@ -73,21 +83,21 @@ function FinancesComponent() {
   const navigate = useNavigate();
   const { plan } = usePlanLimits();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newTransaction, setNewTransaction] = useState({ 
-    amount: "", 
-    type: "income", 
-    description: "", 
-    category: "Serviço", 
-    barber_id: "none", 
+  const [newTransaction, setNewTransaction] = useState({
+    amount: "",
+    type: "income",
+    description: "",
+    category: "Serviço",
+    barber_id: "none",
     customer_id: "none",
-    date: new Date().toISOString().split('T')[0], 
+    date: new Date().toISOString().split("T")[0],
     time: "12:00",
     payment_method: "pix",
     pix_amount: "0",
     cash_amount: "0",
     credit_card_amount: "0",
     credits_amount: "0",
-    cashback_amount: "0"
+    cashback_amount: "0",
   });
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -96,26 +106,41 @@ function FinancesComponent() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const {
-    statusFilter, setStatusFilter,
-    dateFilter, setDateFilter,
-    financeTab, setFinanceTab,
-    globalPeriod, setGlobalPeriod,
-    barberPeriodPreset, setBarberPeriodPreset,
-    barberCustomStart, setBarberCustomStart,
-    barberCustomEnd, setBarberCustomEnd,
+    statusFilter,
+    setStatusFilter,
+    dateFilter,
+    setDateFilter,
+    financeTab,
+    setFinanceTab,
+    globalPeriod,
+    setGlobalPeriod,
+    barberPeriodPreset,
+    setBarberPeriodPreset,
+    barberCustomStart,
+    setBarberCustomStart,
+    barberCustomEnd,
+    setBarberCustomEnd,
     barberPeriodRange,
     inBarberRange,
-    refundStatusFilter, setRefundStatusFilter,
-    refundDateStartFilter, setRefundDateStartFilter,
-    refundDateEndFilter, setRefundDateEndFilter,
-    refundSearchTerm, setRefundSearchTerm,
+    refundStatusFilter,
+    setRefundStatusFilter,
+    refundDateStartFilter,
+    setRefundDateStartFilter,
+    refundDateEndFilter,
+    setRefundDateEndFilter,
+    refundSearchTerm,
+    setRefundSearchTerm,
   } = useFinancesFilters();
 
   const user = authUser || (session ? { id: session.barber_id } : null);
   const loading = authLoading || profLoading;
-  const { summary: financialSummary, isLoading: loadingFinancial } = useFinancial(user?.id || null, dateFilter, dateFilter);
+  const { summary: financialSummary, isLoading: loadingFinancial } = useFinancial(
+    user?.id || null,
+    dateFilter,
+    dateFilter,
+  );
 
-  const role = authRole || (session ? 'barber' : null);
+  const role = authRole || (session ? "barber" : null);
 
   const {
     transactions,
@@ -138,6 +163,7 @@ function FinancesComponent() {
   } = useFinancesData({
     user,
     role,
+    tenantId,
     barberPeriodRange,
     refundStatusFilter,
     refundDateStartFilter,
@@ -151,7 +177,7 @@ function FinancesComponent() {
       return;
     }
 
-    if (!loading && user && role === 'super_admin') {
+    if (!loading && user && role === "super_admin") {
       navigate({ to: "/admin" });
       return;
     }
@@ -169,17 +195,33 @@ function FinancesComponent() {
   });
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const matchStatus = statusFilter === "all" || 
-        (statusFilter === "manual" && !t.appointment && t.type !== 'credit_reversed' && t.type !== 'credit_granted' && t.type !== 'cashback_reversed') ||
-        (statusFilter === "pix" && (t.payment_method === 'pix' || t.appointment?.payment_method === 'pix' || t.pix_amount > 0)) ||
-        (statusFilter === "credits" && (t.payment_method === 'credits' || t.payment_method === 'wallet' || t.type === 'credit_reversed' || t.type === 'credit_granted' || t.credits_amount > 0)) ||
-        (statusFilter === "cashback" && (t.payment_method === 'cashback' || t.type === 'cashback_reversed' || t.cashback_amount > 0)) ||
-        (statusFilter === "expense" && t.type === 'expense') ||
-        (t.appointment?.status === statusFilter);
-      
+    return transactions.filter((t) => {
+      const matchStatus =
+        statusFilter === "all" ||
+        (statusFilter === "manual" &&
+          !t.appointment &&
+          t.type !== "credit_reversed" &&
+          t.type !== "credit_granted" &&
+          t.type !== "cashback_reversed") ||
+        (statusFilter === "pix" &&
+          (t.payment_method === "pix" ||
+            t.appointment?.payment_method === "pix" ||
+            t.pix_amount > 0)) ||
+        (statusFilter === "credits" &&
+          (t.payment_method === "credits" ||
+            t.payment_method === "wallet" ||
+            t.type === "credit_reversed" ||
+            t.type === "credit_granted" ||
+            t.credits_amount > 0)) ||
+        (statusFilter === "cashback" &&
+          (t.payment_method === "cashback" ||
+            t.type === "cashback_reversed" ||
+            t.cashback_amount > 0)) ||
+        (statusFilter === "expense" && t.type === "expense") ||
+        t.appointment?.status === statusFilter;
+
       const matchDate = !dateFilter || t.date === dateFilter;
-      
+
       return matchStatus && matchDate;
     });
   }, [transactions, statusFilter, dateFilter]);
@@ -191,22 +233,20 @@ function FinancesComponent() {
     barbers,
   });
 
-
-
-  const { handleAddTransaction, handleUpdateTransaction, handleDeleteTransaction } = useTransactionMutations({
-    user,
-    transactions,
-    newTransaction,
-    setNewTransaction,
-    setIsAddDialogOpen,
-    editingTransaction,
-    setEditingTransaction,
-    setIsEditDialogOpen,
-    fetchTransactions,
-    fetchAppointments,
-    fetchCustomerStats,
-  });
-
+  const { handleAddTransaction, handleUpdateTransaction, handleDeleteTransaction } =
+    useTransactionMutations({
+      user,
+      transactions,
+      newTransaction,
+      setNewTransaction,
+      setIsAddDialogOpen,
+      editingTransaction,
+      setEditingTransaction,
+      setIsEditDialogOpen,
+      fetchTransactions,
+      fetchAppointments,
+      fetchCustomerStats,
+    });
 
   if (authLoading) return null;
   if (!user) return null;
@@ -222,10 +262,19 @@ function FinancesComponent() {
           globalPeriod={globalPeriod}
           setGlobalPeriod={setGlobalPeriod}
           isExportingPdf={isExportingPdf}
-          brandLogo={tenantId ? <TenantBrandLogo tenantIdOrSlug={tenantId} shop={tenantProfile} size="lg" shape="rounded" /> : undefined}
+          brandLogo={
+            tenantId ? (
+              <TenantBrandLogo
+                tenantIdOrSlug={tenantId}
+                shop={tenantProfile}
+                size="lg"
+                shape="rounded"
+              />
+            ) : undefined
+          }
           tenantName={tenantProfile?.business_name || undefined}
           onExportPdf={async () => {
-            if (plan === 'free') {
+            if (plan === "free") {
               toast.error("Relatórios PDF estão disponíveis apenas no plano Pro.");
               navigate({ to: "/subscription" });
               return;
@@ -253,12 +302,18 @@ function FinancesComponent() {
           }}
           onSyncAll={() => fetchRefundRequests()}
           onRecalculateBalances={async () => {
-            const { data: customers } = await supabase.from('customers').select('id, tenant_id').eq('tenant_id', user.id);
+            const effectiveTenant = tenantId || user?.id;
+            const { data: customers } = await supabase
+              .from("customers")
+              .select("id, tenant_id")
+              .eq("tenant_id", effectiveTenant);
             if (customers) {
               toast.info(`Recalculando saldos de ${customers.length} clientes...`);
               for (const c of customers) {
-                await supabase.rpc('recalculate_customer_credit_balance', { p_customer_id: c.id });
-                await supabase.rpc('recalculate_customer_cashback_balance', { p_customer_id: c.id });
+                await supabase.rpc("recalculate_customer_credit_balance", { p_customer_id: c.id });
+                await supabase.rpc("recalculate_customer_cashback_balance", {
+                  p_customer_id: c.id,
+                });
               }
               fetchTransactions();
               fetchCustomerStats();
@@ -269,19 +324,16 @@ function FinancesComponent() {
             }
           }}
         >
-            <NovaTransacaoDialog
-              open={isAddDialogOpen}
-              onOpenChange={setIsAddDialogOpen}
-              newTransaction={newTransaction}
-              setNewTransaction={setNewTransaction}
-              onSubmit={handleAddTransaction}
-              customers={customers}
-              barbers={barbers}
-            />
+          <NovaTransacaoDialog
+            open={isAddDialogOpen}
+            onOpenChange={setIsAddDialogOpen}
+            newTransaction={newTransaction}
+            setNewTransaction={setNewTransaction}
+            onSubmit={handleAddTransaction}
+            customers={customers}
+            barbers={barbers}
+          />
         </FinancesHeader>
-
-
-
 
         <KpiCards
           summary={summary}
@@ -295,36 +347,45 @@ function FinancesComponent() {
         <Tabs value={financeTab} onValueChange={setFinanceTab} className="w-full">
           <FinancesTabsList role={role} financeTab={financeTab} setFinanceTab={setFinanceTab} />
 
-
-
-          {role !== 'barber' && user && (
+          {role !== "barber" && user && (
             <TabsContent value="erp" className="pt-4">
-              <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Carregando Centro Financeiro...</div>}>
+              <Suspense
+                fallback={
+                  <div className="py-10 text-center text-sm text-muted-foreground">
+                    Carregando Centro Financeiro...
+                  </div>
+                }
+              >
                 <ErpCenter tenantId={user.id} />
               </Suspense>
             </TabsContent>
           )}
 
-          {role !== 'barber' && user && (
+          {role !== "barber" && user && (
             <TabsContent value="managerial" className="pt-4">
-              <ManagerialView tenantId={user.id} initialPeriod={globalPeriod as any} periodKey={globalPeriod} />
+              <ManagerialView
+                tenantId={user.id}
+                initialPeriod={globalPeriod as any}
+                periodKey={globalPeriod}
+              />
             </TabsContent>
           )}
 
-
-          {role !== 'barber' && user && (
+          {role !== "barber" && user && (
             <TabsContent value="coupons" className="pt-4">
-              <CouponsView tenantId={user.id} initialPeriod={globalPeriod as any} periodKey={globalPeriod} />
+              <CouponsView
+                tenantId={user.id}
+                initialPeriod={globalPeriod as any}
+                periodKey={globalPeriod}
+              />
             </TabsContent>
           )}
 
-          {role !== 'barber' && (
+          {role !== "barber" && (
             <TabsContent value="addons" className="pt-4">
               <AddonsRevenueTab />
             </TabsContent>
           )}
-
-
 
           <TabsContent value="transactions" className="pt-4 space-y-4">
             <TransactionsTab
@@ -347,9 +408,12 @@ function FinancesComponent() {
             />
           </TabsContent>
 
-        <TabsContent value="settings">
-          <SettingsTab handleClearTestData={handleClearTestData} isClearingData={isClearingData} />
-        </TabsContent>
+          <TabsContent value="settings">
+            <SettingsTab
+              handleClearTestData={handleClearTestData}
+              isClearingData={isClearingData}
+            />
+          </TabsContent>
 
           <TabsContent value="pending" className="pt-4">
             <PendingTab
@@ -361,7 +425,6 @@ function FinancesComponent() {
               }}
             />
           </TabsContent>
-
 
           <TabsContent value="barbers" className="pt-4 space-y-4">
             <BarbersTab
@@ -381,7 +444,6 @@ function FinancesComponent() {
             />
           </TabsContent>
 
-
           <TabsContent value="refunds" className="pt-0">
             <RefundsTab
               refundRequests={refundRequests}
@@ -399,7 +461,7 @@ function FinancesComponent() {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       <AppointmentDetailsController
         appointmentId={selectedAppointmentId}
         open={isDetailsModalOpen}
@@ -409,8 +471,6 @@ function FinancesComponent() {
         fetchTransactions={fetchTransactions}
         fetchAppointments={fetchAppointments}
       />
-
     </AppLayout>
   );
 }
-

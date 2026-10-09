@@ -4,7 +4,17 @@ import { withModule } from "@/components/modules/withModule";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, LayoutDashboard, Users, Gift, TrendingUp, Award, Loader2, Trophy } from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  Users,
+  Gift,
+  TrendingUp,
+  Award,
+  Loader2,
+  Trophy,
+} from "lucide-react";
 
 export const Route = createFileRoute("/loyalty/dashboard")({
   component: withModule("loyalty", "Dashboard de Fidelidade", LoyaltyDashboard),
@@ -12,6 +22,8 @@ export const Route = createFileRoute("/loyalty/dashboard")({
 
 function LoyaltyDashboard() {
   const { user } = useAuth();
+  const { tenantId } = useTenant();
+  const effectiveTenantId = tenantId || user?.id;
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeCampaigns: 0,
@@ -32,14 +44,23 @@ function LoyaltyDashboard() {
       setLoading(true);
       setLoadError(null);
       try {
-        if (!user) {
+        if (!user || !effectiveTenantId) {
           if (!cancelled) setLoading(false);
           return;
         }
         const [campsRes, partsRes, cashbackRes] = await Promise.all([
-          supabase.from("loyalty_campaigns" as any).select("id,name,status").eq("tenant_id", user.id),
-          supabase.from("loyalty_campaign_participations" as any).select("id,campaign_id,unlocked_at,redeemed_at,reward_granted,current_value").eq("tenant_id", user.id),
-          supabase.from("cashback_transactions" as any).select("amount,type").eq("tenant_id", user.id),
+          supabase
+            .from("loyalty_campaigns" as any)
+            .select("id,name,status")
+            .eq("tenant_id", effectiveTenantId),
+          supabase
+            .from("loyalty_campaign_participations" as any)
+            .select("id,campaign_id,unlocked_at,redeemed_at,reward_granted,current_value")
+            .eq("tenant_id", effectiveTenantId),
+          supabase
+            .from("cashback_transactions" as any)
+            .select("amount,type")
+            .eq("tenant_id", effectiveTenantId),
         ]);
         const camps = (campsRes.data as any[]) || [];
         const parts = (partsRes.data as any[]) || [];
@@ -51,7 +72,9 @@ function LoyaltyDashboard() {
           0,
         );
         const cb = (cashbackRes.data as any[]) || [];
-        const cashback = cb.filter((t) => t.type === "credit").reduce((s, t) => s + Number(t.amount || 0), 0);
+        const cashback = cb
+          .filter((t) => t.type === "credit")
+          .reduce((s, t) => s + Number(t.amount || 0), 0);
 
         const byCamp = new Map<string, number>();
         parts.forEach((p) => byCamp.set(p.campaign_id, (byCamp.get(p.campaign_id) || 0) + 1));
@@ -63,7 +86,9 @@ function LoyaltyDashboard() {
             topCount = n;
           }
         });
-        const topCampaign = topId ? { ...camps.find((c) => c.id === topId), participants: topCount } : null;
+        const topCampaign = topId
+          ? { ...camps.find((c) => c.id === topId), participants: topCount }
+          : null;
 
         if (cancelled) return;
         setStats({
@@ -90,15 +115,35 @@ function LoyaltyDashboard() {
   }, [user]);
 
   const hasData =
-    stats.activeCampaigns + stats.participating + stats.rewardsGranted + stats.valueGranted + stats.cashback > 0;
+    stats.activeCampaigns +
+      stats.participating +
+      stats.rewardsGranted +
+      stats.valueGranted +
+      stats.cashback >
+    0;
 
   const cards = [
     { label: "Campanhas ativas", value: stats.activeCampaigns, icon: Award, color: "#f59e0b" },
     { label: "Clientes participando", value: stats.participating, icon: Users, color: "#3b82f6" },
     { label: "Recompensas concedidas", value: stats.rewardsGranted, icon: Gift, color: "#10b981" },
-    { label: "Valor concedido (R$)", value: `R$ ${stats.valueGranted.toFixed(2)}`, icon: TrendingUp, color: "#a855f7" },
-    { label: "Cashback total (R$)", value: `R$ ${stats.cashback.toFixed(2)}`, icon: TrendingUp, color: "#06b6d4" },
-    { label: "Taxa de conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: Trophy, color: "#ec4899" },
+    {
+      label: "Valor concedido (R$)",
+      value: `R$ ${stats.valueGranted.toFixed(2)}`,
+      icon: TrendingUp,
+      color: "#a855f7",
+    },
+    {
+      label: "Cashback total (R$)",
+      value: `R$ ${stats.cashback.toFixed(2)}`,
+      icon: TrendingUp,
+      color: "#06b6d4",
+    },
+    {
+      label: "Taxa de conversão",
+      value: `${stats.conversionRate.toFixed(1)}%`,
+      icon: Trophy,
+      color: "#ec4899",
+    },
   ];
 
   return (
@@ -106,7 +151,10 @@ function LoyaltyDashboard() {
       <div className="min-h-screen bg-[#05070d] text-white">
         <div className="p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
           <div className="flex items-center gap-3">
-            <Link to="/loyalty" className="h-10 w-10 rounded-xl border border-zinc-800 grid place-items-center text-zinc-400 hover:text-white">
+            <Link
+              to="/loyalty"
+              className="h-10 w-10 rounded-xl border border-zinc-800 grid place-items-center text-zinc-400 hover:text-white"
+            >
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#f59e0b]/20 to-[#ea580c]/5 border border-[#f59e0b]/30 grid place-items-center">
@@ -114,13 +162,18 @@ function LoyaltyDashboard() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-black">Dashboard Premium</h1>
-              <p className="text-sm text-zinc-400">Métricas em tempo real das suas campanhas de fidelidade.</p>
+              <p className="text-sm text-zinc-400">
+                Métricas em tempo real das suas campanhas de fidelidade.
+              </p>
             </div>
           </div>
 
           {loadError && (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-300">
-              Não foi possível carregar todas as métricas. <button onClick={() => location.reload()} className="underline font-bold">Tentar novamente</button>
+              Não foi possível carregar todas as métricas.{" "}
+              <button onClick={() => location.reload()} className="underline font-bold">
+                Tentar novamente
+              </button>
             </div>
           )}
 
@@ -128,13 +181,17 @@ function LoyaltyDashboard() {
             {cards.map((c) => (
               <div key={c.label} className="bg-[#0b0f17] border border-zinc-800/80 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-zinc-400">{c.label}</p>
+                  <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    {c.label}
+                  </p>
                   <c.icon className="h-5 w-5" style={{ color: c.color }} />
                 </div>
                 {loading ? (
                   <div className="h-8 w-20 rounded bg-zinc-800/60 animate-pulse" />
                 ) : (
-                  <p className="text-2xl md:text-3xl font-black" style={{ color: c.color }}>{c.value}</p>
+                  <p className="text-2xl md:text-3xl font-black" style={{ color: c.color }}>
+                    {c.value}
+                  </p>
                 )}
               </div>
             ))}
@@ -143,9 +200,16 @@ function LoyaltyDashboard() {
           {!loading && !hasData && (
             <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-2xl bg-[#0b0f17]">
               <Trophy className="h-10 w-10 text-zinc-600 mx-auto mb-3" />
-              <p className="text-zinc-300 font-bold">Ainda não há dados de fidelidade para exibir.</p>
-              <p className="text-sm text-zinc-500 mt-1">Ative uma campanha em Templates Premium para começar.</p>
-              <Link to="/loyalty/templates" className="inline-block mt-4 px-5 h-10 leading-10 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#ea580c] text-black font-bold">
+              <p className="text-zinc-300 font-bold">
+                Ainda não há dados de fidelidade para exibir.
+              </p>
+              <p className="text-sm text-zinc-500 mt-1">
+                Ative uma campanha em Templates Premium para começar.
+              </p>
+              <Link
+                to="/loyalty/templates"
+                className="inline-block mt-4 px-5 h-10 leading-10 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#ea580c] text-black font-bold"
+              >
                 Ver templates
               </Link>
             </div>
@@ -153,9 +217,13 @@ function LoyaltyDashboard() {
 
           {stats.topCampaign && (
             <div className="bg-gradient-to-br from-[#f59e0b]/10 to-[#ea580c]/5 border border-[#f59e0b]/30 rounded-2xl p-6">
-              <p className="text-xs uppercase tracking-wider font-bold text-[#f59e0b] mb-2">Campanha mais utilizada</p>
+              <p className="text-xs uppercase tracking-wider font-bold text-[#f59e0b] mb-2">
+                Campanha mais utilizada
+              </p>
               <h3 className="text-2xl font-black text-white">{stats.topCampaign.name}</h3>
-              <p className="text-sm text-zinc-300 mt-1">{stats.topCampaign.participants} clientes participando</p>
+              <p className="text-sm text-zinc-300 mt-1">
+                {stats.topCampaign.participants} clientes participando
+              </p>
             </div>
           )}
         </div>

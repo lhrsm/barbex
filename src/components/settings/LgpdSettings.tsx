@@ -1,11 +1,27 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, Download, Trash2, CheckCircle2, Clock, FileText, Cookie, AlertTriangle } from "lucide-react";
+import {
+  ShieldCheck,
+  Download,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Cookie,
+  AlertTriangle,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 interface Consent {
@@ -32,6 +48,7 @@ interface DeletionRequest {
 const RETENTION_KEY = "barbex_lgpd_retention_v1";
 
 export function LgpdSettings() {
+  const { tenantId: ctxTenantId } = useTenant();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [consents, setConsents] = useState<Consent[]>([]);
   const [deletions, setDeletions] = useState<DeletionRequest[]>([]);
@@ -41,26 +58,31 @@ export function LgpdSettings() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
-      setTenantId(user.id);
+      const effTenant = ctxTenantId || user.id;
+      setTenantId(effTenant);
 
       try {
-        const raw = localStorage.getItem(RETENTION_KEY + ":" + user.id);
+        const raw = localStorage.getItem(RETENTION_KEY + ":" + effTenant);
         if (raw) setRetention(raw);
       } catch {}
 
       const [consentsRes, deletionsRes] = await Promise.all([
         supabase
           .from("privacy_consents")
-          .select("id, customer_id, ip, accepted_terms, accepted_privacy, allow_marketing, allow_notifications, source, accepted_at")
-          .eq("tenant_id", user.id)
+          .select(
+            "id, customer_id, ip, accepted_terms, accepted_privacy, allow_marketing, allow_notifications, source, accepted_at",
+          )
+          .eq("tenant_id", effTenant)
           .order("accepted_at", { ascending: false })
           .limit(100),
         supabase
           .from("customers")
           .select("id, name, phone, email, deletion_requested_at, deletion_status")
-          .eq("user_id", user.id)
+          .eq("tenant_id", effTenant)
           .not("deletion_requested_at", "is", null)
           .order("deletion_requested_at", { ascending: false }),
       ]);
@@ -74,13 +96,20 @@ export function LgpdSettings() {
   const saveRetention = (value: string) => {
     setRetention(value);
     if (tenantId) {
-      try { localStorage.setItem(RETENTION_KEY + ":" + tenantId, value); } catch {}
+      try {
+        localStorage.setItem(RETENTION_KEY + ":" + tenantId, value);
+      } catch {}
     }
     toast.success("Política de retenção salva.");
   };
 
   const approveDeletion = async (req: DeletionRequest) => {
-    if (!window.confirm(`Anonimizar dados de "${req.name || "cliente"}"? Esta ação é irreversível. Histórico financeiro será mantido.`)) return;
+    if (
+      !window.confirm(
+        `Anonimizar dados de "${req.name || "cliente"}"? Esta ação é irreversível. Histórico financeiro será mantido.`,
+      )
+    )
+      return;
     setProcessingId(req.id);
     const anonName = `Cliente anonimizado #${req.id.slice(0, 6)}`;
     const { error } = await supabase
@@ -153,18 +182,26 @@ export function LgpdSettings() {
             { icon: Trash2, label: "Exclusão de Dados", to: null, note: "Portal do cliente" },
             { icon: ShieldCheck, label: "Log de Consentimentos", to: null, note: "Abaixo" },
           ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3 flex items-start gap-3">
+            <div
+              key={item.label}
+              className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3 flex items-start gap-3"
+            >
               <div className="h-9 w-9 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
                 <item.icon className="text-emerald-400 h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">{item.label}</p>
                 <p className="text-[11px] text-white/50">
-                  {item.note || (item.to && (
-                    <Link to={item.to} target="_blank" className="text-emerald-300 hover:underline">
-                      Abrir página
-                    </Link>
-                  ))}
+                  {item.note ||
+                    (item.to && (
+                      <Link
+                        to={item.to}
+                        target="_blank"
+                        className="text-emerald-300 hover:underline"
+                      >
+                        Abrir página
+                      </Link>
+                    ))}
                 </p>
               </div>
               <CheckCircle2 className="text-emerald-400 h-4 w-4 mt-0.5 shrink-0" />
@@ -215,7 +252,9 @@ export function LgpdSettings() {
             </CardDescription>
           </div>
           {deletions.length > 0 && (
-            <Badge className="bg-red-500/20 text-red-300 border-red-500/30">{deletions.length} pendente(s)</Badge>
+            <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
+              {deletions.length} pendente(s)
+            </Badge>
           )}
         </CardHeader>
         <CardContent className="p-0">
@@ -273,7 +312,13 @@ export function LgpdSettings() {
               Últimos 100 consentimentos registrados pelos clientes.
             </CardDescription>
           </div>
-          <Button size="sm" variant="outline" className="border-white/15 text-white/80 hover:bg-white/5" onClick={exportConsents} disabled={consents.length === 0}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-white/15 text-white/80 hover:bg-white/5"
+            onClick={exportConsents}
+            disabled={consents.length === 0}
+          >
             <Download size={14} className="mr-1.5" /> Exportar
           </Button>
         </CardHeader>
@@ -298,11 +343,31 @@ export function LgpdSettings() {
                 <tbody className="divide-y divide-white/5">
                   {consents.map((c) => (
                     <tr key={c.id} className="hover:bg-white/[0.02]">
-                      <td className="px-4 py-2 whitespace-nowrap text-white/80">{new Date(c.accepted_at).toLocaleString("pt-BR")}</td>
+                      <td className="px-4 py-2 whitespace-nowrap text-white/80">
+                        {new Date(c.accepted_at).toLocaleString("pt-BR")}
+                      </td>
                       <td className="px-4 py-2 text-white/60">{c.source || "—"}</td>
-                      <td className="px-4 py-2">{c.accepted_terms ? <CheckCircle2 className="text-emerald-400 h-4 w-4" /> : <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-2">{c.accepted_privacy ? <CheckCircle2 className="text-emerald-400 h-4 w-4" /> : <span className="text-white/30">—</span>}</td>
-                      <td className="px-4 py-2">{c.allow_marketing ? <CheckCircle2 className="text-emerald-400 h-4 w-4" /> : <span className="text-white/30">—</span>}</td>
+                      <td className="px-4 py-2">
+                        {c.accepted_terms ? (
+                          <CheckCircle2 className="text-emerald-400 h-4 w-4" />
+                        ) : (
+                          <span className="text-white/30">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        {c.accepted_privacy ? (
+                          <CheckCircle2 className="text-emerald-400 h-4 w-4" />
+                        ) : (
+                          <span className="text-white/30">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        {c.allow_marketing ? (
+                          <CheckCircle2 className="text-emerald-400 h-4 w-4" />
+                        ) : (
+                          <span className="text-white/30">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2 text-white/40 text-xs">{c.ip || "—"}</td>
                     </tr>
                   ))}

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 interface Params {
   user: { id: string } | null;
   role: string | null;
+  tenantId?: string | null;
   barberPeriodRange: { start?: string | null; end?: string | null };
   refundStatusFilter: string;
   refundDateStartFilter: string;
@@ -16,17 +17,21 @@ interface Params {
 export function useFinancesData({
   user,
   role,
+  tenantId,
   barberPeriodRange,
   refundStatusFilter,
   refundDateStartFilter,
   refundDateEndFilter,
   refundSearchTerm,
 }: Params) {
+  const effectiveTenantId = tenantId || user?.id;
   const queryClient = useQueryClient();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [barbers, setBarbers] = useState<any[]>([]);
-  const [barberCommissionSummaries, setBarberCommissionSummaries] = useState<Record<string, any>>({});
+  const [barberCommissionSummaries, setBarberCommissionSummaries] = useState<Record<string, any>>(
+    {},
+  );
   const [refundRequests, setRefundRequests] = useState<any[]>([]);
   const [loadingRefunds, setLoadingRefunds] = useState(false);
   const [cashbackTransactions, setCashbackTransactions] = useState<any[]>([]);
@@ -56,16 +61,18 @@ export function useFinancesData({
           p_end_date: barberPeriodRange.end || undefined,
         });
         return [barber.id, data || {}] as const;
-      })
+      }),
     );
     setBarberCommissionSummaries(Object.fromEntries(summaries));
   }, [user, barbers, barberPeriodRange.start, barberPeriodRange.end]);
 
-  const fetchTransactions = useCallback(async (bId: string | null = null) => {
-    if (!user) return;
-    let query = supabase
-      .from("transactions")
-      .select(`
+  const fetchTransactions = useCallback(
+    async (bId: string | null = null) => {
+      if (!user) return;
+      let query = supabase
+        .from("transactions")
+        .select(
+          `
         *,
         barber:barbers(name),
         appointment:appointments(
@@ -82,50 +89,58 @@ export function useFinancesData({
           pix_amount,
           cashback_used
         )
-      `)
-      .eq("user_id", user.id);
+      `,
+        )
+        .eq("user_id", user.id);
 
-    if (bId) query = query.eq('barber_id', bId);
-    const { data } = await query.order("created_at", { ascending: false });
-    setTransactions(data || []);
-  }, [user]);
+      if (bId) query = query.eq("barber_id", bId);
+      const { data } = await query.order("created_at", { ascending: false });
+      setTransactions(data || []);
+    },
+    [user],
+  );
 
-  const fetchAppointments = useCallback(async (bId: string | null = null) => {
-    if (!user) return;
-    let query = supabase
-      .from("appointments")
-      .select(`
+  const fetchAppointments = useCallback(
+    async (bId: string | null = null) => {
+      if (!user) return;
+      let query = supabase
+        .from("appointments")
+        .select(
+          `
         *,
         customers(name),
         services(name),
         barber:barbers!appointments_barber_id_fkey(name)
-      `)
-      .eq("user_id", user.id)
-      .eq("payment_status", "pending")
-      .neq("status", "cancelled");
+      `,
+        )
+        .eq("user_id", user.id)
+        .eq("payment_status", "pending")
+        .neq("status", "cancelled");
 
-    if (bId) query = query.eq('barber_id', bId);
-    const { data } = await query.order("start_time", { ascending: false });
-    setAppointments(data || []);
-  }, [user]);
+      if (bId) query = query.eq("barber_id", bId);
+      const { data } = await query.order("start_time", { ascending: false });
+      setAppointments(data || []);
+    },
+    [user],
+  );
 
   const fetchRefundRequests = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     setLoadingRefunds(true);
     try {
-      let query = supabase
-        .from("refund_requests")
-        .select("*")
-        .eq("tenant_id", user.id);
+      let query = supabase.from("refund_requests").select("*").eq("tenant_id", effectiveTenantId);
 
       if (refundStatusFilter !== "all") query = query.eq("status", refundStatusFilter);
-      if (refundDateStartFilter) query = query.gte("created_at", `${refundDateStartFilter}T00:00:00Z`);
+      if (refundDateStartFilter)
+        query = query.gte("created_at", `${refundDateStartFilter}T00:00:00Z`);
       if (refundDateEndFilter) query = query.lte("created_at", `${refundDateEndFilter}T23:59:59Z`);
       if (refundSearchTerm) {
         if (refundSearchTerm.length === 36) {
-          query = query.or(`appointment_id.eq.${refundSearchTerm},payment_id.ilike.%${refundSearchTerm}%`);
+          query = query.or(
+            `appointment_id.eq.${refundSearchTerm},payment_id.ilike.%${refundSearchTerm}%`,
+          );
         } else {
-          query = query.ilike('payment_id', `%${refundSearchTerm}%`);
+          query = query.ilike("payment_id", `%${refundSearchTerm}%`);
         }
       }
 
@@ -136,17 +151,23 @@ export function useFinancesData({
         return;
       }
 
-      const customerIds = [...new Set(refunds.map(r => r.customer_id))];
-      const appointmentIds = [...new Set(refunds.map(r => r.appointment_id))];
+      const customerIds = [...new Set(refunds.map((r) => r.customer_id))];
+      const appointmentIds = [...new Set(refunds.map((r) => r.appointment_id))];
       const [{ data: cs }, { data: appts }] = await Promise.all([
         supabase.from("customers").select("id, name").in("id", customerIds),
-        supabase.from("appointments").select("id, service_id, start_time, total_price").in("id", appointmentIds)
+        supabase
+          .from("appointments")
+          .select("id, service_id, start_time, total_price")
+          .in("id", appointmentIds),
       ]);
 
-      const enriched = refunds.map(r => ({
+      const enriched = refunds.map((r) => ({
         ...r,
-        customer: cs?.find(c => c.id === r.customer_id) || { name: "Cliente não encontrado" },
-        appointment: appts?.find(a => a.id === r.appointment_id) || { service_name: "N/A", start_time: null }
+        customer: cs?.find((c) => c.id === r.customer_id) || { name: "Cliente não encontrado" },
+        appointment: appts?.find((a) => a.id === r.appointment_id) || {
+          service_name: "N/A",
+          start_time: null,
+        },
       }));
       setRefundRequests(enriched);
     } catch (err: any) {
@@ -156,54 +177,63 @@ export function useFinancesData({
     } finally {
       setLoadingRefunds(false);
     }
-  }, [user, refundStatusFilter, refundDateStartFilter, refundDateEndFilter, refundSearchTerm]);
+  }, [
+    effectiveTenantId,
+    refundStatusFilter,
+    refundDateStartFilter,
+    refundDateEndFilter,
+    refundSearchTerm,
+  ]);
 
   const fetchCashbackTransactions = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     try {
       const { data, error } = await supabase
         .from("cashback_transactions")
         .select("*")
-        .eq("tenant_id", user.id);
+        .eq("tenant_id", effectiveTenantId);
       if (error) throw error;
       setCashbackTransactions(data || []);
     } catch (err) {
       console.error("Error fetching cashback transactions:", err);
     }
-  }, [user]);
+  }, [effectiveTenantId]);
 
   const fetchCustomerStats = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     try {
       const { data, error } = await supabase
         .from("customers")
         .select("cashback_balance, credits")
-        .eq("tenant_id", user.id);
+        .eq("tenant_id", effectiveTenantId);
       if (error) throw error;
-      const totals = (data || []).reduce((acc, curr) => ({
-        total_cashback: acc.total_cashback + Number(curr.cashback_balance || 0),
-        total_credits: acc.total_credits + Number(curr.credits || 0)
-      }), { total_cashback: 0, total_credits: 0 });
+      const totals = (data || []).reduce(
+        (acc, curr) => ({
+          total_cashback: acc.total_cashback + Number(curr.cashback_balance || 0),
+          total_credits: acc.total_credits + Number(curr.credits || 0),
+        }),
+        { total_cashback: 0, total_credits: 0 },
+      );
       setCustomerStats(totals);
     } catch (err) {
       console.error("Error fetching customer stats:", err);
     }
-  }, [user]);
+  }, [effectiveTenantId]);
 
   const fetchCustomers = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     const { data } = await supabase
       .from("customers")
       .select("id, name")
-      .eq("tenant_id", user.id)
+      .eq("tenant_id", effectiveTenantId)
       .order("name");
     setCustomers(data || []);
-  }, [user]);
+  }, [effectiveTenantId]);
 
   // Initial fetch + realtime
   useEffect(() => {
-    if (!user || role === 'super_admin') return;
-    const barberIdFilter = role === 'barber' ? user.id : null;
+    if (!user || role === "super_admin") return;
+    const barberIdFilter = role === "barber" ? user.id : null;
     fetchTransactions(barberIdFilter);
     fetchBarbers();
     fetchAppointments(barberIdFilter);
@@ -213,57 +243,96 @@ export function useFinancesData({
     fetchCustomers();
 
     const channel = supabase
-      .channel('finances-realtime')
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'transactions',
-        filter: role === 'barber' ? `barber_id=eq.${user.id}` : undefined
-      }, () => {
-        fetchTransactions(barberIdFilter);
-        queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
-      })
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'appointments',
-        filter: role === 'barber' ? `barber_id=eq.${user.id}` : undefined
-      }, () => {
-        fetchAppointments(barberIdFilter);
-        fetchTransactions(barberIdFilter);
-        queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
-      })
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'barber_commissions',
-        filter: role === 'barber' ? `barber_id=eq.${user.id}` : undefined
-      }, () => {
-        fetchBarberCommissionSummaries();
-        queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
-      })
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'refund_requests',
-        filter: `tenant_id=eq.${user.id}`
-      }, () => {
-        fetchRefundRequests();
-        fetchCashbackTransactions();
-        queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
-      })
+      .channel("finances-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: role === "barber" ? `barber_id=eq.${user.id}` : undefined,
+        },
+        () => {
+          fetchTransactions(barberIdFilter);
+          queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: role === "barber" ? `barber_id=eq.${user.id}` : undefined,
+        },
+        () => {
+          fetchAppointments(barberIdFilter);
+          fetchTransactions(barberIdFilter);
+          queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "barber_commissions",
+          filter: role === "barber" ? `barber_id=eq.${user.id}` : undefined,
+        },
+        () => {
+          fetchBarberCommissionSummaries();
+          queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "refund_requests",
+          filter: `tenant_id=eq.${user.id}`,
+        },
+        () => {
+          fetchRefundRequests();
+          fetchCashbackTransactions();
+          queryClient.invalidateQueries({ queryKey: ["financial-summary"] });
+        },
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, role]);
 
   useEffect(() => {
     if (user && barbers.length > 0) fetchBarberCommissionSummaries();
-  }, [user?.id, barbers.length, barberPeriodRange.start, barberPeriodRange.end, fetchBarberCommissionSummaries]);
+  }, [
+    user?.id,
+    barbers.length,
+    barberPeriodRange.start,
+    barberPeriodRange.end,
+    fetchBarberCommissionSummaries,
+  ]);
 
   useEffect(() => {
     if (user) fetchRefundRequests();
-  }, [refundStatusFilter, refundDateStartFilter, refundDateEndFilter, refundSearchTerm, user, fetchRefundRequests]);
+  }, [
+    refundStatusFilter,
+    refundDateStartFilter,
+    refundDateEndFilter,
+    refundSearchTerm,
+    user,
+    fetchRefundRequests,
+  ]);
 
   useEffect(() => {
     async function fetchBalances() {
       if (!user) return;
       const { data, error } = await supabase
-        .from('customers')
-        .select('credits, cashback_balance')
+        .from("customers")
+        .select("credits, cashback_balance")
         .eq("user_id", user.id);
       if (!error && data) {
         setTotalCredits(data.reduce((acc, c) => acc + (Number(c.credits) || 0), 0));

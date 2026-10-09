@@ -4,10 +4,19 @@ import { withModule } from "@/components/modules/withModule";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Sparkles, Search, Layers, Loader2, ArrowLeft, LayoutDashboard, ListChecks } from "lucide-react";
+import {
+  Sparkles,
+  Search,
+  Layers,
+  Loader2,
+  ArrowLeft,
+  LayoutDashboard,
+  ListChecks,
+} from "lucide-react";
 import { TemplateCard } from "@/components/loyalty/TemplateCard";
 import { TemplatePreviewModal } from "@/components/loyalty/TemplatePreviewModal";
 import { suggestLoyaltyCampaignsClient } from "@/lib/backend/edge/ai";
@@ -52,30 +61,236 @@ const mkTpl = (
 });
 
 const FALLBACK_TEMPLATES = [
-  mkTpl("clube-dos-10", "Clube dos 10", "A cada 10 atendimentos, 1 corte grátis.", "recorrencia", "Trophy", "#f59e0b", ["Aumenta recorrência", "Mecânica simples", "Cliente sabe a meta"], "visits", "easy", true),
-  mkTpl("cashback-progressivo", "Cashback Progressivo", "Devolução escalonada conforme gasto mensal.", "cashback", "PiggyBank", "#10b981", ["Eleva ticket médio", "Premia gasto maior", "Crédito reutilizável"], "spend", "medium", true),
-  mkTpl("cliente-ouro", "Cliente Ouro", "Status premium após 20 visitas com benefícios exclusivos.", "recorrencia", "Crown", "#eab308", ["Status VIP", "Atendimento prioritário", "Brindes mensais"], "visits", "medium"),
-  mkTpl("aniversariante-premium", "Aniversariante Premium", "Brinde + 30% off no mês do aniversário.", "datas", "Cake", "#ec4899", ["Engajamento sazonal", "Lembrança automática", "Conversão alta"], "birthday", "easy"),
-  mkTpl("indique-um-amigo", "Indique um Amigo", "Cliente e amigo ganham crédito ao concluir 1 serviço.", "crescimento", "Users", "#3b82f6", ["Crescimento orgânico", "CAC zero", "Premiação dupla"], "referral", "easy", true),
-  mkTpl("cliente-vip", "Cliente VIP", "Acesso a horários exclusivos e produtos premium.", "recorrencia", "Star", "#a855f7", ["Exclusividade real", "Fideliza topo de base", "Diferencial competitivo"], "tier", "advanced"),
-  mkTpl("desafio-mensal", "Desafio Mensal", "Quem atingir X atendimentos no mês ganha bônus.", "recorrencia", "Target", "#f97316", ["Gera urgência", "Mecânica gamificada", "Renova todo mês"], "monthly_goal", "medium"),
-  mkTpl("clube-da-barba", "Clube da Barba", "A cada 5 barbas, 1 grátis ou tratamento exclusivo.", "recorrencia", "Scissors", "#84cc16", ["Foco em serviço específico", "Aumenta frequência da barba"], "visits", "easy"),
-  mkTpl("clube-do-cabelo", "Clube do Cabelo", "A cada 6 cortes, 1 corte premium grátis.", "recorrencia", "Scissors", "#06b6d4", ["Recorrência no carro-chefe", "Meta clara"], "visits", "easy"),
-  mkTpl("combo-premiado", "Combo Premiado", "Levou corte + barba? Ganha pontos extras.", "recorrencia", "Gift", "#f59e0b", ["Aumenta ticket por visita", "Estimula combo"], "combo", "easy"),
-  mkTpl("cliente-frequente", "Cliente Frequente", "3 visitas em 60 dias = desconto na próxima.", "recorrencia", "Repeat", "#22c55e", ["Reduz intervalo", "Premia constância"], "frequency", "medium"),
-  mkTpl("cliente-sem-falta", "Cliente Sem Falta", "Zero faltas em 3 meses = brinde.", "recorrencia", "ShieldCheck", "#0ea5e9", ["Reduz no-show", "Premia compromisso"], "no_show", "medium"),
-  mkTpl("assinante-premium-3", "Assinante Premium 3 Meses", "3 meses de assinatura = brinde exclusivo.", "assinaturas", "BadgeCheck", "#D4AF37", ["Reduz cancelamento", "Premia constância do plano"], "subscription_tenure", "easy"),
-  mkTpl("assinante-premium-6", "Assinante Premium 6 Meses", "6 meses de assinatura = upgrade + brinde.", "assinaturas", "BadgeCheck", "#D4AF37", ["Marca milestone", "Aumenta LTV"], "subscription_tenure", "medium"),
-  mkTpl("assinante-premium-12", "Assinante Premium 12 Meses", "1 ano = mês grátis + kit premium.", "assinaturas", "Crown", "#D4AF37", ["Retenção anual", "Diferencial forte"], "subscription_tenure", "advanced", true),
-  mkTpl("assinante-indica", "Assinante Indica", "Assinante que indica outro assinante ganha bônus.", "assinaturas", "Users", "#a855f7", ["Crescimento da base premium", "Recompensa dupla"], "referral", "medium"),
-  mkTpl("compra-de-produtos", "Compra de Produtos", "A cada R$ X em produtos, ganhe crédito.", "cashback", "ShoppingBag", "#f97316", ["Gira estoque", "Aumenta venda cruzada"], "product_spend", "easy"),
-  mkTpl("black-friday", "Black Friday", "Pontos em dobro durante a campanha.", "datas", "Tag", "#ef4444", ["Pico sazonal", "Cria urgência"], "seasonal", "easy"),
-  mkTpl("natal", "Natal", "Brinde de Natal para clientes frequentes.", "datas", "Gift", "#dc2626", ["Lembrança afetiva", "Reativa base"], "seasonal", "easy"),
-  mkTpl("fidelidade-personalizada", "Fidelidade Personalizada", "Crie suas próprias regras do zero.", "personalizadas", "Settings", "#64748b", ["Total flexibilidade", "Adapte ao seu negócio"], "custom", "advanced"),
+  mkTpl(
+    "clube-dos-10",
+    "Clube dos 10",
+    "A cada 10 atendimentos, 1 corte grátis.",
+    "recorrencia",
+    "Trophy",
+    "#f59e0b",
+    ["Aumenta recorrência", "Mecânica simples", "Cliente sabe a meta"],
+    "visits",
+    "easy",
+    true,
+  ),
+  mkTpl(
+    "cashback-progressivo",
+    "Cashback Progressivo",
+    "Devolução escalonada conforme gasto mensal.",
+    "cashback",
+    "PiggyBank",
+    "#10b981",
+    ["Eleva ticket médio", "Premia gasto maior", "Crédito reutilizável"],
+    "spend",
+    "medium",
+    true,
+  ),
+  mkTpl(
+    "cliente-ouro",
+    "Cliente Ouro",
+    "Status premium após 20 visitas com benefícios exclusivos.",
+    "recorrencia",
+    "Crown",
+    "#eab308",
+    ["Status VIP", "Atendimento prioritário", "Brindes mensais"],
+    "visits",
+    "medium",
+  ),
+  mkTpl(
+    "aniversariante-premium",
+    "Aniversariante Premium",
+    "Brinde + 30% off no mês do aniversário.",
+    "datas",
+    "Cake",
+    "#ec4899",
+    ["Engajamento sazonal", "Lembrança automática", "Conversão alta"],
+    "birthday",
+    "easy",
+  ),
+  mkTpl(
+    "indique-um-amigo",
+    "Indique um Amigo",
+    "Cliente e amigo ganham crédito ao concluir 1 serviço.",
+    "crescimento",
+    "Users",
+    "#3b82f6",
+    ["Crescimento orgânico", "CAC zero", "Premiação dupla"],
+    "referral",
+    "easy",
+    true,
+  ),
+  mkTpl(
+    "cliente-vip",
+    "Cliente VIP",
+    "Acesso a horários exclusivos e produtos premium.",
+    "recorrencia",
+    "Star",
+    "#a855f7",
+    ["Exclusividade real", "Fideliza topo de base", "Diferencial competitivo"],
+    "tier",
+    "advanced",
+  ),
+  mkTpl(
+    "desafio-mensal",
+    "Desafio Mensal",
+    "Quem atingir X atendimentos no mês ganha bônus.",
+    "recorrencia",
+    "Target",
+    "#f97316",
+    ["Gera urgência", "Mecânica gamificada", "Renova todo mês"],
+    "monthly_goal",
+    "medium",
+  ),
+  mkTpl(
+    "clube-da-barba",
+    "Clube da Barba",
+    "A cada 5 barbas, 1 grátis ou tratamento exclusivo.",
+    "recorrencia",
+    "Scissors",
+    "#84cc16",
+    ["Foco em serviço específico", "Aumenta frequência da barba"],
+    "visits",
+    "easy",
+  ),
+  mkTpl(
+    "clube-do-cabelo",
+    "Clube do Cabelo",
+    "A cada 6 cortes, 1 corte premium grátis.",
+    "recorrencia",
+    "Scissors",
+    "#06b6d4",
+    ["Recorrência no carro-chefe", "Meta clara"],
+    "visits",
+    "easy",
+  ),
+  mkTpl(
+    "combo-premiado",
+    "Combo Premiado",
+    "Levou corte + barba? Ganha pontos extras.",
+    "recorrencia",
+    "Gift",
+    "#f59e0b",
+    ["Aumenta ticket por visita", "Estimula combo"],
+    "combo",
+    "easy",
+  ),
+  mkTpl(
+    "cliente-frequente",
+    "Cliente Frequente",
+    "3 visitas em 60 dias = desconto na próxima.",
+    "recorrencia",
+    "Repeat",
+    "#22c55e",
+    ["Reduz intervalo", "Premia constância"],
+    "frequency",
+    "medium",
+  ),
+  mkTpl(
+    "cliente-sem-falta",
+    "Cliente Sem Falta",
+    "Zero faltas em 3 meses = brinde.",
+    "recorrencia",
+    "ShieldCheck",
+    "#0ea5e9",
+    ["Reduz no-show", "Premia compromisso"],
+    "no_show",
+    "medium",
+  ),
+  mkTpl(
+    "assinante-premium-3",
+    "Assinante Premium 3 Meses",
+    "3 meses de assinatura = brinde exclusivo.",
+    "assinaturas",
+    "BadgeCheck",
+    "#D4AF37",
+    ["Reduz cancelamento", "Premia constância do plano"],
+    "subscription_tenure",
+    "easy",
+  ),
+  mkTpl(
+    "assinante-premium-6",
+    "Assinante Premium 6 Meses",
+    "6 meses de assinatura = upgrade + brinde.",
+    "assinaturas",
+    "BadgeCheck",
+    "#D4AF37",
+    ["Marca milestone", "Aumenta LTV"],
+    "subscription_tenure",
+    "medium",
+  ),
+  mkTpl(
+    "assinante-premium-12",
+    "Assinante Premium 12 Meses",
+    "1 ano = mês grátis + kit premium.",
+    "assinaturas",
+    "Crown",
+    "#D4AF37",
+    ["Retenção anual", "Diferencial forte"],
+    "subscription_tenure",
+    "advanced",
+    true,
+  ),
+  mkTpl(
+    "assinante-indica",
+    "Assinante Indica",
+    "Assinante que indica outro assinante ganha bônus.",
+    "assinaturas",
+    "Users",
+    "#a855f7",
+    ["Crescimento da base premium", "Recompensa dupla"],
+    "referral",
+    "medium",
+  ),
+  mkTpl(
+    "compra-de-produtos",
+    "Compra de Produtos",
+    "A cada R$ X em produtos, ganhe crédito.",
+    "cashback",
+    "ShoppingBag",
+    "#f97316",
+    ["Gira estoque", "Aumenta venda cruzada"],
+    "product_spend",
+    "easy",
+  ),
+  mkTpl(
+    "black-friday",
+    "Black Friday",
+    "Pontos em dobro durante a campanha.",
+    "datas",
+    "Tag",
+    "#ef4444",
+    ["Pico sazonal", "Cria urgência"],
+    "seasonal",
+    "easy",
+  ),
+  mkTpl(
+    "natal",
+    "Natal",
+    "Brinde de Natal para clientes frequentes.",
+    "datas",
+    "Gift",
+    "#dc2626",
+    ["Lembrança afetiva", "Reativa base"],
+    "seasonal",
+    "easy",
+  ),
+  mkTpl(
+    "fidelidade-personalizada",
+    "Fidelidade Personalizada",
+    "Crie suas próprias regras do zero.",
+    "personalizadas",
+    "Settings",
+    "#64748b",
+    ["Total flexibilidade", "Adapte ao seu negócio"],
+    "custom",
+    "advanced",
+  ),
 ];
 
 function TemplatesPage() {
   const { user } = useAuth();
+  const { tenantId } = useTenant();
+  const effectiveTenantId = tenantId || user?.id;
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,9 +311,16 @@ function TemplatesPage() {
       setLoadError(null);
       try {
         const [tplRes, settingsRes] = await Promise.all([
-          supabase.from("loyalty_campaign_templates" as any).select("*").order("sort_order"),
-          user
-            ? supabase.from("loyalty_settings" as any).select("premium_enabled").eq("tenant_id", user.id).maybeSingle()
+          supabase
+            .from("loyalty_campaign_templates" as any)
+            .select("*")
+            .order("sort_order"),
+          user && effectiveTenantId
+            ? supabase
+                .from("loyalty_settings" as any)
+                .select("premium_enabled")
+                .eq("tenant_id", effectiveTenantId)
+                .maybeSingle()
             : Promise.resolve({ data: null } as any),
         ]);
         if (cancelled) return;
@@ -118,12 +340,13 @@ function TemplatesPage() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, effectiveTenantId]);
 
   const filtered = useMemo(() => {
     return templates.filter((t) => {
       if (category !== "all" && t.category !== category) return false;
-      if (search && !`${t.name} ${t.description}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search && !`${t.name} ${t.description}`.toLowerCase().includes(search.toLowerCase()))
+        return false;
       return true;
     });
   }, [templates, category, search]);
@@ -211,8 +434,12 @@ function TemplatesPage() {
                 <Layers className="h-7 w-7 text-[#f59e0b]" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight">Biblioteca de Templates</h1>
-                <p className="text-sm text-zinc-400">Modelos prontos de fidelidade. Use, edite e ative em segundos.</p>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                  Biblioteca de Templates
+                </h1>
+                <p className="text-sm text-zinc-400">
+                  Modelos prontos de fidelidade. Use, edite e ative em segundos.
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 md:gap-2.5 md:justify-end md:flex-wrap overflow-x-auto md:overflow-visible -mx-1 px-1 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -295,15 +522,23 @@ function TemplatesPage() {
 
           {/* AI MODAL */}
           {aiOpen && (
-            <div className="fixed inset-0 bg-black/70 backdrop-blur z-50 grid place-items-center p-4" onClick={() => setAiOpen(false)}>
-              <div className="bg-[#0b0f17] border border-zinc-800 rounded-2xl p-6 max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="fixed inset-0 bg-black/70 backdrop-blur z-50 grid place-items-center p-4"
+              onClick={() => setAiOpen(false)}
+            >
+              <div
+                className="bg-[#0b0f17] border border-zinc-800 rounded-2xl p-6 max-w-lg w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#a855f7] to-[#ec4899] grid place-items-center">
                     <Sparkles className="h-5 w-5 text-white" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Sugestões da IA</h3>
-                    <p className="text-xs text-zinc-400">Baseado nos seus clientes e atendimentos</p>
+                    <p className="text-xs text-zinc-400">
+                      Baseado nos seus clientes e atendimentos
+                    </p>
                   </div>
                 </div>
                 {aiLoading ? (
@@ -316,7 +551,10 @@ function TemplatesPage() {
                       const tpl = templates.find((t) => t.slug === s.template_slug);
                       if (!tpl) return null;
                       return (
-                        <div key={i} className="bg-[#05070d] border border-zinc-800 rounded-xl p-4 flex items-center gap-3 hover:border-[#a855f7]/40">
+                        <div
+                          key={i}
+                          className="bg-[#05070d] border border-zinc-800 rounded-xl p-4 flex items-center gap-3 hover:border-[#a855f7]/40"
+                        >
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-white">{tpl.name}</p>
                             <p className="text-xs text-zinc-400 mt-1">{s.reason}</p>

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -51,9 +57,7 @@ import {
 } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 
-const PerformanceCenter = lazy(
-  () => import("@/components/commissions/perf/PerformanceCenter"),
-);
+const PerformanceCenter = lazy(() => import("@/components/commissions/perf/PerformanceCenter"));
 
 export const Route = createFileRoute("/commissions")({
   component: withModule("commissions", "Comissões", CommissionsPage),
@@ -98,9 +102,7 @@ function fmt(v: number) {
 }
 function firstDay() {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
 }
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -108,6 +110,8 @@ function today() {
 
 function CommissionsPage() {
   const { user, loading } = useAuth();
+  const { tenantId } = useTenant();
+  const effectiveTenantId = tenantId || user?.id;
   const [from, setFrom] = useState(firstDay());
   const [to, setTo] = useState(today());
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -128,54 +132,45 @@ function CommissionsPage() {
   const [payNotes, setPayNotes] = useState("");
 
   useEffect(() => {
-    if (!loading && user) load();
+    if (!loading && user && effectiveTenantId) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, user, from, to]);
+  }, [loading, user, effectiveTenantId, from, to]);
 
   async function load() {
     if (!user) return;
     setLoadingData(true);
     try {
-      const [
-        { data: bs },
-        { data: es },
-        { data: cs },
-        { data: ap },
-        { data: prof },
-      ] = await Promise.all([
-        supabase
-          .from("barbers")
-          .select(
-            "id, name, commission_type, commission_rate, commission_fixed_value, commission_bonus_value, monthly_goal"
-          )
-          .eq("user_id", user.id)
-          .order("name"),
-        supabase
-          .from("commission_entries")
-          .select("*")
-          .eq("tenant_id", user.id)
-          .gte("earned_at", from)
-          .lte("earned_at", to + "T23:59:59")
-          .order("earned_at", { ascending: false }),
-        supabase
-          .from("commission_closings")
-          .select("*")
-          .eq("tenant_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase
-          .from("appointments")
-          .select("id, barber_id, customer_id, total_price, completed_at")
-          .eq("tenant_id", user.id)
-          .eq("status", "completed")
-          .gte("completed_at", from)
-          .lte("completed_at", to + "T23:59:59"),
-        supabase
-          .from("profiles")
-          .select("commission_base")
-          .eq("id", user.id)
-          .maybeSingle(),
-      ]);
+      const [{ data: bs }, { data: es }, { data: cs }, { data: ap }, { data: prof }] =
+        await Promise.all([
+          supabase
+            .from("barbers")
+            .select(
+              "id, name, commission_type, commission_rate, commission_fixed_value, commission_bonus_value, monthly_goal",
+            )
+            .or(`tenant_id.eq.${effectiveTenantId},user_id.eq.${user.id}`)
+            .order("name"),
+          supabase
+            .from("commission_entries")
+            .select("*")
+            .eq("tenant_id", effectiveTenantId)
+            .gte("earned_at", from)
+            .lte("earned_at", to + "T23:59:59")
+            .order("earned_at", { ascending: false }),
+          supabase
+            .from("commission_closings")
+            .select("*")
+            .eq("tenant_id", effectiveTenantId)
+            .order("created_at", { ascending: false })
+            .limit(50),
+          supabase
+            .from("appointments")
+            .select("id, barber_id, customer_id, total_price, completed_at")
+            .eq("tenant_id", effectiveTenantId)
+            .eq("status", "completed")
+            .gte("completed_at", from)
+            .lte("completed_at", to + "T23:59:59"),
+          supabase.from("profiles").select("commission_base").eq("id", user.id).maybeSingle(),
+        ]);
       setBarbers((bs ?? []) as Barber[]);
       setEntries((es ?? []) as Entry[]);
       setClosings((cs ?? []) as Closing[]);
@@ -199,10 +194,11 @@ function CommissionsPage() {
 
   async function recalc() {
     if (!user) return;
-    const { data, error } = await supabase.rpc(
-      "recalculate_barber_commissions",
-      { p_tenant_id: user.id, p_from: from, p_to: to }
-    );
+    const { data, error } = await supabase.rpc("recalculate_barber_commissions", {
+      p_tenant_id: effectiveTenantId,
+      p_from: from,
+      p_to: to,
+    });
     if (error) toast.error(error.message);
     else {
       toast.success(`${data ?? 0} atendimentos recalculados`);
@@ -214,31 +210,18 @@ function CommissionsPage() {
     return barbers.map((b) => {
       const bEntries = entries.filter((e) => e.barber_id === b.id);
       const bAppts = appts.filter((a) => a.barber_id === b.id);
-      const production = bAppts.reduce(
-        (s, a) => s + Number(a.total_price ?? 0),
-        0
-      );
+      const production = bAppts.reduce((s, a) => s + Number(a.total_price ?? 0), 0);
       const uniqueCust = new Set(bAppts.map((a) => a.customer_id)).size;
       const services = bAppts.length;
       const avgTicket = services > 0 ? production / services : 0;
-      const accrued = bEntries.reduce(
-        (s, e) => s + Number(e.commission_amount ?? 0),
-        0
-      );
-      const paid = bEntries.reduce(
-        (s, e) => s + Number(e.paid_amount ?? 0),
-        0
-      );
+      const accrued = bEntries.reduce((s, e) => s + Number(e.commission_amount ?? 0), 0);
+      const paid = bEntries.reduce((s, e) => s + Number(e.paid_amount ?? 0), 0);
       const pending = accrued - paid;
-      const goalPct =
-        b.monthly_goal > 0
-          ? Math.min(100, (production / b.monthly_goal) * 100)
-          : 0;
+      const goalPct = b.monthly_goal > 0 ? Math.min(100, (production / b.monthly_goal) * 100) : 0;
       const recurrent =
         uniqueCust > 0
           ? (Array.from(new Set(bAppts.map((a) => a.customer_id))).filter(
-              (cId) =>
-                bAppts.filter((a) => a.customer_id === cId).length > 1
+              (cId) => bAppts.filter((a) => a.customer_id === cId).length > 1,
             ).length /
               uniqueCust) *
             100
@@ -269,7 +252,7 @@ function CommissionsPage() {
 
   const rankingList = useMemo(
     () => [...byBarber].sort((a, b) => b.production - a.production),
-    [byBarber]
+    [byBarber],
   );
 
   const filteredEntries = useMemo(() => {
@@ -281,12 +264,10 @@ function CommissionsPage() {
   }, [entries, barberFilter, statusFilter]);
 
   function openPayDialog(barberId: string) {
-    const pending = entries.filter(
-      (e) => e.barber_id === barberId && e.status !== "paid"
-    );
+    const pending = entries.filter((e) => e.barber_id === barberId && e.status !== "paid");
     const total = pending.reduce(
       (s, e) => s + (Number(e.commission_amount) - Number(e.paid_amount)),
-      0
+      0,
     );
     setPayDialog({
       barberId,
@@ -325,9 +306,7 @@ function CommissionsPage() {
         <div className="min-h-[60vh] flex items-center justify-center bg-[#05070d]">
           <div className="flex flex-col items-center gap-3">
             <div className="h-10 w-10 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin" />
-            <p className="text-zinc-500 text-sm font-medium">
-              Carregando comissões...
-            </p>
+            <p className="text-zinc-500 text-sm font-medium">Carregando comissões...</p>
           </div>
         </div>
       </AppLayout>
@@ -396,9 +375,7 @@ function CommissionsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0b0f17] border-zinc-800 text-white">
-                  <SelectItem value="gross">
-                    Valor integral do serviço
-                  </SelectItem>
+                  <SelectItem value="gross">Valor integral do serviço</SelectItem>
                   <SelectItem value="net_cash">
                     Apenas dinheiro novo (exclui créditos/cashback)
                   </SelectItem>
@@ -444,9 +421,7 @@ function CommissionsPage() {
               value={kpis.melhor?.barber.name ?? "-"}
               hint={
                 kpis.melhor
-                  ? `${kpis.melhor.services} atend. · ${fmt(
-                      kpis.melhor.production
-                    )}`
+                  ? `${kpis.melhor.services} atend. · ${fmt(kpis.melhor.production)}`
                   : undefined
               }
               accent="emerald"
@@ -494,7 +469,7 @@ function CommissionsPage() {
                           "group relative inline-flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[12px] font-semibold uppercase tracking-wider transition-all duration-300 rounded-t-[22px] focus-visible:outline-none",
                           active
                             ? "bg-white text-[#111111] font-bold shadow-[0_-2px_12px_rgba(0,0,0,.15)]"
-                            : "text-white/70 hover:text-white"
+                            : "text-white/70 hover:text-white",
                         )}
                       >
                         <Icon size={15} className="opacity-90" />
@@ -505,7 +480,6 @@ function CommissionsPage() {
                 </div>
               </div>
             </div>
-
 
             {/* DESEMPENHO (painel de produtividade — somente leitura) */}
             <TabsContent value="performance" className="mt-6">
@@ -527,7 +501,6 @@ function CommissionsPage() {
 
             {/* DASHBOARD */}
             <TabsContent value="dashboard" className="mt-6 space-y-4">
-
               {byBarber.length === 0 && (
                 <div className="bg-[#0b0f17] border border-zinc-800/80 rounded-2xl p-10 text-center text-zinc-500">
                   Nenhum barbeiro cadastrado.
@@ -555,7 +528,7 @@ function CommissionsPage() {
                               `${fmt(b.barber.commission_fixed_value)} / atend.`}
                             {b.barber.commission_type === "hybrid" &&
                               `${b.barber.commission_rate}% + ${fmt(
-                                b.barber.commission_bonus_value
+                                b.barber.commission_bonus_value,
                               )}`}
                           </p>
                         </div>
@@ -575,16 +548,8 @@ function CommissionsPage() {
                       <Metric label="Atendimentos" value={String(b.services)} />
                       <Metric label="Clientes" value={String(b.uniqueCust)} />
                       <Metric label="Ticket médio" value={fmt(b.avgTicket)} />
-                      <Metric
-                        label="Comissão"
-                        value={fmt(b.accrued)}
-                        tone="sky"
-                      />
-                      <Metric
-                        label="Pendente"
-                        value={fmt(b.pending)}
-                        tone="amber"
-                      />
+                      <Metric label="Comissão" value={fmt(b.accrued)} tone="sky" />
+                      <Metric label="Pendente" value={fmt(b.pending)} tone="amber" />
                     </div>
 
                     {b.barber.monthly_goal > 0 && (
@@ -647,18 +612,12 @@ function CommissionsPage() {
                               key={b.barber.id}
                               className="border-zinc-800 hover:bg-emerald-500/5"
                             >
-                              <TableCell className="text-zinc-400 font-bold">
-                                {i + 4}º
-                              </TableCell>
+                              <TableCell className="text-zinc-400 font-bold">{i + 4}º</TableCell>
                               <TableCell className="font-bold text-white">
                                 {b.barber.name}
                               </TableCell>
-                              <TableCell className="text-white">
-                                {fmt(b.production)}
-                              </TableCell>
-                              <TableCell className="text-white">
-                                {b.services}
-                              </TableCell>
+                              <TableCell className="text-white">{fmt(b.production)}</TableCell>
+                              <TableCell className="text-white">{b.services}</TableCell>
                               <TableCell className="text-emerald-400 font-bold">
                                 {fmt(b.accrued)}
                               </TableCell>
@@ -737,16 +696,12 @@ function CommissionsPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredEntries.map((e) => (
-                      <TableRow
-                        key={e.id}
-                        className="border-zinc-800 hover:bg-emerald-500/5"
-                      >
+                      <TableRow key={e.id} className="border-zinc-800 hover:bg-emerald-500/5">
                         <TableCell className="text-zinc-300">
                           {new Date(e.earned_at).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell className="text-white font-bold">
-                          {barbers.find((b) => b.id === e.barber_id)?.name ??
-                            "-"}
+                          {barbers.find((b) => b.id === e.barber_id)?.name ?? "-"}
                         </TableCell>
                         <TableCell className="text-zinc-300">
                           {fmt(Number(e.service_amount))}
@@ -764,10 +719,7 @@ function CommissionsPage() {
                     ))}
                     {filteredEntries.length === 0 && (
                       <TableRow className="border-zinc-800 hover:bg-transparent">
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-zinc-500 py-10"
-                        >
+                        <TableCell colSpan={6} className="text-center text-zinc-500 py-10">
                           Sem lançamentos para os filtros aplicados
                         </TableCell>
                       </TableRow>
@@ -805,18 +757,13 @@ function CommissionsPage() {
                   </TableHeader>
                   <TableBody>
                     {closings.map((c) => (
-                      <TableRow
-                        key={c.id}
-                        className="border-zinc-800 hover:bg-emerald-500/5"
-                      >
+                      <TableRow key={c.id} className="border-zinc-800 hover:bg-emerald-500/5">
                         <TableCell className="text-zinc-300">
-                          {new Date(c.period_start).toLocaleDateString("pt-BR")}{" "}
-                          —{" "}
+                          {new Date(c.period_start).toLocaleDateString("pt-BR")} —{" "}
                           {new Date(c.period_end).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell className="text-white font-bold">
-                          {barbers.find((b) => b.id === c.barber_id)?.name ??
-                            "-"}
+                          {barbers.find((b) => b.id === c.barber_id)?.name ?? "-"}
                         </TableCell>
                         <TableCell className="text-zinc-300">
                           {fmt(Number(c.total_amount))}
@@ -828,18 +775,13 @@ function CommissionsPage() {
                           <StatusBadge status={c.status} />
                         </TableCell>
                         <TableCell className="text-zinc-300">
-                          {c.paid_at
-                            ? new Date(c.paid_at).toLocaleString("pt-BR")
-                            : "-"}
+                          {c.paid_at ? new Date(c.paid_at).toLocaleString("pt-BR") : "-"}
                         </TableCell>
                       </TableRow>
                     ))}
                     {closings.length === 0 && (
                       <TableRow className="border-zinc-800 hover:bg-transparent">
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-zinc-500 py-10"
-                        >
+                        <TableCell colSpan={6} className="text-center text-zinc-500 py-10">
                           Nenhum fechamento registrado
                         </TableCell>
                       </TableRow>
@@ -853,10 +795,7 @@ function CommissionsPage() {
       </div>
 
       {/* PAGAMENTO */}
-      <Dialog
-        open={!!payDialog}
-        onOpenChange={(o) => !o && setPayDialog(null)}
-      >
+      <Dialog open={!!payDialog} onOpenChange={(o) => !o && setPayDialog(null)}>
         <DialogContent className="bg-[#0b0f17] border-zinc-800 text-white">
           <DialogHeader>
             <DialogTitle className="text-xl font-black flex items-center gap-2">
@@ -934,10 +873,7 @@ function KpiCard({
   hint?: string;
   accent: "emerald" | "sky" | "purple" | "amber";
 }) {
-  const accents: Record<
-    string,
-    { bg: string; text: string; border: string; glow: string }
-  > = {
+  const accents: Record<string, { bg: string; text: string; border: string; glow: string }> = {
     emerald: {
       bg: "bg-emerald-500/10",
       text: "text-emerald-400",
@@ -969,7 +905,7 @@ function KpiCard({
       className={cn(
         "bg-[#0b0f17] border border-zinc-800/80 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1",
         a.border,
-        a.glow
+        a.glow,
       )}
     >
       <div className="flex items-center justify-between mb-3">
@@ -980,14 +916,8 @@ function KpiCard({
           <Icon className={cn("h-4 w-4", a.text)} />
         </div>
       </div>
-      <div className="text-2xl md:text-3xl font-black tracking-tight truncate">
-        {value}
-      </div>
-      {hint && (
-        <div className={cn("text-xs mt-1 font-bold truncate", a.text)}>
-          {hint}
-        </div>
-      )}
+      <div className="text-2xl md:text-3xl font-black tracking-tight truncate">{value}</div>
+      {hint && <div className={cn("text-xs mt-1 font-bold truncate", a.text)}>{hint}</div>}
     </div>
   );
 }
@@ -1002,19 +932,11 @@ function Metric({
   tone?: "default" | "sky" | "amber";
 }) {
   const toneCls =
-    tone === "sky"
-      ? "text-sky-400"
-      : tone === "amber"
-      ? "text-amber-400"
-      : "text-white";
+    tone === "sky" ? "text-sky-400" : tone === "amber" ? "text-amber-400" : "text-white";
   return (
     <div className="bg-[#05070d]/60 border border-zinc-800/60 rounded-xl p-2.5">
-      <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-        {label}
-      </div>
-      <div className={cn("text-sm font-black mt-0.5 truncate", toneCls)}>
-        {value}
-      </div>
+      <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{label}</div>
+      <div className={cn("text-sm font-black mt-0.5 truncate", toneCls)}>{value}</div>
     </div>
   );
 }
@@ -1041,20 +963,20 @@ function PodiumCard({
           medal: "🥇",
         }
       : place === 2
-      ? {
-          icon: Medal,
-          color: "text-zinc-300",
-          bg: "from-zinc-400/15 to-zinc-500/0",
-          border: "border-zinc-400/40",
-          medal: "🥈",
-        }
-      : {
-          icon: Award,
-          color: "text-orange-400",
-          bg: "from-orange-500/15 to-orange-600/0",
-          border: "border-orange-500/40",
-          medal: "🥉",
-        };
+        ? {
+            icon: Medal,
+            color: "text-zinc-300",
+            bg: "from-zinc-400/15 to-zinc-500/0",
+            border: "border-zinc-400/40",
+            medal: "🥈",
+          }
+        : {
+            icon: Award,
+            color: "text-orange-400",
+            bg: "from-orange-500/15 to-orange-600/0",
+            border: "border-orange-500/40",
+            medal: "🥉",
+          };
   const Icon = styles.icon;
   return (
     <div
@@ -1062,11 +984,16 @@ function PodiumCard({
         "relative bg-gradient-to-br rounded-2xl p-5 border transition-all hover:-translate-y-1",
         styles.bg,
         styles.border,
-        "bg-[#0b0f17]"
+        "bg-[#0b0f17]",
       )}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={cn("h-12 w-12 rounded-2xl grid place-items-center bg-black/40 border", styles.border)}>
+        <div
+          className={cn(
+            "h-12 w-12 rounded-2xl grid place-items-center bg-black/40 border",
+            styles.border,
+          )}
+        >
           <Icon className={cn("h-6 w-6", styles.color)} />
         </div>
         <span className="text-3xl">{styles.medal}</span>
@@ -1077,26 +1004,16 @@ function PodiumCard({
       <h3 className="text-lg font-black mt-1 truncate">{data.barber.name}</h3>
       <div className="grid grid-cols-3 gap-2 mt-4">
         <div>
-          <div className="text-[10px] font-bold uppercase text-zinc-500">
-            Faturamento
-          </div>
-          <div className={cn("text-sm font-black", styles.color)}>
-            {fmt(data.production)}
-          </div>
+          <div className="text-[10px] font-bold uppercase text-zinc-500">Faturamento</div>
+          <div className={cn("text-sm font-black", styles.color)}>{fmt(data.production)}</div>
         </div>
         <div>
-          <div className="text-[10px] font-bold uppercase text-zinc-500">
-            Atend.
-          </div>
+          <div className="text-[10px] font-bold uppercase text-zinc-500">Atend.</div>
           <div className="text-sm font-black text-white">{data.services}</div>
         </div>
         <div>
-          <div className="text-[10px] font-bold uppercase text-zinc-500">
-            Comissão
-          </div>
-          <div className="text-sm font-black text-emerald-400">
-            {fmt(data.accrued)}
-          </div>
+          <div className="text-[10px] font-bold uppercase text-zinc-500">Comissão</div>
+          <div className="text-sm font-black text-emerald-400">{fmt(data.accrued)}</div>
         </div>
       </div>
     </div>
@@ -1123,12 +1040,7 @@ function StatusBadge({ status }: { status: string }) {
     cls: "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
   };
   return (
-    <Badge
-      className={cn(
-        "border font-bold text-[10px] uppercase tracking-wider",
-        s.cls
-      )}
-    >
+    <Badge className={cn("border font-bold text-[10px] uppercase tracking-wider", s.cls)}>
       {s.label}
     </Badge>
   );
