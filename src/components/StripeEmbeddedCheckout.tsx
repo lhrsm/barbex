@@ -58,6 +58,33 @@ export function StripeEmbeddedCheckout({
         throw new Error("Você precisa estar autenticado para realizar esta operação.");
       }
 
+      // Generic Fail-Closed Identity Guard: garantir que a sessão autenticada seja válida e corresponda à solicitação
+      const sessionUser = session?.user;
+      const sessionEmail = sessionUser?.email?.toLowerCase().trim();
+      const requestedEmail = customerEmail?.toLowerCase().trim();
+      const sessionUserId = sessionUser?.id?.trim();
+      const requestedUserId = userId?.trim();
+
+      if (requestedUserId && sessionUserId && sessionUserId !== requestedUserId) {
+        console.error("[StripeEmbeddedCheckout] 🛑 Mismatch de userId:", {
+          sessionUserId,
+          requestedUserId,
+        });
+        throw new Error(
+          "Inconsistência de autenticação: o usuário autenticado não confere com o titular da solicitação.",
+        );
+      }
+
+      if (sessionEmail && requestedEmail && sessionEmail !== requestedEmail) {
+        console.error("[StripeEmbeddedCheckout] 🛑 Mismatch de email:", {
+          sessionEmail,
+          requestedEmail,
+        });
+        throw new Error(
+          `Inconsistência de autenticação: a sessão atual (${sessionEmail}) não confere com o email solicitado (${requestedEmail}).`,
+        );
+      }
+
       console.log("[StripeEmbeddedCheckout] 📡 Invocando server function com token");
 
       const res = await createCheckoutSession(
@@ -132,8 +159,8 @@ export function StripeEmbeddedCheckout({
   return (
     <div id="checkout" className="w-full">
       <EmbeddedCheckoutProvider stripe={getStripe()} options={{ fetchClientSecret }}>
-        <div className="min-h-[400px] flex flex-col items-center justify-center relative">
-          <EmbeddedCheckout />
+        <div className="w-full min-h-[400px] relative">
+          <EmbeddedCheckout className="w-full" />
           {/* Stripe EmbeddedCheckout gerencia seu próprio carregamento */}
         </div>
       </EmbeddedCheckoutProvider>

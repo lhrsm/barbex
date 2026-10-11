@@ -32,11 +32,11 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
-import { getStripe } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { SubscriptionCheckoutModal } from "@/components/subscription/SubscriptionCheckoutModal";
+import { useTenant } from "@/hooks/use-tenant";
 import { createPortalSession } from "@/lib/backend/edge/stripe";
 import { YourAddons } from "@/components/subscription/YourAddons";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -70,12 +70,13 @@ export const Route = createFileRoute("/subscription/")({
 
 function SubscriptionComponent() {
   console.log("[Subscription] Rendering SubscriptionComponent");
-  let auth, planLimits, checkout;
+  let auth, planLimits, checkout, tenantInfo;
 
   try {
     auth = useAuth();
     planLimits = usePlanLimits();
     checkout = useStripeCheckout();
+    tenantInfo = useTenant();
     console.log("[Subscription] Hooks loaded:", {
       authLoading: auth.loading,
       planLoading: planLimits.loading,
@@ -87,6 +88,7 @@ function SubscriptionComponent() {
   }
 
   const { user, loading: authLoading, role } = auth;
+  const { tenantId, businessName } = tenantInfo;
   const {
     plan,
     usage,
@@ -98,7 +100,7 @@ function SubscriptionComponent() {
     delinquency,
     refresh,
   } = planLimits;
-  const { openCheckout, closeCheckout, isOpen, checkoutElement } = checkout;
+  const { openCheckout, closeCheckout, isOpen, options, checkoutElement } = checkout;
   const { ctx: billing, isInternalTesting } = useBillingContext();
 
   const navigate = useNavigate();
@@ -163,9 +165,7 @@ function SubscriptionComponent() {
     try {
       // Normaliza nome legado para 'pro'
       const planKey = (newPlan === ("professional" as any) ? "pro" : newPlan) as
-        | "starter"
-        | "pro"
-        | "elite";
+        "starter" | "pro" | "elite";
       if (!["starter", "pro", "elite"].includes(planKey)) {
         throw new Error("Plano selecionado inválido. Escolha Starter, Pro ou Elite.");
       }
@@ -173,6 +173,10 @@ function SubscriptionComponent() {
       if (!["month", "year"].includes(cycle)) {
         throw new Error("Ciclo de faturamento inválido. Escolha Mensal ou Anual.");
       }
+
+      const targetConfig = planConfigs.find((p) => p.id === planKey);
+      const selectedPrice =
+        cycle === "year" ? targetConfig?.yearlyPrice : targetConfig?.monthlyPrice;
 
       console.log("[Subscription] 🚀 Abrindo modal de checkout com contrato explícito:", {
         planKey,
@@ -184,6 +188,11 @@ function SubscriptionComponent() {
         customerEmail: user.email,
         userId: user.id,
         returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+        tenantId: tenantId || undefined,
+        tenantName: businessName || undefined,
+        planName: targetConfig?.name || planKey,
+        price: selectedPrice || (cycle === "year" ? "499,00" : "59,90"),
+        features: targetConfig?.features || undefined,
       });
     } catch (err: any) {
       console.error("[Subscription] ❌ Erro ao iniciar o checkout:", err);
@@ -804,25 +813,13 @@ function SubscriptionComponent() {
         </div>
       </div>
 
-      <Dialog
+      {/* MODAL DE CHECKOUT STRIPE EMBEDDED REFINADO */}
+      <SubscriptionCheckoutModal
         open={isOpen}
-        onOpenChange={(o) => {
-          if (!o) closeCheckout();
-        }}
-      >
-        <DialogContent className="max-w-3xl min-h-[600px] h-[80vh] overflow-y-auto p-0 flex flex-col sm:rounded-xl">
-          <DialogHeader className="p-6 pb-2 border-b shrink-0">
-            <DialogTitle>Finalizar assinatura</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 w-full overflow-y-auto bg-white custom-stripe-container min-h-[500px] p-4 sm:p-6">
-            {checkoutElement || (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        onClose={closeCheckout}
+        options={options}
+        checkoutElement={checkoutElement}
+      />
 
       {/* COMPARATIVO DE PLANOS */}
       <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
