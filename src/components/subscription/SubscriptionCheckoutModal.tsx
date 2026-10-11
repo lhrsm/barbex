@@ -1,7 +1,9 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
+import { useQuery } from "@tanstack/react-query";
+import { resolveTenantMetadata } from "@/lib/auth-identity.resolver";
 import {
   ShieldCheck,
   Check,
@@ -14,6 +16,8 @@ import {
   AlertTriangle,
   Loader2,
   Lock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CheckoutOptions } from "@/hooks/useStripeCheckout";
@@ -33,6 +37,7 @@ export function SubscriptionCheckoutModal({
 }: SubscriptionCheckoutModalProps) {
   const { user } = useAuth();
   const { tenantId: activeTenantId, businessName: activeBusinessName } = useTenant();
+  const [showBenefits, setShowBenefits] = useState(false);
 
   // Invalidação imediata e desmontagem de checkout obsoleto se houver logout ou troca de tenant/user
   useEffect(() => {
@@ -45,12 +50,21 @@ export function SubscriptionCheckoutModal({
         onClose();
       }
     }
-  }, [open, user, activeTenantId, options?.tenantId, options?.userId, onClose]);
+  }, [open, options, user, activeTenantId, onClose]);
 
-  // ---------------------------------------------------------------------------
-  // GENERIC MULTI-TENANT IDENTITY GUARD VALIDATION (FAIL-CLOSED)
-  // ---------------------------------------------------------------------------
-  const identityCheck = useMemo(() => {
+  // Consulta canônica de fallback caso o nome do estabelecimento ainda não esteja no hook
+  const { data: resolvedTenantMeta } = useQuery({
+    queryKey: ["checkout-tenant-meta", activeTenantId],
+    queryFn: async () => {
+      if (!activeTenantId) return null;
+      return resolveTenantMetadata(activeTenantId);
+    },
+    enabled: !!activeTenantId && !options?.tenantName && !activeBusinessName,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Guard de integridade de identidade genérico fail-closed
+  const identityCheck = useMemo((): { valid: boolean; reason?: string } => {
     if (!open || !options) return { valid: true };
 
     // 1. Authenticated user presence
@@ -113,19 +127,19 @@ export function SubscriptionCheckoutModal({
   const planName =
     options.planName || (planKey === "starter" ? "Starter" : planKey === "pro" ? "Pro" : "Elite");
   const price = options.price || (billingCycle === "year" ? "499,00" : "59,90");
-  const businessName = options.tenantName || activeBusinessName || "Meu Estabelecimento";
+  const businessName =
+    options.tenantName || activeBusinessName || resolvedTenantMeta?.name || "Meu Estabelecimento";
   const userEmail = options.customerEmail || user?.email || "";
 
-  // Authoritative features from plan data
+  // Benefícios oficiais padronizados com o catálogo oficial do Barbex
   const defaultFeatures =
     planKey === "starter"
       ? [
-          "Até 3 profissionais inclusos",
-          "Até 300 clientes cadastrados",
-          "Até 15 serviços no catálogo",
-          "Agendamento online e portal do cliente",
-          "3 automações essenciais de WhatsApp",
-          "Lembretes automáticos e notificações",
+          "Até 3 barbeiros",
+          "Até 300 clientes",
+          "Até 15 serviços",
+          "WhatsApp + Portal do cliente",
+          "3 automações essenciais",
         ]
       : planKey === "pro"
         ? [
@@ -152,7 +166,7 @@ export function SubscriptionCheckoutModal({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         className={cn(
-          "w-[98vw] sm:w-[94vw] max-w-[1100px] sm:max-w-[1100px] lg:max-w-[1100px] h-[96vh] md:h-[92vh] max-h-[96vh] md:max-h-[880px] p-0 sm:p-0 gap-0 overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl",
+          "w-[98vw] sm:w-[94vw] max-w-[1100px] h-[96vh] md:h-[92vh] max-h-[96vh] md:max-h-[880px] p-0 gap-0 overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl",
           "bg-[#0b0f17] border border-zinc-800 text-white shadow-2xl shadow-black/90",
           "flex flex-col focus:outline-none [&>button.absolute]:hidden",
         )}
@@ -174,58 +188,64 @@ export function SubscriptionCheckoutModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-8 w-8 rounded-lg border border-zinc-700/80 bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-800 grid place-items-center transition-colors focus:outline-none"
+            className="h-9 w-9 rounded-lg border border-zinc-700/80 bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-800 grid place-items-center transition-colors focus:outline-none"
             aria-label="Fechar checkout"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* CONTAINER PRINCIPAL RESPONSIVO: 2 COLUNAS NO DESKTOP, 1 COLUNA NO MOBILE */}
-        <div className="flex flex-col lg:flex-row flex-1 min-h-0 w-full overflow-hidden">
-          {/* ================================================================= */}
-          {/* PAINEL ESQUERDO: RESUMO DA ASSINATURA BARBEX (38% DESKTOP)       */}
-          {/* ================================================================= */}
-          <div className="w-full lg:w-[38%] shrink-0 bg-[#070a10] border-b lg:border-b-0 lg:border-r border-zinc-800/80 p-4 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto max-h-[35vh] lg:max-h-none">
-            <div className="space-y-4 sm:space-y-5">
+        {/* ================================================================= */}
+        {/* CORPO DO CHECKOUT:                                                */}
+        {/* NO MOBILE: Fluxo único com rolagem vertical unificada e suave     */}
+        {/* NO DESKTOP: 2 colunas lado a lado (38% Resumo | 62% Stripe)       */}
+        {/* ================================================================= */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0 w-full overscroll-contain">
+          {/* =============================================================== */}
+          {/* PAINEL ESQUERDO: RESUMO DA ASSINATURA BARBEX                    */}
+          {/* Mobile: Topo compacto integrado ao scroll unificado             */}
+          {/* Desktop: Coluna dedicada de 38% com scroll próprio              */}
+          {/* =============================================================== */}
+          <div className="w-full lg:w-[38%] shrink-0 bg-[#070a10] border-b lg:border-b-0 lg:border-r border-zinc-800/80 p-3.5 sm:p-5 lg:p-8 flex flex-col lg:justify-between lg:overflow-y-auto">
+            <div className="space-y-3 sm:space-y-4 lg:space-y-5">
               {/* Badge Superior */}
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Assinatura Barbex
                 </span>
-                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span className="text-[10px] sm:text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
                   Ambiente Seguro
                 </span>
               </div>
 
               {/* Título do Plano e Preço */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 lg:h-10 lg:w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 grid place-items-center shrink-0">
+                  <div className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 grid place-items-center shrink-0">
                     <PlanIcon className="h-4 w-4 lg:h-5 lg:w-5 text-emerald-400" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
                       Plano Selecionado
                     </span>
-                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+                    <h2 className="text-lg sm:text-xl lg:text-3xl font-black text-white tracking-tight">
                       Plano {planName}
                     </h2>
                   </div>
                 </div>
 
-                <div className="pt-1 sm:pt-2">
+                <div className="pt-0.5 sm:pt-1">
                   <div className="flex items-baseline gap-1">
                     <span className="text-xs font-bold text-zinc-400">R$</span>
-                    <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                    <span className="text-xl sm:text-2xl lg:text-4xl font-black text-white tracking-tight">
                       {price}
                     </span>
                     <span className="text-xs font-bold text-zinc-400 ml-1">
                       {billingCycle === "year" ? "/ ano" : "/ mês"}
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-emerald-400/90 mt-0.5">
+                  <p className="text-[11px] sm:text-xs font-semibold text-emerald-400/90 mt-0.5">
                     {billingCycle === "year"
                       ? "Renovação anual com desconto · Cancele quando quiser"
                       : "Renovação mensal · Cancele quando quiser"}
@@ -234,25 +254,59 @@ export function SubscriptionCheckoutModal({
               </div>
 
               {/* Card de Contexto do Estabelecimento e Titular */}
-              <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-3 sm:p-3.5 space-y-1.5 sm:space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-zinc-300">
+              <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-2.5 sm:p-3.5 space-y-1 sm:space-y-1.5 text-xs">
+                <div className="flex items-center gap-2 text-zinc-200">
                   <Store className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold truncate">{businessName}</span>
+                  <span className="font-semibold truncate text-[11px] sm:text-xs">
+                    {businessName}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-zinc-400">
                   <UserCheck className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span className="truncate">{userEmail}</span>
+                  <span className="truncate text-[11px] sm:text-xs">{userEmail}</span>
                 </div>
               </div>
 
-              {/* Lista de Benefícios Inclusos */}
-              <div className="space-y-2 sm:space-y-2.5">
-                <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400 block">
+              {/* Mobile: Botão expansível acessível para benefícios */}
+              <div className="lg:hidden">
+                <button
+                  type="button"
+                  aria-expanded={showBenefits}
+                  onClick={() => setShowBenefits((prev) => !prev)}
+                  className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:text-white transition-colors"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Check className="h-3 w-3 text-emerald-400" />
+                    {showBenefits
+                      ? "Ocultar benefícios do plano"
+                      : `Ver benefícios do plano (${features.length})`}
+                  </span>
+                  {showBenefits ? (
+                    <ChevronUp className="h-3.5 w-3.5 text-emerald-400" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+                  )}
+                </button>
+              </div>
+
+              {/* Lista de Benefícios Inclusos: */}
+              {/* No Desktop: SEMPRE visível (lg:block) */}
+              {/* No Mobile: visível apenas quando expandido */}
+              <div
+                className={cn(
+                  "space-y-2 sm:space-y-2.5",
+                  showBenefits ? "block" : "hidden lg:block",
+                )}
+              >
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-zinc-400 block">
                   O que está incluso:
                 </span>
                 <ul className="space-y-1.5 sm:space-y-2">
                   {features.map((feat, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-xs text-zinc-300">
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-[11px] sm:text-xs text-zinc-300"
+                    >
                       <div className="h-4 w-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 grid place-items-center shrink-0 mt-0.5">
                         <Check className="h-2.5 w-2.5 text-emerald-400" />
                       </div>
@@ -263,10 +317,10 @@ export function SubscriptionCheckoutModal({
               </div>
             </div>
 
-            {/* Rodapé de Segurança e Confiabilidade */}
-            <div className="mt-4 lg:mt-6 pt-4 lg:pt-5 border-t border-zinc-800/80 flex items-start gap-3 text-[11px] text-zinc-400">
-              <div className="h-7 w-7 lg:h-8 lg:w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0 text-emerald-400 mt-0.5">
-                <ShieldCheck className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+            {/* Rodapé de Segurança e Confiabilidade (Desktop apenas) */}
+            <div className="hidden lg:flex mt-6 pt-5 border-t border-zinc-800/80 items-start gap-3 text-[11px] text-zinc-400">
+              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0 text-emerald-400 mt-0.5">
+                <ShieldCheck className="h-4 w-4" />
               </div>
               <p className="leading-snug">
                 Pagamento processado com segurança pelo{" "}
@@ -276,10 +330,12 @@ export function SubscriptionCheckoutModal({
             </div>
           </div>
 
-          {/* ================================================================= */}
-          {/* PAINEL DIREITO: STRIPE EMBEDDED CHECKOUT (62% DESKTOP)            */}
-          {/* ================================================================= */}
-          <div className="flex-1 flex flex-col min-w-0 bg-[#0b0f17] overflow-hidden">
+          {/* =============================================================== */}
+          {/* PAINEL DIREITO: STRIPE EMBEDDED CHECKOUT                        */}
+          {/* Mobile: Integrado no fluxo vertical unificado                   */}
+          {/* Desktop: Coluna dedicada de 62% com scroll próprio              */}
+          {/* =============================================================== */}
+          <div className="flex-1 flex flex-col min-w-0 bg-[#0b0f17] lg:overflow-hidden">
             {/* Cabeçalho do Painel Direito com Fechar (Desktop apenas) */}
             <div className="hidden lg:flex px-7 py-4 border-b border-zinc-800/80 items-center justify-between shrink-0 bg-[#0b0f17]">
               <div>
@@ -302,7 +358,7 @@ export function SubscriptionCheckoutModal({
             </div>
 
             {/* Área de Conteúdo do Pagamento */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 space-y-4">
+            <div className="p-3 sm:p-4 lg:p-7 lg:flex-1 lg:overflow-y-auto space-y-3 sm:space-y-4">
               {/* CONDICIONAL: BLOQUEIO DE IDENTIDADE (FAIL-CLOSED) */}
               {!identityCheck.valid ? (
                 <div className="p-6 border border-destructive/30 bg-destructive/10 rounded-xl space-y-4 text-center my-auto">
@@ -331,9 +387,9 @@ export function SubscriptionCheckoutModal({
                 </div>
               ) : (
                 /* CONTAINER DO STRIPE: EXPANDIDO, SEM MARGENS EXCESSIVAS, ROLAGEM NATURAL */
-                <div className="w-full bg-white rounded-xl shadow-lg border border-zinc-200 p-3 sm:p-5">
+                <div className="w-full bg-white rounded-xl shadow-lg border border-zinc-200 p-2.5 sm:p-5">
                   {checkoutElement || (
-                    <div className="min-h-[400px] flex flex-col items-center justify-center gap-3 text-zinc-500">
+                    <div className="min-h-[380px] flex flex-col items-center justify-center gap-3 text-zinc-500">
                       <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                       <span className="text-xs font-semibold">
                         Carregando formulário seguro do Stripe...
@@ -342,12 +398,12 @@ export function SubscriptionCheckoutModal({
                   )}
                 </div>
               )}
-            </div>
 
-            {/* Rodapé Mobile Compacto de Segurança */}
-            <div className="lg:hidden px-4 py-2.5 bg-[#070a10] border-t border-zinc-800/80 flex items-center justify-center gap-1.5 text-[11px] text-zinc-400">
-              <Lock className="h-3 w-3 text-emerald-400" />
-              <span>Ambiente criptografado e certificado pelo Stripe</span>
+              {/* Rodapé Mobile Integrado no Fluxo (Não sobrepõe nem oculta botões) */}
+              <div className="lg:hidden py-2.5 flex items-center justify-center gap-1.5 text-[11px] text-zinc-400">
+                <Lock className="h-3 w-3 text-emerald-400 shrink-0" />
+                <span>Ambiente seguro processado pelo Stripe · Criptografia ponta a ponta</span>
+              </div>
             </div>
           </div>
         </div>
