@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./use-tenant";
+import { useAuth } from "./use-auth";
 import { startOfMonth, endOfMonth, differenceInDays } from "date-fns";
 import { resolveDelinquencyState, type DelinquencyResolution } from "@/lib/delinquency";
 
@@ -9,6 +10,7 @@ export type PlanType = "starter" | "pro" | "elite" | "free";
 export const PLAN_LIMITS = {
   free: {
     barbers: 1,
+    customers: 50,
     services: 5,
     products: 5,
     monthlyAppointments: 30,
@@ -19,6 +21,7 @@ export const PLAN_LIMITS = {
   },
   starter: {
     barbers: 3,
+    customers: 300,
     services: 15,
     products: Infinity,
     monthlyAppointments: Infinity,
@@ -28,6 +31,7 @@ export const PLAN_LIMITS = {
   },
   pro: {
     barbers: 10,
+    customers: Infinity,
     services: Infinity,
     products: Infinity,
     monthlyAppointments: Infinity,
@@ -37,6 +41,7 @@ export const PLAN_LIMITS = {
   },
   elite: {
     barbers: Infinity,
+    customers: Infinity,
     services: Infinity,
     products: Infinity,
     monthlyAppointments: Infinity,
@@ -48,63 +53,96 @@ export const PLAN_LIMITS = {
 
 export function usePlanLimits() {
   const { tenantId } = useTenant();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const {
     data,
     isLoading: queryLoading,
+    isError,
+    error,
     refetch,
   } = useQuery({
-    queryKey: ["plan-limits", tenantId],
+    queryKey: ["plan-limits", tenantId, userId],
     queryFn: async () => {
-      if (!tenantId) return null;
+      if (!tenantId && !userId) return null;
 
       const monthStart = startOfMonth(new Date()).toISOString();
       const monthEnd = endOfMonth(new Date()).toISOString();
 
+      const profilePromise = userId
+        ? supabase
+            .from("profiles")
+            .select("plan, effective_plan, selected_plan, created_at, trial_end, status")
+            .eq("id", userId)
+            .maybeSingle()
+        : supabase
+            .from("profiles")
+            .select("plan, effective_plan, selected_plan, created_at, trial_end, status")
+            .eq("tenant_id", tenantId!)
+            .maybeSingle();
+
+      const subPromise = userId
+        ? supabase
+            .from("subscriptions")
+            .select(
+              "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, plan_key, past_due_since, grace_ends_at, payment_failed_at",
+            )
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : supabase
+            .from("subscriptions")
+            .select(
+              "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, plan_key, past_due_since, grace_ends_at, payment_failed_at",
+            )
+            .eq("user_id", tenantId!)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
       const [profileRes, subRes, countsRes] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("plan, effective_plan, selected_plan, created_at, trial_end, status")
-          .eq("id", tenantId)
-          .maybeSingle(),
-        supabase
-          .from("subscriptions")
-          .select(
-            "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, past_due_since, grace_ends_at, payment_failed_at",
-          )
-          .eq("user_id", tenantId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+        profilePromise,
+        subPromise,
         Promise.allSettled([
           supabase
             .from("barbers")
             .select("*", { count: "exact", head: true })
-            .eq("tenant_id", tenantId)
+            .eq("tenant_id", tenantId || userId)
             .eq("active", true),
           supabase
             .from("services")
             .select("*", { count: "exact", head: true })
-            .eq("tenant_id", tenantId)
+            .eq("tenant_id", tenantId || userId)
             .eq("active", true),
           supabase
             .from("products")
             .select("*", { count: "exact", head: true })
-            .eq("user_id", tenantId)
+            .eq("user_id", userId || tenantId)
             .eq("active", true),
           supabase
             .from("appointments")
             .select("*", { count: "exact", head: true })
-            .eq("tenant_id", tenantId)
+            .eq("tenant_id", tenantId || userId)
             .neq("status", "cancelled")
             .gte("start_time", monthStart)
             .lte("start_time", monthEnd),
           supabase
             .from("whatsapp_instances")
             .select("*", { count: "exact", head: true })
-            .eq("tenant_id", tenantId),
+            .eq("tenant_id", tenantId || userId),
         ]),
       ]);
+
+      if (profileRes.error && profileRes.error.code !== "PGRST116") {
+        console.error("[usePlanLimits] Erro ao consultar perfil:", profileRes.error);
+        throw new Error("Erro ao consultar perfil: " + profileRes.error.message);
+      }
+      if (subRes.error && subRes.error.code !== "PGRST116") {
+        console.error("[usePlanLimits] Erro ao consultar assinatura:", subRes.error);
+        throw new Error("Erro ao consultar assinatura: " + subRes.error.message);
+      }
 
       let currentPlan: PlanType = "free";
       let trialEndStr: string | null = null;
@@ -152,17 +190,41 @@ export function usePlanLimits() {
         };
 
         const isSubscribed = ["active", "trialing", "past_due"].includes(subRes.data.status || "");
-        if (isSubscribed && subRes.data.price_id) {
-          const planFromPrice = subRes.data.price_id.split("_")[0] as PlanType;
-          if (["starter", "pro", "elite"].includes(planFromPrice)) {
-            currentPlan = planFromPrice;
+        if (isSubscribed) {
+          const planKey = (rawSub.plan_key as string)?.toLowerCase();
+          const priceId = (subRes.data.price_id as string)?.toLowerCase() || "";
+
+          if (planKey && ["starter", "pro", "elite"].includes(planKey)) {
+            currentPlan = planKey as PlanType;
+          } else if (priceId) {
+            if (
+              priceId.includes("starter") ||
+              priceId === "price_1tvtowpkg6q10ujrqerpgyko" ||
+              priceId === "price_1ujdzbpkg6q10ujrqrf3rhbs"
+            ) {
+              currentPlan = "starter";
+            } else if (
+              priceId.includes("pro") ||
+              priceId === "price_1tvtovpkg6q10ujre6zmgypk" ||
+              priceId === "price_1ujdacpkg6q10ujrwojctnmr"
+            ) {
+              currentPlan = "pro";
+            } else if (
+              priceId.includes("elite") ||
+              priceId === "price_1tmyg0pkg6q10ujrox8teehr" ||
+              priceId === "price_1ujdx4pkg6q10ujrzkytrhaj"
+            ) {
+              currentPlan = "elite";
+            }
           }
         }
       }
 
       const [barbRes, servRes, prodRes, appRes, whatsappRes] = countsRes;
 
-      const parseCount = (r: PromiseSettledResult<any>): { count: number; ok: boolean } => {
+      const parseCount = (
+        r: PromiseSettledResult<{ count?: number | null; error?: unknown } | null>,
+      ): { count: number; ok: boolean } => {
         if (r.status === "fulfilled" && !r.value?.error && r.value?.count != null) {
           return { count: Number(r.value.count), ok: true };
         }
@@ -233,7 +295,8 @@ export function usePlanLimits() {
   const hasPlanAccess = !delinquency.isGraceExpired && !!plan && plan !== "free";
 
   const hasActiveSubscription = isSubscriptionActive || hasPlanAccess;
-  const isTrialValid = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
+  const isTrialValid =
+    !hasActiveSubscription && (trialEndsAt ? new Date(trialEndsAt) > new Date() : false);
   const canAccess = hasActiveSubscription || isTrialValid;
   const isTrialExpired = !hasActiveSubscription && !!trialEndsAt && !isTrialValid;
   const isGraceExpired = delinquency.isGraceExpired;
@@ -268,6 +331,8 @@ export function usePlanLimits() {
     limits: limits || PLAN_LIMITS.free,
     usage,
     loading,
+    isError,
+    error,
     trialDaysRemaining,
     trialEndsAt,
     isTrial: isTrialValid,

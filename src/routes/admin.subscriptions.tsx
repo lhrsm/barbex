@@ -78,6 +78,7 @@ interface ProfileDbRow {
 interface PlanDbRow {
   id: string;
   name: string;
+  slug?: string | null;
   price_monthly: number;
   tier: number | null;
 }
@@ -85,7 +86,6 @@ interface PlanDbRow {
 interface SubscriptionDbRow {
   id: string;
   user_id: string | null;
-  barbershop_id?: string | null;
   stripe_subscription_id: string | null;
   stripe_customer_id: string | null;
   product_id?: string | null;
@@ -186,6 +186,15 @@ const formatCycleLabel = (cycle: string | null | undefined): string => {
   return cycle;
 };
 
+const planFromPriceId = (priceId: string | null | undefined): string | null => {
+  if (!priceId) return null;
+  const p = priceId.toLowerCase();
+  if (p.includes("1tvtowpkg6q10ujrqerpgyko") || p.includes("starter")) return "starter";
+  if (p.includes("1tvtpzpkg6q10ujrr4d34v6a") || p.includes("pro")) return "pro";
+  if (p.includes("1tvtqqpkg6q10ujrx7xmsyqm") || p.includes("elite")) return "elite";
+  return null;
+};
+
 function AdminSubscriptionsCommercialCenter() {
   const [search, setSearch] = useState("");
   const [selectedModality, setSelectedModality] = useState<string>("ALL");
@@ -230,11 +239,11 @@ function AdminSubscriptionsCommercialCenter() {
           .select(
             "id, business_name, responsible_name, display_name, email, phone, whatsapp_number, plan, trial_start, trial_end, is_internal_test_tenant",
           ),
-        supabase.from("plans").select("id, name, price_monthly, tier"),
+        supabase.from("plans").select("id, name, slug, price_monthly, tier"),
         supabase
           .from("subscriptions")
           .select(
-            "id, user_id, barbershop_id, stripe_subscription_id, stripe_customer_id, status, billing_cycle, plan_key, environment, current_period_start, current_period_end, cancel_at_period_end, past_due_since, grace_ends_at, payment_failed_at, is_internal_test_tenant, created_at, updated_at",
+            "id, user_id, stripe_subscription_id, stripe_customer_id, status, billing_cycle, plan_key, price_id, environment, current_period_start, current_period_end, cancel_at_period_end, past_due_since, grace_ends_at, payment_failed_at, is_internal_test_tenant, created_at, updated_at",
           ),
         supabase
           .from("tenant_addons")
@@ -244,7 +253,7 @@ function AdminSubscriptionsCommercialCenter() {
       ]);
 
       if (bErr) throw new Error("Erro ao consultar barbearias: " + bErr.message);
-      if (sErr) throw new Error("Erro ao consultar assinaturas Stripe: " + sErr.message);
+      if (sErr) console.warn("[CommercialCenter] Aviso ao consultar assinaturas Stripe:", sErr);
       if (pErr) console.warn("[CommercialCenter] Aviso ao consultar perfis:", pErr);
       if (plErr) console.warn("[CommercialCenter] Aviso ao consultar planos:", plErr);
       if (aErr) console.warn("[CommercialCenter] Aviso ao consultar tenant_addons:", aErr);
@@ -253,7 +262,11 @@ function AdminSubscriptionsCommercialCenter() {
       ((profiles || []) as unknown as ProfileDbRow[]).forEach((p) => profileMap.set(p.id, p));
 
       const planMap = new Map<string, PlanDbRow>();
-      ((plans || []) as unknown as PlanDbRow[]).forEach((pl) => planMap.set(pl.id, pl));
+      ((plans || []) as unknown as PlanDbRow[]).forEach((pl) => {
+        planMap.set(pl.id, pl);
+        if (pl.slug) planMap.set(pl.slug.toLowerCase(), pl);
+        if (pl.name) planMap.set(pl.name.toLowerCase(), pl);
+      });
 
       const subsList = (subs || []) as unknown as SubscriptionDbRow[];
       const addonsList = (tenantAddons || []) as unknown as TenantAddonDbRow[];
@@ -268,17 +281,21 @@ function AdminSubscriptionsCommercialCenter() {
         const profilePlanName = owner?.plan ? owner.plan.trim() : null;
 
         // Subscrições deste tenant
-        const tenantSubs = subsList.filter(
-          (s) =>
-            (s.barbershop_id && s.barbershop_id === b.id) ||
-            s.user_id === b.owner_id ||
-            s.user_id === b.id,
-        );
+        const tenantSubs = subsList.filter((s) => s.user_id === b.owner_id || s.user_id === b.id);
 
         // Subscrição ativa canônica (se houver)
         const activeSub =
           tenantSubs.find((s) => s.status === "active" || s.status === "past_due") ||
           tenantSubs[0] ||
+          null;
+
+        const subPlanKey =
+          activeSub?.plan_key?.toLowerCase() || planFromPriceId(activeSub?.price_id) || null;
+
+        const resolvedCommercialPlan =
+          assignedPlan ||
+          (subPlanKey ? planMap.get(subPlanKey) : null) ||
+          (profilePlanName ? planMap.get(profilePlanName.toLowerCase()) : null) ||
           null;
 
         // Classificação Comercial Canônica
@@ -291,7 +308,7 @@ function AdminSubscriptionsCommercialCenter() {
           created_at: b.created_at,
           ownerProfile: owner,
           assignedPlan,
-          profilePlan: profilePlanName ? planMap.get(profilePlanName.toLowerCase()) : null,
+          profilePlan: resolvedCommercialPlan,
           subscriptions: tenantSubs,
         });
 
@@ -311,7 +328,9 @@ function AdminSubscriptionsCommercialCenter() {
         let basePrice: number | null = null;
         if (classification.modality === "ASSINATURA") {
           basePrice =
-            assignedPlan?.price_monthly ?? (activeSub?.plan_key === "starter" ? 59.9 : null);
+            classification.contractedMonthlyAmount > 0
+              ? classification.contractedMonthlyAmount
+              : (resolvedCommercialPlan?.price_monthly ?? (subPlanKey === "starter" ? 59.9 : null));
         } else if (classification.modality === "FREE") {
           basePrice = 0;
         }
@@ -352,6 +371,7 @@ function AdminSubscriptionsCommercialCenter() {
           subscriptionStatus: activeSub?.status || null,
           billingCycle: activeSub?.billing_cycle || null,
           planKey:
+            subPlanKey ||
             activeSub?.plan_key ||
             classification.commercialPlanName ||
             classification.technicalPlanName ||
