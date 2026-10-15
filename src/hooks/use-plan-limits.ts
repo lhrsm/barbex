@@ -298,9 +298,20 @@ export function usePlanLimits() {
   const isTrialValid =
     !hasActiveSubscription && (trialEndsAt ? new Date(trialEndsAt) > new Date() : false);
   const canAccess = hasActiveSubscription || isTrialValid;
-  const isTrialExpired = !hasActiveSubscription && !!trialEndsAt && !isTrialValid;
+  const isSubscriptionCanceled = subStatus === "canceled";
+  // An ex-subscriber whose paid subscription has terminated reverts to the Free plan
+  // and is not blocked by initial trial expiration.
+  const isTrialExpired =
+    !hasActiveSubscription && !isSubscriptionCanceled && !!trialEndsAt && !isTrialValid;
   const isGraceExpired = delinquency.isGraceExpired;
   const isExpired = !canAccess;
+
+  const isScheduledForCancellation = Boolean(
+    subscription?.cancel_at_period_end && subStatus === "active",
+  );
+  const scheduledCancellationDate = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
+    : null;
 
   const checkLimit = (type: keyof typeof usage) => {
     if (!limits) return false;
@@ -341,6 +352,8 @@ export function usePlanLimits() {
     isGraceExpired,
     delinquency,
     isExpired,
+    isScheduledForCancellation,
+    scheduledCancellationDate,
     subscription,
     checkLimit,
     refresh,

@@ -280,8 +280,10 @@ function AdminSubscriptionsCommercialCenter() {
         const assignedPlan = b.plan_id ? planMap.get(b.plan_id) : null;
         const profilePlanName = owner?.plan ? owner.plan.trim() : null;
 
-        // Subscrições deste tenant
-        const tenantSubs = subsList.filter((s) => s.user_id === b.owner_id || s.user_id === b.id);
+        // Subscrições deste tenant (resolução canônica por owner_id do estabelecimento)
+        const tenantSubs = subsList.filter((s) =>
+          b.owner_id ? s.user_id === b.owner_id : s.user_id === b.id,
+        );
 
         // Subscrição ativa canônica (se houver)
         const activeSub =

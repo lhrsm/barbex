@@ -37,7 +37,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { SubscriptionCheckoutModal } from "@/components/subscription/SubscriptionCheckoutModal";
 import { useTenant } from "@/hooks/use-tenant";
-import { createPortalSession } from "@/lib/backend/edge/stripe";
+import {
+  createPortalSession,
+  cancelSubscriptionPeriodEnd,
+  reactivateSubscription,
+  previewSubscriptionCancellation,
+  requestCancellationWithRefund,
+  type SubscriptionCancellationPreviewResult,
+} from "@/lib/backend/edge/stripe";
+import { Badge } from "@/components/ui/badge";
 import { YourAddons } from "@/components/subscription/YourAddons";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
@@ -123,6 +131,22 @@ function SubscriptionComponent() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [downgradeTarget, setDowngradeTarget] = useState<PlanType | null>(null);
   const [billingCycle, setBillingCycle] = useState<"month" | "year">("month");
+
+  // Cancellation and reactivation lifecycle states
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelingSubscription, setCancelingSubscription] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelFeedback, setCancelFeedback] = useState("");
+  const [cancelPreview, setCancelPreview] = useState<SubscriptionCancellationPreviewResult | null>(
+    null,
+  );
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [selectedCancelMode, setSelectedCancelMode] = useState<
+    "cooling_off" | "proportional" | "period_end"
+  >("period_end");
+
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+  const [reversingCancellation, setReversingCancellation] = useState(false);
 
   const planRank: Record<string, number> = {
     free: 0,
@@ -233,6 +257,168 @@ function SubscriptionComponent() {
       toast.error(e?.message || "Não foi possível abrir o portal.");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleOpenCancelDialog = async () => {
+    setCancelDialogOpen(true);
+    setLoadingPreview(true);
+    try {
+      const {
+        data: { session: authSession },
+      } = await supabase.auth.getSession();
+      const token = authSession?.access_token;
+      if (!token) throw new Error("Você precisa estar logado.");
+
+      const res = await previewSubscriptionCancellation(
+        { environment: getStripeEnvironment() },
+        { authToken: token },
+      );
+
+      if (res.ok) {
+        setCancelPreview(res);
+        if (res.self_service_allowed !== false && res.cooling_off?.eligible) {
+          setSelectedCancelMode("cooling_off");
+        } else if (res.self_service_allowed !== false && res.proportional?.eligible) {
+          setSelectedCancelMode("proportional");
+        } else {
+          setSelectedCancelMode("period_end");
+        }
+      } else {
+        toast.error(res.error || "Não foi possível carregar a prévia de reembolso.");
+      }
+    } catch (e: any) {
+      console.warn("Could not load cancellation preview:", e);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const handleConfirmCancellation = async () => {
+    if (cancelingSubscription) return;
+    setCancelingSubscription(true);
+    try {
+      const {
+        data: { session: authSession },
+      } = await supabase.auth.getSession();
+      const token = authSession?.access_token;
+      if (!token) throw new Error("Você precisa estar logado.");
+
+      if (selectedCancelMode === "cooling_off" || selectedCancelMode === "proportional") {
+        const expectedRefundCents =
+          selectedCancelMode === "cooling_off"
+            ? cancelPreview?.cooling_off?.estimated_refund_cents || 0
+            : cancelPreview?.proportional?.estimated_refund_cents || 0;
+
+        const res = await requestCancellationWithRefund(
+          {
+            mode: selectedCancelMode,
+            expectedRefundCents,
+            reason: cancelReason || "Não informado",
+            feedback: cancelFeedback || undefined,
+            environment: getStripeEnvironment(),
+          },
+          { authToken: token },
+        );
+
+        if (!res.ok) {
+          throw new Error(res.error || "Não foi possível processar o estorno e cancelamento.");
+        }
+
+        if (res.requires_review) {
+          toast.warning(
+            res.message ||
+              "Estorno financeiro enviado. A conciliação do cancelamento está em acompanhamento pelo suporte.",
+          );
+        } else {
+          toast.success(
+            res.message ||
+              "Assinatura cancelada com sucesso e estorno enviado para o provedor de pagamentos.",
+          );
+        }
+      } else {
+        const res = await cancelSubscriptionPeriodEnd(
+          {
+            reason: cancelReason || "Não informado",
+            feedback: cancelFeedback || undefined,
+            environment: getStripeEnvironment(),
+          },
+          { authToken: token },
+        );
+
+        if (!res.ok) {
+          throw new Error(res.error || "Não foi possível agendar o cancelamento.");
+        }
+
+        toast.success(
+          res.message || "Cancelamento agendado com sucesso para o final do ciclo atual.",
+        );
+      }
+
+      setCancelDialogOpen(false);
+      setCancelReason("");
+      setCancelFeedback("");
+      setCancelPreview(null);
+      await refresh();
+    } catch (err: unknown) {
+      console.error("[Subscription] handleConfirmCancellation error:", err);
+      const msg = err instanceof Error ? err.message : "Erro ao processar cancelamento.";
+      if (msg.includes("mudou de R$") || msg.includes("confirme o novo valor")) {
+        toast.info(
+          "O valor do estorno foi atualizado com base no tempo decorrido. Por favor, revise e confirme o novo valor.",
+        );
+        // P2-01: Auto-refresh preview on value drift
+        try {
+          const {
+            data: { session: authSession },
+          } = await supabase.auth.getSession();
+          if (authSession?.access_token) {
+            const updatedPreview = await previewSubscriptionCancellation(
+              { environment: getStripeEnvironment() },
+              { authToken: authSession.access_token },
+            );
+            if (updatedPreview.ok) {
+              setCancelPreview(updatedPreview);
+            }
+          }
+        } catch (_refreshErr) {}
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setCancelingSubscription(false);
+    }
+  };
+
+  const handleConfirmReactivation = async () => {
+    if (reversingCancellation) return;
+    setReversingCancellation(true);
+    try {
+      const {
+        data: { session: authSession },
+      } = await supabase.auth.getSession();
+      const token = authSession?.access_token;
+      if (!token) throw new Error("Você precisa estar logado.");
+
+      const res = await reactivateSubscription(
+        {
+          environment: getStripeEnvironment(),
+        },
+        { authToken: token },
+      );
+
+      if (!res.ok) {
+        throw new Error(res.error || "Não foi possível reativar a assinatura.");
+      }
+
+      toast.success(res.message || "Assinatura mantida com sucesso! Renovação automática ativa.");
+      setReactivateDialogOpen(false);
+      await refresh();
+    } catch (err: unknown) {
+      console.error("[Subscription] handleConfirmReactivation error:", err);
+      toast.error(err instanceof Error ? err.message : "Erro ao reativar assinatura.");
+    } finally {
+      setReversingCancellation(false);
     }
   };
 
@@ -354,19 +540,48 @@ function SubscriptionComponent() {
                 <Scale className="w-3.5 h-3.5 mr-1.5" /> Ver Comparativo
               </Button>
               {plan !== "free" && !isInternalTesting && (
-                <Button
-                  size="sm"
-                  onClick={handleManageSubscription}
-                  disabled={updating}
-                  className="w-full sm:w-auto shrink-0 bg-[#0b0f17] border border-zinc-700 text-white hover:text-white hover:border-emerald-500/50 hover:bg-emerald-500/10 font-bold text-xs h-11 sm:h-9 rounded-[14px] sm:rounded-md px-3 transition-all"
-                >
-                  {updating ? (
-                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  ) : (
-                    <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleManageSubscription}
+                    disabled={updating}
+                    className="w-full sm:w-auto shrink-0 bg-[#0b0f17] border border-zinc-700 text-white hover:text-white hover:border-emerald-500/50 hover:bg-emerald-500/10 font-bold text-xs h-11 sm:h-9 rounded-[14px] sm:rounded-md px-3 transition-all"
+                  >
+                    {updating ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                    )}
+                    Gerenciar Assinatura
+                  </Button>
+                  {subscription?.status === "active" && !subscription?.cancel_at_period_end && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleOpenCancelDialog}
+                      disabled={updating || cancelingSubscription}
+                      className="w-full sm:w-auto shrink-0 border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/50 font-bold text-xs h-11 sm:h-9 rounded-[14px] sm:rounded-md px-3 transition-all"
+                    >
+                      Cancelar assinatura
+                    </Button>
                   )}
-                  Gerenciar Assinatura
-                </Button>
+                  {subscription?.status === "active" && subscription?.cancel_at_period_end && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setReactivateDialogOpen(true)}
+                      disabled={updating || reversingCancellation}
+                      className="w-full sm:w-auto shrink-0 border-amber-500/40 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 hover:border-amber-500/60 font-bold text-xs h-11 sm:h-9 rounded-[14px] sm:rounded-md px-3 transition-all"
+                    >
+                      {reversingCancellation ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                      )}
+                      Desistir do cancelamento
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </header>
@@ -419,6 +634,47 @@ function SubscriptionComponent() {
                 <RefreshCw className={cn("w-4 h-4 mr-2", refreshingStatus && "animate-spin")} />
                 Atualizar status
               </Button>
+            </StatusBanner>
+          )}
+
+          {subscription?.status === "active" && subscription?.cancel_at_period_end && (
+            <StatusBanner
+              tone="amber"
+              icon={Clock}
+              title="Cancelamento Agendado"
+              desc={`Sua assinatura continuará ativa até ${
+                subscription.current_period_end
+                  ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
+                  : "o término do ciclo atual"
+              }. Após esse período, o acesso aos recursos contratados será encerrado e o plano retornará para o Grátis. Nenhuma renovação automática será realizada.`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={reversingCancellation}
+                  onClick={() => setReactivateDialogOpen(true)}
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs"
+                >
+                  {reversingCancellation ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  Desistir do cancelamento
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={refreshingStatus}
+                  onClick={handleManualRefresh}
+                  className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white text-xs"
+                >
+                  <RefreshCw
+                    className={cn("w-3.5 h-3.5 mr-1.5", refreshingStatus && "animate-spin")}
+                  />
+                  Atualizar status
+                </Button>
+              </div>
             </StatusBanner>
           )}
 
@@ -550,30 +806,35 @@ function SubscriptionComponent() {
               <div
                 className={cn(
                   "w-full sm:w-auto h-[34px] sm:h-auto px-3 py-1.5 rounded-xl sm:rounded-lg border text-[10px] font-black uppercase tracking-widest grid place-items-center text-center",
-                  subscription?.status === "active" || (!subscription?.status && plan !== "free")
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                    : subscription?.status === "trialing"
-                      ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
-                      : subscription?.status === "past_due"
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                        : subscription?.status === "unpaid"
-                          ? "bg-red-500/10 text-red-400 border-red-500/30"
-                          : "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
+                  subscription?.status === "active" && subscription?.cancel_at_period_end
+                    ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    : subscription?.status === "active" ||
+                        (!subscription?.status && plan !== "free")
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      : subscription?.status === "trialing"
+                        ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                        : subscription?.status === "past_due"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                          : subscription?.status === "unpaid"
+                            ? "bg-red-500/10 text-red-400 border-red-500/30"
+                            : "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
                 )}
               >
-                {subscription?.status === "active"
-                  ? "Assinatura Ativa"
-                  : subscription?.status === "trialing"
-                    ? "Período de Teste"
-                    : subscription?.status === "past_due"
-                      ? "Pagamento Pendente"
-                      : subscription?.status === "unpaid"
-                        ? "Inadimplente"
-                        : subscription?.status === "canceled"
-                          ? "Cancelada"
-                          : plan === "free"
-                            ? "Plano Gratuito"
-                            : "Assinatura Ativa"}
+                {subscription?.status === "active" && subscription?.cancel_at_period_end
+                  ? "Cancelamento Agendado"
+                  : subscription?.status === "active"
+                    ? "Assinatura Ativa"
+                    : subscription?.status === "trialing"
+                      ? "Período de Teste"
+                      : subscription?.status === "past_due"
+                        ? "Pagamento Pendente"
+                        : subscription?.status === "unpaid"
+                          ? "Inadimplente"
+                          : subscription?.status === "canceled"
+                            ? "Cancelada"
+                            : plan === "free"
+                              ? "Plano Gratuito"
+                              : "Assinatura Ativa"}
               </div>
             </div>
 
@@ -1090,7 +1351,7 @@ function SubscriptionComponent() {
                     <li>Financeiro completo, comissões e fechamentos</li>
                     <li>Automações de WhatsApp e campanhas</li>
                     <li>Programa de fidelidade</li>
-                    <li>Múltiplos profissionais (limite de 1)</li>
+                    <li>Múltiplos profissionais (limite de 3 profissionais)</li>
                     <li>Relatórios avançados</li>
                   </>
                 )}
@@ -1141,6 +1402,321 @@ function SubscriptionComponent() {
               className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
             >
               Confirmar Downgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* MODAL DE CONFIRMAÇÃO DE CANCELAMENTO E REEMBOLSO */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="bg-[#0b0f17] border-red-500/30 text-white max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
+              <AlertTriangle className="h-5 w-5 text-red-400" />
+              Cancelar sua assinatura
+            </DialogTitle>
+          </DialogHeader>
+
+          {loadingPreview ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3 text-zinc-400">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+              <p className="text-xs font-medium">Calculando opções de estorno e elegibilidade...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {cancelPreview?.self_service_allowed === false && (
+                <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs text-amber-300 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-semibold block text-white">
+                      Estorno por autoatendimento não disponível
+                    </span>
+                    <p className="text-zinc-300">
+                      {cancelPreview.self_service_disabled_reason ||
+                        "O cancelamento com estorno automático está em liberação gradual ou requer atendimento assistido."}
+                    </p>
+                    <p className="text-[11px] text-amber-400/90 font-medium">
+                      Você pode cancelar a renovação ao término do período abaixo (sem novas
+                      cobranças) ou contatar o suporte para estorno financeiro.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-zinc-400">
+                Selecione uma das modalidades disponíveis abaixo de acordo com a política comercial
+                e o Código de Defesa do Consumidor:
+              </p>
+
+              {/* OPÇÕES DISPONÍVEIS */}
+              <div className="space-y-3">
+                {/* MODALIDADE A: DIREITO DE ARREPENDIMENTO (CDC ART. 49) */}
+                {cancelPreview?.self_service_allowed !== false &&
+                  cancelPreview?.cooling_off?.eligible && (
+                    <div
+                      onClick={() => setSelectedCancelMode("cooling_off")}
+                      className={cn(
+                        "p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col gap-2",
+                        selectedCancelMode === "cooling_off"
+                          ? "border-emerald-500 bg-emerald-950/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                          : "border-zinc-800 bg-[#05070d] hover:border-zinc-700",
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="cancel_mode"
+                            checked={selectedCancelMode === "cooling_off"}
+                            onChange={() => setSelectedCancelMode("cooling_off")}
+                            className="text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <span className="font-bold text-sm text-white">
+                            Direito de Arrependimento (CDC Art. 49)
+                          </span>
+                        </div>
+                        <Badge variant="success" className="text-[10px] font-bold">
+                          100% de Reembolso
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-zinc-400 pl-5">
+                        Você está dentro dos primeiros 7 dias da contratação. Receba devolução
+                        integral de{" "}
+                        <strong className="text-emerald-400">
+                          R${" "}
+                          {((cancelPreview.cooling_off.estimated_refund_cents || 0) / 100)
+                            .toFixed(2)
+                            .replace(".", ",")}
+                        </strong>
+                        . O acesso pago será encerrado imediatamente.
+                      </p>
+                    </div>
+                  )}
+
+                {/* MODALIDADE B: CANCELAMENTO IMEDIATO PROPORCIONAL */}
+                {cancelPreview?.self_service_allowed !== false &&
+                  cancelPreview?.proportional?.eligible && (
+                    <div
+                      onClick={() => setSelectedCancelMode("proportional")}
+                      className={cn(
+                        "p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col gap-2",
+                        selectedCancelMode === "proportional"
+                          ? "border-sky-500 bg-sky-950/20 shadow-[0_0_15px_rgba(14,165,233,0.15)]"
+                          : "border-zinc-800 bg-[#05070d] hover:border-zinc-700",
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="cancel_mode"
+                            checked={selectedCancelMode === "proportional"}
+                            onChange={() => setSelectedCancelMode("proportional")}
+                            className="text-sky-500 focus:ring-sky-500"
+                          />
+                          <span className="font-bold text-sm text-white">
+                            Cancelar agora com reembolso proporcional
+                          </span>
+                        </div>
+                        <Badge variant="info" className="text-[10px] font-bold">
+                          Pro-rata restante
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-zinc-400 pl-5">
+                        Devolução estimada de{" "}
+                        <strong className="text-sky-400">
+                          R${" "}
+                          {((cancelPreview.proportional.estimated_refund_cents || 0) / 100)
+                            .toFixed(2)
+                            .replace(".", ",")}
+                        </strong>{" "}
+                        referente aos dias não utilizados deste ciclo. O acesso aos recursos pagos
+                        será encerrado imediatamente.
+                      </p>
+                    </div>
+                  )}
+
+                {/* MODALIDADE C: CANCELAR AO TÉRMINO DO CICLO ATUAL */}
+                <div
+                  onClick={() => setSelectedCancelMode("period_end")}
+                  className={cn(
+                    "p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col gap-2",
+                    selectedCancelMode === "period_end"
+                      ? "border-amber-500 bg-amber-950/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+                      : "border-zinc-800 bg-[#05070d] hover:border-zinc-700",
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="cancel_mode"
+                        checked={selectedCancelMode === "period_end"}
+                        onChange={() => setSelectedCancelMode("period_end")}
+                        className="text-amber-500 focus:ring-amber-500"
+                      />
+                      <span className="font-bold text-sm text-white">
+                        Cancelar apenas a próxima renovação
+                      </span>
+                    </div>
+                    <Badge variant="warning" className="text-[10px] font-bold">
+                      Sem Reembolso
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-zinc-400 pl-5">
+                    Você continuará com acesso total aos recursos do plano até{" "}
+                    <strong className="text-amber-400">
+                      {subscription?.current_period_end
+                        ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
+                        : "o final do ciclo"}
+                    </strong>
+                    . Não haverá nenhuma nova cobrança ou renovação automática.
+                  </p>
+                </div>
+              </div>
+
+              {/* RESUMO DA MODALIDADE SELECIONADA */}
+              <div className="rounded-xl border border-zinc-800 bg-[#05070d] p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">Modalidade Selecionada:</span>
+                  <span className="font-bold text-white">
+                    {selectedCancelMode === "cooling_off"
+                      ? "Direito de Arrependimento (Integral)"
+                      : selectedCancelMode === "proportional"
+                        ? "Cancelamento Imediato Proporcional"
+                        : "Cancelamento ao Fim do Período"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">Valor Estimado do Estorno:</span>
+                  <span className="font-bold text-emerald-400">
+                    {selectedCancelMode === "cooling_off"
+                      ? `R$ ${((cancelPreview?.cooling_off?.estimated_refund_cents || 0) / 100).toFixed(2).replace(".", ",")}`
+                      : selectedCancelMode === "proportional"
+                        ? `R$ ${((cancelPreview?.proportional?.estimated_refund_cents || 0) / 100).toFixed(2).replace(".", ",")}`
+                        : "R$ 0,00"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">Término do Acesso Pago:</span>
+                  <span className="font-bold text-amber-400">
+                    {selectedCancelMode === "period_end"
+                      ? subscription?.current_period_end
+                        ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
+                        : "Final do ciclo vigente"
+                      : "Imediato (ao confirmar)"}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-zinc-800 text-[11px] text-zinc-400">
+                  🔒 <strong className="text-zinc-300">Dados seguros:</strong> Clientes,
+                  agendamentos e profissionais cadastrados continuarão preservados no seu
+                  estabelecimento.
+                </div>
+              </div>
+
+              {/* MOTIVO OPCIONAL */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">
+                  Qual o motivo do cancelamento? (opcional)
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full bg-[#05070d] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500/50"
+                >
+                  <option value="">Selecione um motivo...</option>
+                  <option value="arrependimento_legal">Arrependimento da contratação</option>
+                  <option value="custo">Custo da mensalidade</option>
+                  <option value="pouco_uso">Pouco uso dos recursos</option>
+                  <option value="migracao">Migrando para outro sistema</option>
+                  <option value="fechou_estabelecimento">Fechamento do estabelecimento</option>
+                  <option value="dificuldade_uso">Dificuldade de configuração/uso</option>
+                  <option value="outro">Outro motivo</option>
+                </select>
+              </div>
+
+              {/* FEEDBACK ADICIONAL OPCIONAL */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-zinc-300">
+                  Como podemos melhorar? (opcional)
+                </label>
+                <textarea
+                  value={cancelFeedback}
+                  onChange={(e) => setCancelFeedback(e.target.value)}
+                  placeholder="Conte-nos o que faltou ou como poderíamos te atender melhor..."
+                  rows={2}
+                  className="w-full bg-[#05070d] border border-zinc-800 rounded-lg p-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/50 resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-zinc-800">
+            <Button
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+              disabled={cancelingSubscription}
+              className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800 text-xs"
+            >
+              Manter assinatura
+            </Button>
+            <Button
+              onClick={handleConfirmCancellation}
+              disabled={cancelingSubscription || loadingPreview}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs"
+            >
+              {cancelingSubscription ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Processando cancelamento...
+                </>
+              ) : (
+                "Confirmar cancelamento"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL DE CONFIRMAÇÃO DE REVERSÃO / DESISTÊNCIA */}
+      <AlertDialog open={reactivateDialogOpen} onOpenChange={setReactivateDialogOpen}>
+        <AlertDialogContent className="bg-[#0b0f17] border-emerald-500/30 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-white">
+              <RefreshCw className="h-5 w-5 text-emerald-400" />
+              Manter sua assinatura ativa?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400 space-y-2">
+              <span className="block">
+                Ao desistir do cancelamento, o agendamento de término será removido e sua assinatura
+                continuará normalmente com renovação automática no final do ciclo.
+              </span>
+              <span className="block text-xs text-emerald-400/90 font-medium">
+                Você manterá acesso contínuo a todos os recursos do plano {plan?.toUpperCase()} sem
+                interrupções.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={reversingCancellation}
+              className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800 hover:text-white text-xs"
+            >
+              Voltar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmReactivation}
+              disabled={reversingCancellation}
+              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+            >
+              {reversingCancellation ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Revertendo...
+                </>
+              ) : (
+                "Confirmar e Manter Assinatura"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

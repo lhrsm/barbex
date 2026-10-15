@@ -322,7 +322,7 @@ Deno.serve(async (req: Request) => {
         const periodStart = planItem?.current_period_start || object.current_period_start;
         const periodEnd = planItem?.current_period_end || object.current_period_end;
 
-        await adminClient.rpc("sync_subscription_atomic", {
+        const { data: syncResult, error: syncErr } = await adminClient.rpc("sync_subscription_atomic", {
           p_user_id: userId,
           p_stripe_subscription_id: object.id,
           p_stripe_customer_id: object.customer,
@@ -335,6 +335,38 @@ Deno.serve(async (req: Request) => {
           p_environment: environment,
           p_event_timestamp: event.created ? new Date(event.created * 1000).toISOString() : null
         });
+
+        if (syncErr) {
+          logger.error("Error executing sync_subscription_atomic RPC", {
+            error: syncErr.message,
+            eventId,
+            userId,
+            subscriptionId: object.id,
+          });
+          throw new Error(`sync_subscription_atomic failed: ${syncErr.message}`);
+        }
+
+        if (syncResult && typeof syncResult === "object" && syncResult.ok === false) {
+          logger.error("sync_subscription_atomic returned ok: false", {
+            error: syncResult.error,
+            eventId,
+            userId,
+            subscriptionId: object.id,
+          });
+          throw new Error(`sync_subscription_atomic returned error: ${syncResult.error}`);
+        }
+
+        if (syncResult?.ignored_out_of_order) {
+          logger.info("Out-of-order subscription sync ignored", {
+            eventId,
+            eventCreated: event.created,
+            subscriptionId: object.id,
+          });
+          return new Response(JSON.stringify({ received: true, ignored_out_of_order: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
 
         // Note: Canonical profile.plan entitlement is atomically maintained by sync_subscription_atomic
         // inside the transactional advisory lock based on all active subscriptions of user_id.
@@ -457,7 +489,7 @@ Deno.serve(async (req: Request) => {
       });
 
       if (paymentIntentId) {
-        // Reconcile stripe_refund_operations ledger idempotently
+        // P1-03: Reconcile stripe_refund_operations ledger idempotently across all transient states
         // Does NOT modify subscription status or profile plan (CANCEL != REFUND)
         try {
           await adminClient
@@ -469,7 +501,7 @@ Deno.serve(async (req: Request) => {
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_payment_intent_id", paymentIntentId)
-            .eq("status", "pending");
+            .in("status", ["pending", "processing", "failed", "refund_pending", "requires_review"]);
         } catch (refundSyncErr) {
           logger.warn("Warning reconciling stripe_refund_operations:", refundSyncErr);
         }

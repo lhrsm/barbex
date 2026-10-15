@@ -28,6 +28,93 @@ export interface CreatePortalSessionInput {
   returnUrl?: string;
 }
 
+export interface CancelSubscriptionInput {
+  reason?: string;
+  feedback?: string;
+  environment?: StripeEnvironment;
+}
+
+export interface ReactivateSubscriptionInput {
+  environment?: StripeEnvironment;
+}
+
+export interface CancelSubscriptionResult {
+  success?: boolean;
+  subscription_status?: string;
+  cancel_at_period_end?: boolean;
+  current_period_end?: string | null;
+  message?: string;
+}
+
+export interface ReactivateSubscriptionResult {
+  success?: boolean;
+  subscription_status?: string;
+  cancel_at_period_end?: boolean;
+  current_period_end?: string | null;
+  message?: string;
+}
+
+export interface CancellationOptionDetail {
+  eligible: boolean;
+  mode: "cooling_off" | "proportional" | "period_end";
+  estimated_refund_cents: number;
+  effective_end: "immediate" | "period_end";
+  requires_confirmation?: boolean;
+  days_remaining_in_window?: number;
+  remaining_seconds?: number;
+  total_cycle_seconds?: number;
+  current_period_end?: string | null;
+  ineligibility_reason?: string;
+}
+
+export interface SubscriptionCancellationPreviewResult {
+  ok: boolean;
+  subscription_id: string;
+  status: string;
+  cancel_at_period_end: boolean;
+  currency: string;
+  paid_amount_cents: number;
+  already_refunded_cents: number;
+  remaining_refundable_cents: number;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  sub_created_at: string | null;
+  has_active_dispute?: boolean;
+  cooling_off: CancellationOptionDetail;
+  proportional: CancellationOptionDetail;
+  period_end: CancellationOptionDetail;
+  self_service_allowed?: boolean;
+  self_service_disabled_reason?: string;
+  max_self_service_refund_cents?: number;
+  is_annual_cycle?: boolean;
+}
+
+export interface PreviewSubscriptionCancellationInput {
+  environment?: StripeEnvironment;
+}
+
+export interface RequestCancellationWithRefundInput {
+  mode: "cooling_off" | "proportional";
+  expectedRefundCents: number;
+  reason?: string;
+  feedback?: string;
+  environment?: StripeEnvironment;
+}
+
+export interface RequestCancellationWithRefundResult {
+  ok: boolean;
+  success: boolean;
+  partial_success?: boolean;
+  requires_review?: boolean;
+  correlation_id?: string;
+  mode: "cooling_off" | "proportional";
+  refunded_cents: number;
+  stripe_refund_id: string;
+  subscription_status: string;
+  effective_end: "immediate" | "pending_review";
+  message: string;
+}
+
 export interface PreviewAddonInput {
   addonId: string;
   quantity?: number;
@@ -527,5 +614,178 @@ export async function subscribeToAddonsBatch(
   return {
     ok: true,
     contracts,
+  };
+}
+
+/**
+ * Schedules SaaS base subscription cancellation at the end of the current billing cycle.
+ * The tenant retains full access to paid features until current_period_end.
+ */
+export async function cancelSubscriptionPeriodEnd(
+  rawInput?: CancelSubscriptionInput | { data: CancelSubscriptionInput },
+  options?: EdgeInvokeOptions,
+): Promise<StripeResult<CancelSubscriptionResult>> {
+  const input = unwrapInput(rawInput || {});
+
+  const result = await invokeEdgeFunction<
+    {
+      action: "cancel-subscription-period-end";
+      reason?: string;
+      feedback?: string;
+      environment?: string;
+    },
+    CancelSubscriptionResult
+  >(
+    "stripe-checkout",
+    {
+      action: "cancel-subscription-period-end",
+      reason: input.reason,
+      feedback: input.feedback,
+      environment: input.environment || "test",
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.message || "Falha ao solicitar cancelamento da assinatura.",
+      code: result.code,
+    };
+  }
+
+  const data = result.data || {};
+  return {
+    ok: true,
+    success: true,
+    subscription_status: data.subscription_status || "active",
+    cancel_at_period_end: data.cancel_at_period_end ?? true,
+    current_period_end: data.current_period_end,
+    message: data.message || "Cancelamento agendado com sucesso.",
+  };
+}
+
+/**
+ * Reverts scheduled SaaS subscription cancellation, keeping automatic renewal active.
+ */
+export async function reactivateSubscription(
+  rawInput?: ReactivateSubscriptionInput | { data: ReactivateSubscriptionInput },
+  options?: EdgeInvokeOptions,
+): Promise<StripeResult<ReactivateSubscriptionResult>> {
+  const input = unwrapInput(rawInput || {});
+
+  const result = await invokeEdgeFunction<
+    { action: "reactivate-subscription"; environment?: string },
+    ReactivateSubscriptionResult
+  >(
+    "stripe-checkout",
+    {
+      action: "reactivate-subscription",
+      environment: input.environment || "test",
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.message || "Falha ao solicitar reversão do cancelamento.",
+      code: result.code,
+    };
+  }
+
+  const data = result.data || {};
+  return {
+    ok: true,
+    success: true,
+    subscription_status: data.subscription_status || "active",
+    cancel_at_period_end: data.cancel_at_period_end ?? false,
+    current_period_end: data.current_period_end,
+    message: data.message || "Assinatura mantida com sucesso.",
+  };
+}
+
+/**
+ * Previews cancellation refund options (Cooling-off, Proportional, or End-of-period).
+ * Authoritative calculations executed exclusively on backend; read-only preview.
+ */
+export async function previewSubscriptionCancellation(
+  rawInput?: PreviewSubscriptionCancellationInput | { data: PreviewSubscriptionCancellationInput },
+  options?: EdgeInvokeOptions,
+): Promise<StripeResult<SubscriptionCancellationPreviewResult>> {
+  const input = unwrapInput(rawInput || {});
+
+  const result = await invokeEdgeFunction<
+    { action: "preview-subscription-cancellation"; environment?: string },
+    SubscriptionCancellationPreviewResult
+  >(
+    "stripe-checkout",
+    {
+      action: "preview-subscription-cancellation",
+      environment: input.environment || "test",
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.message || "Falha ao calcular opções de cancelamento e reembolso.",
+      code: result.code,
+    };
+  }
+
+  const data = result.data || (result as any);
+  return {
+    ok: true,
+    ...data,
+  };
+}
+
+/**
+ * Executes immediate subscription cancellation with authoritative Stripe refund.
+ * Mode: 'cooling_off' (100% refund) or 'proportional' (pro-rata remaining cycle refund).
+ */
+export async function requestCancellationWithRefund(
+  rawInput: RequestCancellationWithRefundInput | { data: RequestCancellationWithRefundInput },
+  options?: EdgeInvokeOptions,
+): Promise<StripeResult<RequestCancellationWithRefundResult>> {
+  const input = unwrapInput(rawInput);
+
+  const result = await invokeEdgeFunction<
+    {
+      action: "request-cancellation-with-refund";
+      mode: "cooling_off" | "proportional";
+      expectedRefundCents: number;
+      reason?: string;
+      feedback?: string;
+      environment?: string;
+    },
+    RequestCancellationWithRefundResult
+  >(
+    "stripe-checkout",
+    {
+      action: "request-cancellation-with-refund",
+      mode: input.mode,
+      expectedRefundCents: input.expectedRefundCents,
+      reason: input.reason,
+      feedback: input.feedback,
+      environment: input.environment || "test",
+    },
+    options,
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.message || "Falha ao solicitar cancelamento com estorno.",
+      code: result.code,
+    };
+  }
+
+  const data = result.data || (result as any);
+  return {
+    ok: true,
+    ...data,
   };
 }
