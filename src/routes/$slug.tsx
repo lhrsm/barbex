@@ -852,28 +852,23 @@ function ShopPageComponent() {
 
       const isTrialValid = trial_end ? new Date(trial_end) > new Date() : false;
 
-      // Permitir acesso se houver assinatura ativa, trial válido, OU se for um tenant válido (currentShop)
-      // Removendo restrição agressiva que causava 404 em tenants sem assinatura configurada
-      const canAccess = true; // Liberado: Acesso concedido para visualização pública
+      // Canonical Entitlement Check
+      let canAccess = true;
+      let block_reason = "Liberado: Acesso concedido";
 
-      const block_reason = !canAccess ? "Bloqueado: Trial expirado e sem assinatura ativa detectada" : "Liberado: Acesso concedido";
-
-      // Temporary logs for debugging access as requested by user
-      console.log("[profissional-access-debug]", {
-        slug: normalizedSlug,
-        tenant_id: currentShop.id,
-        subscription_status,
-        is_subscription_active: hasActiveSubscription,
-        active_subscription: hasActiveSubscription,
-        plan_id,
-        trial_end,
-        trial_valid: isTrialValid,
-        has_active_subscription: hasActiveSubscription,
-        can_access: canAccess,
-        block_reason,
-        source: "Supabase Public Profile + Subscriptions",
-        now: new Date().toISOString()
-      });
+      try {
+        const { data: entRes, error: entErr } = await supabase.rpc("resolve_tenant_entitlement", {
+          p_tenant_id: currentShop.id,
+        });
+        if (!entErr && entRes) {
+          canAccess = Boolean((entRes as any).can_operate);
+          if (!canAccess) {
+            block_reason = "Agendamento online temporariamente indisponível para este estabelecimento.";
+          }
+        }
+      } catch (e) {
+        console.warn("[profissional-access-debug] resolve_tenant_entitlement fallback:", e);
+      }
 
       console.log("[profissional-access-debug] Final Decision:", canAccess);
 
@@ -1442,26 +1437,56 @@ function ShopPageComponent() {
           }]
         };
 
-        // Colunas explícitas: o papel anônimo não lê mais os tokens de gestão.
-        return supabase
-          .from("appointments")
-          .insert([appointmentPayload])
-          .select(
-            "id, user_id, tenant_id, customer_id, barber_id, service_id, start_time, end_time, status, total_price, appointment_group_id, payment_method, payment_status, subscription_id, subscription_plan_id, subscription_covered_amount, extra_amount, coupon_code, discount_amount, subtotal_amount, items",
-          )
-          .single();
+        // Substituindo INSERT direto anônimo pela RPC pública segura com validação canônica
+        return supabase.rpc("create_public_appointment", {
+          p_tenant_id: shop?.owner_id || shop?.id,
+          p_slug: slug,
+          p_service_id: item.service_id,
+          p_barber_id: item.barber_id,
+          p_start_time: startTime.toISOString(),
+          p_customer_id: finalCustId,
+          p_customer_name: customerName,
+          p_customer_phone: normalized,
+          p_customer_email: null,
+          p_payment_method: finalPaymentMethod,
+          p_appointment_group_id: appointmentGroupId,
+          p_notes: null,
+          p_coupon_code: couponCode || null,
+        }).then(res => {
+          if (res.error) {
+            console.error('SUPABASE ERROR (create_public_appointment):', res.error);
+            throw res.error;
+          }
+          const rpcData = res.data as any;
+          return {
+            id: rpcData.appointment_id,
+            user_id: rpcData.tenant_id,
+            tenant_id: rpcData.tenant_id,
+            customer_id: rpcData.customer_id,
+            barber_id: rpcData.barber_id,
+            service_id: rpcData.service_id,
+            start_time: rpcData.start_time,
+            end_time: rpcData.end_time,
+            status: rpcData.status,
+            total_price: rpcData.total_price,
+            final_amount: rpcData.final_amount,
+            appointment_group_id: appointmentGroupId,
+            payment_method: rpcData.payment_method,
+            payment_status: rpcData.payment_status,
+            cancel_token: rpcData.cancel_token,
+            management_token: rpcData.management_token,
+            items: [{
+              id: item.service_id,
+              name: item.service_name,
+              type: 'service',
+              price: rpcData.total_price,
+              quantity: 1
+            }]
+          };
+        });
       });
 
-
-
-      const appointmentResults = await Promise.all(appointmentPromises);
-      const createdAppointments = appointmentResults.map(res => {
-        if (res.error) {
-          console.error('SUPABASE ERROR (insert appointment):', res.error);
-          throw res.error;
-        }
-        return res.data;
-      });
+      const createdAppointments = await Promise.all(appointmentPromises);
 
       console.log("[POST_BOOKING_TRACE] Appointments persisted", {
         count: createdAppointments?.length,

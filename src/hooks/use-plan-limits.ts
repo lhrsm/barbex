@@ -222,6 +222,30 @@ export function usePlanLimits() {
 
       const [barbRes, servRes, prodRes, appRes, whatsappRes] = countsRes;
 
+      // Canonical entitlement resolution
+      let entitlementData: {
+        operational_state: string;
+        can_operate: boolean;
+        effective_plan: string;
+        plan_type: string;
+        restriction_reason: string | null;
+        modules: string[];
+      } | null = null;
+
+      try {
+        const { data: entRes } = await supabase.rpc("resolve_tenant_entitlement", {
+          p_tenant_id: tenantId || userId,
+        });
+        if (entRes) {
+          entitlementData = entRes as any;
+          if (entitlementData.effective_plan && entitlementData.effective_plan !== "free") {
+            currentPlan = entitlementData.effective_plan as PlanType;
+          }
+        }
+      } catch (e) {
+        console.warn("[usePlanLimits] resolve_tenant_entitlement non-blocking fallback:", e);
+      }
+
       const parseCount = (
         r: PromiseSettledResult<{ count?: number | null; error?: unknown } | null>,
       ): { count: number; ok: boolean } => {
@@ -259,6 +283,7 @@ export function usePlanLimits() {
         subscription: subData,
         usage: usageData,
         usageStatus: usageStatusData,
+        entitlement: entitlementData,
       };
     },
     enabled: !!tenantId,
@@ -268,6 +293,7 @@ export function usePlanLimits() {
   const plan = data?.plan || "free";
   const trialEndsAt = data?.trialEndsAt || null;
   const subscription = data?.subscription || null;
+  const entitlement = data?.entitlement || null;
   const usage = data?.usage || {
     barbers: 0,
     services: 0,
@@ -297,10 +323,15 @@ export function usePlanLimits() {
   const hasActiveSubscription = isSubscriptionActive || hasPlanAccess;
   const isTrialValid =
     !hasActiveSubscription && (trialEndsAt ? new Date(trialEndsAt) > new Date() : false);
-  const canAccess = hasActiveSubscription || isTrialValid;
+
+  // Canonical Operational State Evaluation
+  const operationalState = entitlement?.operational_state || (hasActiveSubscription || isTrialValid ? "SUBSCRIPTION_ACTIVE" : "RESTRICTED");
+  const canOperate = entitlement ? Boolean(entitlement.can_operate) : (hasActiveSubscription || isTrialValid);
+  const isRestricted = !canOperate;
+  const restrictionReason = entitlement?.restriction_reason || (isRestricted ? "Conta com operações restritas" : null);
+
+  const canAccess = canOperate;
   const isSubscriptionCanceled = subStatus === "canceled";
-  // An ex-subscriber whose paid subscription has terminated reverts to the Free plan
-  // and is not blocked by initial trial expiration.
   const isTrialExpired =
     !hasActiveSubscription && !isSubscriptionCanceled && !!trialEndsAt && !isTrialValid;
   const isGraceExpired = delinquency.isGraceExpired;
@@ -314,6 +345,8 @@ export function usePlanLimits() {
     : null;
 
   const checkLimit = (type: keyof typeof usage) => {
+    // If tenant is operational-restricted, all operational actions are blocked
+    if (!canOperate) return false;
     if (!limits) return false;
 
     const limitValue = limits[type];
@@ -355,6 +388,11 @@ export function usePlanLimits() {
     isScheduledForCancellation,
     scheduledCancellationDate,
     subscription,
+    operationalState,
+    canOperate,
+    isRestricted,
+    restrictionReason,
+    entitlement,
     checkLimit,
     refresh,
   };
