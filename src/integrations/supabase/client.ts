@@ -23,7 +23,7 @@ function createSupabaseClient() {
         rpc: noopPromise
       } as any;
     }
-    const message = `Missing Supabase environment variable(s). Connect Supabase in Lovable Cloud.`;
+    const message = `Configuração do Supabase ausente. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
