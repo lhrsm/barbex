@@ -9,9 +9,10 @@ interface Props {
   barbershopName?: string;
   className?: string;
   variant?: "floating" | "inline";
+  hidden?: boolean;
 }
 
-export function InstallBarbexAppPrompt({ barbershopName = "Barbex", className, variant = "floating" }: Props) {
+export function InstallBarbexAppPrompt({ barbershopName = "Barbex", className, variant = "floating", hidden = false }: Props) {
   const {
     isInstalled,
     isInstallable,
@@ -23,8 +24,8 @@ export function InstallBarbexAppPrompt({ barbershopName = "Barbex", className, v
     dismissPrompt,
   } = usePwaInstall();
 
-  // If already running standalone or user dismissed or browser doesn't support install
-  if (isInstalled || isDismissed || !isInstallable) {
+  // If already running standalone or user dismissed or browser doesn't support install or hidden by modal
+  if (isInstalled || isDismissed || !isInstallable || hidden) {
     return null;
   }
 
@@ -33,8 +34,8 @@ export function InstallBarbexAppPrompt({ barbershopName = "Barbex", className, v
       <div
         className={cn(
           variant === "floating"
-            ? "fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-40 max-w-md animate-in slide-in-from-bottom-5 duration-300"
-            : "w-full",
+            ? "fixed bottom-[calc(20px+env(safe-area-inset-bottom,0px))] left-3 right-3 md:left-6 md:right-auto md:bottom-6 z-30 max-w-md animate-in slide-in-from-bottom-5 duration-300"
+            : "w-full max-w-4xl mx-auto my-8 px-4",
           className
         )}
       >

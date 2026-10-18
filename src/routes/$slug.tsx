@@ -2279,18 +2279,18 @@ function ShopPageComponent() {
                   initial={{ y: -40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   className={cn(
-                    "mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 transition-all duration-500",
-                    scrolled ? "h-[76px]" : "h-[90px]"
+                    "mx-auto max-w-7xl flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8 transition-all duration-300",
+                    scrolled ? "h-14 sm:h-16 lg:h-[72px]" : "h-16 sm:h-20 lg:h-[86px]"
                   )}
                 >
                   {/* 1. LEFT: Logo + Identidade */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <a href="#inicio" className="flex items-center gap-3 group" aria-label={shop.business_name}>
+                  <div className="flex items-center gap-2 sm:gap-3 shrink min-w-0">
+                    <a href="#inicio" className="flex items-center gap-2 sm:gap-3 group min-w-0" aria-label={shop.business_name}>
                       <div
                         className={cn(
-                          "relative rounded-full bg-[#0B1324] border-2 border-gold/60 overflow-hidden transition-all duration-500 shrink-0",
-                          "shadow-[0_0_24px_rgba(212,175,55,0.25)] group-hover:shadow-[0_0_32px_rgba(212,175,55,0.45)] group-hover:border-gold",
-                          scrolled ? "h-12 w-12 sm:h-14 sm:w-14" : "h-14 w-14 sm:h-16 sm:w-16"
+                          "relative rounded-full bg-[#0B1324] border-2 border-gold/60 overflow-hidden transition-all duration-300 shrink-0",
+                          "shadow-[0_0_20px_rgba(212,175,55,0.22)] group-hover:shadow-[0_0_28px_rgba(212,175,55,0.4)] group-hover:border-gold",
+                          scrolled ? "h-9 w-9 sm:h-11 sm:w-11 lg:h-13 lg:w-13" : "h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14"
                         )}
                       >
                         {shop.barbershop_logo_url ? (
@@ -2301,15 +2301,15 @@ function ShopPageComponent() {
                           />
                         ) : (
                           <div className="h-full w-full grid place-items-center">
-                            <Scissors className={cn("text-gold transition-all", scrolled ? "h-5 w-5" : "h-6 w-6")} />
+                            <Scissors className={cn("text-gold transition-all", scrolled ? "h-4 w-4 sm:h-5 sm:w-5" : "h-5 w-5 sm:h-6 sm:w-6")} />
                           </div>
                         )}
                       </div>
-                      <div className="hidden sm:block">
-                        <span className="font-extrabold text-sm md:text-base text-white tracking-tight group-hover:text-gold transition-colors line-clamp-1">
+                      <div className="min-w-0 flex flex-col justify-center">
+                        <span className="font-extrabold text-xs sm:text-sm md:text-base text-white tracking-tight group-hover:text-gold transition-colors truncate max-w-[110px] xs:max-w-[160px] sm:max-w-[220px] md:max-w-none">
                           {shop.business_name}
                         </span>
-                        <span className="block text-[10px] uppercase tracking-widest text-gold/70 font-semibold">
+                        <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-gold/70 font-semibold truncate hidden xs:block">
                           Barbearia Premium
                         </span>
                       </div>
@@ -2355,28 +2355,15 @@ function ShopPageComponent() {
                     )}
                   </nav>
 
-                  {/* 3. RIGHT: CTA + Mobile Hamburger */}
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    {shop?.social_links?.instagram && (
-                      <a
-                        href={shop.social_links.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Instagram da Barbearia"
-                        className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-[#0B1324] border border-gold/30 hover:border-gold text-white/80 hover:text-gold flex items-center justify-center transition-all hover:scale-105 shadow-[0_0_12px_rgba(212,175,55,0.15)] shrink-0"
-                      >
-                        <svg className="w-5 h-5 fill-currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM17.5 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                        </svg>
-                      </a>
-                    )}
+                  {/* 3. RIGHT: CTA + Mobile Hamburger (Instagram removido do header em todos os dispositivos conforme R2E.21B.1) */}
+                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     <Button
                       onClick={handleBookingAction}
                       className={cn(
-                        "rounded-full font-extrabold tracking-wide text-black transition-all shrink-0 whitespace-nowrap",
+                        "rounded-full font-black tracking-wide text-black transition-all shrink-0 whitespace-nowrap",
                         "bg-gradient-to-br from-[#F5C542] to-[#D4A017] hover:from-[#F8D265] hover:to-[#D4A017]",
-                        "shadow-[0_10px_28px_rgba(245,197,66,0.28)] hover:-translate-y-0.5",
-                        "h-[42px] px-5 text-xs sm:h-11 sm:px-6 sm:text-sm min-w-[130px] sm:min-w-[150px]"
+                        "shadow-[0_8px_22px_rgba(245,197,66,0.25)] hover:-translate-y-0.5",
+                        "h-9 px-3.5 text-xs sm:h-11 sm:px-6 sm:text-sm"
                       )}
                     >
                       {shop.scheduling_mode === 'manual' ? 'WhatsApp' : 'Agendar Agora'}
@@ -2388,10 +2375,10 @@ function ShopPageComponent() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="lg:hidden h-11 w-11 rounded-full bg-[#0B1324] border border-gold/30 text-white hover:bg-[#0B1324] hover:border-gold/70 hover:text-gold"
+                          className="lg:hidden h-9 w-9 sm:h-11 sm:w-11 rounded-full bg-[#0B1324] border border-gold/30 text-white hover:bg-[#0B1324] hover:border-gold/70 hover:text-gold shrink-0"
                           aria-label="Abrir menu"
                         >
-                          <Menu className="h-5 w-5" />
+                          <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                         </Button>
                       </SheetTrigger>
                       <SheetContent side="right" className="bg-[#05070d]/98 backdrop-blur-2xl border-l border-gold/20 text-white w-[300px] sm:w-[340px] p-0 flex flex-col justify-between">
@@ -2708,7 +2695,7 @@ function ShopPageComponent() {
               <motion.p
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
-                className="text-slate-500 max-w-xl mx-auto font-medium"
+                className="text-slate-400 max-w-xl mx-auto font-medium"
               >
                 Os melhores produtos para manter seu estilo impecável e cuidado pessoal em dia.
               </motion.p>
@@ -2719,10 +2706,10 @@ function ShopPageComponent() {
               onAdd={(p) => toggleProduct(p)}
               isInCart={(p) => !!selectedProducts.find((s: any) => s.id === p.id)}
             />
-            <div className="-mx-4 sm:mx-0 mt-3 mb-4 lg:mb-12 w-screen sm:w-auto overflow-hidden">
+            <div className="w-full mt-3 mb-4 lg:mb-12 overflow-hidden">
 
               <div
-                className="flex items-center gap-2.5 lg:gap-2 overflow-x-auto lg:overflow-visible lg:flex-wrap lg:justify-center px-4 py-2 lg:p-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex items-center gap-2.5 lg:gap-2 overflow-x-auto lg:overflow-visible lg:flex-wrap lg:justify-center px-1 py-2 lg:p-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 style={{ scrollPaddingInline: 16, overscrollBehaviorInline: 'contain' }}
               >
                 {categories.map((cat) => {
@@ -3431,6 +3418,13 @@ function ShopPageComponent() {
         </section>
 
 
+        {/* PWA Install Prompt Contextual e Integrado (R2E.21B.1 FASE 4) */}
+        <InstallBarbexAppPrompt
+          barbershopName={shop.business_name}
+          variant="inline"
+          hidden={isBookingOpen || isCartOpen}
+        />
+
         {/* Seção de Contato Público */}
         <PublicContactSection shop={shop} slug={slug} />
 
@@ -3649,14 +3643,7 @@ function ShopPageComponent() {
           );
         })()}
 
-        <div className="md:hidden h-20" aria-hidden />
 
-        <PortalStickyCta
-          onBook={handleBookingAction}
-          whatsapp={(shop as any)?.whatsapp_number}
-          shopName={shop?.business_name}
-          label={shop?.scheduling_mode === 'manual' ? 'Falar no WhatsApp' : 'Agendar agora'}
-        />
 
         <PortalStructuredData
           shop={shop}
@@ -3817,8 +3804,8 @@ function ShopPageComponent() {
                 animate={{ opacity: 1 }}
                 className="grid md:grid-cols-2 min-h-full"
               >
-                {/* Coluna esquerda: imagem premium */}
-                <div className="relative h-[180px] md:h-auto md:min-h-[560px] overflow-hidden md:rounded-l-[2.25rem]">
+                {/* Coluna esquerda: imagem premium compacta em mobile */}
+                <div className="relative h-[96px] md:h-auto md:min-h-[560px] overflow-hidden md:rounded-l-[2.25rem]">
                   <img
                     src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=1200&q=80"
                     alt="Barbearia"
@@ -3826,30 +3813,29 @@ function ShopPageComponent() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
                   <div className="absolute inset-0 ring-1 ring-inset ring-gold/30 md:rounded-l-[2.25rem] pointer-events-none" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold/95 text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
-                      <CalendarDays size={12} /> Agendamento
-                    </span>
-                    <h3 className="mt-3 text-white text-2xl md:text-3xl font-black tracking-tight leading-tight drop-shadow-lg">
-                      Agende seu horário
-                    </h3>
-                    <p className="mt-2 text-white/85 text-sm md:text-[15px] font-medium leading-snug max-w-xs drop-shadow">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+                    <div className="flex items-center gap-2 md:block">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gold/95 text-black text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
+                        <CalendarDays size={11} /> Agendamento
+                      </span>
+                      <h3 className="text-white text-lg md:text-3xl font-black tracking-tight leading-tight drop-shadow-lg">
+                        Agende seu horário
+                      </h3>
+                    </div>
+                    <p className="hidden md:block mt-2 text-white/85 text-sm md:text-[15px] font-medium leading-snug max-w-xs drop-shadow">
                       Escolha seu serviço, profissional favorito e garanta seu atendimento com praticidade.
                     </p>
                   </div>
                 </div>
 
                 {/* Coluna direita: formulário */}
-                <div className="flex flex-col p-6 md:p-8 gap-5">
-                  <div className="space-y-1.5">
-                    <h4 className="text-2xl md:text-[26px] font-black text-black tracking-tight leading-tight">
+                <div className="flex flex-col p-5 md:p-8 gap-4 md:gap-5">
+                  <div className="space-y-1">
+                    <h4 className="text-xl md:text-[26px] font-black text-black tracking-tight leading-tight">
                       Bem-vindo à {shop.business_name}
                     </h4>
-                    <p className="text-zinc-600 text-sm font-medium leading-snug">
-                      Informe seu WhatsApp para começarmos seu agendamento de forma rápida e segura.
-                    </p>
-                    <p className="text-[11px] text-zinc-500 leading-snug pt-1">
-                      Você poderá escolher serviço, profissional, data e horário nos próximos passos.
+                    <p className="text-zinc-600 text-xs md:text-sm font-medium leading-snug">
+                      Informe seu WhatsApp para iniciarmos seu agendamento de forma rápida e segura.
                     </p>
                   </div>
 
@@ -3872,14 +3858,14 @@ function ShopPageComponent() {
                           onChange={(phone) => setCustomerPhone(phone)}
                           placeholder="(71) 99999-9999"
                           className="relative z-10 w-full"
-                          inputClassName="!w-full !h-14 !bg-white !border-zinc-200 !text-lg !font-semibold !text-black !placeholder:text-zinc-400 focus:!outline-none !pl-4 !rounded-xl"
+                          inputClassName="!w-full !h-14 !bg-white !border-zinc-200 !text-lg !font-semibold !text-black !placeholder:text-zinc-400 focus:!outline-none !pl-4 !rounded-r-xl !rounded-l-none"
                           countrySelectorStyleProps={{
-                            buttonClassName: "!h-14 !bg-white !border-zinc-200 !px-3 !rounded-l-xl hover:!bg-zinc-50 transition-colors",
+                            buttonClassName: "!h-14 !bg-white !border-zinc-200 !px-3 !rounded-l-xl !rounded-r-none hover:!bg-zinc-50 transition-colors",
                           }}
                         />
                         <style>{`
-                          .international-phone-portal .react-international-phone-input-container { width: 100%; border: none; background: transparent; }
-                          .international-phone-portal .react-international-phone-input { width: 100% !important; border: 1px solid #e4e4e7 !important; border-radius: 0.75rem !important; }
+                          .international-phone-portal .react-international-phone-input-container { width: 100%; border: none; background: transparent; display: flex; }
+                          .international-phone-portal .react-international-phone-input { width: 100% !important; border: 1px solid #e4e4e7 !important; border-left: none !important; border-radius: 0 0.75rem 0.75rem 0 !important; }
                           .international-phone-portal .react-international-phone-country-selector-button { border: 1px solid #e4e4e7 !important; border-right: none !important; border-radius: 0.75rem 0 0 0.75rem !important; }
                         `}</style>
                       </div>
@@ -4003,24 +3989,29 @@ function ShopPageComponent() {
                       </AnimatePresence>
                     </div>
 
-                    {/* Benefícios */}
-                    <ul className="grid grid-cols-1 gap-1.5 px-1">
+                    {/* Benefícios compactados em grid 2 colunas */}
+                    <ul className="grid grid-cols-2 gap-1.5 px-1">
                       {[
                         "Agendamento rápido",
                         "Escolha seu barbeiro",
-                        "Confirmação pelo WhatsApp",
-                        ...(shop.subscriptions_enabled ? ["Benefícios para assinantes"] : []),
+                        "Avisos no WhatsApp",
+                        ...(shop.subscriptions_enabled ? ["Benefícios de clube"] : []),
                       ].map((b) => (
-                        <li key={b} className="flex items-center gap-2 text-[12.5px] text-zinc-700 font-medium">
-                          <span className="h-5 w-5 rounded-full bg-gold/15 text-[#B8860B] flex items-center justify-center shrink-0">
-                            <CheckCircle2 size={13} />
+                        <li key={b} className="flex items-center gap-1.5 text-[11px] md:text-[12px] text-zinc-700 font-medium truncate">
+                          <span className="h-4 w-4 rounded-full bg-gold/15 text-[#B8860B] flex items-center justify-center shrink-0">
+                            <CheckCircle2 size={11} />
                           </span>
-                          {b}
+                          <span className="truncate">{b}</span>
                         </li>
                       ))}
                     </ul>
 
-                    <div className="mt-3 space-y-2 rounded-xl bg-zinc-50 border border-zinc-200 p-3">
+                    <div className={cn(
+                      "mt-2 space-y-2 rounded-xl p-3 border transition-colors",
+                      !consentAccepted && normalizePhone(customerPhone).length >= 10
+                        ? "bg-amber-500/10 border-amber-500/30"
+                        : "bg-zinc-50 border-zinc-200"
+                    )}>
                       <label className="flex items-start gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -4036,8 +4027,8 @@ function ShopPageComponent() {
                           e os{" "}
                           <Link to="/terms" target="_blank" className="font-semibold text-[#B8860B] underline underline-offset-2">
                             Termos de Uso
-                          </Link>
-                          .
+                          </Link>{" "}
+                          <span className="text-amber-700 font-bold">*</span>
                         </span>
                       </label>
                       <label className="flex items-start gap-2 cursor-pointer">
@@ -4048,13 +4039,19 @@ function ShopPageComponent() {
                           className="mt-0.5 h-4 w-4 accent-[#D97706] shrink-0"
                         />
                         <span className="text-[12px] leading-snug text-zinc-600">
-                          Quero receber promoções, novidades e campanhas (opcional).
+                          Quero receber promoções e lembretes (opcional).
                         </span>
                       </label>
                     </div>
 
+                    {!consentAccepted && normalizePhone(customerPhone).length >= 10 && (
+                      <p className="text-[11px] text-amber-700 font-bold text-center animate-in fade-in duration-200">
+                        ⚠️ Marque o aceite obrigatório dos Termos e Privacidade acima para continuar.
+                      </p>
+                    )}
+
                     <Button
-                      className="w-full h-14 rounded-2xl font-extrabold text-black text-base tracking-tight transition-all duration-200 hover:brightness-105 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      className="w-full h-13 md:h-14 rounded-2xl font-extrabold text-black text-sm md:text-base tracking-tight transition-all duration-200 hover:brightness-105 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                       style={{
                         background: 'linear-gradient(135deg, #F59E0B, #D97706)',
                         boxShadow: '0 12px 28px rgba(245,158,11,.28)',
@@ -4426,6 +4423,7 @@ function ShopPageComponent() {
                 <div className="bg-white text-zinc-900 border border-zinc-200 rounded-2xl shadow-md shadow-zinc-200/70 p-5 transition-all duration-300">
                   <Label className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2 block">Data Desejada</Label>
                   <Input
+                    id="step3-date-input"
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
@@ -4442,41 +4440,87 @@ function ShopPageComponent() {
                       <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-sky-600" />
                       <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Buscando disponibilidades...</p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                      {barbers
-                        .filter(b => isBarberAvailableOnDate(b, selectedDate, selectedService))
-                        .map(b => (
-                        <motion.div
-                          key={b.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={cn(
-                            "bg-white text-zinc-900 border border-zinc-200 rounded-2xl shadow-md shadow-zinc-200/70 p-5 transition-all duration-300 hover:shadow-lg hover:border-zinc-300 cursor-pointer text-center space-y-3 relative overflow-hidden group",
-                            selectedBarber?.id === b.id ? "border-sky-600 ring-2 ring-sky-600/20 shadow-sky-100" : ""
-                          )}
-                          onClick={() => {
-                            setSelectedBarber(b);
-                            setBookingStep(4);
-                          }}
-                        >
-                          <div className="relative z-10">
-                            <div className="h-16 w-16 rounded-2xl bg-zinc-100 mx-auto overflow-hidden border border-zinc-200 group-hover:border-sky-400 transition-colors">
-                              {b.avatar_url ? (
-                                <img src={b.avatar_url} className="h-full w-full object-cover" alt={b.name} />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center font-black text-xl text-zinc-400">{b.name?.[0] || '?'}</div>
-                              )}
-                            </div>
-                            <div className="mt-3">
-                              <p className={cn("font-bold uppercase tracking-tight text-sm leading-none", selectedBarber?.id === b.id ? "text-sky-700" : "text-black")}>{b.name}</p>
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mt-1">{b.specialty || 'Especialista'}</p>
-                            </div>
+                  ) : (() => {
+                    const availableBarbers = barbers.filter(b => isBarberAvailableOnDate(b, selectedDate, selectedService));
+                    if (availableBarbers.length === 0) {
+                      return (
+                        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 text-center space-y-4">
+                          <div className="h-12 w-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+                            <CalendarDays size={24} />
                           </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-zinc-900">
+                              Nenhum profissional disponível para esta data
+                            </p>
+                            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                              Não encontramos profissionais com agenda aberta para "{selectedService?.name || 'este serviço'}" na data selecionada ({format(parseISO(selectedDate), "dd/MM/yyyy")}).
+                            </p>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl border-zinc-300 text-xs font-bold"
+                              onClick={() => {
+                                const input = document.getElementById('step3-date-input') as HTMLInputElement | null;
+                                if (input) {
+                                  if ('showPicker' in input && typeof (input as any).showPicker === 'function') {
+                                    (input as any).showPicker();
+                                  } else {
+                                    input.focus();
+                                  }
+                                }
+                              }}
+                            >
+                              Escolher outra data
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="rounded-xl text-zinc-600 text-xs font-bold hover:text-black"
+                              onClick={() => setBookingStep(2)}
+                            >
+                              Trocar serviço
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-2 gap-4">
+                        {availableBarbers.map(b => (
+                          <motion.div
+                            key={b.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={cn(
+                              "bg-white text-zinc-900 border border-zinc-200 rounded-2xl shadow-md shadow-zinc-200/70 p-5 transition-all duration-300 hover:shadow-lg hover:border-zinc-300 cursor-pointer text-center space-y-3 relative overflow-hidden group",
+                              selectedBarber?.id === b.id ? "border-sky-600 ring-2 ring-sky-600/20 shadow-sky-100" : ""
+                            )}
+                            onClick={() => {
+                              setSelectedBarber(b);
+                              setBookingStep(4);
+                            }}
+                          >
+                            <div className="relative z-10">
+                              <div className="h-16 w-16 rounded-2xl bg-zinc-100 mx-auto overflow-hidden border border-zinc-200 group-hover:border-sky-400 transition-colors">
+                                {b.avatar_url ? (
+                                  <img src={b.avatar_url} className="h-full w-full object-cover" alt={b.name} />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center font-black text-xl text-zinc-400">{b.name?.[0] || '?'}</div>
+                                )}
+                              </div>
+                              <div className="mt-3">
+                                <p className={cn("font-bold uppercase tracking-tight text-sm leading-none", selectedBarber?.id === b.id ? "text-sky-700" : "text-black")}>{b.name}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mt-1">{b.specialty || 'Especialista'}</p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </motion.div>
             )}
@@ -4487,17 +4531,31 @@ function ShopPageComponent() {
                 animate={{ opacity: 1, x: 0 }}
                 className="space-y-8"
               >
-                <div className="bg-white text-zinc-900 border border-zinc-200 rounded-2xl shadow-md shadow-zinc-200/70 p-5 transition-all duration-300 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-xl bg-zinc-100 border border-zinc-200 overflow-hidden text-zinc-400">
+                <div className="bg-white text-zinc-900 border border-zinc-200 rounded-2xl shadow-md shadow-zinc-200/70 p-4 sm:p-5 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-zinc-100 border border-zinc-200 overflow-hidden text-zinc-400 shrink-0">
                       {selectedBarber?.avatar_url ? <img src={selectedBarber.avatar_url} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center font-black text-lg">{selectedBarber?.name?.[0] || '?'}</div>}
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-0.5">Profissional</p>
-                      <p className="text-lg font-black uppercase tracking-tight text-zinc-900">{selectedBarber?.name}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-0.5">Profissional & Data</p>
+                      <p className="text-base sm:text-lg font-black uppercase tracking-tight text-zinc-900">{selectedBarber?.name}</p>
+                      <p className="text-xs font-semibold text-zinc-600 mt-0.5 flex items-center gap-1">
+                        <CalendarDays size={13} className="text-gold" />
+                        {format(parseISO(selectedDate), "dd 'de' MMMM", { locale: ptBR })}
+                      </p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setBookingStep(3)} className="bg-white text-zinc-900 hover:bg-zinc-50 border border-zinc-200 rounded-xl font-medium transition-all duration-200 h-9 px-4">Alterar</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTime("");
+                      setBookingStep(3);
+                    }}
+                    className="bg-white text-zinc-900 hover:bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold transition-all h-9 px-3 self-end sm:self-center"
+                  >
+                    Alterar data ou barbeiro
+                  </Button>
                 </div>
 
                 <div className="space-y-6">
@@ -4559,11 +4617,25 @@ function ShopPageComponent() {
                     </div>
 
                   ) : (
-                    <div className="text-center py-12 bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-800">
-                      <Clock className="mx-auto h-8 w-8 text-zinc-700 mb-3" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-500">
-                        Nenhum horário disponível para esta data.
+                    <div className="text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 p-6 space-y-3">
+                      <Clock className="mx-auto h-8 w-8 text-zinc-400" />
+                      <p className="text-xs font-black uppercase tracking-wider text-zinc-700">
+                        Nenhum horário disponível em {format(parseISO(selectedDate), "dd/MM/yyyy")}.
                       </p>
+                      <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
+                        Os horários deste profissional para esta data já foram preenchidos ou o estabelecimento não estará atendendo.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl border-zinc-300 font-bold text-xs mt-2"
+                        onClick={() => {
+                          setSelectedTime("");
+                          setBookingStep(3);
+                        }}
+                      >
+                        Escolher outra data
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -5150,38 +5222,51 @@ function ShopPageComponent() {
                               </div>
                             </div>
                           )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <Button
-                            className="flex items-center justify-between h-20 px-6 bg-zinc-50 text-black hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-semibold shadow-sm transition-all duration-200 hover:shadow-md group"
-                            onClick={() => setPaymentMethod('barbershop')}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-white border border-zinc-100 flex items-center justify-center">
-                                <Scissors size={24} className="text-zinc-400 group-hover:text-black transition-colors" />
-                              </div>
-                              <div className="text-left">
-                                <p className="text-sm font-black uppercase tracking-tight text-black">Pagar na Unidade</p>
-                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest opacity-80">Pague após o serviço</p>
-                              </div>
+                        {(() => {
+                          const hasValidPix = Boolean(
+                            shop?.pix_key &&
+                            typeof shop.pix_key === 'string' &&
+                            shop.pix_key.trim().length >= 5 &&
+                            shop.pix_key.toLowerCase() !== 'chave não cadastrada'
+                          );
+
+                          return (
+                            <div className={cn("grid gap-4", hasValidPix ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
+                              <Button
+                                className="flex items-center justify-between h-20 px-6 bg-zinc-50 text-black hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-semibold shadow-sm transition-all duration-200 hover:shadow-md group"
+                                onClick={() => setPaymentMethod('barbershop')}
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="h-12 w-12 rounded-xl bg-white border border-zinc-100 flex items-center justify-center">
+                                    <Scissors size={24} className="text-zinc-400 group-hover:text-black transition-colors" />
+                                  </div>
+                                  <div className="text-left">
+                                    <p className="text-sm font-black uppercase tracking-tight text-black">Pagar na Unidade</p>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest opacity-80">Pague no balcão após o atendimento</p>
+                                  </div>
+                                </div>
+                                <ChevronRight size={18} className="text-zinc-300 group-hover:text-black transition-colors" />
+                              </Button>
+                              {hasValidPix && (
+                                <Button
+                                  className="flex items-center justify-between h-20 px-6 bg-black text-white hover:bg-zinc-800 border border-zinc-800 rounded-2xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg group"
+                                  onClick={() => setPaymentMethod('pix')}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
+                                      <QrCode size={24} className="text-white" />
+                                    </div>
+                                    <div className="text-left">
+                                      <p className="text-sm font-black uppercase tracking-tight text-white">Pagar Agora (PIX)</p>
+                                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest opacity-80">Reserva garantida</p>
+                                    </div>
+                                  </div>
+                                  <ChevronRight size={18} className="text-white/60 group-hover:text-white transition-colors" />
+                                </Button>
+                              )}
                             </div>
-                            <ChevronRight size={18} className="text-zinc-300 group-hover:text-black transition-colors" />
-                          </Button>
-                          <Button
-                            className="flex items-center justify-between h-20 px-6 bg-black text-white hover:bg-zinc-800 border border-zinc-800 rounded-2xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg group"
-                            onClick={() => setPaymentMethod('pix')}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
-                                <QrCode size={24} className="text-white" />
-                              </div>
-                              <div className="text-left">
-                                <p className="text-sm font-black uppercase tracking-tight text-white">Pagar Agora (PIX)</p>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest opacity-80">Reserva garantida</p>
-                              </div>
-                            </div>
-                            <ChevronRight size={18} className="text-white/60 group-hover:text-white transition-colors" />
-                          </Button>
-                        </div>
+                          );
+                        })()}
                         </>
                       ) : (
                         <div className="space-y-4">
@@ -5824,8 +5909,8 @@ function ShopPageComponent() {
                   if (identifyStep !== 'phone') setIdentifyStep('phone');
                   setIdentifyFound(null);
                 }}
-                inputClassName="!w-full !h-11 !bg-white/[0.04] !border-white/15 !text-white !rounded-md"
-                countrySelectorStyleProps={{ buttonClassName: "!h-11 !bg-white/[0.04] !border-white/15" }}
+                inputClassName="!w-full !h-11 !bg-white/[0.04] !border-white/15 !text-white !rounded-r-md !rounded-l-none"
+                countrySelectorStyleProps={{ buttonClassName: "!h-11 !bg-white/[0.04] !border-white/15 !rounded-l-md !rounded-r-none" }}
               />
               {identifyLookupLoading && (
                 <p className="text-[11px] text-white/50 flex items-center gap-2">
@@ -6302,16 +6387,13 @@ function ShopPageComponent() {
         </DialogContent>
       </Dialog>
 
-      <BackToTopButton />
-
-      {/* PWA Install Prompt */}
-      <InstallBarbexAppPrompt barbershopName={shop.business_name} />
+      <BackToTopButton hidden={isBookingOpen || isCartOpen} />
 
     </div>
   );
 }
 
-function BackToTopButton() {
+function BackToTopButton({ hidden = false }: { hidden?: boolean }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400);
@@ -6319,13 +6401,16 @@ function BackToTopButton() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  if (hidden) return null;
+
   return (
     <button
       type="button"
       aria-label="Voltar ao topo"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className={`fixed right-5 md:right-6 z-[60] h-12 w-12 md:h-14 md:w-14 rounded-full bg-gradient-to-br from-[#F5C542] to-[#D4A017] text-[#050505] shadow-[0_12px_30px_rgba(245,197,66,0.42)] flex items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(245,197,66,0.55)] ${visible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+      className={`fixed right-4 md:right-6 z-30 h-12 w-12 md:h-14 md:w-14 rounded-full bg-gradient-to-br from-[#F5C542] to-[#D4A017] text-[#050505] shadow-[0_12px_30px_rgba(245,197,66,0.42)] flex items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(245,197,66,0.55)] ${visible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
     >
       <ArrowUp size={20} strokeWidth={2.5} />
     </button>

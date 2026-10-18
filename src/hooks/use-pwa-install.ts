@@ -10,7 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = "barbex_pwa_install_dismissed_until";
-const DISMISS_DAYS = 7;
+const DISMISS_DAYS = 30;
 
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
