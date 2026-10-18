@@ -466,6 +466,12 @@ function AdminSubscriptionsCommercialCenter() {
   const voucherCount = commercialIndex.filter(
     (r) => r.classification.modality === "VOUCHER",
   ).length;
+  const canceledCount = commercialIndex.filter(
+    (r) => r.classification.modality === "CANCELADA",
+  ).length;
+  const restrictedCount = commercialIndex.filter(
+    (r) => r.classification.modality === "RESTRICTED",
+  ).length;
   const freeCount = commercialIndex.filter((r) => r.classification.modality === "FREE").length;
 
   const isFiltered =
@@ -659,6 +665,8 @@ function AdminSubscriptionsCommercialCenter() {
                 <SelectItem value="ASSINATURA">Assinatura Stripe</SelectItem>
                 <SelectItem value="TRIAL">Trial</SelectItem>
                 <SelectItem value="VOUCHER">Voucher</SelectItem>
+                <SelectItem value="CANCELADA">Assinatura Cancelada</SelectItem>
+                <SelectItem value="RESTRICTED">Acesso Restrito</SelectItem>
                 <SelectItem value="FREE">Plano Free</SelectItem>
               </SelectContent>
             </Select>
@@ -855,6 +863,10 @@ function AdminSubscriptionsCommercialCenter() {
                               "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40",
                             t.classification.modality === "VOUCHER" &&
                               "bg-purple-500/20 text-purple-300 border border-purple-500/40",
+                            t.classification.modality === "CANCELADA" &&
+                              "bg-zinc-500/20 text-zinc-300 border border-zinc-500/40",
+                            t.classification.modality === "RESTRICTED" &&
+                              "bg-red-500/20 text-red-300 border border-red-500/40",
                             t.classification.modality === "TRIAL" &&
                               (t.classification.trialStatus === "EXPIRADO"
                                 ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
@@ -869,7 +881,11 @@ function AdminSubscriptionsCommercialCenter() {
 
                       {/* Plano Base */}
                       <TableCell className="text-xs font-bold text-gray-200">
-                        {formatPlanName(t.planKey)}
+                        {t.classification.modality === "CANCELADA"
+                          ? `Cancelada (Último: ${t.classification.lastContractedPlanName || "Starter"})`
+                          : t.classification.modality === "RESTRICTED"
+                            ? "Sem plano ativo (Restrito)"
+                            : formatPlanName(t.planKey)}
                       </TableCell>
 
                       {/* Ciclo */}

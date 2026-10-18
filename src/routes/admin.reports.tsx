@@ -543,6 +543,14 @@ function AdminReports() {
                           <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px]">
                             VOUCHER PERMANENTE
                           </Badge>
+                        ) : t.modality === "CANCELADA" ? (
+                          <Badge className="bg-zinc-500/20 text-zinc-300 border border-zinc-500/30 text-[10px]">
+                            ASSINATURA CANCELADA
+                          </Badge>
+                        ) : t.modality === "RESTRICTED" ? (
+                          <Badge className="bg-red-500/20 text-red-300 border border-red-500/30 text-[10px]">
+                            ACESSO RESTRITO
+                          </Badge>
                         ) : t.modality === "TRIAL" ? (
                           <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px]">
                             TRIAL

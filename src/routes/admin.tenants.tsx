@@ -197,11 +197,16 @@ function AdminTenants() {
             subscriptions: shopSubs,
           });
 
-          const plan_label = classification.modality === "VOUCHER"
-            ? "VOUCHER"
-            : classification.modality === "TRIAL"
-            ? `TRIAL · ${classification.trialStatus}`
-            : (classification.commercialPlanName || "ASSINATURA");
+          const plan_label =
+            classification.modality === "VOUCHER"
+              ? "VOUCHER"
+              : classification.modality === "CANCELADA"
+                ? `CANCELADA · ${classification.lastContractedPlanName || "Starter"}`
+                : classification.modality === "RESTRICTED"
+                  ? "ACESSO RESTRITO"
+                  : classification.modality === "TRIAL"
+                    ? `TRIAL · ${classification.trialStatus}`
+                    : (classification.commercialPlanName || "ASSINATURA");
           const plan_details = classification.explanation;
           const plan_status: "verified" | "to_verify" = "verified";
 
@@ -595,6 +600,44 @@ function AdminTenants() {
                                     Acesso liberado: <strong className="text-gray-300 font-medium">{tenant.classification.technicalPlanName}</strong>
                                   </span>
                                 )}
+                              </>
+                            ) : tenant.classification.modality === "CANCELADA" ? (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <Badge className="bg-zinc-500/20 text-zinc-300 border border-zinc-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3 text-zinc-400" />
+                                    CANCELADA
+                                  </Badge>
+                                  {tenant.classification.lastContractedPlanName && (
+                                    <Badge
+                                      variant="outline"
+                                      className="border-zinc-500/30 text-zinc-300 bg-zinc-500/10 text-[9px] font-bold uppercase tracking-wider"
+                                    >
+                                      Último: {tenant.classification.lastContractedPlanName}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-zinc-400">
+                                  Assinatura reembolsada/cancelada (Restrito)
+                                </span>
+                              </>
+                            ) : tenant.classification.modality === "RESTRICTED" ? (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <Badge className="bg-red-500/20 text-red-300 border border-red-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <Ban className="w-3 h-3 text-red-400" />
+                                    ACESSO RESTRITO
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="border-red-500/30 text-red-400 bg-red-500/10 text-[9px] font-bold uppercase tracking-wider"
+                                  >
+                                    TRIAL EXPIRADO
+                                  </Badge>
+                                </div>
+                                <span className="text-[10px] text-red-400/80">
+                                  Operações bloqueadas (Sem plano ativo)
+                                </span>
                               </>
                             ) : tenant.classification.modality === "TRIAL" ? (
                               <>

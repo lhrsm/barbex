@@ -191,9 +191,13 @@ function AdminFinance() {
 
         const catKey = classification.modality === "VOUCHER"
           ? "VOUCHER PERMANENTE"
-          : classification.modality === "TRIAL"
-            ? `TRIAL (${classification.technicalPlanName || "PADRÃO"})`
-            : (classification.commercialPlanName || "ASSINATURA").toUpperCase();
+          : classification.modality === "CANCELADA"
+            ? "ASSINATURA CANCELADA"
+            : classification.modality === "RESTRICTED"
+              ? "ACESSO RESTRITO"
+              : classification.modality === "TRIAL"
+                ? `TRIAL (${classification.technicalPlanName || "PADRÃO"})`
+                : (classification.commercialPlanName || "ASSINATURA").toUpperCase();
 
         if (!planDistribution[catKey]) {
           planDistribution[catKey] = { count: 0, value: 0 };
@@ -209,9 +213,13 @@ function AdminFinance() {
           isDivergent,
           effectivePlanName: classification.modality === "VOUCHER"
             ? "Voucher Permanente (Sem Cobrança)"
-            : classification.modality === "TRIAL"
-              ? `Trial ${classification.trialStatus} (Ref: ${classification.technicalPlanName})`
-              : (classification.commercialPlanName || "Assinatura Ativa"),
+            : classification.modality === "CANCELADA"
+              ? `Cancelada (Último: ${classification.lastContractedPlanName || "Starter"})`
+              : classification.modality === "RESTRICTED"
+                ? "Acesso Restrito (Sem Plano)"
+                : classification.modality === "TRIAL"
+                  ? `Trial ${classification.trialStatus} (Ref: ${classification.technicalPlanName})`
+                  : (classification.commercialPlanName || "Assinatura Ativa"),
           monthlyEstimate: classification.contractedMonthlyAmount,
         };
 

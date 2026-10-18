@@ -706,6 +706,10 @@ export function AdminSubscriptionOperationsModal({
                       "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
                     modality === "VOUCHER" &&
                       "bg-purple-500/20 text-purple-300 border border-purple-500/40",
+                    modality === "CANCELADA" &&
+                      "bg-zinc-500/20 text-zinc-300 border border-zinc-500/40",
+                    modality === "RESTRICTED" &&
+                      "bg-red-500/20 text-red-300 border border-red-500/40",
                     modality === "TRIAL" &&
                       "bg-blue-500/20 text-blue-300 border border-blue-500/30",
                     modality === "FREE" && "bg-zinc-500/20 text-zinc-300 border border-zinc-500/30",

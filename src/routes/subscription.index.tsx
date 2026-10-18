@@ -105,6 +105,12 @@ function SubscriptionComponent() {
     isTrial,
     loading: planLoading,
     subscription,
+    lastContractedPlan,
+    commercialState,
+    operationalState,
+    canOperate,
+    isRestricted,
+    isError,
     delinquency,
     refresh,
   } = planLimits;
@@ -539,7 +545,7 @@ function SubscriptionComponent() {
               >
                 <Scale className="w-3.5 h-3.5 mr-1.5" /> Ver Comparativo
               </Button>
-              {plan !== "free" && !isInternalTesting && (
+              {(plan !== "free" || subscription?.stripe_customer_id || subscription?.status === "canceled" || lastContractedPlan) && !isInternalTesting && (
                 <>
                   <Button
                     size="sm"
@@ -552,7 +558,7 @@ function SubscriptionComponent() {
                     ) : (
                       <CreditCard className="w-3.5 h-3.5 mr-1.5" />
                     )}
-                    Gerenciar Assinatura
+                    Histórico & Faturamento
                   </Button>
                   {subscription?.status === "active" && !subscription?.cancel_at_period_end && (
                     <Button
@@ -593,7 +599,61 @@ function SubscriptionComponent() {
           <YourAddons />
 
           {/* Status Alerts */}
-          {isTrial && (
+          {isError && (
+            <div className="bg-[#0b0f17] border border-amber-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_8px_28px_rgba(245,158,11,0.12)]">
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-xl bg-amber-500/10 border border-amber-500/20 grid place-items-center shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    Instabilidade na verificação do plano
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Não foi possível verificar seu plano no momento devido a uma instabilidade de conexão. Suas assinaturas não foram canceladas.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => refresh()}
+                className="bg-amber-500 hover:bg-amber-400 text-black font-bold whitespace-nowrap"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Tentar Novamente
+              </Button>
+            </div>
+          )}
+
+          {!isError && isRestricted && (
+            <div className="bg-[#0b0f17] border border-red-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_8px_28px_rgba(239,68,68,0.12)]">
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-xl bg-red-500/10 border border-red-500/20 grid place-items-center shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    Sem plano ativo — Acesso operacional restrito
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    {lastContractedPlan
+                      ? `Seu último plano contratado foi ${lastContractedPlan === "starter" ? "Starter" : lastContractedPlan === "pro" ? "Pro" : "Elite"} (cancelado/reembolsado). As operações de agendamento e cadastro estão bloqueadas.`
+                      : "Seu período de teste expirou. Escolha um plano abaixo para liberar o sistema para uso."}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  const el = document.getElementById("planos-disponiveis");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold shadow-[0_4px_16px_rgba(16,185,129,0.3)] whitespace-nowrap"
+              >
+                Contratar Novo Plano
+              </Button>
+            </div>
+          )}
+
+          {isTrial && !isRestricted && (
             <div className="bg-[#0b0f17] border border-sky-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_8px_28px_rgba(56,189,248,0.10)]">
               <div className="flex items-center gap-4">
                 <div className="h-11 w-11 rounded-xl bg-sky-500/10 border border-sky-500/20 grid place-items-center shrink-0">
@@ -751,7 +811,17 @@ function SubscriptionComponent() {
               tone="zinc"
               icon={AlertCircle}
               title="Assinatura Cancelada"
-              desc="Sua assinatura anterior foi cancelada. Escolha um novo plano abaixo."
+              desc={
+                lastContractedPlan
+                  ? `Sua assinatura anterior do plano ${
+                      lastContractedPlan === "starter"
+                        ? "Starter"
+                        : lastContractedPlan === "pro"
+                          ? "Pro"
+                          : "Elite"
+                    } foi cancelada. Escolha um novo plano abaixo.`
+                  : "Sua assinatura anterior foi cancelada. Escolha um novo plano abaixo."
+              }
             />
           )}
           {subscription?.status === "incomplete" && (
@@ -775,8 +845,23 @@ function SubscriptionComponent() {
           <div className="bg-[#0b0f17] border border-zinc-800/80 rounded-2xl p-5 md:p-6 shadow-[0_8px_28px_rgba(16,185,129,0.08)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-5 border-b border-zinc-800/80">
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0">
-                  {plan === "elite" || (plan as any) === "enterprise" ? (
+                <div
+                  className={cn(
+                    "h-11 w-11 rounded-xl grid place-items-center shrink-0 border",
+                    isRestricted
+                      ? "bg-red-500/10 border-red-500/20 text-red-400"
+                      : operationalState === "VOUCHER_ACTIVE"
+                        ? "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                        : isTrial
+                          ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
+                          : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
+                  )}
+                >
+                  {isRestricted ? (
+                    <ShieldAlert className="h-5 w-5 text-red-400" />
+                  ) : operationalState === "VOUCHER_ACTIVE" ? (
+                    <Crown className="h-5 w-5 text-purple-400" />
+                  ) : plan === "elite" || (plan as any) === "enterprise" ? (
                     <Rocket className="h-5 w-5 text-emerald-400" />
                   ) : plan === "pro" || (plan as any) === "professional" ? (
                     <Crown className="h-5 w-5 text-emerald-400" />
@@ -788,75 +873,123 @@ function SubscriptionComponent() {
                 </div>
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    Plano Atual
+                    {isRestricted
+                      ? "Situação do Estabelecimento"
+                      : operationalState === "VOUCHER_ACTIVE"
+                        ? "Plano Concedido"
+                        : "Plano Atual"}
                   </div>
                   <div className="text-xl font-black text-white">
-                    {plan === "starter"
-                      ? "Starter"
-                      : plan === "pro" || (plan as any) === "professional"
-                        ? "Pro"
-                        : plan === "elite" || (plan as any) === "enterprise"
-                          ? "Elite"
-                          : !plan || plan === "free"
-                            ? "Grátis"
-                            : plan}
+                    {isRestricted
+                      ? "Sem plano ativo"
+                      : operationalState === "VOUCHER_ACTIVE"
+                        ? "Elite (Voucher)"
+                        : isTrial
+                          ? "Trial Pro"
+                          : plan === "starter"
+                            ? "Starter"
+                            : plan === "pro" || (plan as any) === "professional"
+                              ? "Pro"
+                              : plan === "elite" || (plan as any) === "enterprise"
+                                ? "Elite"
+                                : !plan || plan === "free"
+                                  ? "Grátis"
+                                  : plan}
                   </div>
+                  {isRestricted && lastContractedPlan && (
+                    <div className="text-xs text-zinc-400 mt-0.5">
+                      Último plano contratado:{" "}
+                      <span className="font-semibold text-zinc-300">
+                        {lastContractedPlan === "starter"
+                          ? "Starter"
+                          : lastContractedPlan === "pro"
+                            ? "Pro"
+                            : "Elite"}
+                      </span>{" "}
+                      (Cancelado)
+                    </div>
+                  )}
+                  {operationalState === "VOUCHER_ACTIVE" && (
+                    <div className="text-xs text-purple-300/80 mt-0.5">
+                      Acesso permanente concedido por voucher institucional
+                    </div>
+                  )}
                 </div>
               </div>
               <div
                 className={cn(
                   "w-full sm:w-auto h-[34px] sm:h-auto px-3 py-1.5 rounded-xl sm:rounded-lg border text-[10px] font-black uppercase tracking-widest grid place-items-center text-center",
-                  subscription?.status === "active" && subscription?.cancel_at_period_end
-                    ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                    : subscription?.status === "active" ||
-                        (!subscription?.status && plan !== "free")
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                      : subscription?.status === "trialing"
-                        ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
-                        : subscription?.status === "past_due"
-                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          : subscription?.status === "unpaid"
-                            ? "bg-red-500/10 text-red-400 border-red-500/30"
-                            : "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
+                  isRestricted
+                    ? "bg-red-500/10 text-red-400 border-red-500/30"
+                    : operationalState === "VOUCHER_ACTIVE"
+                      ? "bg-purple-500/10 text-purple-300 border-purple-500/30"
+                      : subscription?.status === "active" && subscription?.cancel_at_period_end
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                        : subscription?.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                          : isTrial
+                            ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                            : subscription?.status === "past_due"
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                              : subscription?.status === "unpaid"
+                                ? "bg-red-500/10 text-red-400 border-red-500/30"
+                                : "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
                 )}
               >
-                {subscription?.status === "active" && subscription?.cancel_at_period_end
-                  ? "Cancelamento Agendado"
-                  : subscription?.status === "active"
-                    ? "Assinatura Ativa"
-                    : subscription?.status === "trialing"
-                      ? "Período de Teste"
-                      : subscription?.status === "past_due"
-                        ? "Pagamento Pendente"
-                        : subscription?.status === "unpaid"
-                          ? "Inadimplente"
-                          : subscription?.status === "canceled"
-                            ? "Cancelada"
-                            : plan === "free"
-                              ? "Plano Gratuito"
-                              : "Assinatura Ativa"}
+                {isRestricted
+                  ? "Acesso Restrito"
+                  : operationalState === "VOUCHER_ACTIVE"
+                    ? "Voucher Ativo"
+                    : subscription?.status === "active" && subscription?.cancel_at_period_end
+                      ? "Cancelamento Agendado"
+                      : subscription?.status === "active"
+                        ? "Assinatura Ativa"
+                        : isTrial
+                          ? "Período de Teste"
+                          : subscription?.status === "past_due"
+                            ? "Pagamento Pendente"
+                            : subscription?.status === "unpaid"
+                              ? "Inadimplente"
+                              : "Plano Gratuito"}
               </div>
             </div>
 
             <div className="grid gap-3 grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-5">
-              <UsageBar label="Profissionais" used={usage?.barbers ?? 0} limit={limits?.barbers} />
-              <UsageBar label="Serviços" used={usage?.services ?? 0} limit={limits?.services} />
-              <UsageBar label="Produtos" used={usage?.products ?? 0} limit={limits?.products} />
+              <UsageBar
+                label="Profissionais"
+                used={usage?.barbers ?? 0}
+                limit={limits?.barbers}
+                isRestricted={isRestricted}
+              />
+              <UsageBar
+                label="Serviços"
+                used={usage?.services ?? 0}
+                limit={limits?.services}
+                isRestricted={isRestricted}
+              />
+              <UsageBar
+                label="Produtos"
+                used={usage?.products ?? 0}
+                limit={limits?.products}
+                isRestricted={isRestricted}
+              />
               <UsageBar
                 label="Agendamentos"
                 used={usage?.monthlyAppointments ?? 0}
                 limit={limits?.monthlyAppointments}
+                isRestricted={isRestricted}
               />
               <UsageBar
                 label="WhatsApp"
                 used={usage?.whatsappConnections ?? 0}
                 limit={limits?.whatsappConnections}
+                isRestricted={isRestricted}
               />
             </div>
           </div>
 
           {/* PLANOS DISPONÍVEIS */}
-          <div className="pt-2">
+          <div id="planos-disponiveis" className="pt-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-px flex-1 bg-zinc-800" />
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
@@ -1791,27 +1924,45 @@ function UsageBar({
   label,
   used,
   limit,
+  isRestricted,
 }: {
   label: string;
   used: number;
   limit: number | undefined;
+  isRestricted?: boolean;
 }) {
   const isInf = limit === Infinity;
+  const isZero = limit === 0 || isRestricted;
   const max = isInf ? 100 : (limit ?? 0);
-  const pct = isInf ? 100 : Math.min((used / (max || 1)) * 100, 100);
+  const pct = isInf ? 100 : isZero ? 100 : Math.min((used / (max || 1)) * 100, 100);
   return (
-    <div className="bg-[#05070d]/60 border border-zinc-800/60 rounded-2xl min-h-[92px] p-[14px] flex flex-col justify-between">
+    <div
+      className={cn(
+        "bg-[#05070d]/60 border rounded-2xl min-h-[92px] p-[14px] flex flex-col justify-between transition-colors",
+        isZero ? "border-red-500/20 bg-red-950/10" : "border-zinc-800/60",
+      )}
+    >
       <div className="flex justify-between items-baseline mb-2 gap-2">
         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 truncate">
           {label}
         </span>
-        <span className="text-xs font-black text-emerald-400 whitespace-nowrap shrink-0">
-          {used} / {isInf ? "∞" : max}
+        <span
+          className={cn(
+            "text-xs font-black whitespace-nowrap shrink-0",
+            isZero ? "text-red-400 font-bold" : "text-emerald-400",
+          )}
+        >
+          {isZero ? `${used} (Restrito)` : `${used} / ${isInf ? "∞" : max}`}
         </span>
       </div>
       <Progress
         value={pct}
-        className="h-1.5 bg-zinc-800 [&>div]:bg-gradient-to-r [&>div]:from-emerald-500 [&>div]:to-emerald-400"
+        className={cn(
+          "h-1.5 bg-zinc-800",
+          isZero
+            ? "[&>div]:bg-red-500/80"
+            : "[&>div]:bg-gradient-to-r [&>div]:from-emerald-500 [&>div]:to-emerald-400",
+        )}
       />
     </div>
   );

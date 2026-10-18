@@ -7,6 +7,47 @@ import { resolveDelinquencyState, type DelinquencyResolution } from "@/lib/delin
 
 export type PlanType = "starter" | "pro" | "elite" | "free";
 
+export const RESTRICTED_LIMITS = {
+  barbers: 0,
+  customers: 0,
+  services: 0,
+  products: 0,
+  monthlyAppointments: 0,
+  whatsappConnections: 0,
+  automations: 0,
+  hasTrial: false,
+  trialDays: 0,
+};
+
+export function resolvePlanFromPriceId(priceId: string | null | undefined): PlanType | null {
+  if (!priceId) return null;
+  const p = priceId.toLowerCase();
+  if (
+    p.includes("starter") ||
+    p === "price_1tvtowpkg6q10ujrqerpgyko" ||
+    p === "price_1ujdzbpkg6q10ujrqrf3rhbs"
+  ) {
+    return "starter";
+  }
+  if (
+    p.includes("pro") ||
+    p === "price_1tvtovpkg6q10ujre6zmgypk" ||
+    p === "price_1ujdacpkg6q10ujrwojctnmr" ||
+    p === "price_1tvtpzpkg6q10ujrr4d34v6a"
+  ) {
+    return "pro";
+  }
+  if (
+    p.includes("elite") ||
+    p === "price_1tmyg0pkg6q10ujrox8teehr" ||
+    p === "price_1ujdx4pkg6q10ujrzkytrhaj" ||
+    p === "price_1tvtqqpkg6q10ujrx7xmsyqm"
+  ) {
+    return "elite";
+  }
+  return null;
+}
+
 export const PLAN_LIMITS = {
   free: {
     barbers: 1,
@@ -70,6 +111,9 @@ export function usePlanLimits() {
       const monthStart = startOfMonth(new Date()).toISOString();
       const monthEnd = endOfMonth(new Date()).toISOString();
 
+      const targetIds = Array.from(new Set([userId, tenantId].filter(Boolean))) as string[];
+      const idOrFilter = targetIds.map((id) => `user_id.eq.${id}`).join(",");
+
       const profilePromise = userId
         ? supabase
             .from("profiles")
@@ -82,25 +126,17 @@ export function usePlanLimits() {
             .eq("tenant_id", tenantId!)
             .maybeSingle();
 
-      const subPromise = userId
+      const subPromise = idOrFilter
         ? supabase
             .from("subscriptions")
             .select(
-              "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, plan_key, past_due_since, grace_ends_at, payment_failed_at",
+              "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, plan_key, past_due_since, grace_ends_at, payment_failed_at, canceled_at",
             )
-            .eq("user_id", userId)
+            .or(idOrFilter)
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle()
-        : supabase
-            .from("subscriptions")
-            .select(
-              "status, current_period_end, cancel_at_period_end, stripe_customer_id, price_id, plan_key, past_due_since, grace_ends_at, payment_failed_at",
-            )
-            .eq("user_id", tenantId!)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        : Promise.resolve({ data: null, error: null } as any);
 
       const [profileRes, subRes, countsRes] = await Promise.all([
         profilePromise,
@@ -144,27 +180,8 @@ export function usePlanLimits() {
         throw new Error("Erro ao consultar assinatura: " + subRes.error.message);
       }
 
-      let currentPlan: PlanType = "free";
-      let trialEndStr: string | null = null;
-
-      if (profileRes.data) {
-        trialEndStr = profileRes.data.trial_end;
-        const now = new Date();
-        const trialEnd = trialEndStr ? new Date(trialEndStr) : null;
-        const trialActive = trialEnd && trialEnd > now;
-
-        const profilePlan = (profileRes.data.plan as string)?.toLowerCase();
-        const effectivePlan = (profileRes.data.effective_plan as string)?.toLowerCase();
-
-        if (trialActive) {
-          currentPlan = "pro";
-        } else if (effectivePlan && effectivePlan !== "free") {
-          currentPlan = effectivePlan as PlanType;
-        } else {
-          currentPlan = (profilePlan as PlanType) || "free";
-        }
-      }
-
+      // 1. Resolução segura de histórico de assinatura contratada
+      let lastContractedPlan: PlanType | null = null;
       let subData: {
         status: string | null;
         currentPeriodEnd: string | null;
@@ -174,6 +191,7 @@ export function usePlanLimits() {
         pastDueSince: string | null;
         graceEndsAt: string | null;
         paymentFailedAt: string | null;
+        canceledAt: string | null;
       } | null = null;
 
       if (subRes.data) {
@@ -187,47 +205,35 @@ export function usePlanLimits() {
           pastDueSince: (rawSub.past_due_since as string) || null,
           graceEndsAt: (rawSub.grace_ends_at as string) || null,
           paymentFailedAt: (rawSub.payment_failed_at as string) || null,
+          canceledAt: (rawSub.canceled_at as string) || null,
         };
 
-        const isSubscribed = ["active", "trialing", "past_due"].includes(subRes.data.status || "");
-        if (isSubscribed) {
-          const planKey = (rawSub.plan_key as string)?.toLowerCase();
-          const priceId = (subRes.data.price_id as string)?.toLowerCase() || "";
-
-          if (planKey && ["starter", "pro", "elite"].includes(planKey)) {
-            currentPlan = planKey as PlanType;
-          } else if (priceId) {
-            if (
-              priceId.includes("starter") ||
-              priceId === "price_1tvtowpkg6q10ujrqerpgyko" ||
-              priceId === "price_1ujdzbpkg6q10ujrqrf3rhbs"
-            ) {
-              currentPlan = "starter";
-            } else if (
-              priceId.includes("pro") ||
-              priceId === "price_1tvtovpkg6q10ujre6zmgypk" ||
-              priceId === "price_1ujdacpkg6q10ujrwojctnmr"
-            ) {
-              currentPlan = "pro";
-            } else if (
-              priceId.includes("elite") ||
-              priceId === "price_1tmyg0pkg6q10ujrox8teehr" ||
-              priceId === "price_1ujdx4pkg6q10ujrzkytrhaj"
-            ) {
-              currentPlan = "elite";
-            }
-          }
+        const planKeyFromSub = (rawSub.plan_key as string)?.toLowerCase();
+        const pricePlan = resolvePlanFromPriceId(subRes.data.price_id);
+        if (pricePlan) {
+          lastContractedPlan = pricePlan;
+        } else if (planKeyFromSub && ["starter", "pro", "elite"].includes(planKeyFromSub)) {
+          lastContractedPlan = planKeyFromSub as PlanType;
         }
       }
 
-      const [barbRes, servRes, prodRes, appRes, whatsappRes] = countsRes;
+      // 2. Avaliação de Trial do Perfil
+      let trialEndStr: string | null = null;
+      let trialActive = false;
+      if (profileRes.data) {
+        trialEndStr = profileRes.data.trial_end;
+        const now = new Date();
+        const trialEnd = trialEndStr ? new Date(trialEndStr) : null;
+        trialActive = !!(trialEnd && trialEnd > now);
+      }
 
-      // Canonical entitlement resolution
+      // 3. Resolução canônica de direitos via RPC resolve_tenant_entitlement
       let entitlementData: {
         operational_state: string;
         can_operate: boolean;
         effective_plan: string;
-        plan_type: string;
+        commercial_plan?: string;
+        plan_type?: string;
         restriction_reason: string | null;
         modules: string[];
       } | null = null;
@@ -238,13 +244,41 @@ export function usePlanLimits() {
         });
         if (entRes) {
           entitlementData = entRes as any;
-          if (entitlementData.effective_plan && entitlementData.effective_plan !== "free") {
-            currentPlan = entitlementData.effective_plan as PlanType;
-          }
         }
       } catch (e) {
         console.warn("[usePlanLimits] resolve_tenant_entitlement non-blocking fallback:", e);
       }
+
+      // 4. Determinação estrita de currentPlan (FAIL-CLOSED / ZERO VULNERABILIDADE A PROFILES.EFFECTIVE_PLAN)
+      let currentPlan: PlanType = "free";
+
+      if (entitlementData) {
+        if (!entitlementData.can_operate || entitlementData.operational_state === "RESTRICTED") {
+          currentPlan = "free";
+        } else if (entitlementData.operational_state === "VOUCHER_ACTIVE") {
+          currentPlan = (["starter", "pro", "elite"].includes(entitlementData.effective_plan)
+            ? entitlementData.effective_plan
+            : "elite") as PlanType;
+        } else if (entitlementData.operational_state === "TRIAL_ACTIVE" || trialActive) {
+          currentPlan = "pro";
+        } else if (["starter", "pro", "elite"].includes(entitlementData.effective_plan)) {
+          currentPlan = entitlementData.effective_plan as PlanType;
+        } else {
+          currentPlan = "free";
+        }
+      } else {
+        // Fallback apenas se RPC falhar (rede / indisponibilidade de banco):
+        const isSubscribed = ["active", "trialing", "past_due"].includes(subRes?.data?.status || "");
+        if (isSubscribed && lastContractedPlan) {
+          currentPlan = lastContractedPlan;
+        } else if (trialActive) {
+          currentPlan = "pro";
+        } else {
+          currentPlan = "free";
+        }
+      }
+
+      const [barbRes, servRes, prodRes, appRes, whatsappRes] = countsRes;
 
       const parseCount = (
         r: PromiseSettledResult<{ count?: number | null; error?: unknown } | null>,
@@ -281,6 +315,7 @@ export function usePlanLimits() {
         plan: currentPlan,
         trialEndsAt: trialEndStr,
         subscription: subData,
+        lastContractedPlan,
         usage: usageData,
         usageStatus: usageStatusData,
         entitlement: entitlementData,
@@ -293,6 +328,7 @@ export function usePlanLimits() {
   const plan = data?.plan || "free";
   const trialEndsAt = data?.trialEndsAt || null;
   const subscription = data?.subscription || null;
+  const lastContractedPlan = data?.lastContractedPlan || null;
   const entitlement = data?.entitlement || null;
   const usage = data?.usage || {
     barbers: 0,
@@ -302,8 +338,6 @@ export function usePlanLimits() {
     whatsappConnections: 0,
   };
   const loading = !!tenantId && queryLoading;
-
-  const limits = plan && PLAN_LIMITS[plan] ? PLAN_LIMITS[plan] : PLAN_LIMITS.free;
 
   const trialDaysRemaining = trialEndsAt
     ? Math.max(0, differenceInDays(new Date(trialEndsAt), new Date()))
@@ -325,10 +359,15 @@ export function usePlanLimits() {
     !hasActiveSubscription && (trialEndsAt ? new Date(trialEndsAt) > new Date() : false);
 
   // Canonical Operational State Evaluation
+  const isQueryError = Boolean(isError);
   const operationalState = entitlement?.operational_state || (hasActiveSubscription || isTrialValid ? "SUBSCRIPTION_ACTIVE" : "RESTRICTED");
-  const canOperate = entitlement ? Boolean(entitlement.can_operate) : (hasActiveSubscription || isTrialValid);
-  const isRestricted = !canOperate;
+  const canOperate = !isQueryError && (entitlement ? Boolean(entitlement.can_operate) : (hasActiveSubscription || isTrialValid));
+  // Falha de rede não pode ser confundida com restrição legítima confirmada:
+  const isRestricted = !isQueryError && (!canOperate || operationalState === "RESTRICTED");
   const restrictionReason = entitlement?.restriction_reason || (isRestricted ? "Conta com operações restritas" : null);
+
+  // Se o tenant for RESTRICTED, em erro de rede, ou não puder operar, limites são rigorosamente ZERADOS (fail-closed)
+  const limits = (isRestricted || isQueryError) ? RESTRICTED_LIMITS : (plan && PLAN_LIMITS[plan] ? PLAN_LIMITS[plan] : PLAN_LIMITS.free);
 
   const canAccess = canOperate;
   const isSubscriptionCanceled = subStatus === "canceled";
@@ -344,9 +383,32 @@ export function usePlanLimits() {
     ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
     : null;
 
+  let commercialState:
+    | "RESTRICTED"
+    | "TRIAL_ACTIVE"
+    | "SUBSCRIPTION_ACTIVE"
+    | "SUBSCRIPTION_GRACE"
+    | "VOUCHER_ACTIVE"
+    | "ERROR"
+    | "FREE" = "FREE";
+
+  if (isQueryError) {
+    commercialState = "ERROR";
+  } else if (isRestricted || operationalState === "RESTRICTED") {
+    commercialState = "RESTRICTED";
+  } else if (operationalState === "VOUCHER_ACTIVE") {
+    commercialState = "VOUCHER_ACTIVE";
+  } else if (operationalState === "TRIAL_ACTIVE" || isTrialValid) {
+    commercialState = "TRIAL_ACTIVE";
+  } else if (delinquency.isInGrace || operationalState === "SUBSCRIPTION_GRACE") {
+    commercialState = "SUBSCRIPTION_GRACE";
+  } else if (hasActiveSubscription || operationalState === "SUBSCRIPTION_ACTIVE") {
+    commercialState = "SUBSCRIPTION_ACTIVE";
+  }
+
   const checkLimit = (type: keyof typeof usage) => {
-    // If tenant is operational-restricted, all operational actions are blocked
-    if (!canOperate) return false;
+    // If query failed or tenant is operational-restricted, all operational actions are blocked (fail-closed)
+    if (isQueryError || !canOperate || isRestricted) return false;
     if (!limits) return false;
 
     const limitValue = limits[type];
@@ -354,7 +416,7 @@ export function usePlanLimits() {
     // A. Se o limite for Infinity, é ilimitado -> sempre permitido (mesmo se contagem falhar)
     if (limitValue === Infinity) return true;
 
-    // B. Se o limite for zero (recurso não permitido no plano), bloqueia
+    // B. Se o limite for zero (recurso não permitido no plano ou restrito), bloqueia
     if (limitValue === 0) return false;
 
     // C. FAIL-CLOSED: Se a contagem falhou ou os dados ainda não foram obtidos, não autoriza
@@ -388,6 +450,8 @@ export function usePlanLimits() {
     isScheduledForCancellation,
     scheduledCancellationDate,
     subscription,
+    lastContractedPlan,
+    commercialState,
     operationalState,
     canOperate,
     isRestricted,

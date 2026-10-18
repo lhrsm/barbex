@@ -11,9 +11,38 @@
 
 export const LM_BARBERSHOP_ID = "c54ac1ac-49be-4505-b7a4-d257ed023f08";
 
-export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "FREE" | "OUTRO";
+export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "CANCELADA" | "RESTRICTED" | "FREE" | "OUTRO";
 
 export type TenantTrialStatus = "EM VIGÊNCIA" | "EXPIRADO" | "SEM EXPIRAÇÃO" | "NÃO APLICÁVEL";
+
+export function resolveCommercialPlanNameFromPriceId(priceId: string | null | undefined): string | null {
+  if (!priceId) return null;
+  const p = priceId.toLowerCase();
+  if (
+    p.includes("starter") ||
+    p === "price_1tvtowpkg6q10ujrqerpgyko" ||
+    p === "price_1ujdzbpkg6q10ujrqrf3rhbs"
+  ) {
+    return "Starter";
+  }
+  if (
+    p.includes("pro") ||
+    p === "price_1tvtovpkg6q10ujre6zmgypk" ||
+    p === "price_1ujdacpkg6q10ujrwojctnmr" ||
+    p === "price_1tvtpzpkg6q10ujrr4d34v6a"
+  ) {
+    return "Pro";
+  }
+  if (
+    p.includes("elite") ||
+    p === "price_1tmyg0pkg6q10ujrox8teehr" ||
+    p === "price_1ujdx4pkg6q10ujrzkytrhaj" ||
+    p === "price_1tvtqqpkg6q10ujrx7xmsyqm"
+  ) {
+    return "Elite";
+  }
+  return null;
+}
 
 export interface CommercialClassification {
   tenantId: string;
@@ -23,6 +52,8 @@ export interface CommercialClassification {
   trialStatus: TenantTrialStatus;
   /** Nome do plano comercial contratado (apenas se houver assinatura comercial) */
   commercialPlanName: string | null;
+  /** Nome do último plano comercial contratado (se cancelado) */
+  lastContractedPlanName?: string | null;
   /** Nome do plano técnico liberado no sistema para testes/funcionalidades */
   technicalPlanName: string | null;
   /** Valor mensal efetivamente contratado (MRR comercial) */
@@ -32,7 +63,7 @@ export interface CommercialClassification {
   isPermanentVoucher: boolean;
   trialStart: string | null;
   trialEnd: string | null;
-  statusBadgeVariant: "emerald" | "blue" | "amber" | "purple" | "gray";
+  statusBadgeVariant: "emerald" | "blue" | "amber" | "purple" | "gray" | "red";
   statusLabel: string;
   explanation: string;
 }
@@ -47,6 +78,7 @@ export interface TenantClassificationInput {
   ownerProfile?: {
     id?: string;
     plan?: string | null;
+    effective_plan?: string | null;
     trial_start?: string | null;
     trial_end?: string | null;
     is_internal_test_tenant?: boolean | null;
@@ -65,9 +97,17 @@ export interface TenantClassificationInput {
     id: string;
     status: string;
     price_id?: string | null;
+    plan_key?: string | null;
     is_internal_test_tenant?: boolean | null;
+    canceled_at?: string | null;
   }> | null;
   hasPermanentVoucher?: boolean;
+  entitlement?: {
+    operational_state?: string | null;
+    can_operate?: boolean | null;
+    effective_plan?: string | null;
+    restriction_reason?: string | null;
+  } | null;
 }
 
 /**
@@ -85,7 +125,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     (input.ownerProfile?.plan ? input.ownerProfile.plan.toUpperCase() : null);
   const catalogNominalAmount = technicalPlan ? Number(technicalPlan.price_monthly) || 0 : 0;
 
-  // 1. Verificação de Assinatura Comercial Contratada
+  // 1. Verificação de Assinatura Comercial Ativa
   const activePaidSub = (input.subscriptions || []).find(
     (s) =>
       (s.status === "active" || s.status === "past_due") &&
@@ -102,6 +142,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       modality: "ASSINATURA",
       trialStatus: "NÃO APLICÁVEL",
       commercialPlanName: technicalPlanName,
+      lastContractedPlanName: technicalPlanName,
       technicalPlanName,
       contractedMonthlyAmount: contractedAmount,
       catalogNominalAmount,
@@ -123,6 +164,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       modality: "VOUCHER",
       trialStatus: "SEM EXPIRAÇÃO",
       commercialPlanName: null, // Proibido exibir como plano comercial
+      lastContractedPlanName: null,
       technicalPlanName, // Referência técnica para liberação de módulos
       contractedMonthlyAmount: 0, // Não gera MRR
       catalogNominalAmount,
@@ -135,7 +177,42 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     };
   }
 
-  // 3. Verificação de Plano Gratuito (Free) sem trial
+  // 3. Verificação de Assinatura Comercial Anterior Cancelada (ex: Carlos Barber Shop)
+  const canceledSub = (input.subscriptions || []).find(
+    (s) => s.status === "canceled" && !s.is_internal_test_tenant && !isPermanentVoucher,
+  );
+
+  if (canceledSub) {
+    const lastPlan =
+      resolveCommercialPlanNameFromPriceId(canceledSub.price_id) ||
+      (canceledSub.plan_key && canceledSub.plan_key !== "free"
+        ? canceledSub.plan_key.charAt(0).toUpperCase() + canceledSub.plan_key.slice(1)
+        : null) ||
+      (technicalPlanName && technicalPlanName !== "FREE" ? technicalPlanName : null);
+
+    return {
+      tenantId: input.id,
+      tenantName: input.name,
+      slug: input.slug,
+      modality: "CANCELADA",
+      trialStatus: "NÃO APLICÁVEL",
+      commercialPlanName: null, // Proibido exibir como plano comercial ativo
+      lastContractedPlanName: lastPlan || null,
+      technicalPlanName: "FREE",
+      contractedMonthlyAmount: 0, // Não gera MRR
+      catalogNominalAmount: 0,
+      isPermanentVoucher: false,
+      trialStart: input.ownerProfile?.trial_start || null,
+      trialEnd: input.ownerProfile?.trial_end || null,
+      statusBadgeVariant: "gray",
+      statusLabel: "ASSINATURA CANCELADA",
+      explanation: lastPlan
+        ? `Assinatura anterior cancelada/reembolsada (Último plano contratado: ${lastPlan})`
+        : "Assinatura anterior cancelada/reembolsada (Sem plano anterior identificado)",
+    };
+  }
+
+  // 4. Verificação de Plano Gratuito (Free) sem trial
   const isProfileFree = input.ownerProfile?.plan?.toLowerCase() === "free";
   const hasNoTrial = !input.ownerProfile?.trial_end && !input.ownerProfile?.trial_start;
   if (isProfileFree && hasNoTrial) {
@@ -146,6 +223,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       modality: "FREE",
       trialStatus: "NÃO APLICÁVEL",
       commercialPlanName: null,
+      lastContractedPlanName: null,
       technicalPlanName: "FREE",
       contractedMonthlyAmount: 0,
       catalogNominalAmount: 0,
@@ -158,7 +236,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     };
   }
 
-  // 4. Verificação de Trial
+  // 5. Verificação de Trial / Acesso Restrito
   const trialStart = input.ownerProfile?.trial_start || input.created_at || null;
   const trialEnd = input.ownerProfile?.trial_end || null;
 
@@ -170,25 +248,43 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     }
   }
 
-  const trialStatus: TenantTrialStatus = isExpired ? "EXPIRADO" : "EM VIGÊNCIA";
+  if (isExpired || input.entitlement?.operational_state === "RESTRICTED") {
+    return {
+      tenantId: input.id,
+      tenantName: input.name,
+      slug: input.slug,
+      modality: "RESTRICTED",
+      trialStatus: "EXPIRADO",
+      commercialPlanName: null,
+      lastContractedPlanName: null,
+      technicalPlanName: "FREE",
+      contractedMonthlyAmount: 0,
+      catalogNominalAmount: 0,
+      isPermanentVoucher: false,
+      trialStart,
+      trialEnd,
+      statusBadgeVariant: "amber",
+      statusLabel: "TRIAL EXPIRADO",
+      explanation: "Período de teste encerrado — Acesso operacional restrito a novas operações",
+    };
+  }
 
   return {
     tenantId: input.id,
     tenantName: input.name,
     slug: input.slug,
     modality: "TRIAL",
-    trialStatus,
+    trialStatus: "EM VIGÊNCIA",
     commercialPlanName: null, // Proibido exibir como plano comercial
-    technicalPlanName, // Referência técnica para liberação de módulos
+    lastContractedPlanName: null,
+    technicalPlanName: "PRO", // Referência técnica liberada no trial
     contractedMonthlyAmount: 0, // Não gera MRR
-    catalogNominalAmount,
+    catalogNominalAmount: 99.9,
     isPermanentVoucher: false,
     trialStart,
     trialEnd,
-    statusBadgeVariant: isExpired ? "amber" : "blue",
-    statusLabel: isExpired ? "TRIAL EXPIRADO" : "TRIAL EM VIGÊNCIA",
-    explanation: isExpired
-      ? "Período de teste expirado (sem bloqueio de teste, sem assinatura comercial)"
-      : "Período de teste ativo (homologação pré-comercial)",
+    statusBadgeVariant: "blue",
+    statusLabel: "TRIAL PRO (EM VIGÊNCIA)",
+    explanation: "Período de teste Pro ativo (homologação pré-comercial)",
   };
 }
