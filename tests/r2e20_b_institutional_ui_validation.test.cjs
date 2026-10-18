@@ -1,5 +1,5 @@
 /**
- * BARBEX — SUÍTE DE TESTES AUTOMATIZADOS R2E.20B
+ * BARBEX — SUÍTE DE TESTES AUTOMATIZADOS R2E.20B / R2E.20D
  * Validação de Integridade Institucional: Landing Page, Planos, FAQ, Navegação e Acessibilidade.
  */
 
@@ -8,7 +8,7 @@ const path = require('path');
 const assert = require('assert');
 
 console.log('================================================================');
-console.log('BARBEX — SUÍTE DE VALIDAÇÃO INSTITUCIONAL R2E.20B');
+console.log('BARBEX — SUÍTE DE VALIDAÇÃO INSTITUCIONAL R2E.20D');
 console.log('================================================================\n');
 
 let passedTests = 0;
@@ -39,7 +39,7 @@ runTest('1.1 PortalFaq: Contém 12 perguntas e respostas institucionais homologa
   assert(faqContent.includes('Como funciona o cancelamento da assinatura? Existe fidelidade?'), 'Falta pergunta sobre cancelamento');
   assert(faqContent.includes('Posso mudar de plano quando minha barbearia crescer?'), 'Falta pergunta sobre mudança de plano');
   assert(faqContent.includes('Quais são as formas de pagamento aceitas para a assinatura?'), 'Falta pergunta de formas de pagamento');
-  assert(faqContent.includes('Como funciona a integração com o WhatsApp?'), 'Falta pergunta de WhatsApp');
+  assert(faqContent.includes('O Barbex permite enviar lembretes e confirmações pelo WhatsApp?'), 'Falta pergunta de WhatsApp');
 });
 
 runTest('1.2 PortalFaq: Regras de negócio - Não anuncia plano gratuito permanente', () => {
@@ -57,9 +57,10 @@ runTest('1.4 PortalFaq: Regras de negócio - Não anuncia módulos avulsos; foca
   assert(faqContent.includes('sem venda fragmentada de módulos avulsos'), 'Deve explicar o modelo de planos completos');
 });
 
-runTest('1.5 PortalFaq: Regras de negócio - Integração WhatsApp via QR Code nativo nos planos Pro e Elite', () => {
-  assert(faqContent.includes('nos planos compatíveis (Pro e Elite)'), 'Deve restringir aos planos compatíveis');
-  assert(faqContent.includes('leitura de QR Code direto no painel'), 'Deve mencionar QR Code nativo');
+runTest('1.5 PortalFaq: Regras de negócio - WhatsApp com provedor externo (Z-API), sem conexão nativa e sem custos inclusos', () => {
+  assert(faqContent.includes('estrutura preparada para integração com serviços externos de comunicação, como a Z-API'), 'Deve informar preparação para provedores externos como Z-API');
+  assert(faqContent.includes('Barbex não fornece uma conexão nativa e independente com o WhatsApp nem inclui automaticamente os custos desses serviços na assinatura'), 'Deve afirmar ausência de conexão nativa ou custos inclusos');
+  assert(!faqContent.includes('possui integração nativa'), 'Não deve prometer integração nativa');
 });
 
 runTest('1.6 PortalFaq: Acessibilidade - Atributos aria e indicador de foco visível', () => {

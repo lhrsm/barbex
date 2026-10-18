@@ -48,8 +48,8 @@ export function PortalFaq({
       a: "As assinaturas da plataforma Barbex são processadas com segurança pela infraestrutura internacional da Stripe, com suporte a cartões de crédito das principais bandeiras nacionais e internacionais, com opção de faturamento mensal ou anual."
     },
     {
-      q: "Como funciona a integração com o WhatsApp?",
-      a: "O Barbex possui integração nativa para disparo de lembretes automáticos de agendamento e confirmações aos seus clientes nos planos compatíveis (Pro e Elite). A barbearia conecta seu próprio número de WhatsApp via leitura de QR Code direto no painel, sem necessidade de contratar planos complexos de API externa."
+      q: "O Barbex permite enviar lembretes e confirmações pelo WhatsApp?",
+      a: "O Barbex possui uma estrutura preparada para integração com serviços externos de comunicação, como a Z-API, permitindo configurar o envio de lembretes e confirmações de agendamentos pelo WhatsApp, conforme as funcionalidades disponíveis no plano contratado. Para utilizar esse recurso, é necessário configurar uma integração com um provedor externo compatível, que poderá exigir contratação e cobrança próprias. O Barbex não fornece uma conexão nativa e independente com o WhatsApp nem inclui automaticamente os custos desses serviços na assinatura."
     },
     {
       q: "O Barbex possui agendamento online com Portal do Cliente?",

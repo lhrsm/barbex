@@ -48,7 +48,7 @@ export function PricingSection({ onSelectPlan }: PricingSectionProps) {
       features: [
         "Até 5 profissionais na equipe",
         "Tudo do plano Starter incluso",
-        "Lembretes e avisos automáticos via WhatsApp",
+        "Integração para envio de avisos via WhatsApp (Z-API compatível)",
         "Cálculo automático de comissões e rateios",
         "CRM 360° e fidelização de clientes",
         "Painel individual para cada barbeiro",

@@ -370,7 +370,7 @@ function LandingPage() {
               { icon: Calendar, label: "Agenda Online" },
               { icon: Smartphone, label: "Portal do Cliente" },
               { icon: BarChart3, label: "Financeiro Premium" },
-              { icon: MessageSquare, label: "Automações WhatsApp" },
+              { icon: MessageSquare, label: "Avisos por WhatsApp" },
               { icon: ShoppingBag, label: "Loja Virtual" },
               { icon: Award, label: "Clube de Assinaturas" }
             ].map((item, idx) => (
