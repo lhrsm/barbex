@@ -44,12 +44,29 @@ function AuthIndexComponent() {
 
             <AuthForm />
 
+            {/* Chamada para novos estabelecimentos iniciarem o Trial Pro */}
+            <div className="mt-6 p-4 rounded-2xl bg-gold/10 border border-gold/25 text-center space-y-2">
+              <p className="text-xs font-black uppercase tracking-wider text-white">
+                Não tem uma barbearia cadastrada?
+              </p>
+              <p className="text-[11px] text-slate-300 font-medium leading-relaxed">
+                Comece seu teste grátis de 15 dias sem burocracia e sem cartão de crédito.
+              </p>
+              <a
+                href="/#planos"
+                className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl bg-gold text-black font-black uppercase tracking-widest text-[11px] hover:bg-gold/90 transition-all shadow-md shadow-gold/20"
+              >
+                <Sparkles size={13} />
+                Iniciar Teste Grátis de 15 Dias
+              </a>
+            </div>
+
             {/* Informational box for clients */}
-            <div className="mt-8 pt-6 border-t border-white/5 text-center space-y-1">
-              <p className="text-[11px] font-bold text-zinc-400 flex items-center justify-center gap-1.5">
+            <div className="mt-6 pt-5 border-t border-white/5 text-center space-y-1">
+              <p className="text-[11px] font-bold text-zinc-300 flex items-center justify-center gap-1.5">
                 <Scissors size={12} className="text-gold/80" /> É cliente de uma barbearia?
               </p>
-              <p className="text-[10px] text-zinc-500 max-w-[280px] mx-auto leading-relaxed">
+              <p className="text-[10px] text-zinc-400 max-w-[280px] mx-auto leading-relaxed">
                 Acesse o link direto da sua barbearia para entrar no Portal do Cliente.
               </p>
             </div>

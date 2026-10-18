@@ -49,6 +49,7 @@ import { PortalFaq } from "@/components/public/PortalFaq";
 import { PrivacyAndLGPDSection } from "@/components/public/PrivacyAndLGPDSection";
 import { ScrollToTopButton } from "@/components/public/ScrollToTopButton";
 import { RegisterWizard } from "@/components/auth/RegisterWizard";
+import { PricingSection, type PlanKey } from "@/components/public/PricingSection";
 import { SystemMockup } from "@/components/public/SystemMockup";
 import { LandingImage, CTASection } from "@/components/public/LandingUI";
 import { PlatformContactSection } from "@/components/public/PlatformContactSection";
@@ -159,6 +160,7 @@ function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showRegisterWizard, setShowRegisterWizard] = useState(false);
+  const [wizardPlan, setWizardPlan] = useState<PlanKey>("pro");
 
   const loaderData = Route.useLoaderData();
 
@@ -218,6 +220,7 @@ function LandingPage() {
                 {[
                   { label: "Recursos", href: "#recursos" },
                   { label: "Soluções", href: "#solucoes" },
+                  { label: "Planos", href: "#planos" },
                   { label: "Sobre", href: "#sobre" },
                   { label: "FAQ", href: "#faq" },
                   { label: "Contato", href: "#contato" },
@@ -234,7 +237,7 @@ function LandingPage() {
               </nav>
 
               <div className="mt-auto flex flex-col gap-3 pb-[env(safe-area-inset-bottom,2rem)]">
-                <Button className="h-14 rounded-2xl bg-gold text-black font-black uppercase tracking-widest text-xs shadow-gold/20 shadow-lg" onClick={() => { setIsMobileMenuOpen(false); setShowRegisterWizard(true); }}>
+                <Button className="h-14 rounded-2xl bg-gold text-black font-black uppercase tracking-widest text-xs shadow-gold/20 shadow-lg" onClick={() => { setIsMobileMenuOpen(false); setWizardPlan("pro"); setShowRegisterWizard(true); }}>
                   Testar Grátis
                 </Button>
                 <Button variant="outline" className="h-14 rounded-2xl border-white/10 text-white/70 font-black uppercase tracking-widest text-[10px]" asChild>
@@ -259,6 +262,7 @@ function LandingPage() {
           <nav className="hidden md:flex gap-8 text-[11px] font-black uppercase tracking-widest text-white/90">
             <a href="#recursos" className="hover:text-gold transition-colors">Recursos</a>
             <a href="#solucoes" className="hover:text-gold transition-colors">Soluções</a>
+            <a href="#planos" className="hover:text-gold transition-colors">Planos</a>
             <a href="#sobre" className="hover:text-gold transition-colors">Sobre</a>
             <a href="#faq" className="hover:text-gold transition-colors">FAQ</a>
             <a href="#contato" className="hover:text-gold transition-colors">Contato</a>
@@ -269,7 +273,7 @@ function LandingPage() {
               <Button variant="ghost" className="text-xs font-black uppercase tracking-widest text-white/90 hover:text-white" asChild>
                 <a href="/auth">Entrar</a>
               </Button>
-              <Button className="bg-gold text-black font-black uppercase tracking-widest text-xs h-10 px-6 rounded-xl hover:bg-gold/90 shadow-lg shadow-gold/20" onClick={() => setShowRegisterWizard(true)}>
+              <Button className="bg-gold text-black font-black uppercase tracking-widest text-xs h-10 px-6 rounded-xl hover:bg-gold/90 shadow-lg shadow-gold/20" onClick={() => { setWizardPlan("pro"); setShowRegisterWizard(true); }}>
                 Testar Grátis
               </Button>
             </div>
@@ -329,13 +333,13 @@ function LandingPage() {
             transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center pt-6 md:pt-8"
           >
-            <Button className="h-14 px-8 rounded-xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90 text-xs shadow-lg shadow-gold/20 w-full sm:w-auto" onClick={() => setShowRegisterWizard(true)}>
+            <Button className="h-14 px-8 rounded-xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90 text-xs shadow-lg shadow-gold/20 w-full sm:w-auto" onClick={() => { setWizardPlan("pro"); setShowRegisterWizard(true); }}>
               Começar teste grátis
             </Button>
             <Button variant="outline" className="h-14 px-8 rounded-xl border-white/20 bg-white/5 backdrop-blur-sm hover:bg-white/10 font-black uppercase tracking-widest text-xs text-white w-full sm:w-auto" asChild>
-              <a href="#solucoes" className="flex items-center gap-2 justify-center">
-                <Play size={16} fill="currentColor" />
-                Ver Funcionalidades
+              <a href="#planos" className="flex items-center gap-2 justify-center">
+                <CircleDollarSign size={16} className="text-gold" />
+                Conhecer Planos
               </a>
             </Button>
           </motion.div>
@@ -344,7 +348,7 @@ function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-x-8 gap-y-3 pt-8 md:pt-10 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-500"
+            className="flex flex-col sm:flex-row items-center justify-center gap-x-8 gap-y-3 pt-8 md:pt-10 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-300"
           >
             <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-gold" /> 15 dias grátis</div>
             <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-gold" /> Sem cartão de crédito</div>
@@ -808,15 +812,23 @@ function LandingPage() {
         description="Venda produtos 24h por dia e deixe que o Barbex lembre seus clientes de agendar através de lembretes automáticos."
         backgroundImage="https://images.unsplash.com/photo-1517832606299-7ae9b720a186?q=80&w=2000&auto=format&fit=crop"
       >
-        <Button className="h-14 px-8 rounded-2xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90" onClick={() => setShowRegisterWizard(true)}>
+        <Button className="h-14 px-8 rounded-2xl bg-gold text-black font-black uppercase tracking-widest hover:bg-gold/90" onClick={() => { setWizardPlan("pro"); setShowRegisterWizard(true); }}>
           Automatizar minha barbearia
         </Button>
       </CTASection>
 
-      {/* 16. LGPD */}
+      {/* 16. Seção de Planos e Preços */}
+      <PricingSection
+        onSelectPlan={(planKey) => {
+          setWizardPlan(planKey);
+          setShowRegisterWizard(true);
+        }}
+      />
+
+      {/* 17. LGPD */}
       <PrivacyAndLGPDSection />
 
-      {/* 17. FAQ Final */}
+      {/* 18. FAQ Final */}
       <div id="faq">
         <PortalFaq />
       </div>
@@ -1036,7 +1048,10 @@ function LandingPage() {
       </footer>
 
       {showRegisterWizard && (
-        <RegisterWizard onClose={() => setShowRegisterWizard(false)} />
+        <RegisterWizard
+          initialPlan={wizardPlan}
+          onClose={() => setShowRegisterWizard(false)}
+        />
       )}
     </div>
   );

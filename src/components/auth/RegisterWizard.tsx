@@ -25,7 +25,13 @@ import { cn } from "@/lib/utils";
 import { PLAN_LIMITS } from "@/hooks/use-plan-limits";
 import { useNavigate } from "@tanstack/react-router";
 
-export function RegisterWizard({ onClose }: { onClose: () => void }) {
+export function RegisterWizard({
+  onClose,
+  initialPlan = "pro"
+}: {
+  onClose: () => void;
+  initialPlan?: "starter" | "pro" | "elite";
+}) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -39,7 +45,7 @@ export function RegisterWizard({ onClose }: { onClose: () => void }) {
     professionalCount: "1-3",
     password: "",
     confirmPassword: "",
-    selectedPlan: "pro" as "starter" | "pro" | "elite"
+    selectedPlan: initialPlan as "starter" | "pro" | "elite"
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});

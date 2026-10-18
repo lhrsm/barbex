@@ -24,52 +24,52 @@ export function PortalFaq({
 
   const faqs = [
     {
-      q: "Como funciona o teste gratuito?",
-      a: "Você tem 15 dias de acesso total a todas as funcionalidades do plano selecionado. Não pedimos cartão de crédito para começar, e você pode configurar sua barbearia em minutos."
+      q: "Como funciona o teste gratuito de 15 dias?",
+      a: "Você tem 15 dias de avaliação gratuita para testar os recursos da plataforma Barbex na sua barbearia. Não solicitamos cartão de crédito para iniciar e a configuração é feita em minutos. Cada barbearia tem direito a 15 dias de Trial Pro concedido uma única vez."
     },
     {
-      q: "Preciso cadastrar cartão de crédito?",
-      a: "Não. O teste é totalmente gratuito e sem compromisso. Você só cadastra uma forma de pagamento se decidir continuar utilizando a plataforma após o período de teste."
+      q: "O que acontece ao final do período de avaliação?",
+      a: "Ao término dos 15 dias de teste, o acesso aos recursos operacionais fica pausado até a contratação de um dos planos vigentes (Starter, Pro ou Elite). O Barbex não possui plano gratuito permanente, mas todas as configurações, cadastros de clientes e dados da sua barbearia permanecem preservados para quando você decidir assinar."
     },
     {
-      q: "Posso cancelar quando quiser?",
-      a: "Sim. O Barbex é uma assinatura mensal sem fidelidade. Você pode cancelar sua conta a qualquer momento direto pelo painel de configurações, sem burocracia."
+      q: "Preciso cadastrar cartão de crédito para iniciar o teste?",
+      a: "Não. O início do período de teste de 15 dias é totalmente livre de cobrança e sem exigência de dados de pagamento. Você só cadastra seu cartão se optar por continuar usando o Barbex após o término da avaliação."
     },
     {
-      q: "O Barbex possui agendamento online?",
-      a: "Sim. Você recebe um link exclusivo do seu Portal do Cliente onde seus clientes podem agendar horários 24h por dia, visualizando apenas os horários livres."
+      q: "Como funciona o cancelamento da assinatura? Existe fidelidade?",
+      a: "O Barbex não possui contratos com cláusulas de fidelidade oculta ou multas rescisórias. O cancelamento pode ser solicitado a qualquer momento diretamente pelo painel administrativo. Na opção padrão de cancelamento ao fim do período, a renovação automática é interrompida e sua barbearia mantém o acesso completo garantido até o último dia do ciclo já pago (seja mensal ou anual). Não há estorno ou reembolso financeiro automático."
     },
     {
-      q: "O cliente consegue reagendar sozinho?",
-      a: "Sim. Através do portal ou do link de confirmação, o cliente pode solicitar o reagendamento ou cancelamento, respeitando as regras de antecedência que você definir."
+      q: "Posso mudar de plano quando minha barbearia crescer?",
+      a: "Sim! O modelo comercial do Barbex é estruturado em planos completos (Starter, Pro e Elite), sem venda fragmentada de módulos avulsos. Você pode solicitar o upgrade ou downgrade a qualquer momento pelo painel, ajustando a quantidade de profissionais e recursos conforme a sua demanda."
     },
     {
-      q: "Existe painel para o barbeiro?",
-      a: "Com certeza. Cada profissional tem seu próprio acesso para gerir sua agenda, ver comissões, histórico de clientes e metas pessoais."
+      q: "Quais são as formas de pagamento aceitas para a assinatura?",
+      a: "As assinaturas da plataforma Barbex são processadas com segurança pela infraestrutura internacional da Stripe, com suporte a cartões de crédito das principais bandeiras nacionais e internacionais, com opção de faturamento mensal ou anual."
     },
     {
-      q: "O Barbex possui controle financeiro?",
-      a: "Sim, oferecemos um módulo financeiro completo com fluxo de caixa, comissões automatizadas, DRE gerencial e relatórios de lucratividade."
+      q: "Como funciona a integração com o WhatsApp?",
+      a: "O Barbex possui integração nativa para disparo de lembretes automáticos de agendamento e confirmações aos seus clientes nos planos compatíveis (Pro e Elite). A barbearia conecta seu próprio número de WhatsApp via leitura de QR Code direto no painel, sem necessidade de contratar planos complexos de API externa."
     },
     {
-      q: "Posso vender produtos?",
-      a: "Sim. O Barbex inclui uma loja virtual integrada onde você pode vender produtos de revenda, com controle de estoque automático e integração com o checkout."
+      q: "O Barbex possui agendamento online com Portal do Cliente?",
+      a: "Sim. Sua barbearia recebe um link exclusivo e personalizável onde os clientes podem consultar horários livres em tempo real e agendar 24 horas por dia, com sincronização imediata na agenda dos profissionais."
     },
     {
-      q: "Como funcionam as automações pelo WhatsApp?",
-      a: "O sistema envia automaticamente lembretes de agendamento, mensagens de aniversário e campanhas de marketing diretamente para o WhatsApp dos seus clientes."
+      q: "O cliente consegue reagendar ou cancelar sozinho?",
+      a: "Sim. Diretamente pelo portal ou pelo link de confirmação do agendamento, o cliente pode solicitar reagendamento ou cancelamento, sempre respeitando as regras de antecedência mínima configuradas pela sua barbearia."
     },
     {
-      q: "Preciso contratar uma API do WhatsApp?",
-      a: "O Barbex já oferece integração nativa. Dependendo do seu volume de mensagens e plano, você pode utilizar nossa infraestrutura sem custos adicionais de API externa."
+      q: "Existe painel individual para cada profissional da equipe?",
+      a: "Com certeza. Cada profissional cadastrado na sua equipe pode ter acesso individual para visualizar sua própria agenda, acompanhar comissões acumuladas, histórico de atendimentos e metas pessoais."
     },
     {
-      q: "Posso adicionar módulos ao meu plano?",
-      a: "Sim, nossa arquitetura é modular. Você pode expandir as funcionalidades do seu plano conforme sua barbearia cresce, ativando novos módulos a qualquer momento."
+      q: "Como funciona o controle financeiro e comissões?",
+      a: "O Barbex automatiza o cálculo de comissões por serviço e produto, gera fluxo de caixa diário, relatórios de lucratividade e visão gerencial de faturamento, eliminando anotações em papel ou planilhas manuais."
     },
     {
-      q: "O Barbex funciona em celular e computador?",
-      a: "Sim. A plataforma é 100% responsiva e otimizada para funcionar perfeitamente em notebooks, desktops, tablets e smartphones."
+      q: "O Barbex funciona em celulares, tablets e computadores?",
+      a: "Sim. A plataforma é 100% web e responsiva, operando com total fluidez em qualquer navegador em computadores (Windows/Mac), tablets e smartphones (Android/iOS), sem exigir downloads pesados de lojas de aplicativos."
     }
   ];
 
@@ -81,57 +81,76 @@ export function PortalFaq({
         <div className="text-center mb-12 md:mb-16 space-y-4">
           <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-[11px]">Dúvidas Frequentes</span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-[1.02] text-balance">
-            FAQ Premium
+            FAQ Comercial & Transparência
           </h2>
+          <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto font-medium">
+            Respostas claras e objetivas sobre planos, período de teste de 15 dias, segurança e funcionamento do Barbex.
+          </p>
         </div>
 
-        <div className="space-y-3">
-          {faqs.map((faq, idx) => (
-            <motion.div
-              key={idx}
-              initial={false}
-              className={cn(
-                "group rounded-2xl border border-white/5 bg-zinc-900/30 transition-all duration-300",
-                openIndex === idx ? "border-gold/30 bg-zinc-900/50" : "hover:border-white/10 hover:bg-zinc-900/40"
-              )}
-            >
-              <button
-                onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-                className="flex w-full items-center justify-between gap-4 sm:gap-6 px-6 sm:px-8 py-5 sm:py-6 text-left"
-              >
-                <span className={cn(
-                  "text-base sm:text-lg font-bold tracking-tight transition-colors duration-300 leading-snug",
-                  openIndex === idx ? "text-gold" : "text-slate-200 group-hover:text-white"
-                )}>
-                  {faq.q}
-                </span>
-                <div className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 transition-all duration-300",
-                  openIndex === idx ? "bg-gold border-gold text-black rotate-180" : "text-slate-500 group-hover:border-gold/50 group-hover:text-gold"
-                )}>
-                  <ChevronDown size={18} />
-                </div>
-              </button>
-              
-              <AnimatePresence initial={false}>
-                {openIndex === idx && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                  >
-                    <div className="px-8 pb-8">
-                      <div className="h-px w-full bg-white/5 mb-6" />
-                      <p className="text-[16px] leading-[1.8] text-slate-400 font-medium">
-                        {faq.a}
-                      </p>
-                    </div>
-                  </motion.div>
+        <div className="space-y-3" role="region" aria-label="Perguntas frequentes sobre o Barbex">
+          {faqs.map((faq, idx) => {
+            const isOpen = openIndex === idx;
+            const questionId = `faq-question-${idx}`;
+            const answerId = `faq-answer-${idx}`;
+
+            return (
+              <motion.div
+                key={idx}
+                initial={false}
+                className={cn(
+                  "group rounded-2xl border transition-all duration-300",
+                  isOpen
+                    ? "border-gold/30 bg-zinc-900/50 shadow-[0_10px_30px_-10px_rgba(212,175,55,0.1)]"
+                    : "border-white/5 bg-zinc-900/30 hover:border-white/10 hover:bg-zinc-900/40"
                 )}
-              </AnimatePresence>
-            </motion.div>
-          ))}
+              >
+                <button
+                  id={questionId}
+                  aria-expanded={isOpen}
+                  aria-controls={answerId}
+                  onClick={() => setOpenIndex(isOpen ? null : idx)}
+                  className="flex w-full items-center justify-between gap-4 sm:gap-6 px-6 sm:px-8 py-5 sm:py-6 text-left rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
+                >
+                  <span className={cn(
+                    "text-base sm:text-lg font-bold tracking-tight transition-colors duration-300 leading-snug",
+                    isOpen ? "text-gold" : "text-slate-200 group-hover:text-white"
+                  )}>
+                    {faq.q}
+                  </span>
+                  <div className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all duration-300",
+                    isOpen
+                      ? "bg-gold border-gold text-black rotate-180"
+                      : "border-white/10 text-slate-400 group-hover:border-gold/50 group-hover:text-gold"
+                  )}>
+                    <ChevronDown size={18} aria-hidden="true" />
+                  </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      id={answerId}
+                      role="region"
+                      aria-labelledby={questionId}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+                        <div className="h-px w-full bg-white/5 mb-6" />
+                        <p className="text-[15px] sm:text-[16px] leading-[1.8] text-slate-300 font-medium">
+                          {faq.a}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
