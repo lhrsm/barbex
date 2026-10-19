@@ -151,8 +151,12 @@ function ShopPageComponent() {
   const [publicLoyaltySettings, setPublicLoyaltySettings] = useState<any>(null);
   const [publicActiveCoupons, setPublicActiveCoupons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [canAccess, setCanAccess] = useState(true);
+  const [isEntitlementChecking, setIsEntitlementChecking] = useState(true);
+  const [canAccess, setCanAccess] = useState(false);
+  const [entitlementError, setEntitlementError] = useState(false);
   const [blockReason, setBlockReason] = useState("");
+  const UNAVAILABLE_BOOKING_MESSAGE =
+    "Agendamentos online temporariamente indisponíveis no momento. Entre em contato diretamente com a barbearia para mais informações.";
   const [subscribeModal, setSubscribeModal] = useState<{ open: boolean; plan: any | null }>({ open: false, plan: null });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -364,6 +368,9 @@ function ShopPageComponent() {
 
   useEffect(() => {
     if (slug) {
+      setIsBookingOpen(false);
+      setCanAccess(false);
+      setIsEntitlementChecking(true);
       fetchShopData(slug);
 
       // Carregar sessão do portal se existir
@@ -582,13 +589,17 @@ function ShopPageComponent() {
         handlePhoneCheckWithParams(normalized, initialName);
       }, 500);
       return () => clearTimeout(timer);
-    } else if (isEmbedded) {
+    } else if (isEmbedded && canAccess) {
       setIsBookingOpen(true);
     }
-  }, [isEmbedded, initialPhone, initialName, shop?.id]);
+  }, [isEmbedded, initialPhone, initialName, shop?.id, canAccess]);
 
   const handlePhoneCheckWithParams = async (phone: string, name?: string) => {
     if (!phone || phone.length < 8 || !shop?.id) return;
+    if (!canAccess) {
+      toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+      return;
+    }
     setSubmitting(true);
     try {
       console.log('AUTO-CHECKING CUSTOMER', { phone, name, shopId: shop.id });
@@ -598,7 +609,9 @@ function ShopPageComponent() {
       if (name) setCustomerName(name);
       else if (customer?.name) setCustomerName(customer.name);
 
-      setIsBookingOpen(true);
+      if (canAccess) {
+        setIsBookingOpen(true);
+      }
       // Removed auto-advancing behavior - user must click Continue
       console.log('Auto-check complete, waiting for user to click Continue');
     } catch (error: any) {
@@ -826,6 +839,16 @@ function ShopPageComponent() {
         return;
       }
 
+      // Resolução canônica de tenant do estabelecimento via barbershops (Public Read)
+      const { data: barbershopEntity } = await supabase
+        .from("barbershops")
+        .select("id, owner_id")
+        .eq("slug", normalizedSlug)
+        .maybeSingle();
+
+      const canonicalTenantId = barbershopEntity?.id || (currentShop as any).tenant_id || currentShop.id;
+      (currentShop as any).tenant_id = canonicalTenantId;
+
       // Fetch subscription status for this shop
       const { data: subData } = await supabase
         .from("subscriptions")
@@ -852,31 +875,57 @@ function ShopPageComponent() {
 
       const isTrialValid = trial_end ? new Date(trial_end) > new Date() : false;
 
-      // Canonical Entitlement Check
-      let canAccess = true;
-      let block_reason = "Liberado: Acesso concedido";
+      // Resolução Canônica de Direitos Operacionais (Fail-Closed)
+      let isOperational = false;
+      setIsEntitlementChecking(true);
+      setEntitlementError(false);
 
       try {
-        const { data: entRes, error: entErr } = await supabase.rpc("resolve_tenant_entitlement", {
-          p_tenant_id: currentShop.id,
+        // Fonte autoritativa: is_tenant_operational (retorna boolean puro, anon-safe, sem expor dados financeiros)
+        // Parâmetro: tenant_id canônico estrito da barbearia carregada
+        const { data: opData, error: opErr } = await supabase.rpc("is_tenant_operational", {
+          p_tenant_id: canonicalTenantId,
         });
-        if (!entErr && entRes) {
-          canAccess = Boolean((entRes as any).can_operate);
-          if (!canAccess) {
-            block_reason = "Agendamento online temporariamente indisponível para este estabelecimento.";
+
+        if (!opErr && typeof opData === "boolean") {
+          isOperational = opData;
+        } else {
+          // Fallback resiliente usando resolve_tenant_entitlement
+          const { data: entRes, error: entErr } = await supabase.rpc("resolve_tenant_entitlement", {
+            p_tenant_id: canonicalTenantId,
+          });
+          if (!entErr && entRes) {
+            isOperational = Boolean((entRes as any).can_operate);
+          } else {
+            console.warn("[entitlement] Erro na resolução canônica:", opErr || entErr);
+            setEntitlementError(true);
+            isOperational = false; // FAIL-CLOSED
           }
         }
-      } catch (e) {
-        console.warn("[profissional-access-debug] resolve_tenant_entitlement fallback:", e);
+      } catch (err) {
+        console.error("[entitlement] Exceção ao verificar direitos operacionais:", err);
+        setEntitlementError(true);
+        isOperational = false; // FAIL-CLOSED
+      } finally {
+        setIsEntitlementChecking(false);
+        setCanAccess(isOperational);
+        setBlockReason(
+          isOperational
+            ? "Liberado: Acesso concedido"
+            : UNAVAILABLE_BOOKING_MESSAGE
+        );
       }
 
-      console.log("[profissional-access-debug] Final Decision:", canAccess);
-
-      setCanAccess(canAccess);
-      setBlockReason(block_reason);
+      console.log("[entitlement] Decisão Operacional Canônica:", {
+        slug: targetSlug,
+        canonicalTenantId,
+        ownerId: currentShop.id,
+        canAccess: isOperational,
+      });
 
       // Bypass any local cache for this specific logic
       if (typeof window !== 'undefined') {
+        localStorage.removeItem(`subscription_cache_${canonicalTenantId}`);
         localStorage.removeItem(`subscription_cache_${currentShop.id}`);
       }
 
@@ -885,14 +934,13 @@ function ShopPageComponent() {
         supabase
           .from("services")
           .select("*")
-          .eq("user_id", currentShop.id)
+          .eq("tenant_id", canonicalTenantId)
           .eq("active", true),
         supabase
           .from("barbers")
           .select("*, barber_services(service_id)")
-          .eq("tenant_id", currentShop.id)
+          .eq("tenant_id", canonicalTenantId)
           .eq("active", true),
-
         supabase
           .from("products")
           .select("*")
@@ -999,6 +1047,16 @@ function ShopPageComponent() {
 
   const handleBookingAction = async () => {
     console.log('DEBUG: handleBookingAction triggered, isBookingOpen:', isBookingOpen);
+
+    if (isEntitlementChecking) {
+      toast.info("Verificando disponibilidade do estabelecimento...");
+      return;
+    }
+
+    if (!canAccess) {
+      toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+      return;
+    }
 
     // Always invalidate cached customer/subscription/module data when opening the
     // booking modal so Chrome/Edge don't render stale "não assinante" state.
@@ -1202,6 +1260,17 @@ function ShopPageComponent() {
 
   const handleSelectService = (service: any) => {
     console.log('DEBUG: handleSelectService triggered', service);
+
+    if (isEntitlementChecking) {
+      toast.info("Verificando disponibilidade do estabelecimento...");
+      return;
+    }
+
+    if (!canAccess) {
+      toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+      return;
+    }
+
     setSelectedService(service);
 
     // Verificamos se já temos sessão salva para pular etapas
@@ -2359,14 +2428,22 @@ function ShopPageComponent() {
                   <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     <Button
                       onClick={handleBookingAction}
+                      disabled={isEntitlementChecking}
                       className={cn(
-                        "rounded-full font-black tracking-wide text-black transition-all shrink-0 whitespace-nowrap",
-                        "bg-gradient-to-br from-[#F5C542] to-[#D4A017] hover:from-[#F8D265] hover:to-[#D4A017]",
-                        "shadow-[0_8px_22px_rgba(245,197,66,0.25)] hover:-translate-y-0.5",
+                        "rounded-full font-black tracking-wide transition-all shrink-0 whitespace-nowrap",
+                        !isEntitlementChecking && !canAccess
+                          ? "bg-zinc-800 text-zinc-400 border border-zinc-700/60 shadow-none hover:bg-zinc-800 hover:-translate-y-0"
+                          : "text-black bg-gradient-to-br from-[#F5C542] to-[#D4A017] hover:from-[#F8D265] hover:to-[#D4A017] shadow-[0_8px_22px_rgba(245,197,66,0.25)] hover:-translate-y-0.5",
                         "h-9 px-3.5 text-xs sm:h-11 sm:px-6 sm:text-sm"
                       )}
                     >
-                      {shop.scheduling_mode === 'manual' ? 'WhatsApp' : 'Agendar Agora'}
+                      {isEntitlementChecking ? (
+                        <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Verificando...</span>
+                      ) : !canAccess ? (
+                        "Indisponível"
+                      ) : (
+                        shop.scheduling_mode === 'manual' ? 'WhatsApp' : 'Agendar Agora'
+                      )}
                     </Button>
 
                     {/* Hambúrguer Mobile / Tablet */}
@@ -2430,9 +2507,21 @@ function ShopPageComponent() {
                               setMobileNavOpen(false);
                               handleBookingAction();
                             }}
-                            className="w-full rounded-full bg-gradient-to-br from-[#F5C542] to-[#D4A017] text-black font-extrabold h-12 shadow-[0_10px_28px_rgba(245,197,66,0.25)] uppercase tracking-wider text-xs"
+                            disabled={isEntitlementChecking}
+                            className={cn(
+                              "w-full rounded-full font-extrabold h-12 uppercase tracking-wider text-xs",
+                              !isEntitlementChecking && !canAccess
+                                ? "bg-zinc-800 text-zinc-400 border border-zinc-700/60 shadow-none hover:bg-zinc-800"
+                                : "bg-gradient-to-br from-[#F5C542] to-[#D4A017] text-black shadow-[0_10px_28px_rgba(245,197,66,0.25)]"
+                            )}
                           >
-                            {shop.scheduling_mode === 'manual' ? 'Falar no WhatsApp' : 'Agendar Agora'}
+                            {isEntitlementChecking ? (
+                              <span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Verificando...</span>
+                            ) : !canAccess ? (
+                              "Indisponível no momento"
+                            ) : (
+                              shop.scheduling_mode === 'manual' ? 'Falar no WhatsApp' : 'Agendar Agora'
+                            )}
                           </Button>
                         </div>
                       </SheetContent>
@@ -2447,6 +2536,28 @@ function ShopPageComponent() {
 
 
       <main className={cn("space-y-0", isEmbedded && "py-0 pb-0")}>
+        {/* Banner Informativo Neutro quando o agendamento público estiver desabilitado */}
+        {!isEntitlementChecking && !canAccess && (
+          <div className="relative z-30 bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-md px-4 py-3.5 text-center">
+            <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-amber-200/90 text-xs sm:text-sm font-medium">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{UNAVAILABLE_BOOKING_MESSAGE}</span>
+              </div>
+              {shop?.whatsapp_number && (
+                <a
+                  href={`https://wa.me/${shop.whatsapp_number}?text=${encodeURIComponent(`Olá! Gostaria de informações sobre horários na ${shop.business_name}.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-gold font-bold hover:underline shrink-0 text-xs sm:text-sm"
+                >
+                  Falar via WhatsApp <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Hero Section */}
         <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-[calc(92px+env(safe-area-inset-top)+24px)] pb-12 md:pt-0 md:pb-0 md:h-screen md:min-h-[700px]">
           {/* Background Image with Parallax effect could be added here */}
@@ -2505,9 +2616,30 @@ function ShopPageComponent() {
               {/* Primário */}
               <button
                 onClick={handleBookingAction}
-                className="group inline-flex items-center justify-center gap-2 h-14 px-5 whitespace-nowrap rounded-full font-extrabold text-[14px] text-[#050505] bg-gradient-to-br from-[#F5C542] to-[#D4A017] shadow-[0_12px_30px_rgba(245,197,66,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(245,197,66,0.42)] w-full sm:w-auto sm:flex-1 sm:min-w-[180px]"
+                disabled={isEntitlementChecking || !canAccess}
+                className={cn(
+                  "group inline-flex items-center justify-center gap-2 h-14 px-5 whitespace-nowrap rounded-full font-extrabold text-[14px] transition-all duration-200 w-full sm:w-auto sm:flex-1 sm:min-w-[180px]",
+                  isEntitlementChecking || !canAccess
+                    ? "bg-zinc-800 text-zinc-400 border border-zinc-700/60 shadow-none cursor-not-allowed"
+                    : "text-[#050505] bg-gradient-to-br from-[#F5C542] to-[#D4A017] shadow-[0_12px_30px_rgba(245,197,66,0.32)] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(245,197,66,0.42)]"
+                )}
               >
-                <Calendar size={16} /> Agendar Agora
+                {isEntitlementChecking ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+                    <span>Verificando...</span>
+                  </>
+                ) : !canAccess ? (
+                  <>
+                    <Clock size={16} className="text-zinc-400" />
+                    <span>Agendamento Indisponível</span>
+                  </>
+                ) : (
+                  <>
+                    <Calendar size={16} />
+                    <span>{shop?.scheduling_mode === 'manual' ? 'Falar no WhatsApp' : 'Agendar Agora'}</span>
+                  </>
+                )}
               </button>
 
               {/* Secundário — Ver Serviços */}
@@ -2621,7 +2753,12 @@ function ShopPageComponent() {
                   viewport={{ once: true }}
                 >
                   <Card
-                    className="group relative overflow-hidden rounded-[2rem] h-full border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black hover:border-gold/50 hover:-translate-y-1 transition-all duration-500 shadow-2xl hover:shadow-[#D4AF37]/10 cursor-pointer"
+                    className={cn(
+                      "group relative overflow-hidden rounded-[2rem] h-full border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black transition-all duration-500 shadow-2xl",
+                      !isEntitlementChecking && !canAccess
+                        ? "cursor-default opacity-85"
+                        : "hover:border-gold/50 hover:-translate-y-1 hover:shadow-[#D4AF37]/10 cursor-pointer"
+                    )}
                     onClick={() => handleSelectService(service)}
                   >
                     <div className="absolute -top-20 -right-20 w-48 h-48 bg-gold/10 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -2656,10 +2793,24 @@ function ShopPageComponent() {
                         </div>
                         <Button
                           size="sm"
-                          className="h-10 px-5 rounded-full font-bold text-xs uppercase tracking-wider bg-gold text-black hover:bg-white transition-all group-hover:scale-105 shadow-lg"
+                          disabled={isEntitlementChecking || !canAccess}
+                          className={cn(
+                            "h-10 px-5 rounded-full font-bold text-xs uppercase tracking-wider transition-all shadow-lg",
+                            isEntitlementChecking || !canAccess
+                              ? "bg-zinc-800 text-zinc-400 border border-zinc-700/60 shadow-none cursor-not-allowed group-hover:scale-100"
+                              : "bg-gold text-black hover:bg-white group-hover:scale-105"
+                          )}
                           onClick={(e) => { e.stopPropagation(); handleSelectService(service); }}
                         >
-                          Agendar <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                          {isEntitlementChecking ? (
+                            <span className="flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Verificando</span>
+                          ) : !canAccess ? (
+                            "Indisponível"
+                          ) : (
+                            <>
+                              Agendar <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -3737,7 +3888,12 @@ function ShopPageComponent() {
 
 
 
-      <Dialog open={isBookingOpen} onOpenChange={(open) => {
+      <Dialog open={isBookingOpen && canAccess === true} onOpenChange={(open) => {
+        if (open && !canAccess) {
+          setIsBookingOpen(false);
+          toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+          return;
+        }
         setIsBookingOpen(open);
         if (!open) {
           // If logged in via portal, we might want to stay on step 2/3 on next open if it was already chosen
@@ -5511,6 +5667,14 @@ function ShopPageComponent() {
                   key={(service as any).id}
                   className="p-3 border rounded-lg flex justify-between items-center hover:bg-muted cursor-pointer transition-colors"
                   onClick={() => {
+                    if (isEntitlementChecking) {
+                      toast.info("Verificando disponibilidade do estabelecimento...");
+                      return;
+                    }
+                    if (!canAccess) {
+                      toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+                      return;
+                    }
                     setSelectedService(service);
                     setSelectedBarber(modalBarber);
                     setIsServicesModalOpen(false);
@@ -5863,8 +6027,22 @@ function ShopPageComponent() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-12 rounded-[14px] bg-transparent border border-gold/60 text-gold font-bold hover:bg-gold/15 hover:text-[#F5D061] hover:border-gold"
+              disabled={isEntitlementChecking || !canAccess}
+              className={cn(
+                "w-full h-12 rounded-[14px] bg-transparent border font-bold transition-all",
+                isEntitlementChecking || !canAccess
+                  ? "border-zinc-700 text-zinc-500 cursor-not-allowed opacity-60"
+                  : "border-gold/60 text-gold hover:bg-gold/15 hover:text-[#F5D061] hover:border-gold"
+              )}
               onClick={() => {
+                if (isEntitlementChecking) {
+                  toast.info("Verificando disponibilidade do estabelecimento...");
+                  return;
+                }
+                if (!canAccess) {
+                  toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+                  return;
+                }
                 setIsPixVisible(false);
                 setIsBookingOpen(true);
                 setBookingStep(2);
@@ -6128,8 +6306,27 @@ function ShopPageComponent() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-12 rounded-[14px] bg-transparent border border-gold/60 text-gold font-bold hover:bg-gold/15 hover:text-[#F5D061] hover:border-gold"
-              onClick={() => { setPurchaseSuccess(null); setSelectedProducts([]); setIsBookingOpen(true); setBookingStep(2); }}
+              disabled={isEntitlementChecking || !canAccess}
+              className={cn(
+                "w-full h-12 rounded-[14px] bg-transparent border font-bold transition-all",
+                isEntitlementChecking || !canAccess
+                  ? "border-zinc-700 text-zinc-500 cursor-not-allowed opacity-60"
+                  : "border-gold/60 text-gold hover:bg-gold/15 hover:text-[#F5D061] hover:border-gold"
+              )}
+              onClick={() => {
+                if (isEntitlementChecking) {
+                  toast.info("Verificando disponibilidade do estabelecimento...");
+                  return;
+                }
+                if (!canAccess) {
+                  toast.info(UNAVAILABLE_BOOKING_MESSAGE, { duration: 6000 });
+                  return;
+                }
+                setPurchaseSuccess(null);
+                setSelectedProducts([]);
+                setIsBookingOpen(true);
+                setBookingStep(2);
+              }}
             >
               <Calendar size={16} className="mr-2" /> Agendar Serviço
             </Button>
