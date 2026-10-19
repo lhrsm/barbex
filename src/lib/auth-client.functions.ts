@@ -60,7 +60,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       throw new Error("Por favor, insira um e-mail válido para a recuperação de senha.");
     }
 
-    const targetRedirect = redirectTo || `${process.env.VITE_APP_URL || 'https://barberlm.lovable.app'}/auth/reset-password`;
+    const targetRedirect = redirectTo || `${process.env.VITE_APP_URL || 'https://barbex.shop'}/auth/reset-password`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(value, {
       redirectTo: targetRedirect,

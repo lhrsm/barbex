@@ -1,5 +1,4 @@
 import { createFileRoute, notFound, useNavigate, Outlet, useLocation, Link, RouteApi } from "@tanstack/react-router";
-import { TrialExpiredBlock } from "@/components/subscription/TrialExpiredBlock";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
@@ -2215,7 +2214,7 @@ function ShopPageComponent() {
 
 
   // Remoção do avanço automático para garantir que o cliente veja a identificação no card
-  // conforme solicitado pela nova UX do BarberLM.
+  // conforme solicitado pela nova UX do Barbex.
 
   if (loading) {
     return (
@@ -2286,9 +2285,6 @@ function ShopPageComponent() {
           </motion.div>
         )}
       </AnimatePresence>
-
-
-      {!canAccess && !isProfissionalRoute && <TrialExpiredBlock />}
 
       {/* Main Content */}
       {(!isPortalRoute && !isProfissionalRoute && !isProfessionalsRoute && !isEquipeRoute) ? (

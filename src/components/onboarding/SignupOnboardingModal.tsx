@@ -627,7 +627,7 @@ export function SignupOnboardingModal({ isOpen, onOpenChange }: SignupOnboarding
           <div className="space-y-2 text-center">
             <h3 className="text-2xl font-black tracking-tighter">E-mail já cadastrado</h3>
             <p className="text-gray-400">
-              Já existe uma conta BarberLM utilizando este e-mail.
+              Já existe uma conta Barbex utilizando este e-mail.
             </p>
           </div>
 

@@ -14,7 +14,7 @@ export function TrialExpiredBlock() {
           <div className="space-y-2">
             <CardTitle className="text-3xl font-black tracking-tight">Período de Teste Terminou</CardTitle>
             <CardDescription className="text-lg">
-              Seu período de 15 dias de teste grátis no BarberLM expirou. Escolha um plano para continuar utilizando nossa plataforma.
+              Seu período de 15 dias de teste grátis no Barbex expirou. Escolha um plano para continuar utilizando nossa plataforma.
             </CardDescription>
           </div>
         </CardHeader>

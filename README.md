@@ -4,7 +4,7 @@
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://barberlm.lovable.app
+**Live app**: https://barbex.shop
 
 ## Build with Lovable
 

@@ -286,7 +286,7 @@ export function SuperAdminTicketDetails({ ticket, onClose }: SuperAdminTicketDet
                   <div className="flex items-center gap-2 px-2">
                     {msg.sender_type === 'super_admin' ? (
                       <>
-                        <span className="text-[10px] font-black uppercase tracking-tighter text-primary">Admin BarberLM</span>
+                        <span className="text-[10px] font-black uppercase tracking-tighter text-primary">Admin Barbex</span>
                         <ShieldCheck size={10} className="text-primary" />
                       </>
                     ) : (
