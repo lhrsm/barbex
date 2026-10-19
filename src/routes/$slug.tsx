@@ -33,7 +33,8 @@ import { ChangePlanModal } from "@/components/portal/ChangePlanModal";
 import { SubscribePlanModal } from "@/components/portal/SubscribePlanModal";
 import { fetchAvailability, hasConflict, OVERLAP_MESSAGE } from "@/lib/availability";
 import { WhyChooseUs } from "@/components/public/WhyChooseUs";
-import { PortalFaq } from "@/components/public/PortalFaq";
+import { BarbershopPublicFaq } from "@/components/public/BarbershopPublicFaq";
+import { normalizeStorageUrl, normalizeStorageUrls, resolveBarbershopLogo } from "@/lib/storage-utils";
 import { AboutShop } from "@/components/public/AboutShop";
 import { StoreHighlights } from "@/components/public/StoreHighlights";
 import { SubscriptionValueProps } from "@/components/public/SubscriptionValueProps";
@@ -827,7 +828,8 @@ function ShopPageComponent() {
           gallery_images,
           portal_before_after,
           portal_events,
-          portal_partners
+          portal_partners,
+          faq_enabled
         `)
         .eq("slug", normalizedSlug)
         .maybeSingle();
@@ -847,6 +849,24 @@ function ShopPageComponent() {
 
       const canonicalTenantId = barbershopEntity?.id || (currentShop as any).tenant_id || currentShop.id;
       (currentShop as any).tenant_id = canonicalTenantId;
+
+      // Garantir que faq_enabled provenha estritamente do proprietário canônico (e não de colaborador)
+      if (barbershopEntity?.owner_id && barbershopEntity.owner_id !== currentShop.id) {
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("faq_enabled")
+          .eq("id", barbershopEntity.owner_id)
+          .maybeSingle();
+        if (ownerProfile && ownerProfile.faq_enabled !== undefined) {
+          (currentShop as any).faq_enabled = ownerProfile.faq_enabled;
+        }
+      }
+
+      // Normalização e sanitização de URLs de storage da barbearia
+      const resolvedLogo = resolveBarbershopLogo(currentShop, barbershopEntity);
+      currentShop.barbershop_logo_url = resolvedLogo;
+      currentShop.logo_url = resolvedLogo;
+      currentShop.gallery_images = normalizeStorageUrls(currentShop.gallery_images);
 
       // Fetch subscription status for this shop
       const { data: subData } = await supabase
@@ -947,7 +967,11 @@ function ShopPageComponent() {
           .eq("active", true),
       ]);
 
-      setServices(servicesRes.data || []);
+      const normalizedServices = (servicesRes.data || []).map((s: any) => ({
+        ...s,
+        ...(s.image_url ? { image_url: normalizeStorageUrl(s.image_url) } : {}),
+      }));
+      setServices(normalizedServices);
 
       // Enrich barbers with rating stats
       const barberList = barbersRes.data || [];
@@ -960,12 +984,23 @@ function ShopPageComponent() {
         const statsMap = new Map((stats || []).map((s: any) => [s.barber_id, s]));
         barbersWithStats = barberList.map((b: any) => ({
           ...b,
+          avatar_url: normalizeStorageUrl(b.avatar_url),
           avg_rating: (statsMap.get(b.id) as any)?.avg_rating ?? null,
           total_ratings: (statsMap.get(b.id) as any)?.total_ratings ?? 0,
         }));
+      } else {
+        barbersWithStats = barberList.map((b: any) => ({
+          ...b,
+          avatar_url: normalizeStorageUrl(b.avatar_url),
+        }));
       }
       setBarbers(barbersWithStats);
-      setProducts(productsRes.data || []);
+
+      const normalizedProducts = (productsRes.data || []).map((p: any) => ({
+        ...p,
+        image_url: normalizeStorageUrl(p.image_url),
+      }));
+      setProducts(normalizedProducts);
 
       // Public approved testimonials
       try {
@@ -3502,14 +3537,10 @@ function ShopPageComponent() {
           </div>
         </section>
 
-        {/* FAQ por categorias */}
-        <PortalFaq
+        {/* FAQ Exclusivo da Barbearia (Multi-tenant) */}
+        <BarbershopPublicFaq
           shop={shop}
-          productsEnabled={productsEnabled}
-          subscriptionsEnabled={subscriptionsEnabled}
-          cashbackEnabled={cashbackEnabled}
-          couponsEnabled={couponsEnabled}
-          loyaltyEnabled={loyaltyEnabled}
+          canonicalTenantId={canonicalTenantId}
         />
 
         {/* Portal CTA Section — Premium with image */}

@@ -44,7 +44,8 @@ import {
   ShieldCheck,
   AlertTriangle,
   Coins,
-  Trophy
+  Trophy,
+  HelpCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ModulesSettings } from "@/components/settings/ModulesSettings";
@@ -54,6 +55,7 @@ import { PaymentsSettings } from "@/components/settings/PaymentsSettings";
 import { LgpdSettings } from "@/components/settings/LgpdSettings";
 import { DangerZone } from "@/components/settings/DangerZone";
 import { CouponManagement } from "@/components/admin/CouponManagement";
+import { FaqSettings } from "@/components/settings/FaqSettings";
 
 import {
   Dialog,
@@ -167,6 +169,7 @@ function SettingsComponent() {
     social_youtube: "",
     social_whatsapp: "",
     gallery_images: [] as string[],
+    faq_enabled: true,
   });
 
 
@@ -336,6 +339,7 @@ function SettingsComponent() {
           social_youtube: (profile as any).social_links?.youtube || "",
           social_whatsapp: (profile as any).social_links?.whatsapp || "",
           gallery_images: Array.isArray((profile as any).gallery_images) ? (profile as any).gallery_images : [],
+          faq_enabled: (profile as any).faq_enabled ?? true,
         });
         setDataLoaded(true);
         console.log("[/settings] SETTINGS FORM VALUES applied for profile:", profile.id, {
@@ -436,6 +440,7 @@ function SettingsComponent() {
         whatsapp: normalizeSocial("whatsapp", profileUpdateData.social_whatsapp),
       },
       gallery_images: Array.isArray(profileUpdateData.gallery_images) ? profileUpdateData.gallery_images : [],
+      faq_enabled: Boolean(profileUpdateData.faq_enabled ?? true),
       updated_at: new Date().toISOString(),
     };
 
@@ -628,6 +633,7 @@ function SettingsComponent() {
                 { value: "appearance", icon: Palette, label: "Aparência" },
                 { value: "scheduling", icon: Calendar, label: "Agenda" },
                 { value: "coupons", icon: Gift, label: "Cupons" },
+                { value: "faq", icon: HelpCircle, label: "FAQ" },
                 { value: "whatsapp", icon: MessageSquare, label: "WhatsApp" },
                 { value: "payments", icon: CreditCard, label: "Pagamentos" },
                 { value: "loyalty", icon: Gift, label: "Fidelidade" },
@@ -1417,6 +1423,17 @@ function SettingsComponent() {
 
             <TabsContent value="coupons" className="space-y-4">
               <CouponManagement />
+            </TabsContent>
+
+            <TabsContent value="faq" className="space-y-4">
+              <FaqSettings
+                tenantId={effectiveTenantId}
+                faqEnabled={formData.faq_enabled ?? true}
+                onToggleFaqEnabled={(enabled) =>
+                  setFormData((prev: any) => ({ ...prev, faq_enabled: enabled }))
+                }
+                shopName={formData.business_name}
+              />
             </TabsContent>
 
             <TabsContent value="whatsapp" className="space-y-6">
