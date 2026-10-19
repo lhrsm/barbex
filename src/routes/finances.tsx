@@ -133,9 +133,10 @@ function FinancesComponent() {
   } = useFinancesFilters();
 
   const user = authUser || (session ? { id: session.barber_id } : null);
+  const effectiveTenantId = tenantId || (session ? session.tenant_id : null) || authUser?.id || null;
   const loading = authLoading || profLoading;
   const { summary: financialSummary, isLoading: loadingFinancial } = useFinancial(
-    user?.id || null,
+    effectiveTenantId,
     dateFilter,
     dateFilter,
   );
@@ -163,7 +164,7 @@ function FinancesComponent() {
   } = useFinancesData({
     user,
     role,
-    tenantId,
+    tenantId: effectiveTenantId,
     barberPeriodRange,
     refundStatusFilter,
     refundDateStartFilter,
@@ -236,6 +237,7 @@ function FinancesComponent() {
   const { handleAddTransaction, handleUpdateTransaction, handleDeleteTransaction } =
     useTransactionMutations({
       user,
+      tenantId: effectiveTenantId,
       transactions,
       newTransaction,
       setNewTransaction,
@@ -285,12 +287,12 @@ function FinancesComponent() {
               const { data: prof } = await supabase
                 .from("profiles")
                 .select("business_name, responsible_name")
-                .eq("id", user.id)
+                .eq("id", effectiveTenantId)
                 .maybeSingle();
               const fname = await exportFinancesPdf({
-                tenantId: user.id,
+                tenantId: effectiveTenantId!,
                 period: globalPeriod,
-                businessName: prof?.business_name || prof?.responsible_name || "Barbex",
+                businessName: prof?.business_name || prof?.responsible_name || tenantProfile?.business_name || "Barbex",
               });
               toast.success(`Relatório gerado: ${fname}`);
             } catch (err: any) {
@@ -356,7 +358,7 @@ function FinancesComponent() {
                   </div>
                 }
               >
-                <ErpCenter tenantId={user.id} />
+                <ErpCenter tenantId={effectiveTenantId!} />
               </Suspense>
             </TabsContent>
           )}
@@ -364,7 +366,7 @@ function FinancesComponent() {
           {role !== "barber" && user && (
             <TabsContent value="managerial" className="pt-4">
               <ManagerialView
-                tenantId={user.id}
+                tenantId={effectiveTenantId!}
                 initialPeriod={globalPeriod as any}
                 periodKey={globalPeriod}
               />
@@ -374,7 +376,7 @@ function FinancesComponent() {
           {role !== "barber" && user && (
             <TabsContent value="coupons" className="pt-4">
               <CouponsView
-                tenantId={user.id}
+                tenantId={effectiveTenantId!}
                 initialPeriod={globalPeriod as any}
                 periodKey={globalPeriod}
               />
@@ -428,7 +430,7 @@ function FinancesComponent() {
 
           <TabsContent value="barbers" className="pt-4 space-y-4">
             <BarbersTab
-              tenantId={user.id}
+              tenantId={effectiveTenantId!}
               barbers={barbers}
               barberCommissionSummaries={barberCommissionSummaries}
               transactions={transactions}

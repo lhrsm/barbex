@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { useEffect, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,8 +89,26 @@ const DAY_LABELS: Record<string, string> = {
 
 function BarbersComponent() {
   const { user, loading: authLoading, role } = useAuth();
-  const { tenantId } = useTenant();
+  const { tenantId, ownedShop, tenantProfile } = useTenant();
   const effectiveTenantId = tenantId || user?.id;
+
+  const { data: currentShopData } = useQuery({
+    queryKey: ["barber-shop-owner", effectiveTenantId],
+    queryFn: async () => {
+      if (!effectiveTenantId) return null;
+      const { data, error } = await supabase
+        .from("barbershops")
+        .select("owner_id")
+        .eq("id", effectiveTenantId)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!effectiveTenantId && (!ownedShop || ownedShop.id !== effectiveTenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const tenantOwnerUserId = ownedShop?.owner_id || currentShopData?.owner_id || tenantProfile?.id || user?.id;
   const navigate = useNavigate();
   const { plan, limits, usage, checkLimit, refresh: refreshLimits } = usePlanLimits();
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -163,29 +182,32 @@ function BarbersComponent() {
 
   async function fetchServices() {
     if (!effectiveTenantId) return;
-    const { data, error } = await supabase
-      .from("services")
-      .select("*")
-      .eq("tenant_id", effectiveTenantId)
-      .eq("active", true)
-      .order("name");
+    let query = supabase.from("services").select("*").eq("active", true);
+    if (tenantOwnerUserId && tenantOwnerUserId !== effectiveTenantId) {
+      query = query.or(`tenant_id.eq.${effectiveTenantId},tenant_id.eq.${tenantOwnerUserId}`);
+    } else {
+      query = query.eq("tenant_id", effectiveTenantId);
+    }
+    const { data, error } = await query.order("name");
     if (error) throw error;
     else setServices(data || []);
   }
 
   async function fetchBarbers() {
     if (!effectiveTenantId) return;
-    const { data, error } = await supabase
-      .from("barbers")
-      .select(
-        `
-        *,
-        barber_services(service_id),
-        appointments:appointments!appointments_barber_id_fkey(count)
-      `,
-      )
-      .eq("tenant_id", effectiveTenantId)
-      .order("name");
+    let query = supabase.from("barbers").select(
+      `
+      *,
+      barber_services(service_id),
+      appointments:appointments!appointments_barber_id_fkey(count)
+    `,
+    );
+    if (tenantOwnerUserId && tenantOwnerUserId !== effectiveTenantId) {
+      query = query.or(`tenant_id.eq.${effectiveTenantId},tenant_id.eq.${tenantOwnerUserId}`);
+    } else {
+      query = query.eq("tenant_id", effectiveTenantId);
+    }
+    const { data, error } = await query.order("name");
 
     if (error) {
       console.error(error);
@@ -223,7 +245,11 @@ function BarbersComponent() {
   }
 
   async function handleDeleteBarber(id: string) {
-    const { error } = await supabase.from("barbers").delete().eq("id", id);
+    const { error } = await supabase
+      .from("barbers")
+      .delete()
+      .eq("id", id)
+      .eq("tenant_id", effectiveTenantId);
 
     if (error) {
       toast.error("Erro ao excluir barbeiro");
@@ -282,11 +308,14 @@ function BarbersComponent() {
     console.log("BARBER CREATED SUCCESSFULLY:", barber);
     console.log("BARBER ID:", barber?.id);
 
-    if (selectedServices.length > 0) {
-      const servicesPayload = selectedServices.map((serviceId) => ({
+    const validServiceIds = new Set(services.map((s) => s.id));
+    const safeSelectedServices = selectedServices.filter((sId) => validServiceIds.has(sId));
+
+    if (safeSelectedServices.length > 0) {
+      const servicesPayload = safeSelectedServices.map((serviceId) => ({
         barber_id: barber.id,
         service_id: serviceId,
-        tenant_id: user.id,
+        tenant_id: tenantOwnerUserId,
         user_id: user.id,
       }));
 
@@ -410,11 +439,14 @@ function BarbersComponent() {
       console.log("OLD SERVICES DELETED");
     }
 
-    if (selectedServices.length > 0) {
-      const servicesPayload = selectedServices.map((serviceId) => ({
+    const validServiceIds = new Set(services.map((s) => s.id));
+    const safeSelectedServices = selectedServices.filter((sId) => validServiceIds.has(sId));
+
+    if (safeSelectedServices.length > 0) {
+      const servicesPayload = safeSelectedServices.map((serviceId) => ({
         barber_id: editingBarber.id,
         service_id: serviceId,
-        tenant_id: user.id,
+        tenant_id: tenantOwnerUserId,
         user_id: user.id,
       }));
 
@@ -531,7 +563,7 @@ function BarbersComponent() {
         avatar_url: barber.avatar_url,
         category: barber.category,
         commission_rate: barber.commission_rate,
-        tenant_id: user.id,
+        tenant_id: effectiveTenantId,
         user_id: user.id,
       })
       .select()
@@ -542,13 +574,18 @@ function BarbersComponent() {
     } else {
       // Duplicate services if they exist
       if (barber.barber_services && barber.barber_services.length > 0) {
-        const links = barber.barber_services.map((bs: any) => ({
-          barber_id: newBarberData.id,
-          service_id: bs.service_id,
-          tenant_id: user.id,
-          user_id: user.id,
-        }));
-        await supabase.from("barber_services").insert(links);
+        const validServiceIds = new Set(services.map((s) => s.id));
+        const safeLinks = barber.barber_services
+          .filter((bs: any) => validServiceIds.has(bs.service_id))
+          .map((bs: any) => ({
+            barber_id: newBarberData.id,
+            service_id: bs.service_id,
+            tenant_id: tenantOwnerUserId,
+            user_id: user.id,
+          }));
+        if (safeLinks.length > 0) {
+          await supabase.from("barber_services").insert(safeLinks);
+        }
       }
 
       toast.success("Barbeiro duplicado com sucesso!");

@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { useEffect, useState, lazy, Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 const CommerceCenter = lazy(() => import("@/components/products/commerce/CommerceCenter"));
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +78,7 @@ const productsHelpConfig = {
 function ProductsComponent() {
 
   const { user, loading, role } = useAuth();
+  const { tenantId, tenantProfile, ownedShop } = useTenant();
   const navigate = useNavigate();
   const { plan, limits, usage, checkLimit, refresh: refreshLimits } = usePlanLimits();
   const [products, setProducts] = useState<any[]>([]);
@@ -84,6 +87,26 @@ function ProductsComponent() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
+
+  const effectiveTenantId = tenantId || user?.id;
+
+  const { data: currentShopData } = useQuery({
+    queryKey: ["shop-owner", effectiveTenantId],
+    queryFn: async () => {
+      if (!effectiveTenantId) return null;
+      const { data, error } = await supabase
+        .from("barbershops")
+        .select("owner_id")
+        .eq("id", effectiveTenantId)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!effectiveTenantId && (!ownedShop || ownedShop.id !== effectiveTenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const shopOwnerId = ownedShop?.owner_id || currentShopData?.owner_id || tenantProfile?.id || user?.id;
 
   useEffect(() => {
     if (!activeProductId) return;
@@ -127,15 +150,15 @@ function ProductsComponent() {
   }, [user, loading, role, navigate]);
 
   useEffect(() => {
-    if (user && role !== 'super_admin') fetchProducts();
-  }, [user, role]);
+    if (user && role !== 'super_admin' && shopOwnerId) fetchProducts();
+  }, [user, role, shopOwnerId]);
 
   async function fetchProducts() {
-    if (!user) return;
+    if (!user || !shopOwnerId) return;
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", shopOwnerId)
       .eq("active", true)
       .order("name");
     if (error) toast.error("Erro ao buscar produtos");
@@ -178,6 +201,7 @@ function ProductsComponent() {
   async function handleAddProduct(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
+    const targetOwnerId = shopOwnerId || user.id;
 
     if (editingProduct) {
       const { error } = await supabase
@@ -188,7 +212,8 @@ function ProductsComponent() {
           promotional_price: editingProduct.promotional_price ? parseFloat(editingProduct.promotional_price) : null,
           stock_quantity: parseInt(editingProduct.stock_quantity),
         })
-        .eq("id", editingProduct.id);
+        .eq("id", editingProduct.id)
+        .eq("user_id", targetOwnerId);
 
       if (error) {
         toast.error("Erro ao atualizar produto");
@@ -204,7 +229,7 @@ function ProductsComponent() {
         price: parseFloat(newProduct.price),
         promotional_price: newProduct.promotional_price ? parseFloat(newProduct.promotional_price) : null,
         stock_quantity: parseInt(newProduct.stock_quantity),
-        user_id: user.id,
+        user_id: targetOwnerId,
       } as any);
 
       if (error) {
@@ -232,10 +257,13 @@ function ProductsComponent() {
   }
 
   async function handleDeleteProduct(id: string) {
-    const { error } = await supabase
+    const targetOwnerId = shopOwnerId || user?.id;
+    let query = supabase
       .from("products")
       .update({ active: false })
       .eq("id", id);
+    if (targetOwnerId) query = query.eq("user_id", targetOwnerId);
+    const { error } = await query;
 
     if (error) {
       toast.error("Erro ao remover produto");
@@ -248,6 +276,7 @@ function ProductsComponent() {
 
   async function handleDuplicateProduct(product: any) {
     if (!user) return;
+    const targetOwnerId = shopOwnerId || user.id;
     
     if (usage.products >= limits.products) {
       toast.error(`Limite atingido! Seu plano permite apenas ${limits.products} produtos.`);
@@ -266,7 +295,7 @@ function ProductsComponent() {
       image_url: product.image_url,
       featured: false,
       badge: product.badge,
-      user_id: user.id,
+      user_id: targetOwnerId,
     } as any);
 
     if (error) {
@@ -721,7 +750,14 @@ function ProductsComponent() {
                                   return;
                                 }
                                 try {
-                                  const { data: barberData } = await supabase.from('barbers').select('id').eq('user_id', user.id).eq('active', true).limit(1).maybeSingle();
+                                  const targetOwnerId = shopOwnerId || user.id;
+                                  const { data: barberData } = await supabase
+                                    .from('barbers')
+                                    .select('id')
+                                    .eq('tenant_id', effectiveTenantId)
+                                    .eq('active', true)
+                                    .limit(1)
+                                    .maybeSingle();
                                   const barberId = role === 'barber' ? user.id : barberData?.id;
 
                                   if (!barberId) {
@@ -731,6 +767,7 @@ function ProductsComponent() {
 
                                   const { error: saleError } = await supabase.from("product_sales").insert([{
                                     user_id: user.id,
+                                    tenant_id: effectiveTenantId,
                                     barber_id: barberId,
                                     items: [{ id: product.id, name: product.name, quantity: 1, price: product.price }],
                                     total_amount: product.price,
@@ -742,12 +779,14 @@ function ProductsComponent() {
                                   const { error: stockError } = await supabase
                                     .from("products")
                                     .update({ stock_quantity: product.stock_quantity - 1 })
-                                    .eq("id", product.id);
+                                    .eq("id", product.id)
+                                    .eq("user_id", targetOwnerId);
 
                                   if (stockError) throw stockError;
 
                                   await supabase.from("transactions").insert([{
                                     user_id: user.id,
+                                    tenant_id: effectiveTenantId,
                                     barber_id: barberId,
                                     amount: product.price,
                                     type: "income",
@@ -775,11 +814,11 @@ function ProductsComponent() {
             </TabsContent>
 
             <TabsContent value="billing" className="pt-6">
-              <SalesHistory user={user} onStatusChange={fetchProducts} onlyCompleted={true} />
+              <SalesHistory user={user} tenantId={effectiveTenantId} onStatusChange={fetchProducts} onlyCompleted={true} />
             </TabsContent>
 
             <TabsContent value="history" className="pt-6">
-              <SalesHistory user={user} onStatusChange={fetchProducts} />
+              <SalesHistory user={user} tenantId={effectiveTenantId} onStatusChange={fetchProducts} />
             </TabsContent>
           </Tabs>
         </div>
@@ -788,20 +827,39 @@ function ProductsComponent() {
   );
 }
 
-function SalesHistory({ user, onStatusChange, onlyCompleted }: { user: any, onStatusChange?: () => void, onlyCompleted?: boolean }) {
+function SalesHistory({
+  user,
+  tenantId,
+  onStatusChange,
+  onlyCompleted
+}: {
+  user: any;
+  tenantId?: string | null;
+  onStatusChange?: () => void;
+  onlyCompleted?: boolean;
+}) {
   const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSales();
-  }, []);
+  }, [tenantId, user?.id]);
 
   async function fetchSales() {
     try {
       let query = supabase
         .from("product_sales")
-        .select("*")
-        .eq("user_id", user.id);
+        .select("*");
+
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      } else if (user?.id) {
+        query = query.eq("user_id", user.id);
+      } else {
+        setSales([]);
+        setLoading(false);
+        return;
+      }
 
       if (onlyCompleted) {
         query = query.eq("status", "completed");
@@ -821,10 +879,14 @@ function SalesHistory({ user, onStatusChange, onlyCompleted }: { user: any, onSt
 
   async function updateStatus(saleId: string, newStatus: 'completed' | 'cancelled' | 'refunded') {
     try {
-      const { error } = await supabase
+      let query = supabase
         .from("product_sales")
         .update({ status: newStatus })
         .eq("id", saleId);
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+      const { error } = await query;
 
       if (error) throw error;
       toast.success(`Status atualizado para ${newStatus}`);

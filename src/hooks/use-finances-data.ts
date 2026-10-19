@@ -41,21 +41,21 @@ export function useFinancesData({
   const [totalCashback, setTotalCashback] = useState(0);
 
   const fetchBarbers = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveTenantId) return;
     const { data } = await supabase
       .from("barbers")
       .select("id, name, commission_rate")
-      .eq("user_id", user.id)
+      .eq("tenant_id", effectiveTenantId)
       .eq("active", true);
     setBarbers(data || []);
-  }, [user]);
+  }, [effectiveTenantId]);
 
   const fetchBarberCommissionSummaries = useCallback(async () => {
-    if (!user || barbers.length === 0) return;
+    if (!effectiveTenantId || barbers.length === 0) return;
     const summaries = await Promise.all(
       barbers.map(async (barber) => {
         const { data } = await supabase.rpc("get_barber_commission_summary", {
-          p_tenant_id: user.id,
+          p_tenant_id: effectiveTenantId,
           p_barber_id: barber.id,
           p_start_date: barberPeriodRange.start || undefined,
           p_end_date: barberPeriodRange.end || undefined,
@@ -64,11 +64,11 @@ export function useFinancesData({
       }),
     );
     setBarberCommissionSummaries(Object.fromEntries(summaries));
-  }, [user, barbers, barberPeriodRange.start, barberPeriodRange.end]);
+  }, [effectiveTenantId, barbers, barberPeriodRange.start, barberPeriodRange.end]);
 
   const fetchTransactions = useCallback(
     async (bId: string | null = null) => {
-      if (!user) return;
+      if (!effectiveTenantId) return;
       let query = supabase
         .from("transactions")
         .select(
@@ -91,18 +91,18 @@ export function useFinancesData({
         )
       `,
         )
-        .eq("user_id", user.id);
+        .eq("tenant_id", effectiveTenantId);
 
       if (bId) query = query.eq("barber_id", bId);
       const { data } = await query.order("created_at", { ascending: false });
       setTransactions(data || []);
     },
-    [user],
+    [effectiveTenantId],
   );
 
   const fetchAppointments = useCallback(
     async (bId: string | null = null) => {
-      if (!user) return;
+      if (!effectiveTenantId) return;
       let query = supabase
         .from("appointments")
         .select(
@@ -113,7 +113,7 @@ export function useFinancesData({
         barber:barbers!appointments_barber_id_fkey(name)
       `,
         )
-        .eq("user_id", user.id)
+        .eq("tenant_id", effectiveTenantId)
         .eq("payment_status", "pending")
         .neq("status", "cancelled");
 
@@ -121,7 +121,7 @@ export function useFinancesData({
       const { data } = await query.order("start_time", { ascending: false });
       setAppointments(data || []);
     },
-    [user],
+    [effectiveTenantId],
   );
 
   const fetchRefundRequests = useCallback(async () => {
@@ -290,7 +290,7 @@ export function useFinancesData({
           event: "*",
           schema: "public",
           table: "refund_requests",
-          filter: `tenant_id=eq.${user.id}`,
+          filter: effectiveTenantId ? `tenant_id=eq.${effectiveTenantId}` : undefined,
         },
         () => {
           fetchRefundRequests();
@@ -329,18 +329,18 @@ export function useFinancesData({
 
   useEffect(() => {
     async function fetchBalances() {
-      if (!user) return;
+      if (!effectiveTenantId) return;
       const { data, error } = await supabase
         .from("customers")
         .select("credits, cashback_balance")
-        .eq("user_id", user.id);
+        .eq("tenant_id", effectiveTenantId);
       if (!error && data) {
         setTotalCredits(data.reduce((acc, c) => acc + (Number(c.credits) || 0), 0));
         setTotalCashback(data.reduce((acc, c) => acc + (Number(c.cashback_balance) || 0), 0));
       }
     }
-    if (user) fetchBalances();
-  }, [user, transactions]);
+    if (effectiveTenantId) fetchBalances();
+  }, [effectiveTenantId, transactions]);
 
   return {
     transactions,

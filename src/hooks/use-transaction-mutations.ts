@@ -21,6 +21,7 @@ const defaultNewTransaction = {
 
 interface Params {
   user: { id: string } | null;
+  tenantId?: string | null;
   transactions: any[];
   newTransaction: any;
   setNewTransaction: (v: any) => void;
@@ -35,6 +36,7 @@ interface Params {
 
 export function useTransactionMutations({
   user,
+  tenantId,
   transactions,
   newTransaction,
   setNewTransaction,
@@ -47,6 +49,7 @@ export function useTransactionMutations({
   fetchCustomerStats,
 }: Params) {
   const queryClient = useQueryClient();
+  const effectiveTenantId = tenantId || user?.id;
 
   async function handleAddTransaction(e: React.FormEvent) {
     e.preventDefault();
@@ -66,7 +69,7 @@ export function useTransactionMutations({
       credits_amount: parseFloat(newTransaction.credits_amount) || 0,
       cashback_amount: parseFloat(newTransaction.cashback_amount) || 0,
       user_id: user.id,
-      tenant_id: user.id,
+      tenant_id: effectiveTenantId,
       barber_id: newTransaction.barber_id === "none" ? null : newTransaction.barber_id,
       customer_id: newTransaction.customer_id === "none" ? null : newTransaction.customer_id,
     }]);
