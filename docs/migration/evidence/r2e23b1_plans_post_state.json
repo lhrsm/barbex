@@ -1,0 +1,41 @@
+[
+  {
+    "id": "2b4c3225-3b35-48c5-a8a0-2c84e2a10c41",
+    "name": "Elite",
+    "price_monthly": "149.90",
+    "price_yearly": "1499.00",
+    "slug": "elite",
+    "stripe_price_id_live": "price_1TmYG0PKG6q10UjrOx8tEehr",
+    "stripe_price_id_test": "price_1UJrp4PKG6q10UjrEB7Iy7RZ",
+    "stripe_product_id_live": "prod_UUtTTRItozWDdd",
+    "stripe_product_id_test": "prod_VKWsIELFcSxXLr",
+    "stripe_yearly_price_id_live": "price_1UJDX4PKG6q10UjrzkytrHAJ",
+    "stripe_yearly_price_id_test": "price_1UJrpUPKG6q10UjruyBirOlI"
+  },
+  {
+    "id": "b2d0b9f0-714d-4e34-bffa-fe2af36d9200",
+    "name": "Pro",
+    "price_monthly": "99.90",
+    "price_yearly": "999.00",
+    "slug": "pro",
+    "stripe_price_id_live": "price_1TVtOVPKG6q10Ujre6zMGYpk",
+    "stripe_price_id_test": "price_1UJroIPKG6q10UjrzvrZu9FX",
+    "stripe_product_id_live": "prod_UUtAGJzYKaux3J",
+    "stripe_product_id_test": "prod_VKWrJsN3EnYsLv",
+    "stripe_yearly_price_id_live": "price_1UJDaCPKG6q10UjrWOjctNmr",
+    "stripe_yearly_price_id_test": "price_1UJroZPKG6q10Ujr3BhHgRpG"
+  },
+  {
+    "id": "90f24904-6d57-40d0-bc16-533da6c9f168",
+    "name": "Starter",
+    "price_monthly": "59.90",
+    "price_yearly": "499.00",
+    "slug": "starter",
+    "stripe_price_id_live": "price_1TVtOWPKG6q10UjrQErPgyKO",
+    "stripe_price_id_test": "price_1UJrndPKG6q10UjrOh0rqWUQ",
+    "stripe_product_id_live": "prod_UUtAMkyffs3hei",
+    "stripe_product_id_test": "prod_VKWq9S7RZgrX3j",
+    "stripe_yearly_price_id_live": "price_1UJDZBPKG6q10UjrQrf3rHBS",
+    "stripe_yearly_price_id_test": "price_1UJrntPKG6q10Ujr5NZvGFcs"
+  }
+]

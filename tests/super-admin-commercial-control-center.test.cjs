@@ -163,7 +163,7 @@ function classifyTenant(input) {
 test("1. Commercial Classification: Distinguishes ASSINATURA, VOUCHER, TRIAL, and FREE", () => {
   // Verify TypeScript source file integrity
   const tsContent = fs.readFileSync(path.join(__dirname, "../src/lib/commercial-classification.ts"), "utf-8");
-  assert.ok(tsContent.includes('export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "FREE"'));
+  assert.ok(tsContent.includes('export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "CANCELADA" | "RESTRICTED" | "FREE" | "OUTRO"'));
   assert.ok(tsContent.includes('LM_BARBERSHOP_ID = "c54ac1ac-49be-4505-b7a4-d257ed023f08"'));
   assert.ok(tsContent.includes('modality: "FREE"'));
 

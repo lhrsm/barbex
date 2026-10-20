@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Crown, Edit2, Save, X, Check, Lock, RefreshCw, AlertCircle, Power, ShieldAlert, ShieldCheck, Loader2 } from "lucide-react";
+import { Crown, Edit2, Save, X, Check, Copy, Lock, RefreshCw, AlertCircle, Power, ShieldAlert, ShieldCheck, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/plans")({
   component: AdminPlans,
@@ -145,6 +145,21 @@ function AdminPlans() {
   const [deactivateReason, setDeactivateReason] = useState<string>("");
   const [activateTarget, setActivateTarget] = useState<Plan | null>(null);
   const [activateReason, setActivateReason] = useState<string>("");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopyId = (text: string, label: string, key: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopiedKey(key);
+        toast.success(`${label} copiado para a área de transferência!`);
+        setTimeout(() => setCopiedKey(null), 2000);
+      },
+      () => {
+        toast.error("Falha ao copiar identificador.");
+      }
+    );
+  };
 
   const {
     data: plans,
@@ -549,30 +564,67 @@ function AdminPlans() {
                         <span className="text-[10px] text-white/40 uppercase tracking-wider block">
                           Price Mensal
                         </span>
-                        <code className="text-[11px] font-mono text-amber-200/90 break-all select-all">
-                          {plan.stripe_price_id_test || (
-                            <span className="text-red-400/80 italic">Não configurado</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <code className="text-[11px] font-mono text-amber-200/90 break-all select-all">
+                            {plan.stripe_price_id_test || (
+                              <span className="text-red-400/80 italic">Não configurado</span>
+                            )}
+                          </code>
+                          {plan.stripe_price_id_test && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 shrink-0"
+                              onClick={() => handleCopyId(plan.stripe_price_id_test!, "Price Mensal Test", `${plan.id}-test-m`)}
+                              title="Copiar Price ID Mensal Test"
+                            >
+                              {copiedKey === `${plan.id}-test-m` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
                           )}
-                        </code>
+                        </div>
                       </div>
                       <div>
                         <span className="text-[10px] text-white/40 uppercase tracking-wider block">
                           Price Anual
                         </span>
-                        <code className="text-[11px] font-mono text-amber-200/90 break-all select-all">
-                          {plan.stripe_yearly_price_id_test || (
-                            <span className="text-red-400/80 italic">Não configurado</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <code className="text-[11px] font-mono text-amber-200/90 break-all select-all">
+                            {plan.stripe_yearly_price_id_test || (
+                              <span className="text-red-400/80 italic">Não configurado</span>
+                            )}
+                          </code>
+                          {plan.stripe_yearly_price_id_test && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 shrink-0"
+                              onClick={() => handleCopyId(plan.stripe_yearly_price_id_test!, "Price Anual Test", `${plan.id}-test-y`)}
+                              title="Copiar Price ID Anual Test"
+                            >
+                              {copiedKey === `${plan.id}-test-y` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
                           )}
-                        </code>
+                        </div>
                       </div>
                       {plan.stripe_product_id_test && (
                         <div className="pt-1 border-t border-amber-500/10">
                           <span className="text-[10px] text-white/40 uppercase tracking-wider block">
                             Product ID
                           </span>
-                          <code className="text-[11px] font-mono text-white/60 break-all select-all">
-                            {plan.stripe_product_id_test}
-                          </code>
+                          <div className="flex items-center justify-between gap-1">
+                            <code className="text-[11px] font-mono text-white/60 break-all select-all">
+                              {plan.stripe_product_id_test}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10 shrink-0"
+                              onClick={() => handleCopyId(plan.stripe_product_id_test!, "Product ID Test", `${plan.id}-test-prod`)}
+                              title="Copiar Product ID Test"
+                            >
+                              {copiedKey === `${plan.id}-test-prod` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -594,30 +646,67 @@ function AdminPlans() {
                         <span className="text-[10px] text-white/40 uppercase tracking-wider block">
                           Price Mensal
                         </span>
-                        <code className="text-[11px] font-mono text-emerald-200/90 break-all select-all">
-                          {plan.stripe_price_id_live || (
-                            <span className="text-red-400/80 italic">Não configurado</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <code className="text-[11px] font-mono text-emerald-200/90 break-all select-all">
+                            {plan.stripe_price_id_live || (
+                              <span className="text-red-400/80 italic">Não configurado</span>
+                            )}
+                          </code>
+                          {plan.stripe_price_id_live && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 shrink-0"
+                              onClick={() => handleCopyId(plan.stripe_price_id_live!, "Price Mensal Live", `${plan.id}-live-m`)}
+                              title="Copiar Price ID Mensal Live"
+                            >
+                              {copiedKey === `${plan.id}-live-m` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
                           )}
-                        </code>
+                        </div>
                       </div>
                       <div>
                         <span className="text-[10px] text-white/40 uppercase tracking-wider block">
                           Price Anual
                         </span>
-                        <code className="text-[11px] font-mono text-emerald-200/90 break-all select-all">
-                          {plan.stripe_yearly_price_id_live || (
-                            <span className="text-red-400/80 italic">Não configurado</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <code className="text-[11px] font-mono text-emerald-200/90 break-all select-all">
+                            {plan.stripe_yearly_price_id_live || (
+                              <span className="text-red-400/80 italic">Não configurado</span>
+                            )}
+                          </code>
+                          {plan.stripe_yearly_price_id_live && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 shrink-0"
+                              onClick={() => handleCopyId(plan.stripe_yearly_price_id_live!, "Price Anual Live", `${plan.id}-live-y`)}
+                              title="Copiar Price ID Anual Live"
+                            >
+                              {copiedKey === `${plan.id}-live-y` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
                           )}
-                        </code>
+                        </div>
                       </div>
                       {plan.stripe_product_id_live && (
                         <div className="pt-1 border-t border-emerald-500/10">
                           <span className="text-[10px] text-white/40 uppercase tracking-wider block">
                             Product ID
                           </span>
-                          <code className="text-[11px] font-mono text-white/60 break-all select-all">
-                            {plan.stripe_product_id_live}
-                          </code>
+                          <div className="flex items-center justify-between gap-1">
+                            <code className="text-[11px] font-mono text-white/60 break-all select-all">
+                              {plan.stripe_product_id_live}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 shrink-0"
+                              onClick={() => handleCopyId(plan.stripe_product_id_live!, "Product ID Live", `${plan.id}-live-prod`)}
+                              title="Copiar Product ID Live"
+                            >
+                              {copiedKey === `${plan.id}-live-prod` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
