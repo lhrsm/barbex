@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   shop: any;
-  canonicalTenantId: string;
+  canonicalTenantId?: string;
 }
 
 interface FaqItem {
@@ -21,13 +21,16 @@ export function BarbershopPublicFaq({ shop, canonicalTenantId }: Props) {
   const [loading, setLoading] = React.useState(true);
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
 
+  // Resolver tenantId canônico de forma resiliente a partir da prop ou do objeto shop
+  const tenantId = canonicalTenantId || shop?.tenant_id || shop?.id;
+
   // Se a barbearia desativou explicitamente a seção de FAQ, ocultar
   const isFaqEnabled = shop?.faq_enabled !== false;
 
   React.useEffect(() => {
     let isMounted = true;
     async function loadFaqs() {
-      if (!canonicalTenantId || !isFaqEnabled) {
+      if (!tenantId || !isFaqEnabled) {
         if (isMounted) {
           setFaqs([]);
           setLoading(false);
@@ -40,7 +43,7 @@ export function BarbershopPublicFaq({ shop, canonicalTenantId }: Props) {
         const { data, error } = await supabase
           .from("barbershop_faqs" as any)
           .select("id, question, answer, display_order")
-          .eq("tenant_id", canonicalTenantId)
+          .eq("tenant_id", tenantId)
           .eq("is_approved", true)
           .eq("is_published", true)
           .order("display_order", { ascending: true });
@@ -63,7 +66,7 @@ export function BarbershopPublicFaq({ shop, canonicalTenantId }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [canonicalTenantId, isFaqEnabled]);
+  }, [tenantId, isFaqEnabled]);
 
   // Se a seção estiver desabilitada ou não houver perguntas validadas, oculta completamente
   if (!isFaqEnabled || (!loading && faqs.length === 0)) {

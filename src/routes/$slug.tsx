@@ -163,6 +163,9 @@ function ShopPageComponent() {
   // Public modules — hide sections disabled by the barbershop owner in Settings > Modules
   const { isEnabled: isModuleEnabled } = usePublicModules(shop?.id);
   const productsEnabled = isModuleEnabled("products");
+
+  // Identificador canônico do tenant derivado do perfil da barbearia
+  const canonicalTenantId = shop?.tenant_id || shop?.id;
   const subscriptionsEnabled = isModuleEnabled("subscriptions");
   const cashbackEnabled = isModuleEnabled("cashback");
   const couponsEnabled = isModuleEnabled("coupons");
