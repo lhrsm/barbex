@@ -110,6 +110,8 @@ function SettingsComponent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const initialContactEmailRef = useRef<string | null>(null);
+  const profileIdRef = useRef<string | null>(null);
+  const shopIdRef = useRef<string | null>(null);
 
 
   const [formData, setFormData] = useState<any>({
@@ -186,35 +188,30 @@ function SettingsComponent() {
     }
   }, [user, loading, role, navigate]);
 
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-
   useEffect(() => {
-    console.log("[/settings] AUTH USER:", user);
-    console.log("[/settings] USER ID:", user?.id);
-    console.log("[/settings] ROLE:", role);
-    console.log("[/settings] TENANT ID RESOLVIDO:", effectiveTenantId);
-    if (user && role !== 'super_admin' && effectiveTenantId) {
+    if (user && role !== 'super_admin' && (effectiveTenantId || user.id)) {
       fetchProfile();
     }
   }, [user, role, effectiveTenantId]);
 
   async function fetchProfile() {
-    if (!effectiveTenantId) {
-      console.warn("[/settings] fetchProfile called without effectiveTenantId");
+    if (!effectiveTenantId && !user?.id) {
+      console.warn("[/settings] fetchProfile called without effectiveTenantId or user");
       return;
     }
 
-    console.log("[/settings] Fetching profile for tenant ID:", effectiveTenantId);
-
     try {
-      // Fetch profile
+      // 1. Fetch profile com resolução resiliente (user.id prioritário, fallback para tenantId)
+      const profileFilter = user?.id
+        ? `id.eq.${user.id},tenant_id.eq.${effectiveTenantId || user.id},id.eq.${effectiveTenantId || user.id}`
+        : `id.eq.${effectiveTenantId},tenant_id.eq.${effectiveTenantId}`;
+
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", effectiveTenantId);
-
-      console.log("[/settings] PROFILE RESULT:", profileData);
-      console.log("[/settings] PROFILE ERROR:", profileError);
+        .or(profileFilter)
+        .order("created_at", { ascending: true })
+        .limit(1);
 
       if (profileError) {
         console.error("[/settings] Supabase error fetching profile:", profileError);
@@ -222,60 +219,54 @@ function SettingsComponent() {
         return;
       }
 
-      // Fetch barbershop settings
+      const profile = profileData && profileData[0];
+      const resolvedProfileId = profile?.id || user?.id;
+      if (resolvedProfileId) {
+        profileIdRef.current = resolvedProfileId;
+      }
+
+      // 2. Fetch barbershops row (business-level source of truth for logo/name/slug)
+      const shopFilter = effectiveTenantId
+        ? `id.eq.${effectiveTenantId},owner_id.eq.${resolvedProfileId}`
+        : `owner_id.eq.${resolvedProfileId}`;
+
+      const { data: shopData, error: shopError } = await supabase
+        .from("barbershops")
+        .select("id, name, slug, logo_url, owner_id")
+        .or(shopFilter)
+        .limit(1)
+        .maybeSingle();
+
+      const resolvedShopId = shopData?.id || effectiveTenantId;
+      if (resolvedShopId) {
+        shopIdRef.current = resolvedShopId;
+      }
+
+      if (shopError) {
+        console.warn("[/settings] Warning fetching barbershop:", shopError);
+      }
+
+      // 3. Fetch barbershop settings (FK barber_id -> profiles.id)
       const { data: settingsData, error: settingsError } = await supabase
         .from("barbershop_settings")
         .select("*")
-        .eq("barber_id", effectiveTenantId)
+        .or(`barber_id.eq.${resolvedProfileId},barber_id.eq.${effectiveTenantId || resolvedProfileId}`)
+        .limit(1)
         .maybeSingle();
 
       if (settingsError) {
         console.error("[/settings] Error fetching barbershop settings:", settingsError);
       }
 
-      // Fetch barbershops row (business-level source of truth for logo/name/slug)
-      const { data: shopData, error: shopError } = await supabase
-        .from("barbershops")
-        .select("name, slug, logo_url")
-        .eq("owner_id", effectiveTenantId)
-        .maybeSingle();
-
-      console.log("[/settings] BARBERSHOP RESULT:", shopData);
-      console.log("[/settings] BARBERSHOP ERROR:", shopError);
-
-      // Fetch loyalty settings (novo módulo)
+      // 4. Fetch loyalty settings (FK tenant_id -> barbershops.id)
       const { data: loyaltyData } = await supabase
         .from("loyalty_settings" as any)
         .select("*")
-        .eq("tenant_id", effectiveTenantId)
+        .or(`tenant_id.eq.${resolvedShopId},tenant_id.eq.${effectiveTenantId || resolvedShopId}`)
+        .limit(1)
         .maybeSingle();
 
-      // Snapshot for on-screen debug panel
-      const profileRow = profileData && profileData[0];
-      setDebugInfo({
-        user_id: user?.id,
-        tenant_id: effectiveTenantId,
-        profile_id: profileRow?.id ?? null,
-        profile_error: profileError,
-        shop_error: shopError,
-        business_name: profileRow?.business_name ?? null,
-        slug: profileRow?.slug ?? null,
-        logo_url: profileRow?.logo_url ?? null,
-        barbershop_logo_url: (profileRow as any)?.barbershop_logo_url ?? null,
-        avatar_url: (profileRow as any)?.avatar_url ?? null,
-        primary_color: profileRow?.primary_color ?? null,
-        secondary_color: profileRow?.secondary_color ?? null,
-        pix_key: profileRow?.pix_key ?? null,
-        pix_qr_code_url: profileRow?.pix_qr_code_url ?? null,
-        opening_date: profileRow?.opening_date ?? null,
-        shop_name: shopData?.name ?? null,
-        shop_slug: shopData?.slug ?? null,
-        shop_logo_url: shopData?.logo_url ?? null,
-      });
-
-
-      if (profileData && profileData.length > 0) {
-        const profile = profileData[0];
+      if (profile) {
         const businessLogo =
           (profile as any).barbershop_logo_url ||
           profile.logo_url ||
@@ -444,12 +435,13 @@ function SettingsComponent() {
       updated_at: new Date().toISOString(),
     };
 
-    const targetId = effectiveTenantId || user.id;
+    const targetProfileId = profileIdRef.current || user.id;
+    const targetShopId = shopIdRef.current || effectiveTenantId;
 
     const { error: profileError } = await supabase
       .from("profiles")
       .update(mainProfilePayload as any)
-      .eq("id", targetId);
+      .eq("id", targetProfileId);
 
     // Update Auth metadata to keep identity consistent across profile and metadata
     await supabase.auth.updateUser({
@@ -459,12 +451,24 @@ function SettingsComponent() {
       }
     });
 
+    // Update barbershops table for business name, slug and logo consistency
+    if (targetShopId) {
+      await supabase
+        .from("barbershops")
+        .update({
+          name: profileUpdateData.business_name,
+          slug: profileUpdateData.slug,
+          logo_url: updatedData.barbershop_logo_url || profileUpdateData.logo_url,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("id", targetShopId);
+    }
 
-    // Save to barbershop_settings
+    // Save to barbershop_settings (barber_id references profiles.id)
     const { error: settingsError } = await supabase
       .from("barbershop_settings")
       .upsert({
-        barber_id: targetId,
+        barber_id: targetProfileId,
         instance_id: updatedData.instance_id,
         instance_token: updatedData.instance_token,
         client_token: updatedData.client_token,
@@ -477,7 +481,7 @@ function SettingsComponent() {
     const { error: loyaltyError } = await supabase
       .from("loyalty_settings" as any)
       .upsert({
-        tenant_id: targetId,
+        tenant_id: targetShopId,
         enabled: loyaltyEnabledFinal,
         appointments_required: Math.max(1, parseInt(String(updatedData.loyalty_appointments_required)) || 10),
         benefit_type: updatedData.loyalty_benefit_type || 'free_service',
@@ -522,7 +526,7 @@ function SettingsComponent() {
     const { error: rpcError } = await (supabase as any).rpc(
       "update_tenant_contact_settings",
       {
-        p_tenant_id: targetId,
+        p_tenant_id: targetProfileId,
         p_contact_form_enabled: contactFormEnabled,
         p_contact_email: currentContactEmail,
       },
@@ -539,7 +543,7 @@ function SettingsComponent() {
           contact_email: currentContactEmail,
           contact_form_enabled: contactFormEnabled,
         } as any)
-        .eq("id", targetId);
+        .eq("id", targetProfileId);
       contactSettingsError = directError;
     }
 
@@ -603,25 +607,6 @@ function SettingsComponent() {
             </Button>
           )}
         </div>
-
-        {/* TEMPORARY DEBUG PANEL — remover após validação */}
-        {debugInfo && (
-          <details className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 text-[11px] text-amber-100" open>
-            <summary className="cursor-pointer text-amber-300 font-black uppercase tracking-widest text-[11px]">
-              🔎 Debug Settings Data (temporário)
-            </summary>
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 font-mono">
-              {Object.entries(debugInfo).map(([k, v]) => (
-                <div key={k} className="flex gap-2 border-b border-amber-500/10 py-1">
-                  <span className="text-amber-400 min-w-[170px]">{k}:</span>
-                  <span className="break-all text-white/90">
-                    {v === null || v === undefined ? <em className="text-red-400">null</em> : typeof v === "object" ? JSON.stringify(v) : String(v)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </details>
-        )}
 
         <Tabs defaultValue="general" className="space-y-0">
           <div className="premium-tabs-scroll overflow-x-auto bg-[#050816] px-2 pt-2 -mx-4 sm:mx-0 rounded-t-[24px]">
@@ -1427,7 +1412,7 @@ function SettingsComponent() {
 
             <TabsContent value="faq" className="space-y-4">
               <FaqSettings
-                tenantId={effectiveTenantId}
+                tenantId={profileIdRef.current || user?.id || effectiveTenantId}
                 faqEnabled={formData.faq_enabled ?? true}
                 onToggleFaqEnabled={(enabled) =>
                   setFormData((prev: any) => ({ ...prev, faq_enabled: enabled }))

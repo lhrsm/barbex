@@ -852,6 +852,7 @@ function ShopPageComponent() {
 
       const canonicalTenantId = barbershopEntity?.id || (currentShop as any).tenant_id || currentShop.id;
       (currentShop as any).tenant_id = canonicalTenantId;
+      (currentShop as any).owner_id = barbershopEntity?.owner_id || currentShop.id;
 
       // Garantir que faq_enabled provenha estritamente do proprietário canônico (e não de colaborador)
       if (barbershopEntity?.owner_id && barbershopEntity.owner_id !== currentShop.id) {
@@ -3543,7 +3544,7 @@ function ShopPageComponent() {
         {/* FAQ Exclusivo da Barbearia (Multi-tenant) */}
         <BarbershopPublicFaq
           shop={shop}
-          canonicalTenantId={canonicalTenantId}
+          canonicalTenantId={shop?.owner_id || canonicalTenantId}
         />
 
         {/* Portal CTA Section — Premium with image */}

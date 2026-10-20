@@ -206,52 +206,165 @@ export function FaqSettings({ tenantId, faqEnabled, onToggleFaqEnabled, shopName
     }
   };
 
-  // Alterna Aprovação
-  const handleToggleApproved = async (faq: FaqRecord) => {
+  // Apenas Aprova (mantém is_published inalterado - não publica automaticamente)
+  const handleApprove = async (faq: FaqRecord) => {
     try {
-      const nextApproved = !faq.is_approved;
+      setActionLoading(true);
       const { error } = await supabase
         .from("barbershop_faqs" as any)
         .update({
-          is_approved: nextApproved,
-          // Se for desaprovada, despublica automaticamente
-          is_published: nextApproved ? faq.is_published : false,
+          is_approved: true,
           updated_at: new Date().toISOString(),
         })
         .eq("id", faq.id);
 
       if (error) throw error;
 
-      toast.success(nextApproved ? "Pergunta aprovada!" : "Pergunta pendente.");
+      toast.success("Pergunta aprovada! Ela permanecerá oculta até ser publicada.");
       await loadFaqs();
     } catch (e: any) {
-      toast.error("Erro ao alterar aprovação: " + e.message);
+      toast.error("Erro ao aprovar pergunta: " + e.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  // Alterna Publicação
-  const handleTogglePublished = async (faq: FaqRecord) => {
-    if (!faq.is_approved && !faq.is_published) {
+  // Desaprova (retorna para pendente e despublica)
+  const handleUnapprove = async (faq: FaqRecord) => {
+    try {
+      setActionLoading(true);
+      const { error } = await supabase
+        .from("barbershop_faqs" as any)
+        .update({
+          is_approved: false,
+          is_published: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", faq.id);
+
+      if (error) throw error;
+
+      toast.success("Pergunta retornada para pendente e ocultada do site.");
+      await loadFaqs();
+    } catch (e: any) {
+      toast.error("Erro ao desaprovar pergunta: " + e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Ação explícita combinada: Aprovar e Publicar
+  const handleApproveAndPublish = async (faq: FaqRecord) => {
+    try {
+      setActionLoading(true);
+      const { error } = await supabase
+        .from("barbershop_faqs" as any)
+        .update({
+          is_approved: true,
+          is_published: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", faq.id);
+
+      if (error) throw error;
+
+      toast.success("Pergunta aprovada e publicada no site público com sucesso!");
+      await loadFaqs();
+    } catch (e: any) {
+      toast.error("Erro ao aprovar e publicar: " + e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Apenas Publica (somente permitido se já aprovada)
+  const handlePublish = async (faq: FaqRecord) => {
+    if (!faq.is_approved) {
       toast.error("A pergunta precisa ser aprovada antes de ser publicada.");
       return;
     }
 
     try {
-      const nextPublished = !faq.is_published;
+      setActionLoading(true);
       const { error } = await supabase
         .from("barbershop_faqs" as any)
         .update({
-          is_published: nextPublished,
+          is_published: true,
           updated_at: new Date().toISOString(),
         })
         .eq("id", faq.id);
 
       if (error) throw error;
 
-      toast.success(nextPublished ? "Pergunta publicada no site público!" : "Pergunta ocultada.");
+      toast.success("Pergunta publicada no site público!");
       await loadFaqs();
     } catch (e: any) {
-      toast.error("Erro ao alterar publicação: " + e.message);
+      toast.error("Erro ao publicar pergunta: " + e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Despublica (mantém aprovada, mas oculta no site público)
+  const handleUnpublish = async (faq: FaqRecord) => {
+    try {
+      setActionLoading(true);
+      const { error } = await supabase
+        .from("barbershop_faqs" as any)
+        .update({
+          is_published: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", faq.id);
+
+      if (error) throw error;
+
+      toast.success("Pergunta despublicada e ocultada do site público.");
+      await loadFaqs();
+    } catch (e: any) {
+      toast.error("Erro ao despublicar pergunta: " + e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Publica em lote todas as perguntas já aprovadas que estejam ocultas (com confirmação explícita)
+  const handlePublishAllApproved = async () => {
+    if (!tenantId) return;
+    const pendingApproved = faqs.filter((f) => f.is_approved && !f.is_published);
+    if (pendingApproved.length === 0) {
+      toast.info("Não há perguntas aprovadas pendentes de publicação.");
+      return;
+    }
+
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Confirma a publicação de ${pendingApproved.length} pergunta(s) aprovada(s) no site público da barbearia?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const { error } = await supabase
+        .from("barbershop_faqs" as any)
+        .update({
+          is_published: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tenant_id", tenantId)
+        .eq("is_approved", true);
+
+      if (error) throw error;
+
+      toast.success(`${pendingApproved.length} pergunta(s) publicada(s) com sucesso no site público!`);
+      await loadFaqs();
+    } catch (e: any) {
+      toast.error("Erro ao publicar perguntas em lote: " + e.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -389,6 +502,33 @@ export function FaqSettings({ tenantId, faqEnabled, onToggleFaqEnabled, shopName
               <Clock className="w-6 h-6 text-amber-500/60" />
             </div>
           </div>
+
+          {/* Alerta de perguntas aprovadas que ainda estão ocultas */}
+          {faqs.some((f) => f.is_approved && !f.is_published) && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-400 shrink-0" />
+                <div>
+                  <p className="font-bold text-sm text-white">
+                    {faqs.filter((f) => f.is_approved && !f.is_published).length} pergunta(s) aprovada(s) ainda não publicada(s) no site
+                  </p>
+                  <p className="text-xs text-amber-300/80">
+                    Clique no botão ao lado para disponibilizá-la(s) imediatamente no portal público da sua barbearia.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handlePublishAllApproved}
+                disabled={actionLoading}
+                className="bg-gold hover:bg-gold/90 text-black font-black uppercase text-xs tracking-wider shrink-0 px-4 h-9 shadow-md"
+              >
+                {actionLoading ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 mr-1.5" />}
+                Publicar no Site
+              </Button>
+            </div>
+          )}
 
           {/* Botão de Sugestões se não houver perguntas ou poucas */}
           {faqs.length === 0 && (
@@ -583,33 +723,71 @@ export function FaqSettings({ tenantId, faqEnabled, onToggleFaqEnabled, shopName
                             <ArrowDown className="w-4 h-4" />
                           </Button>
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleApproved(faq)}
-                            className={`h-8 text-xs font-bold ${
-                              faq.is_approved
-                                ? "border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
-                                : "border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
-                            }`}
-                          >
-                            {faq.is_approved ? "Aprovada" : "Aprovar"}
-                          </Button>
+                          {/* Ações de Estado Independentes */}
+                          {!faq.is_approved ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleApprove(faq)}
+                                disabled={actionLoading}
+                                title="Apenas aprova a pergunta sem publicá-la no site público"
+                                className="h-8 text-xs font-bold border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                              >
+                                Aprovar
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => handleApproveAndPublish(faq)}
+                                disabled={actionLoading}
+                                title="Aprova e coloca no ar imediatamente no site público"
+                                className="h-8 text-xs font-bold bg-gold text-black hover:bg-gold/90 shadow-sm"
+                              >
+                                Aprovar e publicar
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnapprove(faq)}
+                                disabled={actionLoading}
+                                title="Voltar pergunta para status pendente e remover do site público"
+                                className="h-8 text-xs font-bold border-slate-700 text-slate-400 hover:text-white"
+                              >
+                                Desaprovar
+                              </Button>
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleTogglePublished(faq)}
-                            className={`h-8 text-xs font-bold ${
-                              faq.is_published
-                                ? "border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
-                                : "border-slate-700 text-slate-400 hover:text-white"
-                            }`}
-                          >
-                            {faq.is_published ? "Publicada" : "Publicar"}
-                          </Button>
+                              {!faq.is_published ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => handlePublish(faq)}
+                                  disabled={actionLoading}
+                                  title="Publicar esta pergunta aprovada no site público"
+                                  className="h-8 text-xs font-bold bg-emerald-500 text-black hover:bg-emerald-400 shadow-sm"
+                                >
+                                  Publicar
+                                </Button>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUnpublish(faq)}
+                                  disabled={actionLoading}
+                                  title="Ocultar pergunta do site público (mantendo aprovação)"
+                                  className="h-8 text-xs font-bold border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
+                                >
+                                  Despublicar
+                                </Button>
+                              )}
+                            </>
+                          )}
 
                           <Button
                             type="button"
