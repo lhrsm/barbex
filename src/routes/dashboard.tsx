@@ -38,6 +38,9 @@ function DashboardLayout() {
     queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     queryClient.invalidateQueries({ queryKey: ['appointments'] });
     queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('REFRESH_DASHBOARD_DATA'));
+    }
   };
 
   return (

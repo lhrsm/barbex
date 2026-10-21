@@ -149,6 +149,13 @@ export function useAppointmentStatus() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['customer-appointments'] });
       queryClient.invalidateQueries({ queryKey: ['reception-queue'] });
+
+      // Disparo em tempo real para sincronização instantânea do dashboard e telas dependentes
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('REFRESH_DASHBOARD_DATA', {
+          detail: { appointmentId, newStatus }
+        }));
+      }
       
       return { success: true, ...result };
     } catch (error: any) {

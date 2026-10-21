@@ -87,8 +87,8 @@ export function ManagerDashboardView({
         />
       </KPIGrid>
 
-      <div className="grid gap-8 lg:grid-cols-12">
-        <div className="lg:col-span-8 space-y-8">
+      <div className="grid gap-6 xl:gap-8 xl:grid-cols-12">
+        <div className="xl:col-span-8 2xl:col-span-9 space-y-6 xl:space-y-8 min-w-0">
           <ExecutiveSummary 
             appointments={todayAppointments} 
             stats={stats}
@@ -121,7 +121,7 @@ export function ManagerDashboardView({
           </div>
         </div>
 
-        <div className="lg:col-span-4">
+        <div className="xl:col-span-4 2xl:col-span-3 min-w-0">
           <InsightsPanel
             appointments={todayAppointments}
             stats={stats}

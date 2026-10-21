@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
 import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { WalkinModal } from "@/components/calendar/WalkinModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -169,6 +169,52 @@ function DashboardIndexComponent() {
       supabase.removeChannel(channel);
     };
   }, [tenantId, selectedDate]);
+
+  // Sincronização automática e desduplicada após mutações operacionais (conclusão, cancelamento, remarcação)
+  const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const executeDebouncedSync = () => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+      syncTimerRef.current = setTimeout(() => {
+        fetchTodayAppointments();
+        fetchStats();
+        fetchBirthdayCustomers();
+      }, 80);
+    };
+
+    // 1. Escuta invalidações relevantes no TanStack QueryCache
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event?.type === 'updated' || 
+        event?.type === 'observerResultsUpdated' ||
+        event?.type === 'removed'
+      ) {
+        const queryKey = event.query?.queryKey;
+        if (
+          Array.isArray(queryKey) && 
+          (queryKey.includes('dashboard') || queryKey.includes('appointments') || queryKey.includes('calendar') || queryKey.includes('reception-queue'))
+        ) {
+          executeDebouncedSync();
+        }
+      }
+    });
+
+    // 2. Barramento de eventos no window para disparo imperativo pós-RPC
+    window.addEventListener('REFRESH_DASHBOARD_DATA', executeDebouncedSync);
+
+    return () => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+      unsubscribe();
+      window.removeEventListener('REFRESH_DASHBOARD_DATA', executeDebouncedSync);
+    };
+  }, [tenantId, selectedDate, queryClient]);
 
   async function fetchBirthdayCustomers() {
     if (!tenantId) return;

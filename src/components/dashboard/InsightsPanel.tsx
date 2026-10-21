@@ -137,11 +137,11 @@ export const InsightsPanel = memo(({ appointments, stats, barbers = [], birthday
   return (
     <section
       aria-label="Insights da barbearia"
-      className="rounded-3xl border border-white/5 bg-[#0b0f17]/40 p-6 h-full flex flex-col transition-all duration-300 hover:bg-[#0b0f17]/60"
+      className="rounded-3xl border border-white/5 bg-[#0b0f17]/40 p-4 sm:p-5 xl:p-6 h-full flex flex-col transition-all duration-300 hover:bg-[#0b0f17]/60"
     >
-      <div className="mb-6 flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-gold/10 text-gold border border-gold/20">
-          <Lightbulb className="h-5 w-5" aria-hidden />
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl bg-gold/10 text-gold border border-gold/20 shrink-0">
+          <Lightbulb className="h-4.5 w-4.5 sm:h-5 sm:w-5" aria-hidden />
         </div>
         <div className="min-w-0">
           <h3 className="truncate text-sm font-black uppercase tracking-[0.14em] text-white italic">
@@ -153,12 +153,12 @@ export const InsightsPanel = memo(({ appointments, stats, barbers = [], birthday
         </div>
       </div>
 
-      <ul className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1">
+      <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-2.5 sm:gap-3 flex-1 overflow-y-auto pr-1">
         {insights.map((i) => (
           <li
             key={i.id}
             className={cn(
-              "flex items-start gap-3 rounded-2xl border p-4 transition-all duration-300 hover:translate-x-1 group",
+              "flex items-start gap-2.5 sm:gap-3 rounded-2xl border p-3 sm:p-4 transition-all duration-300 hover:translate-x-1 group min-w-0",
               i.tone === "warn"
                 ? "border-amber-500/10 bg-amber-500/5 hover:border-amber-500/20"
                 : i.tone === "good"
@@ -177,8 +177,8 @@ export const InsightsPanel = memo(({ appointments, stats, barbers = [], birthday
               )}
               aria-hidden
             />
-            <div className="space-y-1">
-              <span className="text-[13px] leading-snug text-zinc-300 font-medium block">{i.text}</span>
+            <div className="space-y-1 min-w-0 flex-1">
+              <span className="text-xs sm:text-[13px] leading-snug text-zinc-300 font-medium block break-words">{i.text}</span>
               <button className="text-[10px] font-black uppercase tracking-widest text-gold hover:text-gold/80 transition-colors pt-1">
                 Ver detalhes
               </button>

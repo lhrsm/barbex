@@ -145,13 +145,15 @@ export function useTenant() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const businessName = tenantMeta?.name || ownedShop?.name || null;
+  const businessName = tenantMeta?.name || (ownedShop?.id === tenantId ? ownedShop?.name : null) || tenantProfile?.business_name || null;
+  const canonicalSlug = tenantMeta?.slug || (ownedShop?.id === tenantId ? ownedShop?.slug : null) || (tenantProfile?.id === tenantId ? tenantProfile?.slug : null) || null;
 
   return {
     tenantId,
     canonicalTenantId: tenantId,
     operationalScopeId: tenantId,
     businessName,
+    slug: canonicalSlug,
     tenantProfile,
     planDetails,
     membership,

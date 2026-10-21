@@ -87,7 +87,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "group relative flex h-full min-h-[140px] flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b0f17]/40 p-6 backdrop-blur-sm",
+        "group relative flex h-full min-h-[130px] sm:min-h-[140px] flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b0f17]/40 p-4 sm:p-5 xl:p-6 backdrop-blur-sm",
         "transition-all duration-300 hover:-translate-y-1 hover:bg-[#0b0f17]/60 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]",
         t.ring,
         className,
@@ -101,23 +101,23 @@ export function MetricCard({
         )}
       />
 
-      <div className="relative flex items-start justify-between gap-3">
-        <p className="min-w-0 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-zinc-400 transition-colors">
+      <div className="relative flex items-start justify-between gap-2 sm:gap-3">
+        <p className="min-w-0 truncate text-[10px] font-black uppercase tracking-[0.14em] sm:tracking-[0.2em] text-zinc-500 group-hover:text-zinc-400 transition-colors" title={label}>
           {label}
         </p>
-        <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition-all duration-300 group-hover:scale-110", 
+        <div className={cn("grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl border transition-all duration-300 group-hover:scale-110", 
           t.icon, 
           tone === "neutral" ? "border-white/5" : "border-current/20"
         )}>
-          <Icon className="h-4.5 w-4.5" aria-hidden />
+          <Icon className="h-4 w-4 sm:h-4.5 sm:w-4.5" aria-hidden />
         </div>
       </div>
 
-      <div className="relative mt-4">
+      <div className="relative mt-3 sm:mt-4 min-w-0">
         {loading ? (
           <div className="h-8 w-28 animate-pulse rounded-lg bg-white/5" />
         ) : (
-          <p className={cn("truncate text-3xl font-black tracking-tight", t.value)}>
+          <p className={cn("text-xl sm:text-2xl xl:text-3xl font-black tracking-tight whitespace-nowrap", t.value)} title={String(value)}>
             {value}
           </p>
         )}

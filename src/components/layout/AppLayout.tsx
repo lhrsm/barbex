@@ -195,6 +195,8 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
     stopImpersonation,
     tenantId,
     isLoading: tenantLoading,
+    slug: tenantSlug,
+    ownedShop,
   } = useTenant();
   const {
     role: authRole,
@@ -223,7 +225,11 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const role = authRole || (session ? "barber" : null);
   const loading = authLoading || profLoading;
 
-  const slug = tenantProfile?.slug || session?.tenant_slug || authProfile?.slug || "general";
+  const slug =
+    tenantSlug ||
+    (session?.tenant_id === tenantId ? session?.tenant_slug : null) ||
+    (tenantProfile?.id === tenantId ? tenantProfile?.slug : null) ||
+    "";
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -504,8 +510,8 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
       )}
 
       {/* Mobile Top Header */}
-      <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gold/10 bg-[#0b0f17] sticky top-0 z-40">
-        <div className="flex items-center gap-3 overflow-hidden">
+      <header className="md:hidden flex items-center justify-between px-3 sm:px-4 py-3 border-b border-gold/10 bg-[#0b0f17] sticky top-0 z-40">
+        <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden min-w-0">
           <TenantBrandLogo
             tenantIdOrSlug={tenantId}
             shop={tenantProfile}
@@ -513,16 +519,28 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
             shape="circle"
             className="shrink-0 border border-gold/20"
           />
-          <p className="text-xl font-black text-white truncate tracking-tight">{businessName}</p>
+          <p className="text-base sm:text-lg font-black text-white truncate tracking-tight">{businessName}</p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {slug && slug !== "general" && (
+            <a
+              href={`/${slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-8 px-2 rounded-xl border border-gold/40 bg-gold/10 hover:bg-gold/20 text-gold flex items-center gap-1 text-[10px] font-black uppercase tracking-wider transition-colors active:scale-95"
+              title="Ver Página Pública"
+            >
+              <ExternalLink size={12} className="shrink-0" />
+              <span className="hidden xs:inline text-[9px] font-black">Página</span>
+            </a>
+          )}
           <NotificationsCenter />
           {role === "super_admin" && <AdminNotifications />}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-white"
+            className="text-white h-8 w-8"
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>

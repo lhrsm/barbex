@@ -64,7 +64,7 @@ export const ExecutiveSummary = memo(({ name, appointments, stats, birthdaysCoun
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           title="Faturamento Hoje"
           value={brl(m.revenue)}
@@ -190,36 +190,40 @@ interface MetricCardProps {
 function MetricCard({ title, value, icon, trend, label, variant = 'default' }: MetricCardProps) {
   return (
     <Card className={cn(
-      "relative group overflow-hidden shine",
+      "relative group overflow-hidden shine min-w-0 flex flex-col justify-between",
       variant === 'gold' && "border-gold/20 bg-gold/[0.03]"
     )}>
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
+      <CardContent className="p-4 sm:p-5 xl:p-6 flex flex-col justify-between h-full">
+        <div className="flex justify-between items-start gap-2 mb-3 sm:mb-4">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300",
+            "w-9 h-9 sm:w-10 sm:h-10 rounded-xl shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300",
             variant === 'gold' ? "bg-gold/10 text-gold" : "bg-surface-raised text-muted-foreground"
           )}>
             {icon}
           </div>
           {trend !== undefined && trend !== null && (
-            <Badge variant={trend >= 0 ? "success" : "destructive"} className="font-black text-[10px]">
+            <Badge variant={trend >= 0 ? "success" : "destructive"} className="font-black text-[9px] sm:text-[10px] shrink-0">
               {trend >= 0 ? '+' : ''}{trend.toFixed(1)}%
             </Badge>
           )}
         </div>
         
-        <div className="space-y-1">
-          <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{title}</div>
-          <div className="text-3xl font-black tracking-tight">{value}</div>
-          <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
-            {label}
-            {trend !== undefined && trend !== null && <ArrowUpRight className={cn("h-3 w-3", trend >= 0 ? "text-success" : "text-destructive")} />}
+        <div className="space-y-1 min-w-0">
+          <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground/70 truncate" title={title}>
+            {title}
+          </div>
+          <div className="text-xl sm:text-2xl xl:text-3xl font-black tracking-tight whitespace-nowrap" title={String(value)}>
+            {value}
+          </div>
+          <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 min-w-0">
+            <span className="truncate">{label}</span>
+            {trend !== undefined && trend !== null && <ArrowUpRight className={cn("h-3 w-3 shrink-0", trend >= 0 ? "text-success" : "text-destructive")} />}
           </div>
         </div>
       </CardContent>
       
       {variant === 'gold' && (
-        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gold/5 blur-3xl rounded-full" />
+        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gold/5 blur-3xl rounded-full pointer-events-none" />
       )}
     </Card>
   );
