@@ -189,7 +189,9 @@ function AdminFinance() {
           isDivergent = true;
         }
 
-        const catKey = classification.modality === "VOUCHER"
+        const catKey = classification.modality === "TESTE_INTERNO"
+          ? "TESTE INTERNO (HOMOLOGAÇÃO)"
+          : classification.modality === "VOUCHER"
           ? "VOUCHER PERMANENTE"
           : classification.modality === "CANCELADA"
             ? "ASSINATURA CANCELADA"
@@ -211,7 +213,9 @@ function AdminFinance() {
           assignedPlanName,
           profilePlanName,
           isDivergent,
-          effectivePlanName: classification.modality === "VOUCHER"
+          effectivePlanName: classification.modality === "TESTE_INTERNO"
+            ? "Teste Interno (Sintético)"
+            : classification.modality === "VOUCHER"
             ? "Voucher Permanente (Sem Cobrança)"
             : classification.modality === "CANCELADA"
               ? `Cancelada (Último: ${classification.lastContractedPlanName || "Starter"})`

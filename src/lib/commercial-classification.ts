@@ -11,7 +11,7 @@
 
 export const LM_BARBERSHOP_ID = "c54ac1ac-49be-4505-b7a4-d257ed023f08";
 
-export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "CANCELADA" | "RESTRICTED" | "FREE" | "OUTRO";
+export type TenantAccessModality = "TRIAL" | "VOUCHER" | "ASSINATURA" | "CANCELADA" | "RESTRICTED" | "FREE" | "TESTE_INTERNO" | "OUTRO";
 
 export type TenantTrialStatus = "EM VIGÊNCIA" | "EXPIRADO" | "SEM EXPIRAÇÃO" | "NÃO APLICÁVEL";
 
@@ -50,6 +50,8 @@ export interface CommercialClassification {
   slug: string;
   modality: TenantAccessModality;
   trialStatus: TenantTrialStatus;
+  /** Identifica se o registro é uma fixture de teste interno / sintético */
+  isInternalTest: boolean;
   /** Nome do plano comercial contratado (apenas se houver assinatura comercial) */
   commercialPlanName: string | null;
   /** Nome do último plano comercial contratado (se cancelado) */
@@ -98,6 +100,7 @@ export interface TenantClassificationInput {
     status: string;
     price_id?: string | null;
     plan_key?: string | null;
+    stripe_subscription_id?: string | null;
     is_internal_test_tenant?: boolean | null;
     canceled_at?: string | null;
   }> | null;
@@ -108,6 +111,60 @@ export interface TenantClassificationInput {
     effective_plan?: string | null;
     restriction_reason?: string | null;
   } | null;
+}
+
+/**
+ * Identifica se um estabelecimento ou registro é uma fixture/teste interno sintético.
+ */
+export function isSyntheticTestRecord(input: TenantClassificationInput): boolean {
+  // 1. Flag explícita no perfil do proprietário
+  if (input.ownerProfile?.is_internal_test_tenant === true) {
+    return true;
+  }
+
+  // 2. Assinaturas vinculadas marcadas como teste interno ou com IDs sintéticos conhecidos
+  const subs = input.subscriptions || [];
+  if (subs.some((s) => s.is_internal_test_tenant === true)) {
+    return true;
+  }
+  if (
+    subs.some(
+      (s) =>
+        s.stripe_subscription_id &&
+        (s.stripe_subscription_id.startsWith("sub_t") ||
+          s.stripe_subscription_id.includes("_14b") ||
+          s.stripe_subscription_id.includes("m17")),
+    )
+  ) {
+    return true;
+  }
+
+  // 3. Faixas de IDs reservadas exclusivamente para fixtures sintéticas automatizadas
+  if (
+    input.id.startsWith("c0000000-") ||
+    input.id.startsWith("a0000000-") ||
+    (input.owner_id &&
+      (input.owner_id.startsWith("c0000000-") || input.owner_id.startsWith("a0000000-")))
+  ) {
+    return true;
+  }
+
+  // 4. Salvaguarda contra falso positivo por coincidência de nome:
+  // Se o proprietário estiver expressamente marcado como comercial legítimo (false),
+  // ele NUNCA é classificado como sintético por mera semelhança nominal.
+  if (input.ownerProfile?.is_internal_test_tenant === false) {
+    return false;
+  }
+
+  // 5. Nomenclatura padronizada de fixtures sintéticas conhecidas (Tenant T01 a T30, etc.)
+  if (
+    /^Tenant\s+T\d+/i.test(input.name.trim()) ||
+    /^tenant-t\d+/i.test(input.slug.trim())
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -125,6 +182,29 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     (input.ownerProfile?.plan ? input.ownerProfile.plan.toUpperCase() : null);
   const catalogNominalAmount = technicalPlan ? Number(technicalPlan.price_monthly) || 0 : 0;
 
+  // 0. Verificação Prioritária de Testes Internos / Fixtures Sintéticas
+  if (isSyntheticTestRecord(input)) {
+    return {
+      tenantId: input.id,
+      tenantName: input.name,
+      slug: input.slug,
+      modality: "TESTE_INTERNO",
+      trialStatus: "NÃO APLICÁVEL",
+      isInternalTest: true,
+      commercialPlanName: null, // Proibido apresentar teste interno como plano comercial
+      lastContractedPlanName: null,
+      technicalPlanName: technicalPlanName || "TEST",
+      contractedMonthlyAmount: 0, // Proibido gerar MRR comercial
+      catalogNominalAmount: 0, // Proibido poluir valor nominal de catálogo comercial
+      isPermanentVoucher: false,
+      trialStart: input.ownerProfile?.trial_start || null,
+      trialEnd: input.ownerProfile?.trial_end || null,
+      statusBadgeVariant: "gray",
+      statusLabel: "TESTE INTERNO",
+      explanation: "Registro sintético de homologação interna (não comercial)",
+    };
+  }
+
   // 1. Verificação de Assinatura Comercial Ativa
   const activePaidSub = (input.subscriptions || []).find(
     (s) =>
@@ -141,6 +221,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       slug: input.slug,
       modality: "ASSINATURA",
       trialStatus: "NÃO APLICÁVEL",
+      isInternalTest: false,
       commercialPlanName: technicalPlanName,
       lastContractedPlanName: technicalPlanName,
       technicalPlanName,
@@ -163,6 +244,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       slug: input.slug,
       modality: "VOUCHER",
       trialStatus: "SEM EXPIRAÇÃO",
+      isInternalTest: false,
       commercialPlanName: null, // Proibido exibir como plano comercial
       lastContractedPlanName: null,
       technicalPlanName, // Referência técnica para liberação de módulos
@@ -196,6 +278,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       slug: input.slug,
       modality: "CANCELADA",
       trialStatus: "NÃO APLICÁVEL",
+      isInternalTest: false,
       commercialPlanName: null, // Proibido exibir como plano comercial ativo
       lastContractedPlanName: lastPlan || null,
       technicalPlanName: "FREE",
@@ -222,6 +305,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       slug: input.slug,
       modality: "FREE",
       trialStatus: "NÃO APLICÁVEL",
+      isInternalTest: false,
       commercialPlanName: null,
       lastContractedPlanName: null,
       technicalPlanName: "FREE",
@@ -255,6 +339,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
       slug: input.slug,
       modality: "RESTRICTED",
       trialStatus: "EXPIRADO",
+      isInternalTest: false,
       commercialPlanName: null,
       lastContractedPlanName: null,
       technicalPlanName: "FREE",
@@ -275,6 +360,7 @@ export function classifyTenant(input: TenantClassificationInput): CommercialClas
     slug: input.slug,
     modality: "TRIAL",
     trialStatus: "EM VIGÊNCIA",
+    isInternalTest: false,
     commercialPlanName: null, // Proibido exibir como plano comercial
     lastContractedPlanName: null,
     technicalPlanName: "PRO", // Referência técnica liberada no trial

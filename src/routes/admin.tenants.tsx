@@ -102,6 +102,7 @@ interface TenantRecord {
 
 function AdminTenants() {
   const [search, setSearch] = useState("");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "commercial" | "internal_tests">("all");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -198,15 +199,17 @@ function AdminTenants() {
           });
 
           const plan_label =
-            classification.modality === "VOUCHER"
-              ? "VOUCHER"
-              : classification.modality === "CANCELADA"
-                ? `CANCELADA · ${classification.lastContractedPlanName || "Starter"}`
-                : classification.modality === "RESTRICTED"
-                  ? "ACESSO RESTRITO"
-                  : classification.modality === "TRIAL"
-                    ? `TRIAL · ${classification.trialStatus}`
-                    : (classification.commercialPlanName || "ASSINATURA");
+            classification.modality === "TESTE_INTERNO"
+              ? "TESTE INTERNO"
+              : classification.modality === "VOUCHER"
+                ? "VOUCHER"
+                : classification.modality === "CANCELADA"
+                  ? `CANCELADA · ${classification.lastContractedPlanName || "Starter"}`
+                  : classification.modality === "RESTRICTED"
+                    ? "ACESSO RESTRITO"
+                    : classification.modality === "TRIAL"
+                      ? `TRIAL · ${classification.trialStatus}`
+                      : (classification.commercialPlanName || "ASSINATURA");
           const plan_details = classification.explanation;
           const plan_status: "verified" | "to_verify" = "verified";
 
@@ -254,7 +257,7 @@ function AdminTenants() {
             owner_name,
             owner_email: ownerProfile?.email || null,
             whatsapp_number: ownerProfile?.whatsapp_number || ownerProfile?.phone || null,
-            is_internal_test_tenant: !!ownerProfile?.is_internal_test_tenant,
+            is_internal_test_tenant: !!ownerProfile?.is_internal_test_tenant || classification.isInternalTest,
             status: ownerProfile?.status === "blocked" ? "blocked" : "active",
             plan_status,
             plan_label,
@@ -375,7 +378,16 @@ function AdminTenants() {
     navigate({ to: "/dashboard" });
   };
 
+  const commercialCount = tenants?.filter((t) => !t.classification.isInternalTest).length || 0;
+  const internalTestsCount = tenants?.filter((t) => t.classification.isInternalTest).length || 0;
+  const totalCount = tenants?.length || 0;
+
   const filteredTenants = tenants?.filter((t) => {
+    // 1. Filtro de Escopo (Comerciais vs Testes Internos vs Todos)
+    if (scopeFilter === "commercial" && t.classification.isInternalTest) return false;
+    if (scopeFilter === "internal_tests" && !t.classification.isInternalTest) return false;
+
+    // 2. Busca textual
     const term = search.toLowerCase();
     return (
       t.name.toLowerCase().includes(term) ||
@@ -398,12 +410,58 @@ function AdminTenants() {
               Controle canônico sobre os estabelecimentos parceiros da plataforma.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative w-full md:w-96 group">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Seletor de Escopo: Todos / Comerciais / Testes Internos */}
+            <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-1 gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setScopeFilter("all")}
+                className={cn(
+                  "rounded-xl text-xs font-bold uppercase tracking-wider h-9 px-3 transition-all",
+                  scopeFilter === "all"
+                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                    : "text-gray-400 hover:text-white hover:bg-white/5",
+                )}
+              >
+                Todos ({totalCount})
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setScopeFilter("commercial")}
+                className={cn(
+                  "rounded-xl text-xs font-bold uppercase tracking-wider h-9 px-3 transition-all",
+                  scopeFilter === "commercial"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                    : "text-gray-400 hover:text-white hover:bg-white/5",
+                )}
+              >
+                Comerciais ({commercialCount})
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setScopeFilter("internal_tests")}
+                className={cn(
+                  "rounded-xl text-xs font-bold uppercase tracking-wider h-9 px-3 transition-all",
+                  scopeFilter === "internal_tests"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                    : "text-gray-400 hover:text-white hover:bg-white/5",
+                )}
+              >
+                Testes ({internalTestsCount})
+              </Button>
+            </div>
+
+            <div className="relative w-full sm:w-80 group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
               <Input
-                placeholder="Buscar barbearia, slug, proprietário..."
-                className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-white placeholder:text-gray-500"
+                placeholder="Buscar barbearia, slug..."
+                className="pl-12 h-11 bg-white/5 border-white/10 rounded-2xl focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-white placeholder:text-gray-500"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -411,7 +469,7 @@ function AdminTenants() {
             <Button
               variant="outline"
               size="icon"
-              className="h-12 w-12 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10"
+              className="h-11 w-11 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 shrink-0"
               aria-label="Atualizar dados"
               onClick={() => refetch()}
             >
@@ -581,7 +639,25 @@ function AdminTenants() {
                         {/* Plano Atribuído / Vigência (R2E.9) */}
                         <TableCell>
                           <div className="flex flex-col gap-1 items-start">
-                            {tenant.classification.modality === "VOUCHER" ? (
+                            {tenant.classification.modality === "TESTE_INTERNO" ? (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <Badge className="bg-zinc-500/20 text-zinc-300 border border-zinc-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <Layers className="w-3 h-3 text-zinc-400" />
+                                    TESTE INTERNO
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="border-zinc-500/30 text-zinc-400 bg-zinc-500/10 text-[9px] font-bold uppercase tracking-wider"
+                                  >
+                                    HOMOLOGAÇÃO
+                                  </Badge>
+                                </div>
+                                <span className="text-[10px] text-zinc-500">
+                                  Fixture sintética isolada (Sem cobrança comercial)
+                                </span>
+                              </>
+                            ) : tenant.classification.modality === "VOUCHER" ? (
                               <>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded-lg px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(168,85,247,0.15)]">

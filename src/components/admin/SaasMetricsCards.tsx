@@ -165,25 +165,14 @@ export function SaasMetricsCards() {
           entry.count += 1;
           entry.estimatedValue += price;
           byPlanMap.set(slug, entry);
+        } else if (classification.modality === "TRIAL" && classification.trialStatus === "EM VIGÊNCIA") {
+          activeTrialsCount += 1;
         }
       }
 
       const byPlan = Array.from(byPlanMap.values())
         .sort((a, b) => b.estimatedValue - a.estimatedValue)
         .map((p) => ({ ...p, color: PLAN_COLORS[p.slug] || "bg-blue-500" }));
-
-      // 3. Trials vigentes comprovados
-      const now = new Date();
-      let activeTrialsCount = 0;
-      for (const shop of shopsList) {
-        const owner = shop.owner_id ? profileById.get(shop.owner_id) : profileById.get(shop.id);
-        if (owner?.trial_end) {
-          const tEnd = new Date(owner.trial_end);
-          if (tEnd > now) {
-            activeTrialsCount += 1;
-          }
-        }
-      }
 
       return {
         effectiveMrr,

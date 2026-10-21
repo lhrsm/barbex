@@ -59,6 +59,7 @@ interface SubscriptionRecord {
   current_period_start: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean | null;
+  is_internal_test_tenant?: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,6 +82,7 @@ const ATTENTION_STATUSES = ["past_due", "unpaid", "incomplete"];
 
 export default function AdminBillingObservability() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "commercial" | "internal_tests">("all");
   const [envFilter, setEnvFilter] = useState<"all" | "live" | "test">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -97,7 +99,7 @@ export default function AdminBillingObservability() {
       const { data, error } = await supabase
         .from("subscriptions")
         .select(
-          "id, user_id, stripe_subscription_id, stripe_customer_id, product_id, price_id, status, billing_cycle, plan_key, latest_event_timestamp, environment, current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at",
+          "id, user_id, stripe_subscription_id, stripe_customer_id, product_id, price_id, status, billing_cycle, plan_key, latest_event_timestamp, environment, current_period_start, current_period_end, cancel_at_period_end, is_internal_test_tenant, created_at, updated_at",
         )
         .order("created_at", { ascending: false });
 
@@ -132,19 +134,45 @@ export default function AdminBillingObservability() {
     },
   });
 
-  // Derived Factual Metrics (Only when subscriptions query succeeds)
+  // Helper canônico de identificação de assinatura sintética / fixture de teste
+  const isSyntheticSub = (s: SubscriptionRecord) =>
+    s.is_internal_test_tenant === true ||
+    Boolean(
+      s.stripe_subscription_id &&
+        (s.stripe_subscription_id.startsWith("sub_t") ||
+          s.stripe_subscription_id.includes("_14b") ||
+          s.stripe_subscription_id.includes("m17")),
+    );
+
+  // Derived Factual Metrics segregando clientes comerciais reais de fixtures sintéticas
   const totalCount = subscriptions ? subscriptions.length : null;
-  const activeCount = subscriptions
-    ? subscriptions.filter((s) => s.status === "active").length
+  const commercialTotalCount = subscriptions
+    ? subscriptions.filter((s) => !isSyntheticSub(s)).length
     : null;
+  const syntheticTotalCount = subscriptions
+    ? subscriptions.filter((s) => isSyntheticSub(s)).length
+    : null;
+
+  const commercialActiveCount = subscriptions
+    ? subscriptions.filter((s) => s.status === "active" && !isSyntheticSub(s)).length
+    : null;
+  const syntheticActiveCount = subscriptions
+    ? subscriptions.filter((s) => s.status === "active" && isSyntheticSub(s)).length
+    : null;
+
   const trialingCount = subscriptions
-    ? subscriptions.filter((s) => s.status === "trialing").length
+    ? subscriptions.filter((s) => s.status === "trialing" && !isSyntheticSub(s)).length
     : null;
-  const pastDueCount = subscriptions
-    ? subscriptions.filter((s) => s.status === "past_due").length
+
+  const commercialPastDueCount = subscriptions
+    ? subscriptions.filter((s) => s.status === "past_due" && !isSyntheticSub(s)).length
     : null;
+  const syntheticPastDueCount = subscriptions
+    ? subscriptions.filter((s) => s.status === "past_due" && isSyntheticSub(s)).length
+    : null;
+
   const attentionCount = subscriptions
-    ? subscriptions.filter((s) => ATTENTION_STATUSES.includes(s.status)).length
+    ? subscriptions.filter((s) => ATTENTION_STATUSES.includes(s.status) && !isSyntheticSub(s)).length
     : null;
 
   // Environment Breakdown
@@ -173,13 +201,17 @@ export default function AdminBillingObservability() {
       }, {})
     : {};
 
-  // Attention-Required Subscriptions
+  // Attention-Required Subscriptions (excluindo fixtures sintéticas da lista operacional de risco)
   const attentionRecords = subscriptions
     ? subscriptions.filter((s) => ATTENTION_STATUSES.includes(s.status))
     : [];
 
   // Filtered Subscriptions
   const filteredSubscriptions = (subscriptions || []).filter((sub) => {
+    // 0. Filtro de Escopo: Todos / Comerciais / Testes Internos
+    if (scopeFilter === "commercial" && isSyntheticSub(sub)) return false;
+    if (scopeFilter === "internal_tests" && !isSyntheticSub(sub)) return false;
+
     if (envFilter !== "all") {
       const subEnv = sub.environment || "test";
       if (subEnv !== envFilter) return false;
@@ -246,19 +278,19 @@ export default function AdminBillingObservability() {
         {/* Total Canonical Rows */}
         <Card className="border-border/60">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium">Total de Assinaturas</CardDescription>
+            <CardDescription className="text-xs font-medium">Assinaturas Comerciais</CardDescription>
             <CardTitle className="text-2xl font-bold">
               {isLoadingSubs ? (
                 <span className="text-muted-foreground text-lg">Carregando...</span>
               ) : isErrorSubs ? (
                 <span className="text-destructive text-lg font-semibold">Indisponível</span>
               ) : (
-                totalCount
+                `${commercialTotalCount ?? 0} Reais`
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">
-            Registros na tabela <code className="text-foreground">public.subscriptions</code>
+            Total DB: <code className="text-foreground">{totalCount ?? 0}</code> ({syntheticTotalCount ?? 0} fixtures sintéticas)
           </CardContent>
         </Card>
 
@@ -266,7 +298,7 @@ export default function AdminBillingObservability() {
         <Card className="border-border/60">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Ativas (Active)
+              <CheckCircle2 className="h-3.5 w-3.5" /> Comerciais Ativas
             </CardDescription>
             <CardTitle className="text-2xl font-bold">
               {isLoadingSubs ? (
@@ -274,12 +306,12 @@ export default function AdminBillingObservability() {
               ) : isErrorSubs ? (
                 <span className="text-destructive text-lg font-semibold">Indisponível</span>
               ) : (
-                activeCount
+                `${commercialActiveCount ?? 0} Ativas`
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">
-            Status <span className="font-mono">active</span> confirmado
+            {syntheticActiveCount ?? 0} ativas em fixtures sintéticas isoladas
           </CardContent>
         </Card>
 
@@ -300,7 +332,7 @@ export default function AdminBillingObservability() {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">
-            Período de teste Stripe ativo
+            Período de teste Stripe comercial
           </CardContent>
         </Card>
 
@@ -308,7 +340,7 @@ export default function AdminBillingObservability() {
         <Card className="border-border/60">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
-              <AlertTriangle className="h-3.5 w-3.5" /> Atrasadas (Past Due)
+              <AlertTriangle className="h-3.5 w-3.5" /> Inadimplência Real
             </CardDescription>
             <CardTitle className="text-2xl font-bold">
               {isLoadingSubs ? (
@@ -316,12 +348,12 @@ export default function AdminBillingObservability() {
               ) : isErrorSubs ? (
                 <span className="text-destructive text-lg font-semibold">Indisponível</span>
               ) : (
-                pastDueCount
+                `${commercialPastDueCount ?? 0} Comerciais`
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">
-            Cobrança em atraso/recusada
+            {syntheticPastDueCount ?? 0} em fixtures sintéticas de teste
           </CardContent>
         </Card>
 
@@ -772,6 +804,18 @@ export default function AdminBillingObservability() {
               </div>
 
               <select
+                value={scopeFilter}
+                onChange={(e) =>
+                  setScopeFilter(e.target.value as "all" | "commercial" | "internal_tests")
+                }
+                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="all">Escopo: Todos ({totalCount ?? 0})</option>
+                <option value="commercial">Somente Comerciais ({commercialTotalCount ?? 0})</option>
+                <option value="internal_tests">Somente Testes Internos ({syntheticTotalCount ?? 0})</option>
+              </select>
+
+              <select
                 value={envFilter}
                 onChange={(e) => setEnvFilter(e.target.value as "all" | "live" | "test")}
                 className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -854,7 +898,17 @@ export default function AdminBillingObservability() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs capitalize font-medium">
-                        {sub.plan_key || "Não informado"}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{sub.plan_key || "Não informado"}</span>
+                          {isSyntheticSub(sub) && (
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] border-amber-500/40 text-amber-500 bg-amber-500/10 uppercase tracking-tight py-0 px-1"
+                            >
+                              Teste Interno
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs">
                         {sub.billing_cycle === "year" ? "Anual" : "Mensal"}

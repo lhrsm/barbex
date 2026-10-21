@@ -539,7 +539,11 @@ function AdminReports() {
                         <span className="text-[10px] text-gray-500 block font-mono">slug: {t.slug}</span>
                       </td>
                       <td className="py-3">
-                        {t.modality === "VOUCHER" ? (
+                        {t.modality === "TESTE_INTERNO" ? (
+                          <Badge className="bg-zinc-500/20 text-zinc-400 border border-zinc-500/30 text-[10px]">
+                            TESTE INTERNO
+                          </Badge>
+                        ) : t.modality === "VOUCHER" ? (
                           <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px]">
                             VOUCHER PERMANENTE
                           </Badge>

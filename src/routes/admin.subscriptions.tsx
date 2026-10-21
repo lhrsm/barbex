@@ -197,6 +197,7 @@ const planFromPriceId = (priceId: string | null | undefined): string | null => {
 
 function AdminSubscriptionsCommercialCenter() {
   const [search, setSearch] = useState("");
+  const [selectedScope, setSelectedScope] = useState<string>("ALL");
   const [selectedModality, setSelectedModality] = useState<string>("ALL");
   const [selectedSubStatus, setSelectedSubStatus] = useState<string>("ALL");
   const [selectedCycle, setSelectedCycle] = useState<string>("ALL");
@@ -401,6 +402,10 @@ function AdminSubscriptionsCommercialCenter() {
   // Filtros Avançados
   const filteredRecords = useMemo(() => {
     return commercialIndex.filter((record) => {
+      // 0. Filtro de Escopo (Comerciais vs Testes Internos vs Todos)
+      if (selectedScope === "COMMERCIAL" && record.classification.isInternalTest) return false;
+      if (selectedScope === "INTERNAL_TESTS" && !record.classification.isInternalTest) return false;
+
       // 1. Busca textual
       const q = search.toLowerCase().trim();
       if (q) {
@@ -448,6 +453,7 @@ function AdminSubscriptionsCommercialCenter() {
   }, [
     commercialIndex,
     search,
+    selectedScope,
     selectedModality,
     selectedSubStatus,
     selectedCycle,
@@ -473,9 +479,12 @@ function AdminSubscriptionsCommercialCenter() {
     (r) => r.classification.modality === "RESTRICTED",
   ).length;
   const freeCount = commercialIndex.filter((r) => r.classification.modality === "FREE").length;
+  const internalTestsCount = commercialIndex.filter((r) => r.classification.isInternalTest).length;
+  const commercialTotalCount = totalBarbershops - internalTestsCount;
 
   const isFiltered =
     search.trim() !== "" ||
+    selectedScope !== "ALL" ||
     selectedModality !== "ALL" ||
     selectedSubStatus !== "ALL" ||
     selectedCycle !== "ALL" ||
@@ -484,6 +493,7 @@ function AdminSubscriptionsCommercialCenter() {
 
   const clearFilters = () => {
     setSearch("");
+    setSelectedScope("ALL");
     setSelectedModality("ALL");
     setSelectedSubStatus("ALL");
     setSelectedCycle("ALL");
@@ -643,6 +653,61 @@ function AdminSubscriptionsCommercialCenter() {
 
       {/* Barra de Filtros e Busca Operacional */}
       <Card className="glass border-white/5 bg-white/[0.02] p-4 rounded-3xl space-y-4">
+        {/* Seletor de Escopo: Todos / Comerciais / Testes Internos */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-white/5">
+          <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-2xl p-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedScope("ALL")}
+              className={cn(
+                "rounded-xl text-xs font-bold uppercase tracking-wider h-8 px-3 transition-all",
+                selectedScope === "ALL"
+                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                  : "text-gray-400 hover:text-white hover:bg-white/5",
+              )}
+            >
+              Todos ({totalBarbershops})
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedScope("COMMERCIAL")}
+              className={cn(
+                "rounded-xl text-xs font-bold uppercase tracking-wider h-8 px-3 transition-all",
+                selectedScope === "COMMERCIAL"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  : "text-gray-400 hover:text-white hover:bg-white/5",
+              )}
+            >
+              Comerciais ({commercialTotalCount})
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedScope("INTERNAL_TESTS")}
+              className={cn(
+                "rounded-xl text-xs font-bold uppercase tracking-wider h-8 px-3 transition-all",
+                selectedScope === "INTERNAL_TESTS"
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                  : "text-gray-400 hover:text-white hover:bg-white/5",
+              )}
+            >
+              Testes Internos ({internalTestsCount})
+            </Button>
+          </div>
+          <span className="text-[11px] text-gray-500">
+            {selectedScope === "COMMERCIAL"
+              ? "Exibindo exclusivamente clientes comerciais reais"
+              : selectedScope === "INTERNAL_TESTS"
+                ? "Exibindo exclusivamente fixtures e testes internos sintéticos"
+                : "Exibindo visão irrestrita da base de dados"}
+          </span>
+        </div>
+
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -657,7 +722,7 @@ function AdminSubscriptionsCommercialCenter() {
           <div className="flex items-center gap-2 flex-wrap">
             {/* Modalidade */}
             <Select value={selectedModality} onValueChange={setSelectedModality}>
-              <SelectTrigger className="h-11 w-40 bg-white/5 border-white/10 rounded-2xl text-xs text-white">
+              <SelectTrigger className="h-11 w-44 bg-white/5 border-white/10 rounded-2xl text-xs text-white">
                 <SelectValue placeholder="Modalidade" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -668,6 +733,7 @@ function AdminSubscriptionsCommercialCenter() {
                 <SelectItem value="CANCELADA">Assinatura Cancelada</SelectItem>
                 <SelectItem value="RESTRICTED">Acesso Restrito</SelectItem>
                 <SelectItem value="FREE">Plano Free</SelectItem>
+                <SelectItem value="TESTE_INTERNO">Teste Interno</SelectItem>
               </SelectContent>
             </Select>
 
@@ -841,7 +907,17 @@ function AdminSubscriptionsCommercialCenter() {
                       {/* Barbearia / Contato */}
                       <TableCell className="pl-6 py-4">
                         <div className="flex flex-col">
-                          <span className="font-bold text-white text-sm block">{t.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-sm block">{t.name}</span>
+                            {t.classification.isInternalTest && (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-500/30 text-amber-400 bg-amber-500/10 text-[9px] uppercase font-bold tracking-wider shrink-0"
+                              >
+                                Teste Interno
+                              </Badge>
+                            )}
+                          </div>
                           <span className="text-[11px] text-gray-400 block">{t.owner_name}</span>
                           {t.owner_email && (
                             <span className="text-[10px] text-gray-500 font-mono">
@@ -873,9 +949,13 @@ function AdminSubscriptionsCommercialCenter() {
                                 : "bg-blue-500/15 text-blue-300 border border-blue-500/30"),
                             t.classification.modality === "FREE" &&
                               "bg-zinc-500/20 text-zinc-300 border border-zinc-500/30",
+                            t.classification.modality === "TESTE_INTERNO" &&
+                              "bg-zinc-500/20 text-zinc-300 border border-zinc-500/40",
                           )}
                         >
-                          {t.classification.modality}
+                          {t.classification.modality === "TESTE_INTERNO"
+                            ? "TESTE INTERNO"
+                            : t.classification.modality}
                         </Badge>
                       </TableCell>
 
