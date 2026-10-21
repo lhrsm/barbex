@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Crown, Scissors, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normalizeStorageUrl } from "@/lib/storage-utils";
 
 export const Route = createFileRoute("/subscription-card/validate/$token")({
   head: () => ({
@@ -118,7 +119,7 @@ function ValidatePage() {
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 rounded-full bg-gradient-to-br from-gold to-[#8a6d12] grid place-items-center text-black font-black text-xl overflow-hidden">
                 {customer.avatar_url ? (
-                  <img src={customer.avatar_url} alt={customer.name} className="h-full w-full object-cover" />
+                  <img src={normalizeStorageUrl(customer.avatar_url)} alt={customer.name} className="h-full w-full object-cover" />
                 ) : (
                   (customer.name || "?").charAt(0).toUpperCase()
                 )}

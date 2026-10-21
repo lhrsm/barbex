@@ -18,17 +18,14 @@ export function useAppointmentStatus() {
       
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Fetch current appointment data for notifications
-      const { data: appt } = await supabase
+      // 1. Consulta canônica direta da tabela appointments sem dependência de joins relacionais profundos
+      const { data: simpleAppt, error: simpleApptErr } = await supabase
         .from("appointments")
-        // Colunas explícitas: o painel do profissional roda sem sessão Supabase
-        // e os tokens de gestão não são mais legíveis pelo papel anônimo.
-        .select(
-          "id, user_id, tenant_id, customer_id, barber_id, service_id, start_time, end_time, status, total_price, notes, payment_method, payment_status, appointment_group_id, customers(*), profiles(*), barbers!appointments_barber_id_fkey(*), services(*)",
-        )
+        .select("id, user_id, tenant_id, customer_id, barber_id, service_id, start_time, end_time, status, total_price, final_amount, payment_method, payment_status, notes, appointment_group_id")
         .eq("id", appointmentId)
-        .single();
+        .maybeSingle();
 
+      const appt = simpleAppt;
       let result;
       
       if (newStatus === 'cancelled') {
@@ -42,31 +39,25 @@ export function useAppointmentStatus() {
         
         if (error) throw error;
         result = data as any;
-
-        // WhatsApp Notification
-        if (appt?.profiles?.whatsapp_enabled && appt?.customers?.phone) {
-          triggerWhatsAppMessage({
-            userId: appt.tenant_id,
-            eventType: 'cancellation',
-            phone: appt.customers.phone,
-            appointmentId: appointmentId,
-            placeholders: {
-              cliente_nome: appt.customers.name,
-              barbearia_nome: appt.profiles.business_name,
-              servico: appt.services?.name
-            }
-          });
-        }
       } else if (newStatus === 'completed') {
+        if (simpleApptErr || !appt) {
+          toast.error("Não foi possível validar os dados do agendamento antes da conclusão. Verifique sua conexão e tente novamente.");
+          return {
+            success: false,
+            error: "Falha na leitura dos dados canônicos do agendamento."
+          };
+        }
+
         const isProvenZeroAmount =
-          (appt?.total_price !== null && appt?.total_price !== undefined && Number(appt?.total_price) === 0) ||
-          (appt?.final_amount !== null && appt?.final_amount !== undefined && Number(appt?.final_amount) === 0);
+          (appt.total_price !== null && appt.total_price !== undefined && Number(appt.total_price) === 0) ||
+          (appt.final_amount !== null && appt.final_amount !== undefined && Number(appt.final_amount) === 0);
 
         const isPaidOrSettled =
-          appt?.payment_status === 'paid' ||
-          appt?.payment_status === 'covered_by_subscription' ||
+          appt.payment_status === 'paid' ||
+          appt.payment_status === 'covered_by_subscription' ||
           isProvenZeroAmount;
 
+        // Se o agendamento comprovadamente não está pago/liquidado, bloqueia imediatamente
         if (!isPaidOrSettled) {
           toast.error("Pagamento pendente. Registre ou confirme o pagamento antes de concluir o atendimento.");
           return {
@@ -83,16 +74,6 @@ export function useAppointmentStatus() {
           p_metadata: metadata
         });
         
-        if (error) throw error;
-        result = data as any;
-      } else if (newStatus === 'cancelled') {
-        const { data, error } = await supabase.rpc('cancel_appointment', {
-          p_appointment_id: appointmentId,
-          p_cancelled_by: (source.includes('portal') ? 'customer' : 'admin') as any,
-          p_source: source,
-          p_refund_preference: (metadata?.refund_preference as string) || 'none',
-          p_changed_by_id: user?.id as any,
-        } as any);
         if (error) throw error;
         result = data as any;
       } else {

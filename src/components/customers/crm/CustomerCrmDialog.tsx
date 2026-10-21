@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { normalizeStorageUrl } from "@/lib/storage-utils";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -132,7 +133,7 @@ export function CustomerCrmDialog({
             <div className="relative shrink-0">
               {customer.avatar_url ? (
                 <img
-                  src={customer.avatar_url}
+                  src={normalizeStorageUrl(customer.avatar_url)}
                   alt={`Foto de ${customer.name}`}
                   className={cn("h-20 w-20 rounded-full object-cover border-2", isSub ? "border-gold" : "border-slate-700")}
                 />

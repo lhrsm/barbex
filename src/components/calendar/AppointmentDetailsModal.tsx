@@ -39,6 +39,7 @@ import { SplitPaymentModal } from "./SplitPaymentModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppointmentStatus } from "@/hooks/use-appointment-status";
 import { useCustomerCancellation, type CancellationStep, type FinancialStatus } from "@/hooks/use-customer-cancellation";
+import { normalizeStorageUrl } from "@/lib/storage-utils";
 
 interface AppointmentDetailsModalProps {
   appointmentId?: string;
@@ -315,7 +316,7 @@ export function AppointmentDetailsModal({
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-white/5 shrink-0 bg-[#080d17]">
           <div className="flex items-start gap-4">
             <Avatar className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl border border-gold/30 shrink-0 bg-gold/5">
-              <AvatarImage src={appointment.customers?.avatar_url} alt={appointment.customers?.name} />
+              <AvatarImage src={normalizeStorageUrl(appointment.customers?.avatar_url)} alt={appointment.customers?.name} />
               <AvatarFallback className="bg-gold/10 text-gold font-black text-lg rounded-2xl">
                 {appointment.customers?.name?.[0] || <User size={20} />}
               </AvatarFallback>

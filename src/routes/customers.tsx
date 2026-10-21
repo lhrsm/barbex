@@ -6,6 +6,7 @@ import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useEffect, useMemo, useState, memo } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeStorageUrl } from "@/lib/storage-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -240,7 +241,7 @@ const CustomerCard = memo(
             <div className="relative shrink-0">
               {customer.avatar_url ? (
                 <img
-                  src={customer.avatar_url}
+                  src={normalizeStorageUrl(customer.avatar_url)}
                   alt={customer.name}
                   className={cn(
                     "h-14 w-14 rounded-full object-cover border-2",

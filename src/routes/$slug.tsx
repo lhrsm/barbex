@@ -3254,7 +3254,8 @@ function ShopPageComponent() {
                   const avg = ratings.length ? Math.round(ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length) : 5;
                   const svcName = t.appointments?.services?.name;
                   const custName = t.customers?.name || "Cliente";
-                  const avatarUrl = t.customers?.avatar_url || t.customers?.photo_url || null;
+                  const rawAvatar = t.customers?.avatar_url || t.customers?.photo_url;
+                  const avatarUrl = rawAvatar ? normalizeStorageUrl(rawAvatar) : null;
                   const initial = (custName.trim()?.charAt(0) || "C").toUpperCase();
                   return (
                     <div key={t.id} className="rounded-2xl p-6 border border-gold/30 bg-gradient-to-br from-zinc-950 to-black shadow-[0_2px_12px_-4px_rgba(212,175,55,0.15)] hover:border-gold/60 hover:shadow-[0_12px_40px_-8px_rgba(212,175,55,0.45)] hover:-translate-y-1 transition-all duration-300 flex flex-col">
@@ -5430,32 +5431,32 @@ function ShopPageComponent() {
                           return (
                             <div className={cn("grid gap-4", hasValidPix ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
                               <Button
-                                className="flex items-center justify-between min-h-[5rem] h-auto py-3.5 px-4 sm:px-5 bg-zinc-50 text-black hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-semibold shadow-sm transition-all duration-200 hover:shadow-md group whitespace-normal text-left w-full gap-3"
+                                className="flex items-center justify-between min-h-[5rem] h-auto py-3.5 px-3.5 sm:px-5 bg-zinc-50 text-black hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-semibold shadow-sm transition-all duration-200 hover:shadow-md group whitespace-normal text-left w-full gap-2.5 sm:gap-3 overflow-hidden"
                                 onClick={() => setPaymentMethod('barbershop')}
                               >
-                                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1 overflow-hidden">
                                   <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-white border border-zinc-100 flex items-center justify-center shrink-0">
                                     <Scissors size={22} className="text-zinc-400 group-hover:text-black transition-colors" />
                                   </div>
-                                  <div className="text-left min-w-0 flex-1">
-                                    <p className="text-sm font-black uppercase tracking-tight text-black truncate sm:whitespace-normal">Pagar na Unidade</p>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider opacity-80 break-words leading-tight mt-0.5">Pague no balcão após o atendimento</p>
+                                  <div className="text-left min-w-0 flex-1 overflow-hidden">
+                                    <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-black truncate">Pagar na Unidade</p>
+                                    <p className="text-[10px] text-zinc-500 font-medium whitespace-normal break-words leading-tight mt-0.5">Pague no balcão após o atendimento</p>
                                   </div>
                                 </div>
                                 <ChevronRight size={18} className="text-zinc-300 group-hover:text-black transition-colors shrink-0 ml-1" />
                               </Button>
                               {hasValidPix && (
                                 <Button
-                                  className="flex items-center justify-between min-h-[5rem] h-auto py-3.5 px-4 sm:px-5 bg-black text-white hover:bg-zinc-800 border border-zinc-800 rounded-2xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg group whitespace-normal text-left w-full gap-3"
+                                  className="flex items-center justify-between min-h-[5rem] h-auto py-3.5 px-3.5 sm:px-5 bg-black text-white hover:bg-zinc-800 border border-zinc-800 rounded-2xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg group whitespace-normal text-left w-full gap-2.5 sm:gap-3 overflow-hidden"
                                   onClick={() => setPaymentMethod('pix')}
                                 >
-                                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                  <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1 overflow-hidden">
                                     <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                                       <QrCode size={22} className="text-white" />
                                     </div>
-                                    <div className="text-left min-w-0 flex-1">
-                                      <p className="text-sm font-black uppercase tracking-tight text-white truncate sm:whitespace-normal">Pagar Agora (PIX)</p>
-                                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider opacity-80 break-words leading-tight mt-0.5">Reserva garantida</p>
+                                    <div className="text-left min-w-0 flex-1 overflow-hidden">
+                                      <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-white truncate">Pagar Agora (PIX)</p>
+                                      <p className="text-[10px] text-zinc-400 font-medium whitespace-normal break-words leading-tight mt-0.5">Reserva garantida</p>
                                     </div>
                                   </div>
                                   <ChevronRight size={18} className="text-white/60 group-hover:text-white transition-colors shrink-0 ml-1" />
@@ -5480,7 +5481,18 @@ function ShopPageComponent() {
                               {shop.pix_qr_code_url && (
                                 <div className="flex justify-center group">
                                   <div className="relative p-4 bg-white border border-zinc-100 rounded-2xl shadow-sm transition-transform group-hover:scale-105 duration-300">
-                                    <img src={normalizeStorageUrl(shop.pix_qr_code_url) || shop.pix_qr_code_url} className="h-44 w-44 object-contain" alt="PIX QR Code" />
+                                    <img
+                                      src={normalizeStorageUrl(shop.pix_qr_code_url) || shop.pix_qr_code_url}
+                                      className="h-44 w-44 object-contain"
+                                      alt="PIX QR Code"
+                                      onError={(e) => {
+                                        const img = e.currentTarget;
+                                        if (!img.dataset.retried) {
+                                          img.dataset.retried = "true";
+                                          img.src = `${normalizeStorageUrl(shop.pix_qr_code_url)}?retry=1`;
+                                        }
+                                      }}
+                                    />
                                   </div>
                                 </div>
                               )}
@@ -5945,7 +5957,18 @@ function ShopPageComponent() {
             {shop.pix_qr_code_url && (
               <div className="flex justify-center">
                 <div className="p-3 border-2 border-gold/40 rounded-2xl bg-white">
-                  <img src={normalizeStorageUrl(shop.pix_qr_code_url) || shop.pix_qr_code_url} alt="PIX QR Code" className="h-44 w-44 object-contain" />
+                  <img
+                    src={normalizeStorageUrl(shop.pix_qr_code_url) || shop.pix_qr_code_url}
+                    alt="PIX QR Code"
+                    className="h-44 w-44 object-contain"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.retried) {
+                        img.dataset.retried = "true";
+                        img.src = `${normalizeStorageUrl(shop.pix_qr_code_url)}?retry=1`;
+                      }
+                    }}
+                  />
                 </div>
               </div>
             )}

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { normalizeStorageUrl } from "@/lib/storage-utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -151,7 +152,7 @@ export function PremiumHeroCard({
           <div className="relative">
             {customerData?.avatar_url ? (
               <img
-                src={customerData.avatar_url}
+                src={normalizeStorageUrl(customerData.avatar_url)}
                 alt={client?.name || 'Cliente'}
                 className={cn(
                   "h-20 w-20 md:h-24 md:w-24 rounded-2xl object-cover border-2",
