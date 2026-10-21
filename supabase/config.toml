@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.contact-platform-reply]
 verify_jwt = false
+
+[functions.run-automations-cron]
+verify_jwt = false

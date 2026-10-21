@@ -142,15 +142,65 @@ serve(async (req) => {
       }];
     }
 
+    // 2.1 Isolation of unapproved retro messages (R2E.25B.1 Fase 3)
+    const CUTOVER_TIMESTAMP = "2026-10-21T15:20:00.000Z";
+    const AUTHORIZED_RETRO_QUEUE_IDS = new Set([
+      "fb242b9d-38b7-4f7b-98ec-b07f7e05876d",
+      "8b6a051d-16f8-4f8b-97da-08b86edfb9d4",
+      "cd4cab18-19f9-4d88-ab95-583acb31b298",
+    ]);
+
+    itemsToProcess = itemsToProcess.filter((it: any) => {
+      if (it.id && it.id.startsWith("virtual-")) return true;
+      if (!it.created_at) return true;
+      const isRetro = new Date(it.created_at) < new Date(CUTOVER_TIMESTAMP);
+      if (isRetro && !AUTHORIZED_RETRO_QUEUE_IDS.has(it.id)) {
+        console.log(`[ProcessQueue] Skipping unapproved retro queue item ${it.id} (Category C)`);
+        return false;
+      }
+      return true;
+    });
+
     if (itemsToProcess.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No items to process" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // 2.2 Atomic Concurrency Lock (R2E.25B.1 Fase 6)
+    // Mark claimed items as 'processing' so concurrent runs will not double-claim them
+    let claimedItems = itemsToProcess;
+    if (!dry_run) {
+      const realItemIds = itemsToProcess
+        .map((it: any) => it.id)
+        .filter((id: string) => id && !id.startsWith("virtual-"));
+
+      if (realItemIds.length > 0) {
+        const { data: lockedRows, error: lockErr } = await supabase
+          .from("automation_queue")
+          .update({ status: "processing", updated_at: new Date().toISOString() })
+          .in("id", realItemIds)
+          .in("status", ["pending", "failed"])
+          .select("id");
+
+        if (!lockErr && lockedRows) {
+          const lockedSet = new Set(lockedRows.map((r: any) => r.id));
+          claimedItems = itemsToProcess.filter(
+            (it: any) => (it.id && it.id.startsWith("virtual-")) || lockedSet.has(it.id)
+          );
+        }
+      }
+    }
+
+    if (claimedItems.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: "Items already claimed by another worker" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const results = [];
 
-    for (const item of itemsToProcess) {
+    for (const item of claimedItems) {
       try {
         console.log(`[ProcessQueue] Processing item ${item.id}`);
         const { appointment, automation, tenant_id: itemTenantId, workflow_key, automation_type, id: queueId, appointment_group_id } = item;
