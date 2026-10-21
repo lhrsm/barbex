@@ -852,17 +852,26 @@ function ShopPageComponent() {
 
       const canonicalTenantId = barbershopEntity?.id || (currentShop as any).tenant_id || currentShop.id;
       (currentShop as any).tenant_id = canonicalTenantId;
-      (currentShop as any).owner_id = barbershopEntity?.owner_id || currentShop.id;
+      const canonicalOwnerId = barbershopEntity?.owner_id || (currentShop as any).owner_id || currentShop.id;
+      (currentShop as any).owner_id = canonicalOwnerId;
 
-      // Garantir que faq_enabled provenha estritamente do proprietário canônico (e não de colaborador)
-      if (barbershopEntity?.owner_id && barbershopEntity.owner_id !== currentShop.id) {
+      // Garantir que faq_enabled e dados canônicos de pagamento (PIX) provenham estritamente do proprietário canônico
+      if (canonicalOwnerId && (canonicalOwnerId !== currentShop.id || !currentShop.pix_key || !currentShop.pix_qr_code_url)) {
         const { data: ownerProfile } = await supabase
           .from("profiles")
-          .select("faq_enabled")
-          .eq("id", barbershopEntity.owner_id)
+          .select("faq_enabled, pix_key, pix_qr_code_url")
+          .eq("id", canonicalOwnerId)
           .maybeSingle();
-        if (ownerProfile && ownerProfile.faq_enabled !== undefined) {
-          (currentShop as any).faq_enabled = ownerProfile.faq_enabled;
+        if (ownerProfile) {
+          if (ownerProfile.faq_enabled !== undefined && ownerProfile.faq_enabled !== null) {
+            (currentShop as any).faq_enabled = ownerProfile.faq_enabled;
+          }
+          if (ownerProfile.pix_key) {
+            (currentShop as any).pix_key = ownerProfile.pix_key;
+          }
+          if (ownerProfile.pix_qr_code_url) {
+            (currentShop as any).pix_qr_code_url = ownerProfile.pix_qr_code_url;
+          }
         }
       }
 
@@ -871,6 +880,7 @@ function ShopPageComponent() {
       currentShop.barbershop_logo_url = resolvedLogo;
       currentShop.logo_url = resolvedLogo;
       currentShop.gallery_images = normalizeStorageUrls(currentShop.gallery_images);
+      currentShop.pix_qr_code_url = normalizeStorageUrl(currentShop.pix_qr_code_url);
 
       // Fetch subscription status for this shop
       const { data: subData } = await supabase
@@ -5420,35 +5430,35 @@ function ShopPageComponent() {
                           return (
                             <div className={cn("grid gap-4", hasValidPix ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
                               <Button
-                                className="flex items-center justify-between h-20 px-6 bg-zinc-50 text-black hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-semibold shadow-sm transition-all duration-200 hover:shadow-md group"
+                                className="flex items-center justify-between min-h-[5rem] h-auto py-3.5 px-4 sm:px-5 bg-zinc-50 text-black hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-semibold shadow-sm transition-all duration-200 hover:shadow-md group whitespace-normal text-left w-full gap-3"
                                 onClick={() => setPaymentMethod('barbershop')}
                               >
-                                <div className="flex items-center gap-4">
-                                  <div className="h-12 w-12 rounded-xl bg-white border border-zinc-100 flex items-center justify-center">
-                                    <Scissors size={24} className="text-zinc-400 group-hover:text-black transition-colors" />
+                                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                  <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-white border border-zinc-100 flex items-center justify-center shrink-0">
+                                    <Scissors size={22} className="text-zinc-400 group-hover:text-black transition-colors" />
                                   </div>
-                                  <div className="text-left">
-                                    <p className="text-sm font-black uppercase tracking-tight text-black">Pagar na Unidade</p>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest opacity-80">Pague no balcão após o atendimento</p>
+                                  <div className="text-left min-w-0 flex-1">
+                                    <p className="text-sm font-black uppercase tracking-tight text-black truncate sm:whitespace-normal">Pagar na Unidade</p>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider opacity-80 break-words leading-tight mt-0.5">Pague no balcão após o atendimento</p>
                                   </div>
                                 </div>
-                                <ChevronRight size={18} className="text-zinc-300 group-hover:text-black transition-colors" />
+                                <ChevronRight size={18} className="text-zinc-300 group-hover:text-black transition-colors shrink-0 ml-1" />
                               </Button>
                               {hasValidPix && (
                                 <Button
-                                  className="flex items-center justify-between h-20 px-6 bg-black text-white hover:bg-zinc-800 border border-zinc-800 rounded-2xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg group"
+                                  className="flex items-center justify-between min-h-[5rem] h-auto py-3.5 px-4 sm:px-5 bg-black text-white hover:bg-zinc-800 border border-zinc-800 rounded-2xl font-semibold shadow-md transition-all duration-200 hover:shadow-lg group whitespace-normal text-left w-full gap-3"
                                   onClick={() => setPaymentMethod('pix')}
                                 >
-                                  <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
-                                      <QrCode size={24} className="text-white" />
+                                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                    <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                                      <QrCode size={22} className="text-white" />
                                     </div>
-                                    <div className="text-left">
-                                      <p className="text-sm font-black uppercase tracking-tight text-white">Pagar Agora (PIX)</p>
-                                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest opacity-80">Reserva garantida</p>
+                                    <div className="text-left min-w-0 flex-1">
+                                      <p className="text-sm font-black uppercase tracking-tight text-white truncate sm:whitespace-normal">Pagar Agora (PIX)</p>
+                                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider opacity-80 break-words leading-tight mt-0.5">Reserva garantida</p>
                                     </div>
                                   </div>
-                                  <ChevronRight size={18} className="text-white/60 group-hover:text-white transition-colors" />
+                                  <ChevronRight size={18} className="text-white/60 group-hover:text-white transition-colors shrink-0 ml-1" />
                                 </Button>
                               )}
                             </div>
@@ -5470,7 +5480,7 @@ function ShopPageComponent() {
                               {shop.pix_qr_code_url && (
                                 <div className="flex justify-center group">
                                   <div className="relative p-4 bg-white border border-zinc-100 rounded-2xl shadow-sm transition-transform group-hover:scale-105 duration-300">
-                                    <img src={shop.pix_qr_code_url} className="h-44 w-44 object-contain" alt="PIX QR Code" />
+                                    <img src={normalizeStorageUrl(shop.pix_qr_code_url) || shop.pix_qr_code_url} className="h-44 w-44 object-contain" alt="PIX QR Code" />
                                   </div>
                                 </div>
                               )}
@@ -5935,7 +5945,7 @@ function ShopPageComponent() {
             {shop.pix_qr_code_url && (
               <div className="flex justify-center">
                 <div className="p-3 border-2 border-gold/40 rounded-2xl bg-white">
-                  <img src={shop.pix_qr_code_url} alt="PIX QR Code" className="h-44 w-44 object-contain" />
+                  <img src={normalizeStorageUrl(shop.pix_qr_code_url) || shop.pix_qr_code_url} alt="PIX QR Code" className="h-44 w-44 object-contain" />
                 </div>
               </div>
             )}

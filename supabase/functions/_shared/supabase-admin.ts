@@ -30,3 +30,6 @@ export function createAdminClient(): SupabaseClient {
 
   return adminClientInstance;
 }
+
+export { createClient, SupabaseClient };
+export const createSupabaseAdminClient = createAdminClient;

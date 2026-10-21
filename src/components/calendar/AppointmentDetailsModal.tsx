@@ -566,26 +566,60 @@ export function AppointmentDetailsModal({
                 <Button
                   className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-wider shadow-lg transition-all"
                   onClick={async () => {
+                    if (actionLoading) return;
                     setActionLoading(true);
                     try {
-                      const { error } = await supabase
-                        .from("appointments")
-                        .update({
-                          payment_status: 'paid',
-                          paid_at: new Date().toISOString()
-                        })
-                        .eq("id", appointment.id);
+                      // 1. Tentar RPC canônica com verificação no servidor
+                      const { data: rpcData, error: rpcError } = await supabase.rpc("mark_appointment_as_paid", {
+                        p_appointment_id: appointment.id,
+                        p_payment_method: appointment.payment_method || 'cash'
+                      });
 
-                      if (error) {
-                        toast.error(`Erro ao marcar como pago: ${error.message || 'Erro desconhecido'}`);
+                      let persisted = false;
+                      let paidAtIso = new Date().toISOString();
+
+                      if (!rpcError && rpcData) {
+                        const res = rpcData as any;
+                        if (res.success) {
+                          persisted = true;
+                          paidAtIso = res.paid_at || paidAtIso;
+                        } else {
+                          toast.error(res.error || "Operação não autorizada para este operador.");
+                          return;
+                        }
                       } else {
-                        toast.success("Pagamento marcado como pago");
-                        setAppointment((prev: any) => prev ? ({ ...prev, payment_status: 'paid', paid_at: new Date().toISOString() }) : prev);
+                        // 2. Fallback de compatibilidade caso RPC ainda não esteja ativa: UPDATE com validação explícita de linhas retornadas
+                        const { data: updatedRows, error: updateError } = await supabase
+                          .from("appointments")
+                          .update({
+                            payment_status: 'paid',
+                            paid_at: paidAtIso
+                          })
+                          .eq("id", appointment.id)
+                          .select("id, payment_status, paid_at");
+
+                        if (updateError) {
+                          toast.error(`Erro ao registrar pagamento: ${updateError.message || 'Falha de permissão'}`);
+                          return;
+                        }
+
+                        if (!updatedRows || updatedRows.length === 0) {
+                          toast.error("Não foi possível confirmar o pagamento: permissão insuficiente ou agendamento não encontrado.");
+                          return;
+                        }
+
+                        persisted = true;
+                        paidAtIso = updatedRows[0].paid_at || paidAtIso;
+                      }
+
+                      if (persisted) {
+                        toast.success("Pagamento confirmado com sucesso!");
+                        setAppointment((prev: any) => prev ? ({ ...prev, payment_status: 'paid', paid_at: paidAtIso }) : prev);
 
                         queryClient.invalidateQueries({ queryKey: ['appointments'] });
                         queryClient.invalidateQueries({ queryKey: ['calendar'] });
                         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-                        fetchAppointment();
+                        await fetchAppointment();
                         if (onSuccess) onSuccess();
                       }
                     } catch (err: any) {

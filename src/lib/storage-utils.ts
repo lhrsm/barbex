@@ -5,7 +5,19 @@
  * ou para o Supabase URL configurado no ambiente.
  */
 
-const CANONICAL_SUPABASE_HOST = 'ywdwrstxvsdqiryhieiz.supabase.co';
+function getCanonicalSupabaseHost(): string {
+  try {
+    const envUrl = typeof window !== 'undefined' 
+      ? (import.meta as any)?.env?.VITE_SUPABASE_URL 
+      : (typeof process !== 'undefined' ? process.env?.SUPABASE_URL : undefined);
+    if (envUrl) {
+      return new URL(envUrl).host;
+    }
+  } catch {}
+  return 'ywdwrstxvsdqiryhieiz.supabase.co';
+}
+
+const CANONICAL_SUPABASE_HOST = getCanonicalSupabaseHost();
 const LEGACY_SUPABASE_HOSTS = [
   'wdxhjwodyctgzqtogkgv.supabase.co',
 ];

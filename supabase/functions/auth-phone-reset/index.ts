@@ -4,12 +4,11 @@
  * Dispatches reset email server-side via GoTrue resetPasswordForEmail without leaking user existence.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { requireMethod, parseJsonBody } from "../_shared/validation.ts";
 import { normalizePhone, isValidBrazilianPhone } from "../_shared/phone.ts";
 import { generateRateLimitKey, checkRateLimit } from "../_shared/rate-limit.ts";
-import { createAdminClient } from "../_shared/supabase-admin.ts";
+import { createAdminClient, createClient } from "../_shared/supabase-admin.ts";
 import { getRequiredEnv } from "../_shared/env.ts";
 import { createStructuredLogger } from "../_shared/logging.ts";
 import { generateRequestId } from "../_shared/crypto.ts";
@@ -142,18 +141,29 @@ async function resolveCustomerUserByPhone(
   const cleanSlug = tenantSlug.trim().toLowerCase();
   if (!cleanSlug) return null;
 
-  // 1. Resolve Tenant ID server-side from profiles table by slug
-  const { data: shopProfile, error: shopErr } = await adminClient
-    .from("profiles")
-    .select("id")
+  // 1. Resolve canonical barbershop and owner server-side by slug
+  const { data: barbershop, error: shopErr } = await adminClient
+    .from("barbershops")
+    .select("id, owner_id")
     .eq("slug", cleanSlug)
     .maybeSingle();
 
-  if (shopErr || !shopProfile?.id) {
-    return null;
-  }
+  let canonicalTenantId: string | null = barbershop?.id || null;
+  let canonicalOwnerId: string | null = barbershop?.owner_id || null;
 
-  const effectiveTenantId = shopProfile.id;
+  // Fallback de compatibilidade legada: consultar profiles por slug
+  if (!canonicalTenantId) {
+    const { data: shopProfile, error: profErr } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("slug", cleanSlug)
+      .maybeSingle();
+
+    if (profErr || !shopProfile?.id) {
+      return null;
+    }
+    canonicalTenantId = shopProfile.id;
+  }
 
   // 2. Phone candidates (with and without DDI 55)
   const phoneCandidates = [cleanPhone];
@@ -161,11 +171,16 @@ async function resolveCustomerUserByPhone(
     phoneCandidates.push(cleanPhone.slice(2));
   }
 
-  // 3. Match customer in tenant
+  // 3. Match customer in tenant (accepting canonical tenant_id or legacy owner_id)
+  const tenantIds = [canonicalTenantId];
+  if (canonicalOwnerId && canonicalOwnerId !== canonicalTenantId) {
+    tenantIds.push(canonicalOwnerId);
+  }
+
   const { data: matchedCustomers, error: customerError } = await adminClient
     .from("customers")
     .select("id, user_id, auth_user_id, tenant_id")
-    .eq("tenant_id", effectiveTenantId)
+    .in("tenant_id", tenantIds)
     .in("phone", phoneCandidates)
     .not("phone", "is", null)
     .neq("phone", "");
