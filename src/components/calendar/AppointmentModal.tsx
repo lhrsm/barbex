@@ -23,6 +23,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { emitAutomationEvent } from "@/utils/emit-event";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 
 import { AppointmentStepper } from "./appointment/AppointmentStepper";
 import { ProfessionalServiceStep } from "./appointment/ProfessionalServiceStep";
@@ -592,13 +593,11 @@ export function AppointmentModal({
       refreshLimits();
       if (onSuccess) onSuccess();
 
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["calendar"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["customerAppointments"] });
-      queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appointmentData.id,
+        tenantId: tenantId as string,
+        barberId: selectedBarber,
+      });
     } catch (error: any) {
       toast.error("Erro ao criar agendamento: " + error.message);
     } finally {

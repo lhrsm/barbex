@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { triggerWhatsAppMessage } from "@/utils/whatsapp";
 import { emitAutomationEvent } from "@/utils/emit-event";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 
 export function useAppointmentStatus() {
   const queryClient = useQueryClient();
@@ -143,19 +144,14 @@ export function useAppointmentStatus() {
 
       toast.success(`Agendamento ${statusLabels[newStatus] || newStatus} com sucesso!`);
       
-      // Invalidação centralizada com escopo operacional estrito (sem invalidar auth/tenant/plan-limits)
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['calendar'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['customer-appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['reception-queue'] });
-
-      // Disparo em tempo real para sincronização instantânea do dashboard e telas dependentes
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('REFRESH_DASHBOARD_DATA', {
-          detail: { appointmentId, newStatus }
-        }));
-      }
+      // Invalidação centralizada com escopo operacional estrito e sincronização instantânea
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId,
+        status: newStatus,
+        source,
+        tenantId: appt?.tenant_id,
+        barberId: appt?.barber_id,
+      });
       
       return { success: true, ...result };
     } catch (error: any) {

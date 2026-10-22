@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 import {
   CalendarPlus,
   UserPlus,
@@ -81,6 +82,7 @@ function KpiCard({
 }
 
 function ReceptionHome() {
+  const queryClient = useQueryClient();
   const { tenantId, profile, user, can } = useReception();
   const { tenantProfile } = useTenant();
   const [apptOpen, setApptOpen] = useState(false);
@@ -88,6 +90,18 @@ function ReceptionHome() {
   const now = new Date();
   const day = format(now, "yyyy-MM-dd");
   const formattedDate = format(now, "EEEE, dd 'de' MMMM", { locale: ptBR });
+
+  useEffect(() => {
+    if (!tenantId) return;
+    const handleSync = () => {
+      queryClient.invalidateQueries({ queryKey: ["reception-stats", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["reception-queue", tenantId] });
+    };
+    window.addEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
+    return () => {
+      window.removeEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
+    };
+  }, [tenantId, queryClient]);
 
   const barbershopName = tenantProfile?.business_name || (profile as any)?.business_name || "Barbex";
   const userGreetingName = (profile as any)?.responsible_name?.split(" ")[0] ||
@@ -299,8 +313,16 @@ function ReceptionHome() {
         <ReceptionQueue onNewAppointment={() => setApptOpen(true)} />
       </section>
 
-      <AppointmentModal open={apptOpen} onOpenChange={setApptOpen} />
-      <WalkinModal open={walkinOpen} onOpenChange={setWalkinOpen} />
+      <AppointmentModal
+        open={apptOpen}
+        onOpenChange={setApptOpen}
+        onSuccess={() => invalidateAllAppointmentQueries(queryClient, { tenantId })}
+      />
+      <WalkinModal
+        open={walkinOpen}
+        onOpenChange={setWalkinOpen}
+        onSuccess={() => invalidateAllAppointmentQueries(queryClient, { tenantId })}
+      />
     </div>
   );
 }

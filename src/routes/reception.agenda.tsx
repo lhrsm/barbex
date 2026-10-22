@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 import { ChevronLeft, ChevronRight, CalendarPlus, Footprints } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/reception/agenda")({
 });
 
 function ReceptionAgenda() {
+  const queryClient = useQueryClient();
   const { tenantId } = useReception();
   const [date, setDate] = useState(() => new Date());
   const [barber, setBarber] = useState("all");
@@ -98,8 +100,17 @@ function ReceptionAgenda() {
 
       <ReceptionQueue key={`${day}-${barber}`} date={day} barberId={barber === "all" ? undefined : barber} />
 
-      <AppointmentModal open={apptOpen} onOpenChange={setApptOpen} initialDate={day} />
-      <WalkinModal open={walkinOpen} onOpenChange={setWalkinOpen} />
+      <AppointmentModal
+        open={apptOpen}
+        onOpenChange={setApptOpen}
+        initialDate={day}
+        onSuccess={() => invalidateAllAppointmentQueries(queryClient, { tenantId })}
+      />
+      <WalkinModal
+        open={walkinOpen}
+        onOpenChange={setWalkinOpen}
+        onSuccess={() => invalidateAllAppointmentQueries(queryClient, { tenantId })}
+      />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 import { hasConflict, OVERLAP_MESSAGE } from "@/lib/availability";
 
 import {
@@ -32,6 +34,7 @@ interface Props {
 }
 
 export function WalkinModal({ open, onOpenChange, onSuccess }: Props) {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { tenantId } = useTenant();
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -152,6 +155,12 @@ export function WalkinModal({ open, onOpenChange, onSuccess }: Props) {
         toast.error(res?.error || "Não foi possível criar o atendimento");
         return;
       }
+
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: res?.appointment_id || undefined,
+        tenantId: tenantId || undefined,
+        barberId: barberId || undefined,
+      });
 
       toast.success("Atendimento presencial registrado — horário bloqueado.");
       onOpenChange(false);

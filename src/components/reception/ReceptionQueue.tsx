@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle2, LogIn, PlayCircle, XCircle, Eye, Clock, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -69,6 +70,8 @@ export function ReceptionQueue({
     queryKey: ["reception-queue", tenantId, day, barberId ?? "all"],
     enabled: !!tenantId,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       const start = `${day}T00:00:00`;
       const end = `${day}T23:59:59`;
@@ -113,6 +116,51 @@ export function ReceptionQueue({
 
   const items = useMemo(() => data || [], [data]);
 
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const channel = supabase
+      .channel(`reception-realtime-${tenantId}-${day}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        (payload) => {
+          console.log("[ReceptionQueue Realtime] appointments change detected:", payload);
+          invalidateAllAppointmentQueries(queryClient, { tenantId });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointment_checkins",
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        (payload) => {
+          console.log("[ReceptionQueue Realtime] checkin change detected:", payload);
+          invalidateAllAppointmentQueries(queryClient, { tenantId });
+        }
+      )
+      .subscribe();
+
+    const handleSync = () => {
+      queryClient.invalidateQueries({ queryKey: ["reception-queue", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["reception-stats", tenantId] });
+    };
+    window.addEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
+    };
+  }, [tenantId, day, queryClient]);
+
   async function handleCheckin(appt: any) {
     try {
       setBusyId(appt.id);
@@ -125,7 +173,11 @@ export function ReceptionQueue({
       if (error) throw error;
       await updateStatus(appt.id, "confirmed", {}, "reception_portal");
       toast.success(`Check-in registrado para ${appt.customers?.name || "cliente"}`);
-      queryClient.invalidateQueries({ queryKey: ["reception-queue"] });
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appt.id,
+        status: "confirmed",
+        tenantId,
+      });
     } catch (err: any) {
       toast.error(err.message || "Erro ao registrar check-in");
     } finally {
@@ -138,7 +190,11 @@ export function ReceptionQueue({
       setBusyId(appt.id);
       await updateStatus(appt.id, nextStatus as any, {}, "reception_portal");
       toast.success(`Status atualizado para ${STATUS_LABEL[nextStatus] || nextStatus}`);
-      queryClient.invalidateQueries({ queryKey: ["reception-queue"] });
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appt.id,
+        status: nextStatus,
+        tenantId,
+      });
     } catch (err: any) {
       toast.error(err.message || "Erro ao atualizar status");
     } finally {
@@ -293,7 +349,7 @@ export function ReceptionQueue({
         appointmentId={detailsId || undefined}
         open={!!detailsId}
         onOpenChange={(v) => !v && setDetailsId(null)}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["reception-queue"] })}
+        onSuccess={() => invalidateAllAppointmentQueries(queryClient, { tenantId })}
       />
     </>
   );

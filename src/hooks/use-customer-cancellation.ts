@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 
 export type CancellationStep = 'none' | 'simple_confirmation' | 'financial_decision' | 'pix_refund_form';
 
@@ -105,22 +106,12 @@ export function useCustomerCancellation() {
   };
 
   const finalizeCancellation = async (appointmentId: string) => {
-    // Invalidação agressiva de cache
-    const queryKeys = [
-      ['appointments'], 
-      ['calendar'], 
-      ['customer-appointments'], 
-      ['customerAppointments'], 
-      ['credits'], 
-      ['finances'],
-      ['calendar-appointments'],
-      ['dashboard-appointments'],
-      ['customer-portal']
-    ];
-    
-    queryKeys.forEach(key => {
-      queryClient.invalidateQueries({ queryKey: key });
+    invalidateAllAppointmentQueries(queryClient, {
+      appointmentId,
+      status: 'cancelled',
+      source: 'customer_cancellation',
     });
+    queryClient.invalidateQueries({ queryKey: ['credits'] });
   };
 
   return {

@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { emitAutomationEvent } from "@/utils/emit-event";
 import { createNotification } from "@/utils/notifications";
 import { fetchAvailableTimes } from "@/lib/availability";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 
 import { Check, ChevronLeft, ChevronRight, Scissors, User, Calendar as CalIcon, Clock, Sparkles } from "lucide-react";
 
@@ -66,6 +68,7 @@ export function RescheduleWizard({
   allowProfessionalChange = true,
   onSuccess,
 }: RescheduleWizardProps) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>(1);
   const [barbers, setBarbers] = useState<BarberOption[]>([]);
   const [loadingBarbers, setLoadingBarbers] = useState(false);
@@ -285,6 +288,12 @@ export function RescheduleWizard({
       }
 
       toast.success(barberChanged ? "Agendamento atualizado com novo profissional!" : "Agendamento reagendado!");
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appointment.id,
+        status: 'rescheduled',
+        tenantId: appointment.tenant_id,
+        barberId: selectedBarberId,
+      });
       onOpenChange(false);
       onSuccess?.();
     } catch (err: any) {

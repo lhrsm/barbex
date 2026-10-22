@@ -40,6 +40,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAppointmentStatus } from "@/hooks/use-appointment-status";
 import { useCustomerCancellation, type CancellationStep, type FinancialStatus } from "@/hooks/use-customer-cancellation";
 import { normalizeStorageUrl } from "@/lib/storage-utils";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 
 interface AppointmentDetailsModalProps {
   appointmentId?: string;
@@ -159,6 +160,12 @@ export function AppointmentDetailsModal({
     setActionLoading(true);
     const result = await confirmSimpleCancellation(appointment.id, mode === 'customer' ? 'customer_portal' : 'admin_panel');
     if (result.success) {
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appointment.id,
+        status: 'cancelled',
+        tenantId: appointment.tenant_id,
+        barberId: appointment.barber_id,
+      });
       onSuccess?.();
       onOpenChange(false);
     }
@@ -170,6 +177,12 @@ export function AppointmentDetailsModal({
     setActionLoading(true);
     const result = await confirmCancellationWithCredit(appointment.id, mode === 'customer' ? 'customer_portal' : 'admin_panel');
     if (result.success) {
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appointment.id,
+        status: 'cancelled',
+        tenantId: appointment.tenant_id,
+        barberId: appointment.barber_id,
+      });
       onSuccess?.();
       onOpenChange(false);
     }
@@ -185,6 +198,12 @@ export function AppointmentDetailsModal({
     setActionLoading(true);
     const result = await confirmCancellationWithRefundRequest(appointment.id, refundData, mode === 'customer' ? 'customer_portal' : 'admin_panel');
     if (result.success) {
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appointment.id,
+        status: 'cancelled',
+        tenantId: appointment.tenant_id,
+        barberId: appointment.barber_id,
+      });
       onSuccess?.();
       onOpenChange(false);
     }
@@ -227,10 +246,12 @@ export function AppointmentDetailsModal({
     );
 
     if (result.success) {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['calendar'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['customer-appointments'] });
+      invalidateAllAppointmentQueries(queryClient, {
+        appointmentId: appointment.id,
+        status: newStatus,
+        tenantId: appointment.tenant_id,
+        barberId: appointment.barber_id,
+      });
       if (onSuccess) onSuccess();
       onOpenChange(false);
     }
