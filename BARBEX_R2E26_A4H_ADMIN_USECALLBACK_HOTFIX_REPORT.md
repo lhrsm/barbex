@@ -6,7 +6,7 @@
 **Data:** 26/10/2026  
 **Ambiente Alvo:** Produção — [https://barbex.shop](https://barbex.shop/) | Supabase: `ywdwrstxvsdqiryhieiz`  
 **Commit com Falha:** `1ce304e9` (`fix(realtime): apply controlled realtime sync remediation (R2E.26A.4)`)  
-**Commit de Hotfix:** `(registrado abaixo)`  
+**Commit de Hotfix:** [`d91a090c`](https://github.com/lhrsm/barbex/commit/d91a090cb7f240954b0eb03a5e8bf832f059cb5b) (`fix(dashboard): add missing useCallback import in admin dashboard (R2E.26A.4H)`)  
 
 ---
 
