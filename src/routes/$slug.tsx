@@ -926,7 +926,7 @@ function ShopPageComponent() {
         } else {
           // Fallback resiliente usando resolve_tenant_entitlement
           const { data: entRes, error: entErr } = await supabase.rpc("resolve_tenant_entitlement", {
-            p_tenant_id: canonicalTenantId,
+            _tenant_id: canonicalTenantId,
           });
           if (!entErr && entRes) {
             isOperational = Boolean((entRes as any).can_operate);

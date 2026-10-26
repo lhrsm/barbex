@@ -142,10 +142,28 @@ function ReviewsAdminPage() {
   }, [tenantId, fetchReviews]);
 
   const moderate = async (id: string, action: "approve" | "reject" | "hide" | "show") => {
-    const { data: user } = await supabase.auth.getUser();
-    const now = new Date().toISOString();
     const target = reviews.find((r) => r.id === id);
     const hasText = !!target?.testimonial_text;
+
+    // Tenta primeiro a RPC segura canônica (R2E.26C)
+    const { error: rpcError } = await supabase.rpc("moderate_appointment_review", {
+      p_review_id: id,
+      p_action: action,
+    });
+
+    if (!rpcError) {
+      toast.success(
+        action === "approve" ? (hasText ? "Aprovado e publicado!" : "Aprovado (sem comentário — não aparece no site)") :
+        action === "reject" ? "Rejeitado" :
+        action === "hide" ? "Ocultado do site" : "Exibido no site"
+      );
+      fetchReviews();
+      return;
+    }
+
+    // Fallback de compatibilidade
+    const { data: user } = await supabase.auth.getUser();
+    const now = new Date().toISOString();
     const update: any =
       action === "approve" ? { testimonial_status: "approved", show_on_frontend: hasText, approved_at: now, approved_by: user.user?.id, rejected_at: null, rejected_by: null }
       : action === "reject" ? { testimonial_status: "rejected", show_on_frontend: false, rejected_at: now, rejected_by: user.user?.id }
@@ -163,11 +181,26 @@ function ReviewsAdminPage() {
     }
   };
 
-
   const saveReply = async (id: string) => {
     const text = (replyDraft[id] || "").trim();
     if (!text) { toast.error("Escreva uma resposta."); return; }
     setSavingReply((s) => ({ ...s, [id]: true }));
+
+    // Tenta primeiro a RPC segura canônica (R2E.26C)
+    const { error: rpcError } = await supabase.rpc("reply_to_appointment_review", {
+      p_review_id: id,
+      p_reply: text,
+    });
+
+    if (!rpcError) {
+      setSavingReply((s) => ({ ...s, [id]: false }));
+      toast.success("Resposta enviada");
+      setReplyOpen((s) => ({ ...s, [id]: false }));
+      fetchReviews();
+      return;
+    }
+
+    // Fallback de compatibilidade
     const { data: user } = await supabase.auth.getUser();
     const { error } = await supabase.from("appointment_reviews").update({
       reply: text,

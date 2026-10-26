@@ -102,6 +102,7 @@ import { Route as LoyaltyTemplatesRouteImport } from './routes/loyalty.templates
 import { Route as ReceptionIndexRouteImport } from './routes/reception.index'
 import { Route as ReceptionAgendaRouteImport } from './routes/reception.agenda'
 import { Route as ReceptionCustomersRouteImport } from './routes/reception.customers'
+import { Route as ReceptionReviewsRouteImport } from './routes/reception.reviews'
 import { Route as ReceptionWaitingListRouteImport } from './routes/reception.waiting-list'
 import { Route as ReviewTokenRouteImport } from './routes/review.$token'
 import { Route as SubscriptionIndexRouteImport } from './routes/subscription.index'
@@ -595,6 +596,11 @@ const ReceptionCustomersRoute = ReceptionCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => ReceptionRoute,
 } as any)
+const ReceptionReviewsRoute = ReceptionReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => ReceptionRoute,
+} as any)
 const ReceptionWaitingListRoute = ReceptionWaitingListRouteImport.update({
   id: '/waiting-list',
   path: '/waiting-list',
@@ -823,6 +829,7 @@ export interface FileRoutesByFullPath {
   '/loyalty/templates': typeof LoyaltyTemplatesRoute
   '/reception/agenda': typeof ReceptionAgendaRoute
   '/reception/customers': typeof ReceptionCustomersRoute
+  '/reception/reviews': typeof ReceptionReviewsRoute
   '/reception/waiting-list': typeof ReceptionWaitingListRoute
   '/review/$token': typeof ReviewTokenRoute
   '/subscription/addons': typeof SubscriptionAddonsRoute
@@ -938,6 +945,7 @@ export interface FileRoutesByTo {
   '/loyalty/templates': typeof LoyaltyTemplatesRoute
   '/reception/agenda': typeof ReceptionAgendaRoute
   '/reception/customers': typeof ReceptionCustomersRoute
+  '/reception/reviews': typeof ReceptionReviewsRoute
   '/reception/waiting-list': typeof ReceptionWaitingListRoute
   '/review/$token': typeof ReviewTokenRoute
   '/subscription/addons': typeof SubscriptionAddonsRoute
@@ -1059,6 +1067,7 @@ export interface FileRoutesById {
   '/loyalty/templates': typeof LoyaltyTemplatesRoute
   '/reception/agenda': typeof ReceptionAgendaRoute
   '/reception/customers': typeof ReceptionCustomersRoute
+  '/reception/reviews': typeof ReceptionReviewsRoute
   '/reception/waiting-list': typeof ReceptionWaitingListRoute
   '/review/$token': typeof ReviewTokenRoute
   '/subscription/addons': typeof SubscriptionAddonsRoute
@@ -1181,6 +1190,7 @@ export interface FileRouteTypes {
     | '/loyalty/templates'
     | '/reception/agenda'
     | '/reception/customers'
+    | '/reception/reviews'
     | '/reception/waiting-list'
     | '/review/$token'
     | '/subscription/addons'
@@ -1296,6 +1306,7 @@ export interface FileRouteTypes {
     | '/loyalty/templates'
     | '/reception/agenda'
     | '/reception/customers'
+    | '/reception/reviews'
     | '/reception/waiting-list'
     | '/review/$token'
     | '/subscription/addons'
@@ -1416,6 +1427,7 @@ export interface FileRouteTypes {
     | '/loyalty/templates'
     | '/reception/agenda'
     | '/reception/customers'
+    | '/reception/reviews'
     | '/reception/waiting-list'
     | '/review/$token'
     | '/subscription/addons'
@@ -2164,6 +2176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReceptionCustomersRouteImport
       parentRoute: typeof ReceptionRoute
     }
+    '/reception/reviews': {
+      id: '/reception/reviews'
+      path: '/reviews'
+      fullPath: '/reception/reviews'
+      preLoaderRoute: typeof ReceptionReviewsRouteImport
+      parentRoute: typeof ReceptionRoute
+    }
     '/reception/waiting-list': {
       id: '/reception/waiting-list'
       path: '/waiting-list'
@@ -2530,6 +2549,7 @@ const LoyaltyRouteWithChildren =
 interface ReceptionRouteChildren {
   ReceptionAgendaRoute: typeof ReceptionAgendaRoute
   ReceptionCustomersRoute: typeof ReceptionCustomersRoute
+  ReceptionReviewsRoute: typeof ReceptionReviewsRoute
   ReceptionWaitingListRoute: typeof ReceptionWaitingListRoute
   ReceptionIndexRoute: typeof ReceptionIndexRoute
 }
@@ -2537,6 +2557,7 @@ interface ReceptionRouteChildren {
 const ReceptionRouteChildren: ReceptionRouteChildren = {
   ReceptionAgendaRoute: ReceptionAgendaRoute,
   ReceptionCustomersRoute: ReceptionCustomersRoute,
+  ReceptionReviewsRoute: ReceptionReviewsRoute,
   ReceptionWaitingListRoute: ReceptionWaitingListRoute,
   ReceptionIndexRoute: ReceptionIndexRoute,
 }

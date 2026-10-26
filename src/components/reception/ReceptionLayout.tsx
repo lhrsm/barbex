@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Users,
   ListChecks,
+  MessageSquare,
   Menu,
   X,
   LogOut,
@@ -28,6 +29,7 @@ const NAV = [
   { label: "Agenda", to: "/reception/agenda", icon: CalendarDays },
   { label: "Lista de espera", to: "/reception/waiting-list", icon: ListChecks },
   { label: "Clientes", to: "/reception/customers", icon: Users },
+  { label: "Avaliações", to: "/reception/reviews", icon: MessageSquare },
 ];
 
 export function ReceptionLayout({ children }: { children: React.ReactNode }) {

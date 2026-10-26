@@ -114,17 +114,21 @@ export function usePlanLimits() {
       const targetIds = Array.from(new Set([userId, tenantId].filter(Boolean))) as string[];
       const idOrFilter = targetIds.map((id) => `user_id.eq.${id}`).join(",");
 
-      const profilePromise = userId
+      const profilePromise = tenantId
+        ? supabase
+            .from("profiles")
+            .select("plan, effective_plan, selected_plan, created_at, trial_end, status")
+            .or(`id.eq.${tenantId},tenant_id.eq.${tenantId}`)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle()
+        : userId
         ? supabase
             .from("profiles")
             .select("plan, effective_plan, selected_plan, created_at, trial_end, status")
             .eq("id", userId)
             .maybeSingle()
-        : supabase
-            .from("profiles")
-            .select("plan, effective_plan, selected_plan, created_at, trial_end, status")
-            .eq("tenant_id", tenantId!)
-            .maybeSingle();
+        : Promise.resolve({ data: null, error: null } as any);
 
       const subPromise = idOrFilter
         ? supabase
@@ -155,7 +159,7 @@ export function usePlanLimits() {
           supabase
             .from("products")
             .select("*", { count: "exact", head: true })
-            .eq("user_id", userId || tenantId)
+            .eq("user_id", tenantId || userId)
             .eq("active", true),
           supabase
             .from("appointments")
@@ -239,8 +243,9 @@ export function usePlanLimits() {
       } | null = null;
 
       try {
+        const effectiveTenant = tenantId || userId;
         const { data: entRes } = await supabase.rpc("resolve_tenant_entitlement", {
-          p_tenant_id: tenantId || userId,
+          _tenant_id: effectiveTenant,
         });
         if (entRes) {
           entitlementData = entRes as any;

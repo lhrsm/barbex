@@ -20,7 +20,8 @@ export type ReceptionAction =
   | "delete_appointment"
   | "change_professional"
   | "manage_waiting_list"
-  | "sell_without_appointment";
+  | "sell_without_appointment"
+  | "moderate_reviews";
 
 export interface ReceptionActionMeta {
   action: ReceptionAction;
@@ -31,6 +32,7 @@ export interface ReceptionActionMeta {
 
 export const RECEPTION_ACTIONS: ReceptionActionMeta[] = [
   { action: "complete_appointment", label: "Concluir atendimento", description: "Marcar atendimentos como concluídos.", group: "Atendimento" },
+  { action: "moderate_reviews", label: "Moderar avaliações", description: "Aprovar ou rejeitar avaliações recebidas.", group: "Atendimento" },
   { action: "change_professional", label: "Alterar profissional", description: "Trocar o profissional de um atendimento.", group: "Atendimento" },
   { action: "delete_appointment", label: "Excluir agendamento", description: "Remover agendamentos da agenda.", group: "Atendimento" },
   { action: "manage_waiting_list", label: "Gerenciar lista de espera", description: "Criar, editar e encaixar clientes da lista de espera.", group: "Operação" },
@@ -52,6 +54,7 @@ export const RECEPTION_ACTIONS: ReceptionActionMeta[] = [
 export const DEFAULT_RECEPTION_PERMISSIONS: Record<string, boolean> = {
   complete_appointment: true,
   manage_waiting_list: true,
+  moderate_reviews: true,
   change_professional: false,
   delete_appointment: false,
   sell_without_appointment: true,
