@@ -137,32 +137,32 @@ export function PixReceiptStep({
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <section className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-xs">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gold/10 text-gold">
             <Receipt className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-black text-foreground">Comprovante do PIX</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-sm font-black text-zinc-900">Comprovante do PIX</h3>
+            <p className="text-xs text-zinc-500">
               Valor {formatBRL(amount)} • {dateLabel} às {timeLabel}
             </p>
           </div>
         </div>
 
         {pixKey && (
-          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                 Chave PIX
               </p>
-              <p className="truncate text-sm font-bold text-foreground">{pixKey}</p>
+              <p className="truncate text-sm font-bold text-zinc-900">{pixKey}</p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-lg"
+              className="rounded-lg border-zinc-200 bg-white text-xs font-bold text-zinc-700 hover:bg-zinc-100"
               onClick={() => {
                 navigator.clipboard?.writeText(pixKey);
                 toast.success("Chave PIX copiada!");
@@ -174,8 +174,8 @@ export function PixReceiptStep({
         )}
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <Label className="text-xs font-semibold text-muted-foreground">Anexar comprovante</Label>
+      <section className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-xs">
+        <Label className="text-xs font-semibold text-zinc-600">Anexar comprovante</Label>
 
         <input
           ref={inputRef}
@@ -189,14 +189,14 @@ export function PixReceiptStep({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="mt-2 flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-4 py-8 text-center transition-colors hover:border-primary/60 hover:bg-primary/5"
+            className="mt-2 flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50/70 px-4 py-8 text-center transition-colors hover:border-gold/60 hover:bg-gold/5 cursor-pointer"
           >
-            <FileUp className="h-6 w-6 text-primary" />
-            <span className="text-sm font-bold text-foreground">Selecionar arquivo</span>
-            <span className="text-xs text-muted-foreground">PNG, JPG, WEBP ou PDF até 8MB</span>
+            <FileUp className="h-6 w-6 text-gold" />
+            <span className="text-sm font-bold text-zinc-900">Selecionar arquivo</span>
+            <span className="text-xs text-zinc-400">PNG, JPG, WEBP ou PDF até 8MB</span>
           </button>
         ) : (
-          <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+          <div className="mt-2 flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
             {preview ? (
               <img
                 src={preview}
@@ -204,13 +204,13 @@ export function PixReceiptStep({
                 className="h-16 w-16 rounded-lg object-cover"
               />
             ) : (
-              <span className="grid h-16 w-16 place-items-center rounded-lg bg-primary/10 text-primary">
+              <span className="grid h-16 w-16 place-items-center rounded-lg bg-gold/10 text-gold">
                 <Receipt className="h-6 w-6" />
               </span>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-foreground">{file.name}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="truncate text-sm font-bold text-zinc-900">{file.name}</p>
+              <p className="text-xs text-zinc-500">
                 {(file.size / 1024).toFixed(0)} KB {saved && "• armazenado"}
               </p>
             </div>
@@ -218,7 +218,7 @@ export function PixReceiptStep({
               type="button"
               variant="ghost"
               size="icon"
-              className="rounded-lg text-muted-foreground hover:text-destructive"
+              className="rounded-lg text-zinc-400 hover:text-destructive"
               onClick={clearFile}
               aria-label="Remover arquivo"
             >
@@ -228,7 +228,7 @@ export function PixReceiptStep({
         )}
 
         <div className="mt-3 space-y-1.5">
-          <Label htmlFor="receipt-notes" className="text-xs font-semibold text-muted-foreground">
+          <Label htmlFor="receipt-notes" className="text-xs font-semibold text-zinc-600">
             Observação (opcional)
           </Label>
           <Textarea
@@ -237,7 +237,7 @@ export function PixReceiptStep({
             onChange={(e) => setNotes(e.target.value)}
             maxLength={300}
             placeholder="Ex.: pagamento feito pelo app do banco às 14h30"
-            className="min-h-[70px] rounded-xl"
+            className="min-h-[70px] rounded-xl border-zinc-200/90 bg-white text-zinc-900"
           />
         </div>
 
@@ -246,7 +246,7 @@ export function PixReceiptStep({
             type="button"
             onClick={() => handleUpload(false)}
             disabled={uploading || !file || saved}
-            className="h-11 rounded-xl font-bold"
+            className="h-11 rounded-xl font-bold bg-black text-white hover:bg-zinc-800"
           >
             {uploading ? (
               <>
@@ -268,7 +268,7 @@ export function PixReceiptStep({
             onClick={handleWhatsapp}
             disabled={uploading}
             className={cn(
-              "h-11 rounded-xl bg-emerald-500 font-bold text-white hover:bg-emerald-500/90",
+              "h-11 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-700",
               !waLink && "opacity-60",
             )}
           >
@@ -277,7 +277,7 @@ export function PixReceiptStep({
         </div>
 
         {!waLink && (
-          <p className="mt-2 text-xs font-medium text-muted-foreground">
+          <p className="mt-2 text-xs font-medium text-zinc-400">
             Cadastre o número de WhatsApp da barbearia em Configurações para habilitar o envio direto.
           </p>
         )}
@@ -288,7 +288,7 @@ export function PixReceiptStep({
           type="button"
           variant="outline"
           onClick={onFinish}
-          className="h-11 rounded-xl font-semibold"
+          className="h-11 rounded-xl font-semibold border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-100"
         >
           <X className="mr-1.5 h-4 w-4" />
           Concluir

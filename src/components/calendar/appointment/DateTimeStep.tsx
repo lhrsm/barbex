@@ -55,19 +55,27 @@ export function DateTimeStep({
 
   return (
     <div className="animate-in fade-in slide-in-from-right-2 space-y-4 duration-300">
-      <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 p-3">
+      {/* Pill do Profissional selecionado */}
+      <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/90 bg-zinc-50/70 p-3 shadow-xs">
         <EntityAvatar
           imageUrl={resolveImageUrl(barber)}
           name={barber?.name}
           entityType="professional"
-          size={36}
+          size={38}
+          showStatus
+          active={barber?.active !== false}
         />
-        <p className="min-w-0 truncate text-sm font-semibold text-foreground">
-          Disponibilidade de{" "}
-          <span className="text-primary">{barber?.name || "profissional"}</span>
-        </p>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+            Agenda do Profissional
+          </p>
+          <p className="min-w-0 truncate text-sm font-black text-zinc-900">
+            {barber?.name || "Profissional"}
+          </p>
+        </div>
       </div>
 
+      {/* Atalhos rápidos de data */}
       <div className="flex flex-wrap gap-2">
         {shortcuts.map((s) => (
           <Button
@@ -77,8 +85,10 @@ export function DateTimeStep({
             size="sm"
             onClick={() => onDateChange(s.date)}
             className={cn(
-              "h-8 rounded-full text-xs font-semibold",
-              selectedDate === s.date && "border-primary bg-primary/10 text-primary",
+              "h-8 rounded-full text-xs font-bold transition-all px-3 cursor-pointer",
+              selectedDate === s.date
+                ? "border-gold bg-gold/15 text-zinc-950 ring-1 ring-gold/30 shadow-xs"
+                : "border-zinc-200/90 bg-white text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900",
             )}
           >
             {s.label}
@@ -86,20 +96,42 @@ export function DateTimeStep({
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-2 shadow-sm">
+      {/* Calendário Claro com Alto Contraste */}
+      <div className="rounded-2xl border border-zinc-200/90 bg-white p-3 shadow-xs overflow-hidden">
         <Calendar
           mode="single"
           locale={ptBR}
           selected={selected}
           onSelect={(d) => d && onDateChange(format(d, "yyyy-MM-dd"))}
           disabled={(date) => date < today || !isDayEnabled(date)}
-          className={cn("pointer-events-auto mx-auto p-2")}
+          className="w-full bg-white text-zinc-900 p-0"
+          classNames={{
+            root: "w-full bg-white text-zinc-900",
+            months: "w-full",
+            month: "w-full space-y-3",
+            month_caption: "flex justify-center items-center h-8 text-zinc-900 font-black text-sm capitalize",
+            caption_label: "text-zinc-900 font-black text-sm capitalize",
+            nav: "flex items-center justify-between w-full absolute top-0 inset-x-0 px-1 z-10",
+            button_previous: "h-7 w-7 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors border border-zinc-200/60 bg-white",
+            button_next: "h-7 w-7 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors border border-zinc-200/60 bg-white",
+            table: "w-full border-collapse",
+            weekdays: "flex w-full justify-between mb-1 border-b border-zinc-100 pb-1.5",
+            weekday: "text-zinc-400 font-bold text-[11px] uppercase flex-1 text-center",
+            week: "flex w-full justify-between mt-1",
+            day: "flex-1 text-center p-0 relative",
+            today: "border border-gold text-zinc-950 font-black rounded-xl",
+            outside: "text-zinc-300 opacity-40 pointer-events-none",
+            disabled: "text-zinc-300 opacity-30 cursor-not-allowed pointer-events-none line-through",
+          }}
         />
       </div>
       {errors.date && <p className="text-xs font-medium text-destructive">{errors.date}</p>}
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-black text-foreground">Horários disponíveis</h3>
+      {/* Horários disponíveis */}
+      <div className="space-y-2 pt-1">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+          Horários disponíveis
+        </h3>
         <AvailableSlotsGrid
           slots={slots}
           value={selectedTime}
@@ -109,18 +141,19 @@ export function DateTimeStep({
         />
       </div>
 
+      {/* Resumo do serviço */}
       {service && (
-        <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm">
-          <p className="text-muted-foreground">
+        <div className="rounded-2xl border border-zinc-200/90 bg-zinc-50/70 p-3.5 text-sm shadow-xs space-y-1">
+          <p className="text-zinc-500">
             Serviço selecionado:{" "}
-            <span className="font-bold text-foreground">{service.name}</span>
+            <span className="font-bold text-zinc-900">{service.name}</span>
           </p>
-          <p className="text-muted-foreground">
-            Duração: <span className="font-bold text-foreground">{service.duration_minutes} minutos</span>
+          <p className="text-zinc-500">
+            Duração: <span className="font-bold text-zinc-900">{service.duration_minutes} minutos</span>
           </p>
           {endsAt && (
-            <p className="text-muted-foreground">
-              Término previsto: <span className="font-bold text-foreground">{endsAt}</span>
+            <p className="text-zinc-500">
+              Término previsto: <span className="font-bold text-zinc-900">{endsAt}</span>
             </p>
           )}
         </div>

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, CalendarCheck, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   step: number;
@@ -27,9 +28,9 @@ export function AppointmentModalFooter({
           variant="outline"
           onClick={onBack}
           disabled={isLoading}
-          className="h-11 w-full rounded-xl border-border bg-background font-semibold text-foreground hover:bg-muted sm:w-auto"
+          className="h-10 w-full rounded-xl border-zinc-200 bg-white font-bold text-zinc-700 hover:bg-zinc-100 sm:w-auto text-xs transition-colors"
         >
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          <ArrowLeft className="mr-1.5 h-4 w-4 text-zinc-500" />
           Voltar
         </Button>
       ) : (
@@ -40,12 +41,17 @@ export function AppointmentModalFooter({
         type="button"
         onClick={isLast ? onConfirm : onNext}
         disabled={isLoading}
-        className="h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-60 sm:w-auto"
+        className={cn(
+          "h-10 w-full rounded-xl font-bold uppercase tracking-wider text-xs shadow-xs transition-all disabled:opacity-50 sm:w-auto",
+          isLast
+            ? "bg-gold text-black hover:bg-gold-500 shadow-sm"
+            : "bg-black text-white hover:bg-zinc-800",
+        )}
       >
         {isLoading ? (
           <>
             <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-            {isLast ? (isEditing ? "Salvando alterações..." : "Criando agendamento...") : "Validando..."}
+            {isLast ? (isEditing ? "Salvando..." : "Criando agendamento...") : "Validando..."}
           </>
         ) : isLast ? (
           <>

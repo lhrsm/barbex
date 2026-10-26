@@ -16,7 +16,6 @@ export const PAYMENT_METHODS = [
   { value: "wallet", label: "Créditos do cliente" },
 ];
 
-
 interface Props {
   status: string;
   method: string;
@@ -48,20 +47,27 @@ export function PaymentSelector({
   const matches = Math.abs(sum - total) < 0.01;
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm" aria-label="Pagamento">
-      <h3 className="mb-3 text-sm font-black text-foreground">Pagamento</h3>
+    <section className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-xs" aria-label="Pagamento">
+      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-500">Pagamento</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="payment-status" className="text-xs font-semibold text-muted-foreground">
+          <Label htmlFor="payment-status" className="text-xs font-semibold text-zinc-600">
             Status do pagamento
           </Label>
           <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger id="payment-status" className="rounded-xl">
+            <SelectTrigger
+              id="payment-status"
+              className="rounded-xl border-zinc-200/90 bg-zinc-50/70 hover:bg-zinc-100 text-zinc-900 font-semibold h-10 shadow-xs"
+            >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border-zinc-200/90 text-zinc-900 rounded-xl shadow-xl z-[70]">
               {PAYMENT_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
+                <SelectItem
+                  key={s.value}
+                  value={s.value}
+                  className="text-zinc-900 hover:bg-zinc-100 focus:bg-zinc-100 cursor-pointer font-medium"
+                >
                   {s.label}
                 </SelectItem>
               ))}
@@ -70,19 +76,26 @@ export function PaymentSelector({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="payment-method" className="text-xs font-semibold text-muted-foreground">
+          <Label htmlFor="payment-method" className="text-xs font-semibold text-zinc-600">
             Forma de pagamento
           </Label>
           <Select value={method} onValueChange={onMethodChange}>
             <SelectTrigger
               id="payment-method"
-              className={cn("rounded-xl", methodError && "border-destructive")}
+              className={cn(
+                "rounded-xl border-zinc-200/90 bg-zinc-50/70 hover:bg-zinc-100 text-zinc-900 font-semibold h-10 shadow-xs",
+                methodError && "border-destructive text-destructive",
+              )}
             >
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border-zinc-200/90 text-zinc-900 rounded-xl shadow-xl z-[70]">
               {PAYMENT_METHODS.map((m) => (
-                <SelectItem key={m.value} value={m.value}>
+                <SelectItem
+                  key={m.value}
+                  value={m.value}
+                  className="text-zinc-900 hover:bg-zinc-100 focus:bg-zinc-100 cursor-pointer font-medium"
+                >
                   {m.label}
                 </SelectItem>
               ))}
@@ -93,10 +106,10 @@ export function PaymentSelector({
       </div>
 
       {method === "mixed" && (
-        <div className="mt-3 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
+        <div className="mt-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="mixed-credits" className="text-xs font-semibold text-muted-foreground">
+              <Label htmlFor="mixed-credits" className="text-xs font-semibold text-zinc-600">
                 Créditos
               </Label>
               <Input
@@ -106,11 +119,11 @@ export function PaymentSelector({
                 min="0"
                 value={mixedCredits}
                 onChange={(e) => onMixedCreditsChange(e.target.value)}
-                className="h-10 rounded-xl"
+                className="h-10 rounded-xl border-zinc-200/90 bg-white text-zinc-900"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="mixed-other" className="text-xs font-semibold text-muted-foreground">
+              <Label htmlFor="mixed-other" className="text-xs font-semibold text-zinc-600">
                 Demais formas
               </Label>
               <Input
@@ -120,14 +133,14 @@ export function PaymentSelector({
                 min="0"
                 value={mixedOther}
                 onChange={(e) => onMixedOtherChange(e.target.value)}
-                className="h-10 rounded-xl"
+                className="h-10 rounded-xl border-zinc-200/90 bg-white text-zinc-900"
               />
             </div>
           </div>
           <p
             className={cn(
-              "text-xs font-bold",
-              matches ? "text-emerald-600" : "text-destructive",
+              "text-xs font-bold pt-1",
+              matches ? "text-emerald-700" : "text-destructive",
             )}
           >
             Soma: {formatBRL(sum)} / Total: {formatBRL(total)}

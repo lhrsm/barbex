@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { format, parseISO, addMinutes, addDays } from "date-fns";
-import { AlertTriangle, CalendarPlus, Pencil } from "lucide-react";
+import { AlertTriangle, CalendarPlus, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
@@ -630,17 +630,21 @@ export function AppointmentModal({
                 <DialogTitle className="text-lg font-black uppercase tracking-tight text-black leading-none">
                   {editingAppointmentId ? "Editar Agendamento" : "Novo Agendamento"}
                 </DialogTitle>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mt-1">Painel Administrativo</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mt-1">
+                  {(typeof window !== "undefined" && window.location.pathname.includes("reception")) || role === "receptionist"
+                    ? "Painel da Recepção"
+                    : "Painel Administrativo"}
+                </p>
               </div>
             </div>
             
-            <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-1.5" aria-label={`Etapa ${currentStep} de 4`}>
               {[1, 2, 3, 4].map(i => (
                 <div 
                   key={i} 
                   className={cn(
-                    "h-1 rounded-full transition-all duration-300",
-                    i <= currentStep ? "w-4 bg-gold" : "w-1 bg-zinc-200"
+                    "h-1.5 rounded-full transition-all duration-300",
+                    i === currentStep ? "w-6 bg-gold" : i < currentStep ? "w-3 bg-gold/50" : "w-1.5 bg-zinc-200"
                   )}
                 />
               ))}
@@ -773,13 +777,15 @@ export function AppointmentModal({
           </div>
 
           {!receiptContext && (
-            <DialogFooter className="p-6 md:p-8 pt-4 border-t border-zinc-100 bg-zinc-50/50">
+            <DialogFooter className="p-4 md:p-6 pt-3.5 border-t border-zinc-100 bg-zinc-50/70">
               <div className="flex w-full justify-between items-center">
                 {currentStep > 1 ? (
                   <Button 
+                    type="button"
                     variant="ghost" 
                     onClick={() => setCurrentStep(prev => prev - 1)}
-                    className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-black"
+                    disabled={isLoading}
+                    className="h-10 px-4 text-xs font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
                   >
                     Voltar
                   </Button>
@@ -787,9 +793,10 @@ export function AppointmentModal({
                   <div />
                 )}
                 
-                <div className="flex gap-3">
+                <div className="flex gap-2.5">
                   {currentStep < 4 ? (
                     <Button 
+                      type="button"
                       onClick={handleNextStep}
                       disabled={
                         (currentStep === 1 && (!selectedBarber || !selectedService)) ||
@@ -798,17 +805,32 @@ export function AppointmentModal({
                         (!canAddAppointment && !editingAppointmentId) ||
                         isLoading
                       }
-                      className="bg-black text-white hover:bg-zinc-800 rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px]"
+                      className="bg-black text-white hover:bg-zinc-800 disabled:bg-zinc-200 disabled:text-zinc-400 rounded-xl h-10 px-6 font-bold uppercase tracking-wider text-xs shadow-xs transition-all cursor-pointer"
                     >
-                      Próximo
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Avançando...
+                        </span>
+                      ) : (
+                        "Próximo"
+                      )}
                     </Button>
                   ) : (
                     <Button 
+                      type="button"
                       onClick={handleCreateAppointment}
                       disabled={isLoading || (!canAddAppointment && !editingAppointmentId)}
-                      className="bg-black text-white hover:bg-zinc-800 rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px]"
+                      className="bg-gold text-black hover:bg-gold-500 disabled:bg-zinc-200 disabled:text-zinc-400 rounded-xl h-10 px-6 font-black uppercase tracking-wider text-xs shadow-sm transition-all cursor-pointer"
                     >
-                      {isLoading ? "Salvando..." : editingAppointmentId ? "Salvar" : "Confirmar"}
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          {editingAppointmentId ? "Salvando..." : "Confirmando..."}
+                        </span>
+                      ) : (
+                        editingAppointmentId ? "Salvar agendamento" : "Confirmar agendamento"
+                      )}
                     </Button>
                   )}
                 </div>
