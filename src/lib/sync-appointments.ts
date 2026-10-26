@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * BARBEX R2E.26A — Sincronização Global de Agendamentos entre Painéis
@@ -32,17 +33,18 @@ export interface AppointmentSyncOptions {
 }
 
 /**
- * Invalida todas as queries do TanStack Query e despacha eventos no barramento local (window)
- * para atualização instantânea na mesma aba e entre componentes montados simultaneamente.
+ * Invalida todas as queries do TanStack Query e despacha eventos no barramento local (window).
+ * A sincronização cross-session e entre dispositivos é realizada de forma estritamente segura
+ * pelo Supabase Realtime via PostgreSQL Logical Replication (postgres_changes), protegido por RLS.
  */
 export function invalidateAllAppointmentQueries(
   queryClient: QueryClient,
   options?: AppointmentSyncOptions
 ) {
-  if (!queryClient) return;
-
-  for (const key of APPOINTMENT_QUERY_KEYS) {
-    queryClient.invalidateQueries({ queryKey: [key] });
+  if (queryClient) {
+    for (const key of APPOINTMENT_QUERY_KEYS) {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    }
   }
 
   if (typeof window !== "undefined") {
@@ -58,3 +60,4 @@ export function invalidateAllAppointmentQueries(
     );
   }
 }
+

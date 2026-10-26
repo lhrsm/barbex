@@ -131,6 +131,20 @@ function DashboardIndexComponent() {
   }, [user, role, isCriticalBoot, navigate, authLoading, tenantLoading, planLoading, tenantId, hasRenderedSuccessfully, isRefreshing, tenantProfile, authProfile, proSession, identity]);
 
 
+  // Sincronização automática e desduplicada após mutações operacionais (conclusão, cancelamento, remarcação, novos agendamentos)
+  const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const executeDebouncedSync = useCallback(() => {
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+    }
+    syncTimerRef.current = setTimeout(() => {
+      fetchTodayAppointments();
+      fetchStats();
+      fetchBirthdayCustomers();
+    }, 100);
+  }, []);
+
   useEffect(() => {
     if (!tenantId || role === 'barber' || role === 'professional' || role === 'client' || role === 'customer' || role === 'unknown') return;
 
@@ -139,7 +153,7 @@ function DashboardIndexComponent() {
     fetchBirthdayCustomers();
 
     const channel = supabase
-      .channel(`dashboard-realtime-${tenantId}`)
+      .channel(`tenant-sync-${tenantId}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
@@ -153,39 +167,17 @@ function DashboardIndexComponent() {
           notificationId: payload.commit_timestamp
         });
         
-        setIsRefreshing(true);
-        // Realtime update: atualizar somente agendamentos e estatísticas operacionais
-        Promise.allSettled([
-          fetchTodayAppointments(),
-          fetchStats()
-        ]).finally(() => {
-          setIsRefreshing(false);
-        });
+        executeDebouncedSync();
       })
       .subscribe();
-
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, selectedDate]);
-
-  // Sincronização automática e desduplicada após mutações operacionais (conclusão, cancelamento, remarcação)
-  const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
+  }, [tenantId, selectedDate, executeDebouncedSync]);
 
   useEffect(() => {
     if (!tenantId) return;
-
-    const executeDebouncedSync = () => {
-      if (syncTimerRef.current) {
-        clearTimeout(syncTimerRef.current);
-      }
-      syncTimerRef.current = setTimeout(() => {
-        fetchTodayAppointments();
-        fetchStats();
-        fetchBirthdayCustomers();
-      }, 80);
-    };
 
     // 1. Escuta invalidações relevantes no TanStack QueryCache
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
@@ -204,8 +196,9 @@ function DashboardIndexComponent() {
       }
     });
 
-    // 2. Barramento de eventos no window para disparo imperativo pós-RPC
+    // 2. Barramento de eventos no window para disparo imperativo intra-sessão
     window.addEventListener('REFRESH_DASHBOARD_DATA', executeDebouncedSync);
+    window.addEventListener('REFRESH_APPOINTMENTS_DATA', executeDebouncedSync);
 
     return () => {
       if (syncTimerRef.current) {
@@ -213,8 +206,9 @@ function DashboardIndexComponent() {
       }
       unsubscribe();
       window.removeEventListener('REFRESH_DASHBOARD_DATA', executeDebouncedSync);
+      window.removeEventListener('REFRESH_APPOINTMENTS_DATA', executeDebouncedSync);
     };
-  }, [tenantId, selectedDate, queryClient]);
+  }, [tenantId, selectedDate, queryClient, executeDebouncedSync]);
 
   async function fetchBirthdayCustomers() {
     if (!tenantId) return;

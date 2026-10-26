@@ -15,7 +15,7 @@ async function runTests() {
   }
   const base = path.join(__dirname, '..');
   check('H-sync-module', base+'/src/lib/sync-appointments.ts', 'APPOINTMENT_QUERY_KEYS', 'invalidateAllAppointmentQueries', 'reception-queue', 'reception-stats', 'REFRESH_APPOINTMENTS_DATA', 'REFRESH_DASHBOARD_DATA');
-  check('I-ReceptionQueue-Realtime', base+'/src/components/reception/ReceptionQueue.tsx', 'reception-realtime-', 'appointment_checkins', 'removeChannel', 'REFRESH_APPOINTMENTS_DATA', 'invalidateAllAppointmentQueries', 'refetchOnWindowFocus');
+  check('I-ReceptionQueue-Realtime', base+'/src/components/reception/ReceptionQueue.tsx', 'tenant-sync-', 'appointment_checkins', 'removeChannel', 'REFRESH_APPOINTMENTS_DATA', 'refetchOnWindowFocus');
   check('J-WalkinModal', base+'/src/components/calendar/WalkinModal.tsx', 'invalidateAllAppointmentQueries', 'useQueryClient');
   check('K1-reception.index', base+'/src/routes/reception.index.tsx', 'onSuccess', 'invalidateAllAppointmentQueries', 'REFRESH_APPOINTMENTS_DATA');
   check('K2-reception.agenda', base+'/src/routes/reception.agenda.tsx', 'onSuccess', 'invalidateAllAppointmentQueries', 'useQueryClient');

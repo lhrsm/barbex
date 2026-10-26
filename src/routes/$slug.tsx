@@ -15,6 +15,7 @@ import { PixReceiptStep } from "@/components/calendar/appointment/PixReceiptStep
 import { BookingAuthStep } from "@/components/public/booking/BookingAuthStep";
 import { BookingConfirmationCard } from "@/components/public/booking/BookingConfirmationCard";
 import { resolveClubCoverage } from "@/lib/club-coverage.utils";
+import { invalidateAllAppointmentQueries } from "@/lib/sync-appointments";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1742,14 +1743,11 @@ function ShopPageComponent() {
           .eq("id", finalCustId);
       }
 
-      // Invalidate cache
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["calendar"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["customerAppointments"] });
-      queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      // Invalidate cache and trigger local window sync
+      invalidateAllAppointmentQueries(queryClient, {
+        tenantId: shop.id,
+        source: 'public_booking',
+      });
 
       // 5. Notifications
       for (const appt of createdAppointments) {

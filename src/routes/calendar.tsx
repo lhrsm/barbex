@@ -310,6 +310,18 @@ const CalendarComponent = memo(() => {
     }
   }, []);
 
+  const calendarDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedFetchData = useCallback(() => {
+    if (calendarDebounceRef.current) {
+      clearTimeout(calendarDebounceRef.current);
+    }
+    calendarDebounceRef.current = setTimeout(() => {
+      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    }, 100);
+  }, [fetchData, queryClient]);
+
   useEffect(() => {
     console.log("[CALENDAR_BOOT_TRACE] Starting fetchData", { 
       hasUser: !!user, 
@@ -325,22 +337,26 @@ const CalendarComponent = memo(() => {
     if (!tenantId) return;
 
     const channel = supabase
-      .channel(`appointments-calendar-${tenantId}`)
+      .channel(`tenant-sync-${tenantId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments', filter: `tenant_id=eq.${tenantId}` },
         () => {
-          fetchData();
-          queryClient.invalidateQueries({ queryKey: ['appointments'] });
-          queryClient.invalidateQueries({ queryKey: ['calendar'] });
+          debouncedFetchData();
         }
       )
       .subscribe();
 
+    window.addEventListener('REFRESH_APPOINTMENTS_DATA', debouncedFetchData);
+
     return () => {
+      if (calendarDebounceRef.current) {
+        clearTimeout(calendarDebounceRef.current);
+      }
       supabase.removeChannel(channel);
+      window.removeEventListener('REFRESH_APPOINTMENTS_DATA', debouncedFetchData);
     };
-  }, [tenantId, fetchData, queryClient]);
+  }, [tenantId, debouncedFetchData]);
 
   const isToday = isSameDay(currentDate, new Date());
   const todayApps = useMemo(() => appointments.filter(a => isSameDay(new Date(a.start_time), currentDate)), [appointments, currentDate]);

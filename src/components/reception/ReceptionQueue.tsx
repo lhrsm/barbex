@@ -119,8 +119,13 @@ export function ReceptionQueue({
   useEffect(() => {
     if (!tenantId) return;
 
+    const handleSync = () => {
+      queryClient.invalidateQueries({ queryKey: ["reception-queue", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["reception-stats", tenantId] });
+    };
+
     const channel = supabase
-      .channel(`reception-realtime-${tenantId}-${day}`)
+      .channel(`tenant-sync-${tenantId}`)
       .on(
         "postgres_changes",
         {
@@ -131,7 +136,7 @@ export function ReceptionQueue({
         },
         (payload) => {
           console.log("[ReceptionQueue Realtime] appointments change detected:", payload);
-          invalidateAllAppointmentQueries(queryClient, { tenantId });
+          handleSync();
         }
       )
       .on(
@@ -144,22 +149,18 @@ export function ReceptionQueue({
         },
         (payload) => {
           console.log("[ReceptionQueue Realtime] checkin change detected:", payload);
-          invalidateAllAppointmentQueries(queryClient, { tenantId });
+          handleSync();
         }
       )
       .subscribe();
 
-    const handleSync = () => {
-      queryClient.invalidateQueries({ queryKey: ["reception-queue", tenantId] });
-      queryClient.invalidateQueries({ queryKey: ["reception-stats", tenantId] });
-    };
     window.addEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
 
     return () => {
       supabase.removeChannel(channel);
       window.removeEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
     };
-  }, [tenantId, day, queryClient]);
+  }, [tenantId, queryClient]);
 
   async function handleCheckin(appt: any) {
     try {
