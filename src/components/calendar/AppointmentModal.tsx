@@ -847,39 +847,39 @@ export function AppointmentModal({
           if (!open) setNewCustomer({ name: "", phone: "" });
         }}
       >
-        <DialogContent className="rounded-[24px] border border-gold/20 sm:max-w-[425px]">
+        <DialogContent className="rounded-[24px] border border-gold/20 sm:max-w-[425px] bg-white text-zinc-900 shadow-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black uppercase tracking-tight italic">Cadastrar novo cliente</DialogTitle>
+            <DialogTitle className="text-lg font-black uppercase tracking-tight text-zinc-900">Cadastrar novo cliente</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="new-customer-name" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Nome completo</Label>
-              <Input
+            <div className="space-y-1.5">
+              <Label htmlFor="new-customer-name" className="text-xs font-bold uppercase tracking-wide text-zinc-500">Nome completo</Label>
+              <input
                 id="new-customer-name"
                 placeholder="Nome do cliente"
                 value={newCustomer.name}
                 onChange={(e) => setNewCustomer((prev) => ({ ...prev, name: e.target.value }))}
                 autoComplete="off"
-                className="h-12 rounded-xl border-zinc-200 focus:ring-gold/30"
+                className="flex h-11 w-full rounded-xl border border-zinc-200/90 bg-zinc-50/80 px-3.5 py-2 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold transition-all"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-customer-phone" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Telefone</Label>
-              <Input
+            <div className="space-y-1.5">
+              <Label htmlFor="new-customer-phone" className="text-xs font-bold uppercase tracking-wide text-zinc-500">Telefone</Label>
+              <input
                 id="new-customer-phone"
                 placeholder="(00) 00000-0000"
                 value={newCustomer.phone}
                 onChange={(e) => setNewCustomer((prev) => ({ ...prev, phone: e.target.value }))}
                 autoComplete="off"
-                className="h-12 rounded-xl border-zinc-200 focus:ring-gold/30"
+                className="flex h-11 w-full rounded-xl border border-zinc-200/90 bg-zinc-50/80 px-3.5 py-2 text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold transition-all"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-2 pt-2">
             <Button
               type="button"
               variant="ghost"
-              className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-red-500"
+              className="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 rounded-xl h-10 px-4"
               onClick={() => {
                 setIsNewCustomerDialogOpen(false);
                 setNewCustomer({ name: "", phone: "" });
@@ -888,7 +888,7 @@ export function AppointmentModal({
               Cancelar
             </Button>
             <Button
-              className="bg-black text-white hover:bg-zinc-800 rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px]"
+              className="bg-gold text-black hover:bg-gold-500 rounded-xl h-10 px-6 font-bold uppercase tracking-wider text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
               onClick={handleCreateCustomer}
               disabled={isLoading || !newCustomer.name}
             >

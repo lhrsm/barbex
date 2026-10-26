@@ -135,10 +135,11 @@ export function ProfessionalSelector({ barbers, value, onChange, error }: Props)
           className="w-[--radix-popover-trigger-width] min-w-[280px] max-w-[calc(100vw-32px)] p-0 bg-white border border-zinc-200/90 rounded-2xl shadow-2xl z-[60] overflow-hidden text-zinc-900"
         >
           {/* Campo de Busca */}
-          <div className="flex items-center gap-2.5 border-b border-zinc-100 px-3.5 py-2.5 bg-zinc-50/70">
+          <div className="flex items-center gap-2.5 border-b border-zinc-200/80 px-3.5 py-2 bg-zinc-50/80 focus-within:bg-white focus-within:border-gold/60 focus-within:ring-2 focus-within:ring-gold/30 transition-all">
             <Search className="h-4 w-4 shrink-0 text-zinc-400" />
-            <Input
+            <input
               ref={inputRef}
+              type="text"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -147,7 +148,7 @@ export function ProfessionalSelector({ barbers, value, onChange, error }: Props)
               onKeyDown={handleKeyDown}
               placeholder="Buscar profissional por nome..."
               aria-label="Buscar profissional"
-              className="h-8 border-0 bg-transparent p-0 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-0 shadow-none"
+              className="h-8 w-full border-0 bg-transparent p-0 text-xs font-semibold text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-0"
             />
             {query && (
               <button
@@ -156,7 +157,7 @@ export function ProfessionalSelector({ barbers, value, onChange, error }: Props)
                   setQuery("");
                   inputRef.current?.focus();
                 }}
-                className="text-zinc-400 hover:text-zinc-600 p-0.5 rounded transition-colors"
+                className="text-zinc-400 hover:text-zinc-700 p-1 rounded-md transition-colors cursor-pointer"
                 aria-label="Limpar busca"
               >
                 <X className="h-3.5 w-3.5" />
