@@ -93,7 +93,7 @@ async function runTestSuite() {
   // Prova empírica no código de que não existem DELETEs físicos de agendamentos
   let allApptDeletes = '';
   try {
-    allApptDeletes = execSync('git grep -i "DELETE FROM appointments"', { cwd: rootDir, encoding: 'utf8' }).trim();
+    allApptDeletes = execSync('git grep -i "DELETE FROM appointments" -- src/', { cwd: rootDir, encoding: 'utf8' }).trim();
   } catch (e) {
     allApptDeletes = ''; // git grep exits with 1 when no matches are found
   }

@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
 import { useProfessionalAuth } from "@/components/professional/ProfessionalAuthProvider";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { WalkinModal } from "@/components/calendar/WalkinModal";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
