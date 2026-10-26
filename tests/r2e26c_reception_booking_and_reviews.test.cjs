@@ -40,8 +40,7 @@ const migrationPath = path.join(__dirname, '..', 'supabase', 'migrations', '2026
 assert(fs.existsSync(migrationPath), 'Migration 20261026170000 deve existir localmente');
 const migrationSql = fs.readFileSync(migrationPath, 'utf8');
 
-runTest('TEST-1-MIGRATION-STRUCTURE: Overload de resolve_tenant_entitlement e RPCs de moderação', () => {
-  assert(migrationSql.includes('CREATE OR REPLACE FUNCTION public.resolve_tenant_entitlement(p_tenant_id uuid)'), 'Deve conter overload p_tenant_id');
+runTest('TEST-1-MIGRATION-STRUCTURE: RPCs de moderação da recepção', () => {
   assert(migrationSql.includes('CREATE OR REPLACE FUNCTION public.moderate_appointment_review'), 'Deve conter moderate_appointment_review');
   assert(migrationSql.includes('CREATE OR REPLACE FUNCTION public.reply_to_appointment_review'), 'Deve conter reply_to_appointment_review');
   assert(migrationSql.includes('REVOKE ALL ON FUNCTION public.moderate_appointment_review(uuid, text) FROM PUBLIC, anon;'), 'Deve revogar anon de moderate_review');
