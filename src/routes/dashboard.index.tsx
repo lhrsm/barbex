@@ -152,8 +152,9 @@ function DashboardIndexComponent() {
     fetchTodayAppointments();
     fetchBirthdayCustomers();
 
+    const channelTopic = `dashboard-realtime-${tenantId}`;
     const channel = supabase
-      .channel(`tenant-sync-${tenantId}`)
+      .channel(channelTopic)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
@@ -169,7 +170,12 @@ function DashboardIndexComponent() {
         
         executeDebouncedSync();
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn("[DASHBOARD_REALTIME_STATUS] Re-syncing dashboard due to channel disruption:", status);
+          executeDebouncedSync();
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

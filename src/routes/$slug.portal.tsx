@@ -431,18 +431,34 @@ function CustomerPortalPage() {
   useEffect(() => {
     if (portalState !== 'DATA_READY' || !data?.customer?.id || !data?.shop?.id) return;
 
+    const channelTopic = `portal_updates_${data.customer.id}`;
     const channel = supabase
-      .channel(`portal_updates_${data.customer.id}`)
+      .channel(channelTopic)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'appointments',
         filter: `customer_id=eq.${data.customer.id}`
-      }, () => {
-        console.log("[PORTAL_RESOLUTION_TRACE] Realtime update triggered");
+      }, (payload) => {
+        console.log("[PORTAL_REALTIME_EVENT] appointments change detected:", payload.eventType, payload.new?.id || payload.old?.id);
         loadPortalData(true);
       })
-      .subscribe();
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'appointment_reviews',
+        filter: `customer_id=eq.${data.customer.id}`
+      }, (payload) => {
+        console.log("[PORTAL_REALTIME_EVENT] review change detected (moderation/submission):", payload.eventType, payload.new?.testimonial_status);
+        loadPortalData(true);
+      })
+      .subscribe((status, err) => {
+        console.log("[PORTAL_REALTIME_STATUS]", { topic: channelTopic, status, error: err ? err.message : null });
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn("[PORTAL_REALTIME_STATUS] Re-fetching portal data due to channel disruption:", status);
+          loadPortalData(true);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

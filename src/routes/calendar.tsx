@@ -288,8 +288,13 @@ const CalendarComponent = memo(() => {
       }
 
       if (appRes.error) {
-        console.error("[CALENDAR_BOOT_TRACE] Appointments fetch error:", appRes.error);
+        console.error("[CALENDAR_SYNC_TRACE] Appointments fetch error:", appRes.error);
       } else if (appRes.data) {
+        console.log("[CALENDAR_SYNC_TRACE] Refetch success, updating React state", {
+          fetchId,
+          returnedCount: appRes.data.length,
+          tenantId: curTenant
+        });
         setAppointments(appRes.data);
         fetchSuccess = true;
       }
@@ -311,11 +316,13 @@ const CalendarComponent = memo(() => {
   }, []);
 
   const calendarDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const debouncedFetchData = useCallback(() => {
+  const debouncedFetchData = useCallback((source?: string) => {
+    console.log("[CALENDAR_SYNC_TRACE] Debounced refetch requested", { source: source || 'unknown' });
     if (calendarDebounceRef.current) {
       clearTimeout(calendarDebounceRef.current);
     }
     calendarDebounceRef.current = setTimeout(() => {
+      console.log("[CALENDAR_SYNC_TRACE] Debounce timer fired, invoking fetchData");
       fetchData();
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       queryClient.invalidateQueries({ queryKey: ['calendar'] });
@@ -336,27 +343,73 @@ const CalendarComponent = memo(() => {
   useEffect(() => {
     if (!tenantId) return;
 
+    const channelTopic = `calendar-realtime-${tenantId}`;
+    console.log("[CALENDAR_REALTIME_INIT]", {
+      tenantId,
+      hasUser: !!user,
+      role,
+      channelTopic,
+      filter: `tenant_id=eq.${tenantId}`
+    });
+
     const channel = supabase
-      .channel(`tenant-sync-${tenantId}`)
+      .channel(channelTopic)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments', filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          debouncedFetchData();
+        (payload) => {
+          console.log("[CALENDAR_REALTIME_EVENT]", {
+            table: 'appointments',
+            eventType: payload.eventType,
+            recordId: payload.new?.id || payload.old?.id,
+            tenantMatch: (payload.new?.tenant_id || payload.old?.tenant_id) === tenantId,
+            commitTimestamp: payload.commit_timestamp
+          });
+          debouncedFetchData('realtime:appointments');
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointment_checkins', filter: `tenant_id=eq.${tenantId}` },
+        (payload) => {
+          console.log("[CALENDAR_REALTIME_EVENT]", {
+            table: 'appointment_checkins',
+            eventType: payload.eventType,
+            recordId: payload.new?.id || payload.old?.id,
+            tenantMatch: (payload.new?.tenant_id || payload.old?.tenant_id) === tenantId,
+            commitTimestamp: payload.commit_timestamp
+          });
+          debouncedFetchData('realtime:checkins');
+        }
+      )
+      .subscribe((status, err) => {
+        console.log("[CALENDAR_REALTIME_STATUS]", {
+          topic: channelTopic,
+          status,
+          error: err ? err.message : null
+        });
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn("[CALENDAR_REALTIME_STATUS] Re-fetching data due to channel disruption:", status);
+          debouncedFetchData(`recovery:${status}`);
+        }
+      });
 
-    window.addEventListener('REFRESH_APPOINTMENTS_DATA', debouncedFetchData);
+    const handleWindowRefresh = () => {
+      console.log("[CALENDAR_SYNC_TRACE] Window REFRESH_APPOINTMENTS_DATA received");
+      debouncedFetchData('window:event');
+    };
+
+    window.addEventListener('REFRESH_APPOINTMENTS_DATA', handleWindowRefresh);
 
     return () => {
+      console.log("[CALENDAR_REALTIME_CLEANUP] Cleaning up channel and listeners:", channelTopic);
       if (calendarDebounceRef.current) {
         clearTimeout(calendarDebounceRef.current);
       }
       supabase.removeChannel(channel);
-      window.removeEventListener('REFRESH_APPOINTMENTS_DATA', debouncedFetchData);
+      window.removeEventListener('REFRESH_APPOINTMENTS_DATA', handleWindowRefresh);
     };
-  }, [tenantId, debouncedFetchData]);
+  }, [tenantId, debouncedFetchData, user, role]);
 
   const isToday = isSameDay(currentDate, new Date());
   const todayApps = useMemo(() => appointments.filter(a => isSameDay(new Date(a.start_time), currentDate)), [appointments, currentDate]);

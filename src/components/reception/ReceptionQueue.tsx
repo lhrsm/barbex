@@ -124,8 +124,9 @@ export function ReceptionQueue({
       queryClient.invalidateQueries({ queryKey: ["reception-stats", tenantId] });
     };
 
+    const channelTopic = `reception-realtime-${tenantId}`;
     const channel = supabase
-      .channel(`tenant-sync-${tenantId}`)
+      .channel(channelTopic)
       .on(
         "postgres_changes",
         {
@@ -152,7 +153,12 @@ export function ReceptionQueue({
           handleSync();
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn("[ReceptionQueue Realtime] Re-syncing due to channel disruption:", status);
+          handleSync();
+        }
+      });
 
     window.addEventListener("REFRESH_APPOINTMENTS_DATA", handleSync);
 

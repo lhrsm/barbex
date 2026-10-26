@@ -268,7 +268,12 @@ function ProfessionalDashboard() {
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'appointments', filter: `barber_id=eq.${bId}` }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'barber_commissions', filter: `barber_id=eq.${bId}` }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'barbers', filter: `id=eq.${bId}` }, fetchData)
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn("[PROFESSIONAL_REALTIME_STATUS] Re-fetching data due to channel disruption:", status);
+          fetchData();
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [session?.barber_id]);
 

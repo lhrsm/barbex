@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/use-tenant";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +81,7 @@ function KpiCard({ label, value, icon: Icon, tone = "gold" }: { label: string; v
 }
 
 function ReviewsAdminPage() {
+  const { tenantId } = useTenant();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("pending");
@@ -88,27 +90,56 @@ function ReviewsAdminPage() {
   const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
   const [savingReply, setSavingReply] = useState<Record<string, boolean>>({});
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) { setLoading(false); return; }
+    const effectiveTenantId = tenantId || user.user.id;
     const { data, error } = await supabase
       .from("appointment_reviews")
       .select("*, customers(name, phone), barbers(name), appointments(start_time, services(name))")
-      .eq("tenant_id", user.user.id)
+      .eq("tenant_id", effectiveTenantId)
       .or("submitted_at.not.is.null,service_rating.not.is.null,barbershop_rating.not.is.null,barber_rating.not.is.null")
       .order("created_at", { ascending: false });
     if (error) toast.error("Erro ao carregar: " + error.message);
     setReviews(data || []);
     setLoading(false);
-  };
+  }, [tenantId]);
 
   useEffect(() => {
     fetchReviews();
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session?.user) fetchReviews();
     });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+
+    const effectiveTenantId = tenantId;
+    if (!effectiveTenantId) {
+      return () => sub.subscription.unsubscribe();
+    }
+
+    const channelTopic = `admin-reviews-realtime-${effectiveTenantId}`;
+    const channel = supabase
+      .channel(channelTopic)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'appointment_reviews',
+        filter: `tenant_id=eq.${effectiveTenantId}`
+      }, (payload) => {
+        console.log("[REVIEWS_ADMIN_REALTIME] Change detected:", payload.eventType, payload.new?.id || payload.old?.id);
+        fetchReviews();
+      })
+      .subscribe((status, err) => {
+        console.log("[REVIEWS_ADMIN_REALTIME_STATUS]", { topic: channelTopic, status, error: err ? err.message : null });
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          fetchReviews();
+        }
+      });
+
+    return () => {
+      sub.subscription.unsubscribe();
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, fetchReviews]);
 
   const moderate = async (id: string, action: "approve" | "reject" | "hide" | "show") => {
     const { data: user } = await supabase.auth.getUser();

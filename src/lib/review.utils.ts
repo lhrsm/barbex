@@ -53,21 +53,39 @@ export function resolveReviewState(app: any, reviewsStatus?: 'success' | 'error'
   }
 
   // 3. Avaliação enviada (via relação appointment_reviews, flag ou reviewStatus)
-  const review = app.appointment_reviews || app.review;
+  const rawReview = (Array.isArray(app.appointment_reviews) && app.appointment_reviews.length > 0)
+    ? app.appointment_reviews[0]
+    : (app.review || (!Array.isArray(app.appointment_reviews) ? app.appointment_reviews : null));
+
   const isRealReview = Boolean(
-    review && (
-      review.submitted_at ||
-      (review.rating != null && Number(review.rating) > 0) ||
-      review.testimonial_status === "approved" ||
-      review.testimonial_status === "rejected" ||
-      review.testimonial_status === "submitted"
+    rawReview && (
+      rawReview.submitted_at ||
+      (rawReview.rating != null && Number(rawReview.rating) > 0) ||
+      rawReview.barbershop_rating != null ||
+      rawReview.service_rating != null ||
+      rawReview.barber_rating != null ||
+      rawReview.testimonial_status === "approved" ||
+      rawReview.testimonial_status === "rejected" ||
+      rawReview.testimonial_status === "pending" ||
+      rawReview.testimonial_status === "submitted"
     )
   );
 
   const hasSubmittedReview = isRealReview || app.review_decision === "submitted";
 
   if (hasSubmittedReview) {
-    const moderation = (review?.testimonial_status || (app._review_id ? "approved" : "pending")) as "pending" | "approved" | "rejected";
+    const rawStatus = String(rawReview?.testimonial_status || '').toLowerCase();
+    const moderation: "pending" | "approved" | "rejected" =
+      rawStatus === "approved"
+        ? "approved"
+        : rawStatus === "rejected"
+        ? "rejected"
+        : rawStatus === "pending" || rawStatus === "submitted"
+        ? "pending"
+        : app._review_id
+        ? "approved"
+        : "pending";
+
     const label =
       moderation === "approved"
         ? "✓ Avaliado"
