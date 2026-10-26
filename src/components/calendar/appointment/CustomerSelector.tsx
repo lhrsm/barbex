@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronsUpDown, Search, Check, UserPlus, Crown, Pencil } from "lucide-react";
+import { ChevronsUpDown, Search, Check, UserPlus, Crown, Pencil, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,10 @@ interface Props {
 export function CustomerSelector({ customers, value, onChange, onCreateNew, error }: Props) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const [highlightedIndex, setHighlightedIndex] = React.useState(0);
+  const listRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
   const selected = customers.find((c) => c.id === value);
 
   const list = React.useMemo(() => {
@@ -33,10 +37,47 @@ export function CustomerSelector({ customers, value, onChange, onCreateNew, erro
       .slice(0, 60);
   }, [customers, query]);
 
+  // Keep highlighted item visible
+  React.useEffect(() => {
+    if (open && listRef.current) {
+      const activeEl = listRef.current.children[highlightedIndex] as HTMLElement;
+      if (activeEl && typeof activeEl.scrollIntoView === "function") {
+        activeEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [highlightedIndex, open]);
+
+  // Reset highlight and query when opening/closing
+  React.useEffect(() => {
+    if (open) {
+      const currentIndex = list.findIndex((c) => c.id === value);
+      setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setQuery("");
+    }
+  }, [open, list, value]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1 < list.length ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : list.length - 1));
+    } else if (e.key === "Enter" && list[highlightedIndex]) {
+      e.preventDefault();
+      onChange(list[highlightedIndex].id);
+      setOpen(false);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
           Cliente
         </label>
         <Button
@@ -51,14 +92,19 @@ export function CustomerSelector({ customers, value, onChange, onCreateNew, erro
         </Button>
       </div>
 
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <button
             type="button"
             aria-label="Buscar e selecionar cliente"
+            aria-expanded={open}
             className={cn(
-              "flex w-full items-center gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              error ? "border-destructive" : "border-border",
+              "flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 shadow-xs cursor-pointer",
+              error
+                ? "border-destructive/60 bg-red-50/30 text-destructive"
+                : open
+                ? "border-gold/60 bg-gold/5 ring-1 ring-gold/20 text-zinc-900"
+                : "border-zinc-200/90 bg-zinc-50/70 hover:bg-zinc-100/70 hover:border-zinc-300 text-zinc-900",
             )}
           >
             <EntityAvatar
@@ -68,73 +114,112 @@ export function CustomerSelector({ customers, value, onChange, onCreateNew, erro
               size={44}
             />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-bold text-foreground">
+              <span className="block truncate text-sm font-bold text-zinc-900">
                 {selected?.name || "Buscar por nome, telefone ou e-mail"}
               </span>
-              <span className="block truncate text-xs text-muted-foreground">
+              <span className="block truncate text-xs text-zinc-500 font-medium">
                 {selected?.phone || "Nenhum cliente selecionado"}
               </span>
             </span>
             {selected ? (
-              <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
-                <Pencil className="h-3.5 w-3.5" /> Alterar
+              <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-200/80 transition-colors">
+                <Pencil className="h-3 w-3 text-zinc-500" /> Alterar
               </span>
             ) : (
-              <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <ChevronsUpDown className="h-4 w-4 shrink-0 text-zinc-400" />
             )}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[--radix-popover-trigger-width] p-0">
-          <div className="flex items-center gap-2 border-b px-3 py-2">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <PopoverContent
+          align="start"
+          side="bottom"
+          sideOffset={6}
+          avoidCollisions={true}
+          collisionPadding={12}
+          className="w-[--radix-popover-trigger-width] min-w-[280px] max-w-[calc(100vw-32px)] p-0 bg-white border border-zinc-200/90 rounded-2xl shadow-2xl z-[60] overflow-hidden text-zinc-900"
+        >
+          <div className="flex items-center gap-2.5 border-b border-zinc-100 px-3.5 py-2.5 bg-zinc-50/70">
+            <Search className="h-4 w-4 shrink-0 text-zinc-400" />
             <Input
+              ref={inputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nome, telefone ou e-mail"
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setHighlightedIndex(0);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Buscar por nome, telefone ou e-mail..."
               aria-label="Buscar cliente"
-              className="h-8 border-0 p-0 shadow-none focus-visible:ring-0"
+              className="h-8 border-0 bg-transparent p-0 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-0 shadow-none"
             />
-          </div>
-          <div className="max-h-72 overflow-y-auto p-1">
-            {list.length === 0 && (
-              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                Nenhum cliente encontrado.
-              </p>
-            )}
-            {list.map((c) => (
+            {query && (
               <button
-                key={c.id}
                 type="button"
                 onClick={() => {
-                  onChange(c.id);
-                  setOpen(false);
+                  setQuery("");
+                  inputRef.current?.focus();
                 }}
-                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-zinc-400 hover:text-zinc-600 p-0.5 rounded transition-colors"
+                aria-label="Limpar busca"
               >
-                <EntityAvatar
-                  imageUrl={resolveImageUrl(c)}
-                  name={c.name}
-                  entityType="customer"
-                  size={40}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-semibold text-foreground">{c.name}</span>
-                    {c.is_subscriber && (
-                      <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-label="Assinante" />
-                    )}
-                  </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {c.phone || c.email || "Sem contato"}
-                  </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    Créditos: {formatBRL(Number(c.credits ?? c.credit_balance ?? 0))} · Cashback:{" "}
-                    {formatBRL(Number(c.cashback_balance || 0))}
-                  </span>
-                </span>
-                {value === c.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                <X className="h-3.5 w-3.5" />
               </button>
-            ))}
+            )}
+          </div>
+          <div
+            ref={listRef}
+            className="max-h-[min(300px,calc(var(--radix-popover-content-available-height,300px)-52px))] overflow-y-auto overscroll-contain p-1.5 custom-scrollbar"
+            style={{ WebkitOverflowScrolling: "touch" }}
+            onWheel={(e) => e.stopPropagation()}
+          >
+            {list.length === 0 ? (
+              <div className="px-3 py-8 text-center text-xs font-medium text-zinc-500">
+                Nenhum cliente encontrado{query ? ` para "${query}"` : ""}.
+              </div>
+            ) : (
+              list.map((c, index) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(c.id);
+                    setOpen(false);
+                  }}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors cursor-pointer select-none outline-none",
+                    value === c.id
+                      ? "bg-gold/10 text-gold-950 font-bold"
+                      : highlightedIndex === index
+                      ? "bg-zinc-100 text-zinc-900"
+                      : "hover:bg-zinc-50 text-zinc-800",
+                  )}
+                >
+                  <EntityAvatar
+                    imageUrl={resolveImageUrl(c)}
+                    name={c.name}
+                    entityType="customer"
+                    size={40}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-xs font-bold text-zinc-900">{c.name}</span>
+                      {c.is_subscriber && (
+                        <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-label="Assinante" />
+                      )}
+                    </span>
+                    <span className="block truncate text-[11px] text-zinc-500 font-medium">
+                      {c.phone || c.email || "Sem contato"}
+                    </span>
+                    <span className="block truncate text-[10px] text-zinc-400">
+                      Créditos: {formatBRL(Number(c.credits ?? c.credit_balance ?? 0))} · Cashback:{" "}
+                      {formatBRL(Number(c.cashback_balance || 0))}
+                    </span>
+                  </span>
+                  {value === c.id && <Check className="h-4 w-4 shrink-0 text-gold" />}
+                </button>
+              ))
+            )}
           </div>
         </PopoverContent>
       </Popover>
