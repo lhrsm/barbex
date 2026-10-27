@@ -213,6 +213,8 @@ function PublicReviewPage() {
               barberName={data.barber_name}
               barberAvatar={data.barber_avatar}
               pixKey={data.barber_pix_key}
+              pixKeyType={data.barber_pix_key_type}
+              pixQrCodeUrl={data.barber_pix_qr_code_url}
             />
           )}
         </div>

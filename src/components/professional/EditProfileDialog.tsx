@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, X, Loader2 } from "lucide-react";
+import { Camera, Save, X, Loader2, QrCode } from "lucide-react";
+import { validatePixKey, normalizePixKey } from "@/utils/pix-validator";
 
 export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,10 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
     avatar_url: "",
     active: true,
     category: "",
-    specialties_string: ""
+    specialties_string: "",
+    pix_key: "",
+    pix_key_type: "cpf",
+    accepts_tips: false,
   });
 
   useEffect(() => {
@@ -34,7 +38,10 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
         avatar_url: barber.avatar_url || "",
         active: barber.active !== false,
         category: barber.category || "",
-        specialties_string: Array.isArray(barber.specialties) ? barber.specialties.join(", ") : ""
+        specialties_string: Array.isArray(barber.specialties) ? barber.specialties.join(", ") : "",
+        pix_key: barber.pix_key || "",
+        pix_key_type: barber.pix_key_type || "cpf",
+        accepts_tips: barber.accepts_tips ?? false,
       });
     }
   }, [barber, isOpen]);
@@ -101,26 +108,77 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
         .map(s => s.trim())
         .filter(s => s.length > 0);
 
-      const { error } = await supabase
+      // Validação coerente para formatos PIX quando gorjetas estiverem habilitadas
+      if (formData.accepts_tips && formData.pix_key.trim()) {
+        const pixValidation = validatePixKey(formData.pix_key, formData.pix_key_type);
+        if (!pixValidation.isValid) {
+          toast.error(`Chave PIX inválida: ${pixValidation.errorMessage}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const normalizedPixKey = (formData.accepts_tips && formData.pix_key.trim())
+        ? normalizePixKey(formData.pix_key, formData.pix_key_type)
+        : formData.pix_key.trim();
+
+      // 1. Atualização de dados PIX exclusivamente via RPC autorizada (Gate 3 - Sem fallback inseguro)
+      const hasPixConfigured = formData.accepts_tips || Boolean(formData.pix_key.trim());
+      const pixChanged = (
+        normalizedPixKey !== (barber.pix_key || "") ||
+        formData.pix_key_type !== (barber.pix_key_type || "cpf") ||
+        formData.accepts_tips !== (barber.accepts_tips ?? false)
+      );
+
+      if (hasPixConfigured || pixChanged) {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_barber_pix_info", {
+          p_barber_id: barber.id,
+          p_pix_key: normalizedPixKey,
+          p_pix_key_type: formData.pix_key_type,
+          p_accepts_tips: formData.accepts_tips,
+        });
+
+        if (rpcErr) {
+          console.error("[EditProfileDialog] Erro na RPC de PIX:", rpcErr);
+          toast.error(`Não foi possível salvar as configurações de PIX: ${rpcErr.message}`);
+          setLoading(false);
+          return; // Aborta imediatamente sem salvar parcialmente e sem fallback inseguro
+        }
+
+        if (!rpcRes || !(rpcRes as any).success) {
+          const failureMsg = (rpcRes as any)?.error || "Erro de validação no servidor ao atualizar PIX.";
+          console.error("[EditProfileDialog] Falha na validação do servidor:", failureMsg);
+          toast.error(`Erro ao salvar PIX: ${failureMsg}`);
+          setLoading(false);
+          return; // Aborta imediatamente sem salvar parcialmente
+        }
+      }
+
+      // 2. Persistência dos dados de perfil estritamente autorizados ao profissional
+      // Exclui colunas administrativas e não envia dados de PIX diretamente na tabela barbers
+      const updatePayload = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        bio: formData.bio,
+        avatar_url: formData.avatar_url,
+        active: formData.active,
+        category: formData.category,
+        specialties: specialties,
+      };
+
+      const { error: profileError } = await supabase
         .from("barbers")
-        .update({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          bio: formData.bio,
-          avatar_url: formData.avatar_url,
-          active: formData.active,
-          category: formData.category,
-          specialties: specialties
-        })
+        .update(updatePayload)
         .eq("id", barber.id);
       
-      if (error) throw error;
-      toast.success("Perfil atualizado com sucesso!");
+      if (profileError) throw profileError;
+      toast.success("Perfil e configurações atualizados com sucesso!");
       if (onUpdate) onUpdate();
       onClose();
     } catch (e: any) {
-      toast.error("Erro ao salvar: " + e.message);
+      console.error("[EditProfileDialog] Erro ao salvar perfil:", e);
+      toast.error("Erro ao salvar: " + (e.message || "Erro desconhecido"));
     } finally {
       setLoading(false);
     }
@@ -248,6 +306,69 @@ export function EditProfileDialog({ isOpen, onClose, barber, onUpdate }: any) {
               onCheckedChange={(checked) => setFormData({...formData, active: checked})}
               className="data-[state=checked]:bg-gold"
             />
+          </div>
+
+          {/* Seção PIX para Gorjetas */}
+          <div className="p-4 bg-zinc-950/80 rounded-xl border border-gold/20 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <QrCode className="h-4 w-4 text-gold" />
+                  <Label className="text-gold font-black uppercase text-[10px] tracking-wider">
+                    PIX para Gorjetas Digitais
+                  </Label>
+                </div>
+                <p className="text-[10px] text-gray-400 font-medium leading-tight">
+                  Permite aos clientes enviarem gorjetas diretamente para sua conta ao avaliar o atendimento.
+                </p>
+              </div>
+              <Switch 
+                id="edit-profile-accepts-tips"
+                checked={formData.accepts_tips}
+                onCheckedChange={(checked) => setFormData({...formData, accepts_tips: checked})}
+                className="data-[state=checked]:bg-gold"
+              />
+            </div>
+
+            {formData.accepts_tips && (
+              <div className="space-y-3 pt-2 border-t border-gold/10">
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300 font-semibold text-xs">Tipo de Chave PIX</Label>
+                  <select
+                    id="edit-profile-pix-type"
+                    value={formData.pix_key_type}
+                    onChange={(e) => setFormData({ ...formData, pix_key_type: e.target.value })}
+                    className="w-full bg-[#05070d] border border-gold/20 focus-visible:ring-gold/40 rounded-xl h-11 text-white font-medium text-xs px-3 focus:outline-none"
+                  >
+                    <option value="cpf">CPF</option>
+                    <option value="cnpj">CNPJ</option>
+                    <option value="phone">Telefone / Celular</option>
+                    <option value="email">E-mail</option>
+                    <option value="random">Chave Aleatória (EVP)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300 font-semibold text-xs">Chave PIX</Label>
+                  <Input 
+                    id="edit-profile-pix-key"
+                    placeholder={
+                      formData.pix_key_type === 'cpf' ? '000.000.000-00' :
+                      formData.pix_key_type === 'cnpj' ? '00.000.000/0000-00' :
+                      formData.pix_key_type === 'phone' ? '(11) 99999-9999' :
+                      formData.pix_key_type === 'email' ? 'seu-pix@exemplo.com' :
+                      'Chave aleatória de 32 ou 36 caracteres'
+                    }
+                    value={formData.pix_key}
+                    onChange={(e) => setFormData({...formData, pix_key: e.target.value})}
+                    className="bg-[#05070d] border-gold/20 focus-visible:ring-gold/40 rounded-xl h-11 text-white placeholder:text-gray-600 font-medium text-xs"
+                  />
+                  <p className="text-[10px] text-zinc-400">
+                    O valor é transferido 100% diretamente ao profissional via app bancário do cliente.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

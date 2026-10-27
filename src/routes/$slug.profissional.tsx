@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Calendar, CircleDollarSign, Clock, Users, Scissors, TrendingUp, Edit2, 
   User as UserIcon, LogOut, RefreshCcw, CheckCircle2, Phone, Mail, UserCheck, X,
-  AlertCircle, Eye, ChevronLeft, ChevronRight, Filter, Crown, Plus, MessageSquare as MessageSquareText, Sparkles
+  AlertCircle, Eye, ChevronLeft, ChevronRight, Filter, Crown, Plus, MessageSquare as MessageSquareText, Sparkles,
+  QrCode, Copy, Check
 } from "lucide-react";
 import { format, startOfDay, endOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -79,6 +80,7 @@ function ProfessionalDashboard() {
   const [commissionSummary, setCommissionSummary] = useState<any>(null);
   const [appointmentFilter, setAppointmentFilter] = useState<'today'|'week'|'month'|'completed'|'cancelled'|'pending'>('today');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [copiedPixKey, setCopiedPixKey] = useState(false);
 
   // ——— Camada de leitura premium (somente apresentação, zero regra de negócio) ———
   const { reviews, productSales } = useProfessionalExtras(session?.barber_id, !!session?.barber_id);
@@ -1061,6 +1063,100 @@ function ProfessionalDashboard() {
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Seção PIX para Gorjetas Digitais */}
+              <Card className="bg-[#0b0f17] border-gold/10 shadow-[0_4px_16px_rgba(0,0,0,0.3)] rounded-2xl overflow-hidden md:col-span-2">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-gold/10 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center">
+                      <QrCode className="h-5 w-5 text-gold" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-black text-white">PIX para Gorjetas Digitais</CardTitle>
+                      <CardDescription className="text-xs text-zinc-400">
+                        Recebimento direto de gorjetas via PIX dos clientes na avaliação pós-atendimento
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowEditProfile(true)}
+                    className="bg-transparent hover:bg-gold/10 text-gold border border-gold/30 rounded-xl font-black px-6 h-10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Edit2 className="h-4 w-4 mr-2" /> Configurar PIX
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                  {barber?.accepts_tips ? (
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="bg-[#05070d] p-4 rounded-xl border border-gold/10 space-y-1">
+                        <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400">Status</span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-emerald-400 font-bold text-sm">Habilitado</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#05070d] p-4 rounded-xl border border-gold/10 space-y-1">
+                        <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400">Tipo de Chave</span>
+                        <p className="text-white font-bold text-sm uppercase">
+                          {barber?.pix_key_type === 'cpf' ? 'CPF' :
+                           barber?.pix_key_type === 'cnpj' ? 'CNPJ' :
+                           barber?.pix_key_type === 'phone' ? 'Telefone / WhatsApp' :
+                           barber?.pix_key_type === 'email' ? 'E-mail' :
+                           barber?.pix_key_type === 'random' ? 'Chave Aleatória (EVP)' :
+                           barber?.pix_key_type || 'Não definido'}
+                        </p>
+                      </div>
+
+                      <div className="bg-[#05070d] p-4 rounded-xl border border-gold/10 space-y-1">
+                        <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400">Chave Cadastrada</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-gold font-mono font-bold text-sm truncate">
+                            {barber?.pix_key || "Nenhuma chave cadastrada"}
+                          </span>
+                          {barber?.pix_key && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                navigator.clipboard.writeText(barber.pix_key);
+                                setCopiedPixKey(true);
+                                toast.success("Chave PIX copiada!");
+                                setTimeout(() => setCopiedPixKey(false), 2000);
+                              }}
+                              className="h-8 px-2 text-zinc-400 hover:text-gold hover:bg-gold/10"
+                              title="Copiar Chave PIX"
+                            >
+                              {copiedPixKey ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-3 bg-gold/5 border border-gold/15 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed">
+                        <strong className="text-gold font-semibold">Transferência direta P2P: </strong>
+                        As gorjetas digitais são pagas diretamente pelo cliente para a sua chave bancária, sem retenção da barbearia e sem alterar a conciliação do caixa.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center bg-[#05070d] rounded-xl border border-dashed border-zinc-800 p-6">
+                      <QrCode className="h-10 w-10 text-zinc-600 mb-3" />
+                      <h4 className="text-white font-bold text-sm">Gorjetas digitais desabilitadas</h4>
+                      <p className="text-xs text-zinc-400 max-w-md mt-1 mb-4">
+                        Seu perfil atualmente não está configurado para receber gorjetas digitais via PIX dos clientes.
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowEditProfile(true)}
+                        className="bg-gold hover:bg-[#B8962E] text-black font-black text-xs rounded-xl"
+                      >
+                        Habilitar Recebimento de Gorjetas
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

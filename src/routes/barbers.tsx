@@ -62,6 +62,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { PayCommissionDialog } from "@/components/commissions/PayCommissionDialog";
 import { BarberPerformanceDialog } from "@/components/barbers/BarberPerformanceDialog";
 import { ProfessionalTimeOffDialog } from "@/components/barbers/ProfessionalTimeOffDialog";
+import { validatePixKey, normalizePixKey } from "@/utils/pix-validator";
 
 export const Route = createFileRoute("/barbers")({
   component: BarbersComponent,
@@ -121,6 +122,10 @@ function BarbersComponent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [teamMetrics, setTeamMetrics] = useState<Record<string, { total: number; completed: number; scheduled: number }>>({});
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -142,6 +147,9 @@ function BarbersComponent() {
     commission_bonus_value: 0,
     monthly_goal: 0,
     working_hours: DEFAULT_WORKING_HOURS,
+    pix_key: "",
+    pix_key_type: "cpf",
+    accepts_tips: true,
   });
   const [uploading, setUploading] = useState(false);
   const [performanceBarber, setPerformanceBarber] = useState<any>(null);
@@ -198,8 +206,7 @@ function BarbersComponent() {
     let query = supabase.from("barbers").select(
       `
       *,
-      barber_services(service_id),
-      appointments:appointments!appointments_barber_id_fkey(count)
+      barber_services(service_id)
     `,
     );
     if (tenantOwnerUserId && tenantOwnerUserId !== effectiveTenantId) {
@@ -215,6 +222,38 @@ function BarbersComponent() {
     } else {
       const list = data || [];
       setBarbers(list);
+
+      // Consulta métricas reais de agendamentos via RPC agregada no servidor (Gate 4 - Escalável e isolada)
+      setMetricsLoading(true);
+      setMetricsError(null);
+      try {
+        const { data: rpcSummary, error: rpcSummaryError } = await supabase.rpc("get_team_appointments_summary", {
+          p_tenant_id: effectiveTenantId,
+        });
+
+        if (rpcSummaryError) {
+          console.error("[TEAM_METRICS_ERROR]", rpcSummaryError);
+          // Não mascara erros de permissão ou execução com fallback silencioso
+          setMetricsError(rpcSummaryError.message || "Falha na consulta de métricas da equipe.");
+        } else if (Array.isArray(rpcSummary)) {
+          const counts: Record<string, { total: number; completed: number; scheduled: number }> = {};
+          rpcSummary.forEach((r: any) => {
+            if (!r.barber_id) return;
+            counts[r.barber_id] = {
+              total: Number(r.total_appointments || 0),
+              completed: Number(r.completed_appointments || 0),
+              scheduled: Number(r.scheduled_appointments || 0),
+            };
+          });
+          setTeamMetrics(counts);
+        }
+      } catch (err: any) {
+        console.error("[TEAM_METRICS_CATCH]", err);
+        setMetricsError(err?.message || "Erro ao consultar métricas da equipe.");
+      } finally {
+        setMetricsLoading(false);
+      }
+
       const summaries = await Promise.all(
         list.map(async (barber: any) => {
           const { data: summary } = await supabase.rpc("get_barber_commission_summary", {
@@ -288,10 +327,25 @@ function BarbersComponent() {
     console.log("NEW BARBER DATA:", newBarber);
     console.log("SELECTED SERVICES:", selectedServices);
 
+    if (newBarber.accepts_tips && newBarber.pix_key) {
+      const check = validatePixKey(newBarber.pix_key, newBarber.pix_key_type);
+      if (!check.isValid) {
+        toast.error(`Chave PIX inválida: ${check.error}`);
+        return;
+      }
+    }
+
+    const normalizedPixKey = newBarber.accepts_tips && newBarber.pix_key
+      ? normalizePixKey(newBarber.pix_key, newBarber.pix_key_type)
+      : null;
+
     const { data: barber, error: barberError } = await supabase
       .from("barbers")
       .insert({
         ...newBarber,
+        pix_key: normalizedPixKey,
+        pix_key_type: newBarber.accepts_tips && newBarber.pix_key ? newBarber.pix_key_type : null,
+        accepts_tips: newBarber.accepts_tips,
         tenant_id: effectiveTenantId,
         user_id: user.id,
         active: true,
@@ -356,6 +410,9 @@ function BarbersComponent() {
       commission_bonus_value: 0,
       monthly_goal: 0,
       working_hours: DEFAULT_WORKING_HOURS,
+      pix_key: "",
+      pix_key_type: "cpf",
+      accepts_tips: true,
     });
     setSelectedServices([]);
 
@@ -380,6 +437,18 @@ function BarbersComponent() {
     console.log("--- START UPDATE BARBER ---");
     console.log("UPDATING BARBER ID:", editingBarber.id);
 
+    if (editingBarber.accepts_tips && editingBarber.pix_key) {
+      const check = validatePixKey(editingBarber.pix_key, editingBarber.pix_key_type);
+      if (!check.isValid) {
+        toast.error(`Chave PIX inválida: ${check.error}`);
+        return;
+      }
+    }
+
+    const normalizedPixKey = editingBarber.accepts_tips && editingBarber.pix_key
+      ? normalizePixKey(editingBarber.pix_key, editingBarber.pix_key_type)
+      : null;
+
     const payload = {
       name: editingBarber.name,
       phone: editingBarber.phone,
@@ -392,8 +461,8 @@ function BarbersComponent() {
       commission_bonus_value: editingBarber.commission_bonus_value ?? 0,
       monthly_goal: editingBarber.monthly_goal ?? 0,
       working_hours: editingBarber.working_hours,
-      pix_key: editingBarber.pix_key ?? null,
-      pix_key_type: editingBarber.pix_key_type ?? null,
+      pix_key: normalizedPixKey,
+      pix_key_type: editingBarber.accepts_tips && editingBarber.pix_key ? editingBarber.pix_key_type : null,
       pix_qr_code_url: editingBarber.pix_qr_code_url ?? null,
 
       accepts_tips: editingBarber.accepts_tips ?? true,
@@ -952,6 +1021,72 @@ function BarbersComponent() {
                       </div>
                     </div>
 
+                    {/* Seção PIX para Gorjetas Digitais no Cadastro */}
+                    <div className="space-y-3 border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-gold font-bold text-xs uppercase tracking-wider">
+                          PIX para Gorjetas Digitais
+                        </Label>
+                        <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer">
+                          <input
+                            id="new-barber-accepts-tips"
+                            type="checkbox"
+                            checked={newBarber.accepts_tips}
+                            onChange={(e) => setNewBarber({ ...newBarber, accepts_tips: e.target.checked })}
+                            className="h-4 w-4 accent-amber-500 rounded"
+                          />
+                          Aceita gorjetas
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Clientes poderão transferir gorjetas diretamente ao profissional após avaliar o atendimento.
+                      </p>
+                      {newBarber.accepts_tips && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <div className="space-y-1">
+                            <Label htmlFor="new-barber-pix-type" className="text-xs text-white/70">
+                              Tipo da chave
+                            </Label>
+                            <Select
+                              value={newBarber.pix_key_type}
+                              onValueChange={(v) => setNewBarber({ ...newBarber, pix_key_type: v })}
+                            >
+                              <SelectTrigger id="new-barber-pix-type" className="bg-[#0b0f17] border-amber-500/20 text-white h-10 rounded-xl">
+                                <SelectValue placeholder="Selecionar" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#0b0f17] border-amber-500/20 text-white">
+                                <SelectItem value="cpf">CPF</SelectItem>
+                                <SelectItem value="cnpj">CNPJ</SelectItem>
+                                <SelectItem value="phone">Telefone</SelectItem>
+                                <SelectItem value="email">E-mail</SelectItem>
+                                <SelectItem value="random">Chave aleatória</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="new-barber-pix-key" className="text-xs text-white/70">
+                              Chave PIX
+                            </Label>
+                            <Input
+                              id="new-barber-pix-key"
+                              placeholder={
+                                newBarber.pix_key_type === "cpf"
+                                  ? "000.000.000-00"
+                                  : newBarber.pix_key_type === "phone"
+                                  ? "(00) 00000-0000"
+                                  : newBarber.pix_key_type === "email"
+                                  ? "nome@exemplo.com"
+                                  : "Informe a chave"
+                              }
+                              value={newBarber.pix_key}
+                              onChange={(e) => setNewBarber({ ...newBarber, pix_key: e.target.value })}
+                              className="bg-[#0b0f17] border-amber-500/20 text-white h-10 rounded-xl"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <Button
                       type="submit"
                       className="w-full bg-gold text-black hover:bg-[#B8962E] hover:scale-105 hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] transition-all h-12 rounded-xl font-bold uppercase tracking-tight"
@@ -1132,11 +1267,27 @@ function BarbersComponent() {
                         </div>
                         <span className="truncate">{barber.email || "Não informado"}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-white/60 text-sm hover:text-white transition-colors">
-                        <div className="p-1.5 rounded-lg bg-white/5">
+                      <div className="flex items-start gap-3 text-white/60 text-sm hover:text-white transition-colors">
+                        <div className="p-1.5 rounded-lg bg-white/5 shrink-0 mt-0.5">
                           <BarChart3 size={14} className="text-amber-500/70" />
                         </div>
-                        <span>{barber.appointments?.[0]?.count || 0} Atendimentos</span>
+                        {metricsLoading ? (
+                          <span className="text-xs text-amber-500/70 animate-pulse">Carregando métricas...</span>
+                        ) : metricsError ? (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-red-400 font-bold" title={metricsError}>Erro nas métricas</span>
+                            <span className="text-[10px] text-red-400/70">Não foi possível carregar contagens</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-white">
+                              {teamMetrics[barber.id]?.completed || 0} Atendimentos concluídos
+                            </span>
+                            <span className="text-[10px] text-white/50">
+                              {teamMetrics[barber.id]?.total || 0} total registrado (histórico)
+                            </span>
+                          </div>
+                        )}
                       </div>
                       {pendingCommission > 0 && (
                         <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3">
@@ -1459,7 +1610,7 @@ function BarbersComponent() {
                           setEditingBarber({ ...editingBarber, pix_key_type: v })
                         }
                       >
-                        <SelectTrigger id="edit_pix_type">
+                        <SelectTrigger id="edit-barber-pix-type">
                           <SelectValue placeholder="Selecionar" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1474,6 +1625,7 @@ function BarbersComponent() {
                     <div className="flex items-end gap-2">
                       <label className="flex items-center gap-2 text-xs">
                         <input
+                          id="edit-barber-accepts-tips"
                           type="checkbox"
                           checked={editingBarber.accepts_tips ?? true}
                           onChange={(e) =>
@@ -1486,6 +1638,7 @@ function BarbersComponent() {
                     </div>
                   </div>
                   <Input
+                    id="edit-barber-pix-key"
                     placeholder="Chave PIX"
                     value={editingBarber.pix_key || ""}
                     onChange={(e) =>
