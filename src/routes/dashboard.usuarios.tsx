@@ -873,7 +873,7 @@ function TeamManagementPage() {
                         <Pencil className="h-3.5 w-3.5" />
                         Editar Dados
                       </Button>
-                      {isAuthorizedAdmin && member.id !== user?.id && member.id !== tenantId && member.role !== "super_admin" && (
+                      {isAuthorizedAdmin && member.userId !== user?.id && member.userId !== tenantId && member.role !== "super_admin" && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -1011,7 +1011,7 @@ function TeamManagementPage() {
                               <Pencil className="h-3 w-3" />
                               Editar
                             </Button>
-                            {isAuthorizedAdmin && member.id !== user?.id && member.id !== tenantId && member.role !== "super_admin" && (
+                            {isAuthorizedAdmin && member.userId !== user?.id && member.userId !== tenantId && member.role !== "super_admin" && (
                               <Button
                                 variant="ghost"
                                 size="sm"

@@ -44,6 +44,21 @@ interface ChangeMemberRoleModalProps {
   onSuccess?: () => void;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function resolveCanonicalUserId(member: UnifiedTeamMember | null | undefined): string | null {
+  if (!member) return null;
+  // 1. Prioridade canônica: member.userId (UUID real de auth.users / tenant_memberships.user_id)
+  if (member.userId && typeof member.userId === "string" && UUID_REGEX.test(member.userId.trim())) {
+    return member.userId.trim();
+  }
+  // 2. Se member.id já for um UUID puro sem prefixo sintético (ex: "staff-" ou "barber-")
+  if (member.id && typeof member.id === "string" && UUID_REGEX.test(member.id.trim())) {
+    return member.id.trim();
+  }
+  return null;
+}
+
 const AVAILABLE_ROLES = [
   { value: "reception", label: "Recepcionista", icon: Headphones, desc: "Agendamentos, atendimento a clientes e escala diária" },
   { value: "financial", label: "Financeiro", icon: DollarSign, desc: "Gestão do caixa, DRE, conciliação e quitação de comissões" },
@@ -71,9 +86,11 @@ export function ChangeMemberRoleModal({
     }
   }, [isOpen, member]);
 
-  const isSelf = member?.id === currentUserId;
-  const isOwner = member?.id === tenantId;
-  const isBlocked = isSelf || isOwner;
+  const canonicalUserId = resolveCanonicalUserId(member);
+  const isSelf = Boolean(canonicalUserId && currentUserId && canonicalUserId === currentUserId);
+  const isOwner = Boolean(canonicalUserId && tenantId && canonicalUserId === tenantId);
+  const isMissingCanonicalId = !canonicalUserId;
+  const isBlocked = isSelf || isOwner || isMissingCanonicalId;
 
   const currentRoleInfo = AVAILABLE_ROLES.find(
     (r) => r.value === member?.category || r.value === member?.role
@@ -82,8 +99,8 @@ export function ChangeMemberRoleModal({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!member?.id || !tenantId) {
-        throw new Error("Dados incompletos do colaborador ou barbearia.");
+      if (!canonicalUserId || !tenantId) {
+        throw new Error("Não foi possível identificar o identificador canônico (UUID) do colaborador para esta operação.");
       }
       if (isSelf) {
         throw new Error("Não é permitido alterar seu próprio cargo.");
@@ -94,7 +111,7 @@ export function ChangeMemberRoleModal({
 
       const { data, error } = await (supabase.rpc as any)("change_tenant_team_member_role", {
         p_tenant_id: tenantId,
-        p_target_user_id: member.id,
+        p_target_user_id: canonicalUserId,
         p_new_role: selectedRole,
       });
 
@@ -151,7 +168,9 @@ export function ChangeMemberRoleModal({
               <p className="mt-1 text-red-300/80">
                 {isSelf
                   ? "Por motivos de segurança e prevenção de autopromoção, você não pode alterar o seu próprio cargo."
-                  : "O proprietário principal da barbearia não pode ter seu cargo alterado por este menu."}
+                  : isOwner
+                  ? "O proprietário principal da barbearia não pode ter seu cargo alterado por este menu."
+                  : "Este colaborador não possui uma conta de usuário ativa (UUID) vinculada ao sistema para alteração de papéis de acesso."}
               </p>
             </div>
           </div>
