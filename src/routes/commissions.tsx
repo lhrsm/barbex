@@ -58,6 +58,8 @@ import {
 } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 import { PayCommissionDialog } from "@/components/commissions/PayCommissionDialog";
+import { usePermissions } from "@/hooks/use-permissions";
+import { canManageCommissionPayouts } from "@/lib/permissions.matrix";
 
 const PerformanceCenter = lazy(() => import("@/components/commissions/perf/PerformanceCenter"));
 
@@ -113,9 +115,21 @@ function today() {
 }
 
 function CommissionsPage() {
-  const { user, loading } = useAuth();
-  const { tenantId } = useTenant();
+  const { user, role, loading } = useAuth();
+  const { tenantId, membership, ownedShop } = useTenant();
+  const { hasPermission } = usePermissions();
   const effectiveTenantId = tenantId || user?.id;
+
+  const canManagePayouts = canManageCommissionPayouts({
+    role,
+    membershipRole: membership?.role,
+    isOwner:
+      ownedShop?.id === effectiveTenantId ||
+      user?.id === effectiveTenantId ||
+      membership?.role === "owner",
+    hasManagePermission: hasPermission("finances:manage"),
+  });
+
   const [from, setFrom] = useState(firstDay());
   const [to, setTo] = useState(today());
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -264,6 +278,14 @@ function CommissionsPage() {
       const accrued = bEntries.reduce((s, e) => s + Number(e.commission_amount ?? 0), 0);
       const paid = bEntries.reduce((s, e) => s + Number(e.paid_amount ?? 0), 0);
       const pending = accrued - paid;
+
+      const pendingEntries = bEntries.filter((e) => e.status === "pending");
+      const pendingCount = pendingEntries.length;
+      const pendingAmount = pendingEntries.reduce(
+        (s, e) => s + Number(e.commission_amount ?? 0),
+        0
+      );
+
       const goalPct = b.monthly_goal > 0 ? Math.min(100, (production / b.monthly_goal) * 100) : 0;
       const recurrent =
         uniqueCust > 0
@@ -282,6 +304,8 @@ function CommissionsPage() {
         accrued,
         paid,
         pending,
+        pendingCount,
+        pendingAmount,
         goalPct,
         recurrent,
       };
@@ -540,44 +564,53 @@ function CommissionsPage() {
                 </div>
               )}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {byBarber.map((b) => (
-                  <div
-                    key={b.barber.id}
-                    className="bg-[#0b0f17] border border-zinc-800/80 hover:border-emerald-500/30 rounded-2xl p-4 sm:p-5 transition-all hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-11 w-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0">
-                          <Users className="h-5 w-5 text-emerald-400" />
+                {byBarber.map((b) => {
+                  const canPayThisBarber =
+                    canManagePayouts &&
+                    !financialError &&
+                    b.pendingCount > 0 &&
+                    b.pendingAmount > 0;
+
+                  return (
+                    <div
+                      key={b.barber.id}
+                      className="bg-[#0b0f17] border border-zinc-800/80 hover:border-emerald-500/30 rounded-2xl p-4 sm:p-5 transition-all hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-11 w-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 grid place-items-center shrink-0">
+                            <Users className="h-5 w-5 text-emerald-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-base sm:text-lg font-black truncate">
+                              {b.barber.name}
+                            </h3>
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 mt-0.5">
+                              {b.barber.commission_type === "percentage" &&
+                                `${b.barber.commission_rate}%`}
+                              {b.barber.commission_type === "fixed" &&
+                                `${fmt(b.barber.commission_fixed_value)} / atend.`}
+                              {b.barber.commission_type === "hybrid" &&
+                                `${b.barber.commission_rate}% + ${fmt(
+                                  b.barber.commission_bonus_value,
+                                )}`}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <h3 className="text-base sm:text-lg font-black truncate">
-                            {b.barber.name}
-                          </h3>
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 mt-0.5">
-                            {b.barber.commission_type === "percentage" &&
-                              `${b.barber.commission_rate}%`}
-                            {b.barber.commission_type === "fixed" &&
-                              `${fmt(b.barber.commission_fixed_value)} / atend.`}
-                            {b.barber.commission_type === "hybrid" &&
-                              `${b.barber.commission_rate}% + ${fmt(
-                                b.barber.commission_bonus_value,
-                              )}`}
-                          </p>
-                        </div>
+                        {canPayThisBarber && (
+                          <PayCommissionDialog
+                            tenantId={effectiveTenantId}
+                            barberId={b.barber.id}
+                            barberName={b.barber.name}
+                            startDate={from}
+                            endDate={to}
+                            pendingAmount={b.pendingAmount}
+                            pendingCount={b.pendingCount}
+                            triggerClassName="w-full sm:w-auto h-9 text-xs"
+                            onPaid={load}
+                          />
+                        )}
                       </div>
-                      <PayCommissionDialog
-                        tenantId={effectiveTenantId}
-                        barberId={b.barber.id}
-                        barberName={b.barber.name}
-                        startDate={from}
-                        endDate={to}
-                        pendingAmount={b.pending}
-                        pendingCount={entries.filter((e) => e.barber_id === b.barber.id && e.status === "pending").length}
-                        triggerClassName="w-full sm:w-auto h-9 text-xs"
-                        onPaid={load}
-                      />
-                    </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                       <Metric label="Produção" value={fmt(b.production)} />
@@ -605,7 +638,8 @@ function CommissionsPage() {
                       </div>
                     )}
                   </div>
-                ))}
+                );
+              })}
               </div>
             </TabsContent>
 

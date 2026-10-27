@@ -8,6 +8,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PayCommissionDialog } from "@/components/commissions/PayCommissionDialog";
+import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
+import { usePermissions } from "@/hooks/use-permissions";
+import { canManageCommissionPayouts } from "@/lib/permissions.matrix";
 
 type BarberPeriodRange = { start: string | null; end: string | null };
 
@@ -42,6 +46,20 @@ export function BarbersTab({
   inBarberRange,
   onCommissionPaid,
 }: Props) {
+  const { user, role } = useAuth();
+  const { membership, ownedShop } = useTenant();
+  const { hasPermission } = usePermissions();
+
+  const canManagePayouts = canManageCommissionPayouts({
+    role,
+    membershipRole: membership?.role,
+    isOwner:
+      ownedShop?.id === tenantId ||
+      user?.id === tenantId ||
+      membership?.role === "owner",
+    hasManagePermission: hasPermission("finances:manage"),
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-end bg-card p-4 border border-border rounded-xl text-foreground">
@@ -134,7 +152,7 @@ export function BarbersTab({
                     <span className="text-muted-foreground">Ticket Médio</span>
                     <span className="font-medium text-white">R$ {avgTicket.toFixed(2)}</span>
                   </div>
-                  {commissionPending > 0 && (
+                  {canManagePayouts && commissionPending > 0 && pendingCount > 0 && (
                     <PayCommissionDialog
                       tenantId={tenantId}
                       barberId={barber.id}
@@ -142,7 +160,7 @@ export function BarbersTab({
                       startDate={barberPeriodRange.start}
                       endDate={barberPeriodRange.end}
                       pendingAmount={commissionPending}
-                      pendingCount={pendingCount || apptCount}
+                      pendingCount={pendingCount}
                       triggerClassName="w-full mt-3"
                       onPaid={onCommissionPaid}
                     />

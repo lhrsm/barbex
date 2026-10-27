@@ -1303,7 +1303,7 @@ function BarbersComponent() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5">
-                    {pendingCommission > 0 && user?.id && (
+                    {pendingCommission > 0 && pendingCount > 0 && user?.id && (
                       <PayCommissionDialog
                         tenantId={user.id}
                         barberId={barber.id}

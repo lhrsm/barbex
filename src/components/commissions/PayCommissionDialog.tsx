@@ -77,6 +77,11 @@ export function PayCommissionDialog({
   triggerLabel = "Pagar Comissão",
   onPaid,
 }: PayCommissionDialogProps) {
+  // R2E.26E.13D: Ocultar o botão quando não houver saldo pendente positivo elegível
+  if (pendingAmount <= 0 || pendingCount <= 0) {
+    return null;
+  }
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
