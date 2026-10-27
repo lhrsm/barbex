@@ -38,6 +38,18 @@ export function RefundsTab({
   setRefundSearchTerm,
   handleUpdateRefundStatus,
 }: Props) {
+  const requestedTotal = (refundRequests || [])
+    .filter((r) => r && r.status === "requested")
+    .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+  const paidTotal = (refundRequests || [])
+    .filter((r) => r && (r.status === "completed" || r.status === "paid"))
+    .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+  const creditsTotal = (refundRequests || [])
+    .filter((r) => r && (r.refund_type === "credits" || r.type === "credits") && (r.status === "completed" || r.status === "paid"))
+    .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
   return (
     <div className="pt-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -51,7 +63,7 @@ export function RefundsTab({
             </Badge>
           </div>
           <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest mb-1">Estornos Solicitados</p>
-          <h3 className="text-3xl font-black text-white">R$ 0.00</h3>
+          <h3 className="text-3xl font-black text-white">R$ {requestedTotal.toFixed(2)}</h3>
         </Card>
 
         <Card className="bg-zinc-900/40 border-zinc-800/50 rounded-2xl p-6">
@@ -64,7 +76,7 @@ export function RefundsTab({
             </Badge>
           </div>
           <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest mb-1">Estornos Pagos</p>
-          <h3 className="text-3xl font-black text-white">R$ 0.00</h3>
+          <h3 className="text-3xl font-black text-white">R$ {paidTotal.toFixed(2)}</h3>
         </Card>
 
         <Card className="bg-zinc-900/40 border-zinc-800/50 rounded-2xl p-6">
@@ -77,7 +89,7 @@ export function RefundsTab({
             </Badge>
           </div>
           <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest mb-1">Créditos Concedidos</p>
-          <h3 className="text-3xl font-black text-white">R$ 0.00</h3>
+          <h3 className="text-3xl font-black text-white">R$ {creditsTotal.toFixed(2)}</h3>
         </Card>
       </div>
 

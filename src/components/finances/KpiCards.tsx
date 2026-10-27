@@ -42,7 +42,11 @@ export function KpiCards({
   dateFilter,
 }: KpiCardsProps) {
   const requestedRefunds = (refundRequests || [])
-    .filter((r) => r.status === "requested")
+    .filter((r) => r && r.status === "requested")
+    .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+  const paidRefunds = (refundRequests || [])
+    .filter((r) => r && (r.status === "completed" || r.status === "paid"))
     .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
 
   const pendingPayments = appointments.reduce(
@@ -111,13 +115,13 @@ export function KpiCards({
 
           <Card className="bg-card border-border text-card-foreground shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold">Saídas (Estornos Pagos)</CardTitle>
+              <CardTitle className="text-sm font-semibold">Estornos Pagos</CardTitle>
               <div className="p-2 bg-red-500/10 rounded-lg">
                 <TrendingDown className="h-4 w-4 text-red-500" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-500">R$ {summary.totalExpense.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-red-500">R$ {paidRefunds.toFixed(2)}</div>
               <p className="text-[10px] text-muted-foreground font-medium mt-1">Estornos Pix concluídos</p>
             </CardContent>
           </Card>

@@ -93,8 +93,18 @@ export function TransactionsMobileList({
                       t.appointment.status === 'cancelled' ? 'Cancelado' : 'Agendado'}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px] font-black uppercase italic">
-                    {t.type === 'credit_reversed' || t.type === 'cashback_reversed' ? 'Estorno de Saldo' :
+                  <Badge variant="outline" className={cn(
+                    "text-[10px] font-black uppercase italic",
+                    t.category === 'Comissão' || t.description?.toLowerCase().includes('comiss')
+                      ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                      : t.type === 'credit_reversed' || t.type === 'cashback_reversed'
+                        ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                        : t.type === 'credit_granted'
+                          ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                          : "bg-muted text-muted-foreground border-border"
+                  )}>
+                    {t.category === 'Comissão' || t.description?.toLowerCase().includes('comiss') ? 'Comissão' :
+                      t.type === 'credit_reversed' || t.type === 'cashback_reversed' ? 'Estorno de Saldo' :
                       t.type === 'credit_granted' ? 'Crédito Concedido' : 'Manual'}
                   </Badge>
                 )}

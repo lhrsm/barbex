@@ -81,6 +81,18 @@ export function TransactionsDesktopTable({
                       {t.appointment.status === 'completed' ? 'Concluído' :
                         t.appointment.status === 'cancelled' ? 'Cancelado' : 'Agendado'}
                     </Badge>
+                  ) : t.category === 'Comissão' || t.description?.toLowerCase().includes('comiss') ? (
+                    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 font-semibold">
+                      Comissão
+                    </Badge>
+                  ) : t.type === 'credit_reversed' || t.type === 'cashback_reversed' ? (
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 font-semibold">
+                      Estorno de Saldo
+                    </Badge>
+                  ) : t.type === 'credit_granted' ? (
+                    <Badge variant="outline" className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 font-semibold">
+                      Crédito Concedido
+                    </Badge>
                   ) : (
                     <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Manual</Badge>
                   )}
