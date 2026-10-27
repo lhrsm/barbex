@@ -826,7 +826,14 @@ function TeamManagementPage() {
                         <div className="p-1.5 rounded-lg bg-white/5">
                           <Scissors size={13} className="text-amber-500/70" />
                         </div>
-                        <span>{member.appointmentsCount} atendimentos realizados</span>
+                        <span>
+                          {member.appointmentsCount} atendimentos realizados
+                          {Boolean(member.totalAppointmentsCount && member.totalAppointmentsCount > member.appointmentsCount) && (
+                            <span className="text-zinc-500 text-xs ml-1 font-normal">
+                              ({member.totalAppointmentsCount} total)
+                            </span>
+                          )}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -916,6 +923,12 @@ function TeamManagementPage() {
                         >
                           {member.roleLabel}
                         </Badge>
+                        {member.entityType === "barber" && (
+                          <div className="text-[11px] text-zinc-400 mt-1 flex items-center gap-1">
+                            <Scissors className="h-3 w-3 text-amber-500/70" />
+                            <span>{member.appointmentsCount} atendimentos</span>
+                          </div>
+                        )}
                       </TableCell>
 
                       <TableCell className="text-zinc-300 text-sm">

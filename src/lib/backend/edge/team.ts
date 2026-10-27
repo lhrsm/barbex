@@ -31,6 +31,7 @@ export interface UnifiedTeamMember {
   barberCategory: string | null;
   specialties: string[] | null;
   appointmentsCount: number;
+  totalAppointmentsCount?: number;
   createdAt: string | null;
 }
 
@@ -122,7 +123,7 @@ export async function getTeamMembers(
   const input = unwrapInput(rawInput);
   const client = options?.client || defaultSupabase;
 
-  const [barbersRes, membershipsRes] = await Promise.all([
+  const [barbersRes, membershipsRes, appointmentsSummaryRes] = await Promise.all([
     client
       .from("barbers")
       .select("id, name, email, phone, avatar_url, active, user_id, commission_rate, commission_type, category, specialties, created_at")
@@ -133,6 +134,8 @@ export async function getTeamMembers(
       .eq("tenant_id", input.tenantId)
       .eq("status", "active")
       .order("created_at", { ascending: true }),
+    client
+      .rpc("get_team_appointments_summary", { p_tenant_id: input.tenantId }),
   ]);
 
   if (barbersRes.error) {
@@ -143,6 +146,24 @@ export async function getTeamMembers(
   if (membershipsRes.error) {
     console.error("[getTeamMembers] Error loading tenant memberships:", membershipsRes.error);
     throw new Error(`Erro ao buscar colaboradores da equipe: ${membershipsRes.error.message}`);
+  }
+
+  if (appointmentsSummaryRes.error) {
+    console.error("[getTeamMembers] Error loading appointments summary:", appointmentsSummaryRes.error);
+    throw new Error(`Erro ao buscar métricas de agendamentos da equipe: ${appointmentsSummaryRes.error.message}`);
+  }
+
+  // Map appointment summaries by barber_id
+  const summaryMap = new Map<string, { total: number; completed: number }>();
+  if (appointmentsSummaryRes.data) {
+    for (const row of appointmentsSummaryRes.data as any[]) {
+      if (row.barber_id) {
+        summaryMap.set(row.barber_id, {
+          total: Number(row.total_appointments || 0),
+          completed: Number(row.completed_appointments || 0),
+        });
+      }
+    }
   }
 
   // 1. Collect user IDs from tenant memberships to fetch profiles
@@ -182,6 +203,10 @@ export async function getTeamMembers(
       if (barber.user_id) {
         registeredUserIds.add(barber.user_id);
       }
+      const barberSummary = summaryMap.get(barber.id);
+      const completedCount = barberSummary?.completed ?? 0;
+      const totalCount = barberSummary?.total ?? 0;
+
       unifiedList.push({
         id: `barber-${barber.id}`,
         entityType: "barber",
@@ -203,7 +228,8 @@ export async function getTeamMembers(
         commissionType: barber.commission_type,
         barberCategory: barber.category,
         specialties: barber.specialties,
-        appointmentsCount: 0,
+        appointmentsCount: completedCount,
+        totalAppointmentsCount: totalCount,
         createdAt: barber.created_at,
       });
     }
@@ -240,6 +266,7 @@ export async function getTeamMembers(
         barberCategory: null,
         specialties: null,
         appointmentsCount: 0,
+        totalAppointmentsCount: 0,
         createdAt: mem.created_at,
       });
     }

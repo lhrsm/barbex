@@ -9,6 +9,8 @@ interface FinancesTabsListProps {
 }
 
 export function FinancesTabsList({ role, financeTab, setFinanceTab }: FinancesTabsListProps) {
+  const isAdmin = role === 'admin' || role === 'tenant_admin' || role === 'super_admin';
+
   const items = [
     ...(role !== 'barber' ? [
       { v: "erp", icon: Sparkles, label: "Central Financeira" },
@@ -22,7 +24,7 @@ export function FinancesTabsList({ role, financeTab, setFinanceTab }: FinancesTa
       { v: "coupons", icon: TicketPercent, label: "Cupons" },
       { v: "addons", icon: Package, label: "Add-ons" },
       { v: "barbers", icon: Users, label: "Por Barbeiro" },
-      { v: "settings", icon: AlertCircle, label: "Configs" },
+      ...(isAdmin ? [{ v: "settings", icon: AlertCircle, label: "Configs" }] : []),
     ] : []),
   ];
 

@@ -410,12 +410,14 @@ function FinancesComponent() {
             />
           </TabsContent>
 
-          <TabsContent value="settings">
-            <SettingsTab
-              handleClearTestData={handleClearTestData}
-              isClearingData={isClearingData}
-            />
-          </TabsContent>
+          {['admin', 'tenant_admin', 'super_admin'].includes(role || '') && (
+            <TabsContent value="settings">
+              <SettingsTab
+                handleClearTestData={handleClearTestData}
+                isClearingData={isClearingData}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="pending" className="pt-4">
             <PendingTab
