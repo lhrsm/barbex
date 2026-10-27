@@ -56,6 +56,7 @@ import {
   Gauge,
 } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
+import { PayCommissionDialog } from "@/components/commissions/PayCommissionDialog";
 
 const PerformanceCenter = lazy(() => import("@/components/commissions/perf/PerformanceCenter"));
 
@@ -123,13 +124,6 @@ function CommissionsPage() {
   const [barberFilter, setBarberFilter] = useState<string>("all");
   const [commTab, setCommTab] = useState<string>("dashboard");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [payDialog, setPayDialog] = useState<{
-    barberId: string;
-    entryIds: string[];
-    total: number;
-  } | null>(null);
-  const [payAmount, setPayAmount] = useState("");
-  const [payNotes, setPayNotes] = useState("");
 
   useEffect(() => {
     if (!loading && user && effectiveTenantId) load();
@@ -140,7 +134,7 @@ function CommissionsPage() {
     if (!user) return;
     setLoadingData(true);
     try {
-      const [{ data: bs }, { data: es }, { data: cs }, { data: ap }, { data: prof }] =
+      const [{ data: bs }, { data: bcs }, { data: txs }, { data: ap }, { data: prof }] =
         await Promise.all([
           supabase
             .from("barbers")
@@ -150,16 +144,18 @@ function CommissionsPage() {
             .or(`tenant_id.eq.${effectiveTenantId},user_id.eq.${user.id}`)
             .order("name"),
           supabase
-            .from("commission_entries")
-            .select("*")
+            .from("barber_commissions")
+            .select("id, barber_id, appointment_id, customer_id, service_name, service_amount, commission_amount, status, paid_at, created_at, customer:customers(name)")
             .eq("tenant_id", effectiveTenantId)
-            .gte("earned_at", from)
-            .lte("earned_at", to + "T23:59:59")
-            .order("earned_at", { ascending: false }),
+            .gte("created_at", from)
+            .lte("created_at", to + "T23:59:59")
+            .order("created_at", { ascending: false }),
           supabase
-            .from("commission_closings")
-            .select("*")
+            .from("transactions")
+            .select("id, barber_id, amount, date, created_at, payment_method, description, payment_breakdown")
             .eq("tenant_id", effectiveTenantId)
+            .eq("type", "expense")
+            .eq("category", "Comissão")
             .order("created_at", { ascending: false })
             .limit(50),
           supabase
@@ -171,9 +167,37 @@ function CommissionsPage() {
             .lte("completed_at", to + "T23:59:59"),
           supabase.from("profiles").select("commission_base").eq("id", user.id).maybeSingle(),
         ]);
+
       setBarbers((bs ?? []) as Barber[]);
-      setEntries((es ?? []) as Entry[]);
-      setClosings((cs ?? []) as Closing[]);
+
+      // Map canonical barber_commissions to Entry interface
+      const mappedEntries: Entry[] = ((bcs as any[]) ?? []).map((c) => ({
+        id: c.id,
+        barber_id: c.barber_id,
+        appointment_id: c.appointment_id,
+        customer_id: c.customer_id,
+        service_amount: Number(c.service_amount || 0),
+        commission_amount: Number(c.commission_amount || 0),
+        paid_amount: c.status === "paid" ? Number(c.commission_amount || 0) : 0,
+        status: c.status,
+        earned_at: c.created_at,
+      }));
+      setEntries(mappedEntries);
+
+      // Map commission expense transactions to Closing interface
+      const mappedClosings: Closing[] = ((txs as any[]) ?? []).map((t) => ({
+        id: t.id,
+        barber_id: t.barber_id || "",
+        period_start: t.date || t.created_at?.slice(0, 10),
+        period_end: t.date || t.created_at?.slice(0, 10),
+        total_amount: Number(t.amount || 0),
+        paid_amount: Number(t.amount || 0),
+        status: "paid",
+        paid_at: t.created_at,
+        notes: t.description || t.payment_breakdown?.notes || null,
+      }));
+      setClosings(mappedClosings);
+
       setAppts(ap ?? []);
       setCommissionBase(prof?.commission_base ?? "gross");
     } finally {
@@ -263,42 +287,7 @@ function CommissionsPage() {
     });
   }, [entries, barberFilter, statusFilter]);
 
-  function openPayDialog(barberId: string) {
-    const pending = entries.filter((e) => e.barber_id === barberId && e.status !== "paid");
-    const total = pending.reduce(
-      (s, e) => s + (Number(e.commission_amount) - Number(e.paid_amount)),
-      0,
-    );
-    setPayDialog({
-      barberId,
-      entryIds: pending.map((e) => e.id),
-      total,
-    });
-    setPayAmount(total.toFixed(2));
-    setPayNotes("");
-  }
 
-  async function confirmPay() {
-    if (!payDialog) return;
-    const { data, error } = await supabase.rpc("pay_commission_entries", {
-      p_barber_id: payDialog.barberId,
-      p_entry_ids: payDialog.entryIds,
-      p_amount: Number(payAmount),
-      p_notes: payNotes || undefined,
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    const r = data as any;
-    if (!r?.success) {
-      toast.error(r?.error ?? "Falha ao registrar pagamento");
-      return;
-    }
-    toast.success("Pagamento registrado");
-    setPayDialog(null);
-    load();
-  }
 
   if (loading || loadingData) {
     return (
@@ -533,14 +522,17 @@ function CommissionsPage() {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => openPayDialog(b.barber.id)}
-                        disabled={b.pending <= 0}
-                        className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold shadow-[0_4px_16px_rgba(16,185,129,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Pagar Comissão
-                      </Button>
+                      <PayCommissionDialog
+                        tenantId={effectiveTenantId}
+                        barberId={b.barber.id}
+                        barberName={b.barber.name}
+                        startDate={from}
+                        endDate={to}
+                        pendingAmount={b.pending}
+                        pendingCount={entries.filter((e) => e.barber_id === b.barber.id && e.status === "pending").length}
+                        triggerClassName="w-full sm:w-auto h-9 text-xs"
+                        onPaid={load}
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
@@ -794,68 +786,6 @@ function CommissionsPage() {
         </div>
       </div>
 
-      {/* PAGAMENTO */}
-      <Dialog open={!!payDialog} onOpenChange={(o) => !o && setPayDialog(null)}>
-        <DialogContent className="bg-[#0b0f17] border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-emerald-400" />
-              Registrar pagamento
-            </DialogTitle>
-          </DialogHeader>
-          {payDialog && (
-            <div className="space-y-4 pt-2">
-              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
-                <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400/80">
-                  Total pendente
-                </div>
-                <div className="text-2xl font-black text-emerald-400 mt-1">
-                  {fmt(payDialog.total)}
-                </div>
-              </div>
-              <div>
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">
-                  Valor pago
-                </Label>
-                <Input
-                  type="number"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="bg-[#05070d] border-zinc-800 text-white h-10 focus-visible:border-emerald-500/60 focus-visible:ring-emerald-500/20"
-                />
-                <p className="text-xs text-zinc-500 mt-1.5">
-                  Igual ao total = pago. Menor = parcialmente pago.
-                </p>
-              </div>
-              <div>
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">
-                  Observações
-                </Label>
-                <Input
-                  value={payNotes}
-                  onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="opcional"
-                  className="bg-[#05070d] border-zinc-800 text-white h-10 focus-visible:border-emerald-500/60 focus-visible:ring-emerald-500/20"
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              onClick={() => setPayDialog(null)}
-              className="bg-[#0b0f17] border border-zinc-700 text-white hover:text-white hover:border-zinc-500 hover:bg-zinc-800/50 font-bold"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={confirmPay}
-              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold shadow-[0_4px_16px_rgba(16,185,129,0.3)]"
-            >
-              Confirmar Pagamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   );
 }

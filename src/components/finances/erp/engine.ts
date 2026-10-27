@@ -40,6 +40,8 @@ export interface ErpTotals {
   commissionsTotal: number;
   commissionsPaid: number;
   commissionsPending: number;
+  commissionExpenses: number;
+  otherExpenses: number;
   subscriptionsRevenue: number;
   ticketAverage: number;
   servedCount: number;
@@ -95,6 +97,12 @@ export function computeTotals(d: {
     .filter((s) => s.status === "active")
     .reduce((a, s) => a + num(s.amount), 0);
 
+  const commissionExpenses = d.transactions
+    .filter(isExpense)
+    .filter((t) => t.category?.toLowerCase().includes("comiss"))
+    .reduce((a, t) => a + num(t.amount), 0);
+  const otherExpenses = expense - commissionExpenses;
+
   const servedCount = completed.length;
   const withCoupon = completed.filter((a) => !!a.coupon_code);
 
@@ -113,6 +121,8 @@ export function computeTotals(d: {
     commissionsTotal,
     commissionsPaid,
     commissionsPending: commissionsTotal - commissionsPaid,
+    commissionExpenses,
+    otherExpenses,
     subscriptionsRevenue,
     ticketAverage: servedCount ? servicesRevenue / servedCount : 0,
     servedCount,
@@ -126,7 +136,9 @@ export function computeDre(t: ErpTotals) {
   const grossRevenue = t.income;
   const netRevenue = grossRevenue - t.discounts;
   const costs = t.commissionsTotal;
-  const operatingProfit = netRevenue - costs - t.expense;
+  // Despesas operacionais não incluem comissões já contabilizadas em 'costs'
+  const operatingExpenses = t.otherExpenses ?? t.expense;
+  const operatingProfit = netRevenue - costs - operatingExpenses;
   const netProfit = operatingProfit - t.cashbackGranted;
   return {
     grossRevenue,
@@ -135,7 +147,7 @@ export function computeDre(t: ErpTotals) {
     creditsUsed: t.creditsUsed,
     netRevenue,
     costs,
-    expenses: t.expense,
+    expenses: operatingExpenses,
     operatingProfit,
     netProfit,
     margin: grossRevenue ? (netProfit / grossRevenue) * 100 : 0,
