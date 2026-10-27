@@ -21,7 +21,8 @@ import {
   AlertCircle,
   ExternalLink,
   RefreshCw,
-  Pencil
+  Pencil,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getPendingInvitations, resendTeamInvitation, revokeTeamInvitation, UnifiedTeamMember } from "@/lib/backend/edge/team";
 import { useTenant } from "@/hooks/use-tenant";
+import { useAuth } from "@/hooks/use-auth";
 import { AddUserModal } from "@/components/team/AddUserModal";
 import { EditTeamMemberModal } from "@/components/team/EditTeamMemberModal";
+import { ChangeMemberRoleModal } from "@/components/team/ChangeMemberRoleModal";
 import { PermissionMatrix } from "@/components/security/PermissionMatrix";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useState, useMemo } from "react";
@@ -93,10 +96,18 @@ function getRoleIcon(category: string) {
 
 function TeamManagementPage() {
   const { tenantId } = useTenant();
+  const { user, role: userRole } = useAuth();
+  const isAuthorizedAdmin = Boolean(
+    (user?.id && tenantId && user.id === tenantId) ||
+    userRole === "admin" ||
+    userRole === "tenant_admin" ||
+    userRole === "super_admin"
+  );
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<UnifiedTeamMember | null>(null);
+  const [changingRoleMember, setChangingRoleMember] = useState<UnifiedTeamMember | null>(null);
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<CategoryTab>("all");
@@ -857,11 +868,23 @@ function TeamManagementPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingMember(member)}
-                        className="w-full h-10 border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5"
+                        className="flex-1 h-10 border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                         Editar Dados
                       </Button>
+                      {isAuthorizedAdmin && member.id !== user?.id && member.id !== tenantId && member.role !== "super_admin" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setChangingRoleMember(member)}
+                          className="h-10 px-3 border-zinc-750 hover:border-amber-500/50 text-zinc-300 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                          title="Alterar Cargo do Colaborador"
+                        >
+                          <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
+                          <span className="hidden sm:inline">Cargo</span>
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -978,15 +1001,29 @@ function TeamManagementPage() {
                             <ExternalLink className="h-3 w-3 ml-1" />
                           </Button>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingMember(member)}
-                            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 text-xs inline-flex items-center gap-1"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            Editar
-                          </Button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingMember(member)}
+                              className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 text-xs inline-flex items-center gap-1"
+                            >
+                              <Pencil className="h-3 w-3" />
+                              Editar
+                            </Button>
+                            {isAuthorizedAdmin && member.id !== user?.id && member.id !== tenantId && member.role !== "super_admin" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setChangingRoleMember(member)}
+                                className="text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 text-xs inline-flex items-center gap-1"
+                                title="Alterar Cargo"
+                              >
+                                <ShieldAlert className="h-3 w-3 text-amber-400" />
+                                Cargo
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -1069,6 +1106,16 @@ function TeamManagementPage() {
         onClose={() => setEditingMember(null)}
         member={editingMember}
         tenantId={tenantId || ""}
+        onSuccess={() => refetchMembers()}
+      />
+
+      {/* Modal de Alteração Segura de Cargo (RBAC) */}
+      <ChangeMemberRoleModal
+        isOpen={!!changingRoleMember}
+        onClose={() => setChangingRoleMember(null)}
+        member={changingRoleMember}
+        tenantId={tenantId || ""}
+        currentUserId={user?.id}
         onSuccess={() => refetchMembers()}
       />
     </div>

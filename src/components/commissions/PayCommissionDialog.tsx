@@ -154,12 +154,23 @@ export function PayCommissionDialog({
       toast.error("Selecione pelo menos uma comissão para liquidar.");
       return;
     }
+    const totalToPay = items
+      .filter((i) => selectedIds.includes(i.id))
+      .reduce((s, i) => s + Number(i.commission_amount || 0), 0);
+    if (totalToPay <= 0) {
+      toast.error("O valor total das comissões selecionadas deve ser maior que R$ 0,00.");
+      return;
+    }
     setStep("confirm");
   }
 
   async function executePayment() {
     if (selectedIds.length === 0) {
       toast.error("Selecione pelo menos uma comissão para pagar.");
+      return;
+    }
+    if (selectedTotal <= 0) {
+      toast.error("Não é permitido liquidar comissões com valor total zerado.");
       return;
     }
     setPaying(true);
@@ -217,7 +228,7 @@ export function PayCommissionDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
-          disabled={pendingAmount <= 0 && pendingCount <= 0}
+          disabled={pendingAmount <= 0 || pendingCount <= 0}
           className={cn(
             "h-10 gap-2 bg-emerald-500 text-black hover:bg-emerald-400 font-black rounded-xl disabled:opacity-50 transition-all",
             triggerClassName

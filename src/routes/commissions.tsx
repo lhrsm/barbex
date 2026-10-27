@@ -54,6 +54,7 @@ import {
   Medal,
   Award,
   Gauge,
+  AlertCircle,
 } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 import { PayCommissionDialog } from "@/components/commissions/PayCommissionDialog";
@@ -69,6 +70,8 @@ type Entry = {
   barber_id: string;
   appointment_id: string;
   customer_id: string | null;
+  customer_name?: string;
+  service_name?: string;
   service_amount: number;
   commission_amount: number;
   paid_amount: number;
@@ -124,6 +127,7 @@ function CommissionsPage() {
   const [barberFilter, setBarberFilter] = useState<string>("all");
   const [commTab, setCommTab] = useState<string>("dashboard");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [financialError, setFinancialError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && user && effectiveTenantId) load();
@@ -133,40 +137,57 @@ function CommissionsPage() {
   async function load() {
     if (!user) return;
     setLoadingData(true);
+    setFinancialError(null);
     try {
-      const [{ data: bs }, { data: bcs }, { data: txs }, { data: ap }, { data: prof }] =
-        await Promise.all([
-          supabase
-            .from("barbers")
-            .select(
-              "id, name, commission_type, commission_rate, commission_fixed_value, commission_bonus_value, monthly_goal",
-            )
-            .or(`tenant_id.eq.${effectiveTenantId},user_id.eq.${user.id}`)
-            .order("name"),
-          supabase
-            .from("barber_commissions")
-            .select("id, barber_id, appointment_id, customer_id, service_name, service_amount, commission_amount, status, paid_at, created_at, customer:customers(name)")
-            .eq("tenant_id", effectiveTenantId)
-            .gte("created_at", from)
-            .lte("created_at", to + "T23:59:59")
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("transactions")
-            .select("id, barber_id, amount, date, created_at, payment_method, description, payment_breakdown")
-            .eq("tenant_id", effectiveTenantId)
-            .eq("type", "expense")
-            .eq("category", "Comissão")
-            .order("created_at", { ascending: false })
-            .limit(50),
-          supabase
-            .from("appointments")
-            .select("id, barber_id, customer_id, total_price, completed_at")
-            .eq("tenant_id", effectiveTenantId)
-            .eq("status", "completed")
-            .gte("completed_at", from)
-            .lte("completed_at", to + "T23:59:59"),
-          supabase.from("profiles").select("commission_base").eq("id", user.id).maybeSingle(),
-        ]);
+      const [
+        { data: bs, error: bsError },
+        { data: bcs, error: bcsError },
+        { data: txs, error: txsError },
+        { data: ap, error: apError },
+        { data: prof }
+      ] = await Promise.all([
+        supabase
+          .from("barbers")
+          .select(
+            "id, name, commission_type, commission_rate, commission_fixed_value, commission_bonus_value, monthly_goal",
+          )
+          .or(`tenant_id.eq.${effectiveTenantId},user_id.eq.${user.id}`)
+          .order("name"),
+        supabase
+          .from("barber_commissions")
+          .select(`
+            id, barber_id, appointment_id, customer_id, service_name, service_amount, commission_amount, status, paid_at, created_at,
+            appointment:appointments(customer_id, customer:customers(name))
+          `)
+          .eq("tenant_id", effectiveTenantId)
+          .gte("created_at", from)
+          .lte("created_at", to + "T23:59:59")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("transactions")
+          .select("id, barber_id, amount, date, created_at, payment_method, description, payment_breakdown")
+          .eq("tenant_id", effectiveTenantId)
+          .eq("type", "expense")
+          .eq("category", "Comissão")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("appointments")
+          .select("id, barber_id, customer_id, total_price, completed_at")
+          .eq("tenant_id", effectiveTenantId)
+          .eq("status", "completed")
+          .gte("completed_at", from)
+          .lte("completed_at", to + "T23:59:59"),
+        supabase.from("profiles").select("commission_base").eq("id", user.id).maybeSingle(),
+      ]);
+
+      if (bcsError) {
+        console.error("[Commissions] Erro ao consultar comissões:", bcsError);
+        setFinancialError(`Erro ao consultar comissões: ${bcsError.message}`);
+        toast.error(`Falha na consulta financeira: ${bcsError.message}`);
+        setEntries([]);
+        return;
+      }
 
       setBarbers((bs ?? []) as Barber[]);
 
@@ -175,7 +196,9 @@ function CommissionsPage() {
         id: c.id,
         barber_id: c.barber_id,
         appointment_id: c.appointment_id,
-        customer_id: c.customer_id,
+        customer_id: c.customer_id || (c.appointment as any)?.customer_id,
+        customer_name: (c.appointment as any)?.customer?.name || "Cliente",
+        service_name: c.service_name || "Serviço",
         service_amount: Number(c.service_amount || 0),
         commission_amount: Number(c.commission_amount || 0),
         paid_amount: c.status === "paid" ? Number(c.commission_amount || 0) : 0,
@@ -330,6 +353,27 @@ function CommissionsPage() {
               </Button>
             </div>
           </header>
+
+          {/* ALERTA DE ERRO FINANCEIRO EXPLÍCITO */}
+          {financialError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 text-red-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.15)] animate-in fade-in duration-300">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 shrink-0 text-red-400" />
+                <div>
+                  <p className="font-black text-sm">Falha na consulta financeira</p>
+                  <p className="text-xs text-red-400/85 mt-0.5">{financialError}</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => load()}
+                className="w-full sm:w-auto border-red-500/40 text-red-300 hover:bg-red-500/20 text-xs shrink-0 font-bold"
+              >
+                Tentar novamente
+              </Button>
+            </div>
+          )}
 
           {/* FILTROS DE PERÍODO */}
           <div className="bg-[#0b0f17] border border-zinc-800/80 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
