@@ -576,28 +576,34 @@ const CalendarComponent = memo(() => {
         </div>
 
         {/* Seletores de Modo de Visualização e Botões de Ação */}
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="flex items-center bg-[#05070D] p-1 rounded-[18px] h-14 border border-white/5 w-full lg:w-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center bg-[#05070D] p-1 rounded-2xl h-11 border border-white/5 w-full sm:w-auto">
             {(["day", "week", "month", "custom"] as const).map(v => (
               <button 
                 key={v} 
                 type="button"
                 onClick={() => setView(v)} 
                 className={cn(
-                  "flex-1 sm:px-6 h-full rounded-[14px] text-xs font-black uppercase tracking-wider transition-all", 
-                  view === v ? "bg-gold text-black shadow-lg" : "text-slate-400 hover:text-white"
+                  "flex-1 sm:px-4 h-full rounded-xl text-xs font-black uppercase tracking-wider transition-all", 
+                  view === v ? "bg-gold text-black shadow-md" : "text-slate-400 hover:text-white"
                 )}
               >
                 {v === "day" ? "Dia" : v === "week" ? "Semana" : v === "month" ? "Mês" : "Período"}
               </button>
             ))}
           </div>
-          <div className="flex gap-2 flex-1">
-            <Button onClick={() => openNewAppointment()} className="flex-1 h-14 rounded-[18px] bg-gold text-black font-black">
-              <Plus className="mr-2 h-4 w-4" /> Novo Agendamento
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
+            <Button 
+              onClick={() => openNewAppointment()} 
+              className="h-11 px-4 sm:px-5 rounded-xl bg-gold hover:bg-[#D4A017] text-black font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(245,197,66,0.2)] transition-all w-full sm:w-auto justify-center"
+            >
+              <Plus className="mr-1.5 h-4 w-4 shrink-0" /> Novo Agendamento
             </Button>
-            <Button onClick={() => setIsWalkinOpen(true)} className="flex-1 h-14 rounded-[18px] bg-emerald-600 hover:bg-emerald-500 text-white font-black">
-              <UserPlus className="mr-2 h-4 w-4" /> Walk-in
+            <Button 
+              onClick={() => setIsWalkinOpen(true)} 
+              className="h-11 px-4 sm:px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all w-full sm:w-auto justify-center"
+            >
+              <UserPlus className="mr-1.5 h-4 w-4 shrink-0" /> Walk-in
             </Button>
           </div>
         </div>

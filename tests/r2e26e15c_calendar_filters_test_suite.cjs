@@ -289,9 +289,11 @@ runTest('T16', 'Desempenho: bloqueia intervalos acima de 90 dias', () => {
 });
 
 // T17 — Responsividade mobile
-runTest('T17', 'Responsividade mobile: classes CSS com flex-col lg:flex-row e colapso de filtros', () => {
-  const wrapperClass = 'flex flex-col lg:flex-row gap-3';
-  assert(wrapperClass.includes('flex-col') && wrapperClass.includes('lg:flex-row'));
+runTest('T17', 'Responsividade mobile: classes CSS com flex-col sm:flex-row e colapso de botões', () => {
+  const wrapperClass = 'flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+  const buttonsClass = 'grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0';
+  assert(wrapperClass.includes('flex-col') && wrapperClass.includes('sm:flex-row'));
+  assert(buttonsClass.includes('grid-cols-2') && buttonsClass.includes('sm:flex'));
 });
 
 // T18 — Regressão das ações existentes da Agenda
