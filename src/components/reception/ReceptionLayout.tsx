@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Building2,
   Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { OnboardingModal, openOnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ const NAV = [
   { label: "Lista de espera", to: "/reception/waiting-list", icon: ListChecks },
   { label: "Clientes", to: "/reception/customers", icon: Users },
   { label: "Avaliações", to: "/reception/reviews", icon: MessageSquare },
+  { label: "Ajuda e Tutoriais", to: "/tutorials", icon: BookOpen },
 ];
 
 export function ReceptionLayout({ children }: { children: React.ReactNode }) {

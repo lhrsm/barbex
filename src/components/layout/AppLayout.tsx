@@ -153,7 +153,7 @@ const defaultNavItems: NavItem[] = [
     permission: "integrations:manage",
   },
   { label: "Academia", icon: GraduationCap, to: "/academy" },
-  { label: "Tutoriais", icon: BookOpen, to: "/tutorials", module: "tutorials" },
+  { label: "Ajuda e Tutoriais", icon: BookOpen, to: "/tutorials" },
   { label: "Suporte", icon: Headset, to: "/support", module: "support" },
   { label: "Clube Barbex", icon: Crown, to: "/subscriptions", module: "subscriptions" },
   { label: "Fidelidade", icon: Gift, to: "/loyalty", permission: "marketing:view" },
@@ -181,6 +181,7 @@ const barberNavItems = (slug: string) => [
   { label: "Histórico", icon: History, to: `/${slug}/profissional?tab=history` },
   { label: "Financeiro", icon: CircleDollarSign, to: `/${slug}/profissional?tab=finances` },
   { label: "Comissão", icon: CircleDollarSign, to: `/${slug}/profissional?tab=commission` },
+  { label: "Ajuda e Tutoriais", icon: BookOpen, to: "/tutorials" },
   { label: "Perfil", icon: User, to: `/${slug}/profissional?tab=profile` },
 ];
 

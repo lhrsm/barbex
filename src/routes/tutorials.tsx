@@ -9,7 +9,7 @@ import { HelpArticleCard } from "@/components/help-center/HelpArticleCard";
 import { HelpArticlePage } from "@/components/help-center/HelpArticlePage";
 import { HelpHistory } from "@/components/help-center/HelpHistory";
 import { HelpSkeleton } from "@/components/help-center/HelpSkeleton";
-import { BookOpen, Search as SearchIcon, Sparkles } from "lucide-react";
+import { BookOpen, Search as SearchIcon, Sparkles, GraduationCap } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
@@ -206,95 +206,110 @@ function HelpCenterPage() {
   return (
     <HelpCenterLayout>
       {!selectedArticle ? (
-        <div className="space-y-12">
-          {/* Hero & Search */}
-          <div className="text-center space-y-6 py-8 md:py-14">
-            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase italic">
-              Como podemos <span className="text-gold">ajudar?</span>
-            </h2>
-            <p className="text-zinc-400 text-sm md:text-base max-w-xl mx-auto">
-              Guias oficiais, passo a passo de operação e respostas para o dia a dia da barbearia.
-            </p>
-            <HelpSearch value={searchQuery} onChange={setSearchQuery} />
+        <div className="space-y-4 sm:space-y-6">
+          {/* 1. Identificação da Central de Ajuda */}
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-800/60">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/25 text-gold text-xs font-semibold">
+              <GraduationCap className="w-3.5 h-3.5 text-gold" />
+              <span>Central de Ajuda 2.0</span>
+            </div>
+            <span className="text-[11px] text-zinc-500 font-medium hidden sm:inline">
+              Base oficial Barbex
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3 space-y-10">
-              {/* Categorias */}
-              {categories.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                      Categorias
-                    </h3>
-                    {selectedCategoryId && (
-                      <button
-                        onClick={() => setSelectedCategoryId(null)}
-                        className="text-xs text-gold hover:underline font-bold"
-                      >
-                        Limpar filtro
-                      </button>
-                    )}
-                  </div>
-                  <HelpCategories
-                    categories={categories || []}
-                    selectedId={selectedCategoryId}
-                    onSelect={setSelectedCategoryId}
-                  />
-                </div>
-              )}
+          {/* 2. Título e descrição compactos + 3. Campo de pesquisa */}
+          <div className="text-center space-y-2.5 pt-1 pb-1 max-w-2xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl md:text-[34px] font-black text-white tracking-tight leading-tight">
+              Como podemos <span className="text-gold">ajudar?</span>
+            </h2>
+            <p className="text-zinc-400 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
+              Guias oficiais, passo a passo de operação e respostas para o dia a dia da barbearia.
+            </p>
+            {/* 3. Campo de pesquisa */}
+            <div className="pt-1.5">
+              <HelpSearch value={searchQuery} onChange={setSearchQuery} />
+            </div>
+          </div>
 
-              {/* Grid de Artigos */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-                  <h3 className="font-bold flex items-center gap-2 text-white text-lg">
-                    <BookOpen className="text-gold h-5 w-5" />
-                    {selectedCategoryId
-                      ? categories?.find((c) => c.id === selectedCategoryId)?.name || selectedCategoryId
-                      : "Todos os Artigos"}
-                  </h3>
-                  <span className="text-xs text-zinc-500 font-medium">
-                    {filteredArticles.length} resultados
-                  </span>
-                </div>
-
-                {isLoading && combinedArticles.length === 0 ? (
-                  <HelpSkeleton />
-                ) : filteredArticles.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredArticles.map((article) => (
-                      <HelpArticleCard key={article.id} article={article} onClick={addToHistory} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-20 border-2 border-dashed rounded-[32px] bg-[#0b0f17]/50 border-zinc-800 animate-in fade-in zoom-in-95 duration-300">
-                    <SearchIcon className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-                    <h4 className="text-lg font-bold text-white">Nenhum tutorial encontrado</h4>
-                    <p className="text-zinc-500 max-w-sm mx-auto mt-1 text-sm">
-                      Não encontramos tutoriais para "{searchQuery}". Tente outros termos ou limpe os filtros.
-                    </p>
-                  </div>
+          {/* 4. Categorias */}
+          {categories.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                  Categorias
+                </span>
+                {selectedCategoryId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategoryId(null)}
+                    className="text-xs text-gold hover:underline font-bold"
+                  >
+                    Limpar filtro
+                  </button>
                 )}
               </div>
+              <HelpCategories
+                categories={categories || []}
+                selectedId={selectedCategoryId}
+                onSelect={setSelectedCategoryId}
+              />
+            </div>
+          )}
+
+          {/* Conteúdo Principal: 5. Artigos e tutoriais + 6. Área lateral */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 pt-1">
+            {/* 5. Artigos e tutoriais */}
+            <div className="lg:col-span-3 space-y-3.5">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
+                <h3 className="font-bold flex items-center gap-2 text-white text-base sm:text-lg">
+                  <BookOpen className="text-gold h-4 w-4 sm:h-5 sm:w-5" />
+                  {selectedCategoryId
+                    ? categories?.find((c) => c.id === selectedCategoryId)?.name || selectedCategoryId
+                    : "Todos os Artigos"}
+                </h3>
+                <span className="text-xs text-zinc-500 font-medium">
+                  {filteredArticles.length} {filteredArticles.length === 1 ? "resultado" : "resultados"}
+                </span>
+              </div>
+
+              {isLoading && combinedArticles.length === 0 ? (
+                <HelpSkeleton />
+              ) : filteredArticles.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
+                  {filteredArticles.map((article) => (
+                    <HelpArticleCard key={article.id} article={article} onClick={addToHistory} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 px-4 border-2 border-dashed rounded-2xl bg-[#0b0f17]/50 border-zinc-800 animate-in fade-in zoom-in-95 duration-200">
+                  <SearchIcon className="h-10 w-10 text-zinc-600 mx-auto mb-2" />
+                  <h4 className="text-base font-bold text-white">Nenhum tutorial encontrado</h4>
+                  <p className="text-zinc-500 max-w-sm mx-auto mt-1 text-xs sm:text-sm">
+                    Não encontramos tutoriais para "{searchQuery}". Tente outros termos ou limpe os filtros.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <aside className="space-y-6">
-              {/* Botão de Boas-vindas Reabrir */}
-              <div className="p-5 rounded-3xl bg-zinc-900/60 border border-gold/20 space-y-3">
+            {/* 6. Área lateral de Guia de Início e Suporte Direto */}
+            <aside className="space-y-3.5 lg:col-span-1 order-last lg:order-none">
+              {/* Card Guia de Início */}
+              <div className="p-4 rounded-2xl bg-[#0b0f17] border border-gold/25 space-y-2">
                 <div className="flex items-center gap-2 text-gold">
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-gold" />
                   <h4 className="font-bold text-xs uppercase tracking-wider text-white">
                     Guia de Início
                   </h4>
                 </div>
-                <p className="text-xs text-zinc-400">
-                  Deseja rever o painel com as principais ferramentas e atalhos da sua função?
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Reveja o painel com as principais ferramentas e atalhos da sua função.
                 </p>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => openOnboardingModal()}
-                  className="w-full bg-gold/10 hover:bg-gold/20 border-gold/30 text-gold text-xs font-bold rounded-xl"
+                  className="w-full bg-gold/10 hover:bg-gold/20 border-gold/30 text-gold text-xs font-bold rounded-xl h-8.5"
                 >
                   Abrir Guia de Boas-Vindas
                 </Button>
@@ -302,16 +317,18 @@ function HelpCenterPage() {
 
               <HelpHistory recentArticles={recentArticles} onSelect={addToHistory} />
 
-              <div className="p-6 bg-gold rounded-3xl space-y-4 shadow-[0_8px_32px_rgba(212,175,55,0.2)]">
-                <h4 className="font-black text-black uppercase text-xs tracking-widest">
+              {/* Card Suporte Direto */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-gold/10 to-[#0b0f17] border border-gold/30 space-y-2 shadow-[0_4px_20px_rgba(212,175,55,0.15)]">
+                <h4 className="font-black text-gold uppercase text-[11px] tracking-wider">
                   Suporte Direto
                 </h4>
-                <p className="text-sm text-black/70 font-medium">
-                  Não encontrou o que precisava? Fale com nosso time agora.
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Não encontrou o que precisava? Fale com nosso suporte especializado.
                 </p>
                 <Button
                   variant="outline"
-                  className="w-full bg-black/10 border-black/20 text-black hover:bg-black/20 font-bold rounded-xl"
+                  size="sm"
+                  className="w-full bg-gold hover:bg-gold/90 text-black font-bold rounded-xl border-none h-8.5 text-xs shadow-[0_2px_12px_rgba(212,175,55,0.25)]"
                   asChild
                 >
                   <Link to="/support">Abrir Chamado</Link>
