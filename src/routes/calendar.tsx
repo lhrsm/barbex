@@ -1,23 +1,45 @@
 import * as React from "react";
 import { memo } from "react";
-import { format, addMinutes, startOfHour, parseISO, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, addDays, subDays, startOfDay, endOfDay } from "date-fns";
+import { 
+  format, 
+  addMinutes, 
+  startOfHour, 
+  parseISO, 
+  isSameDay, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  addDays, 
+  subDays, 
+  startOfDay, 
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  subMonths,
+  differenceInDays,
+  isValid
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
   ChevronLeft, 
   ChevronRight, 
   Plus, 
   Calendar as CalendarIcon,
-  Clock,
-  User,
-  Scissors,
-  X,
-  AlertTriangle,
-  Crown,
-  CheckCircle2,
-  RefreshCcw,
-  UserPlus,
-  HelpCircle,
-  Loader2
+  Clock, 
+  User, 
+  Scissors, 
+  X, 
+  AlertTriangle, 
+  Crown, 
+  CheckCircle2, 
+  RefreshCcw, 
+  UserPlus, 
+  HelpCircle, 
+  Loader2,
+  CalendarRange,
+  CalendarDays,
+  CalendarCheck
 } from "lucide-react";
 import { AppointmentModal } from "@/components/calendar/AppointmentModal";
 import { AppointmentDetailsModal } from "@/components/calendar/AppointmentDetailsModal";
@@ -62,6 +84,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { triggerWhatsAppMessage } from "@/utils/whatsapp";
+
+// Componentes da Agenda Avançada Multiperfil
+import { 
+  AgendaFilters, 
+  EMPTY_FILTERS, 
+  type AgendaFilterState, 
+  applyAgendaFilters 
+} from "@/components/calendar/agenda/AgendaFilters";
+import { MonthView } from "@/components/calendar/agenda/MonthView";
+import { getAgendaOrigin, getAgendaStatus, paymentLabel, barberColor } from "@/components/calendar/agenda/status";
 
 const calendarHelpConfig = {
   moduleKey: 'calendar',
@@ -145,7 +177,6 @@ function getCalendarStatusConfig(status: string) {
   };
 }
 
-
 const calendarTourConfig = {
   key: 'calendar-tour',
   version: '1.0.0',
@@ -165,6 +196,8 @@ const calendarTourConfig = {
   ]
 };
 
+export type CalendarViewMode = "day" | "week" | "month" | "custom";
+
 const CalendarComponent = memo(() => {
   const { user: authUser, loading: authLoading, role: authRole } = useAuth();
   const { tenantId } = useTenant();
@@ -176,9 +209,23 @@ const CalendarComponent = memo(() => {
   const role = authRole || (session ? 'barber' : null);
   const loading = authLoading || profLoading;
 
+  const isBarberRole = role === 'barber';
+  const barberTargetId = isBarberRole ? (user?.id || session?.barber_id) : null;
+
   const { checkLimit, limits, usage, refresh: refreshLimits } = usePlanLimits();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"day" | "week">("day");
+
+  // Estados dos Modos de Visualização e Filtros Avançados
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [view, setView] = useState<CalendarViewMode>("day");
+  const [customStartDate, setCustomStartDate] = useState(() => format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [customEndDate, setCustomEndDate] = useState(() => format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [dateError, setDateError] = useState<string | null>(null);
+
+  const [filters, setFilters] = useState<AgendaFilterState>(() => ({
+    ...EMPTY_FILTERS,
+    barberId: barberTargetId || "all"
+  }));
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [barbers, setBarbers] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -193,6 +240,13 @@ const CalendarComponent = memo(() => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const hasLoadedOnceRef = useRef(false);
+
+  // Trava de perfil do Barbeiro
+  useEffect(() => {
+    if (isBarberRole && barberTargetId) {
+      setFilters(prev => ({ ...prev, barberId: barberTargetId }));
+    }
+  }, [isBarberRole, barberTargetId]);
 
   const currentDateRef = useRef(currentDate);
   currentDateRef.current = currentDate;
@@ -211,6 +265,12 @@ const CalendarComponent = memo(() => {
 
   const sessionRef = useRef(session);
   sessionRef.current = session;
+
+  const customStartRef = useRef(customStartDate);
+  customStartRef.current = customStartDate;
+
+  const customEndRef = useRef(customEndDate);
+  customEndRef.current = customEndDate;
 
   const latestFetchIdRef = useRef(0);
 
@@ -252,13 +312,30 @@ const CalendarComponent = memo(() => {
     } else {
       setIsRefreshing(true);
     }
-    console.log("[CALENDAR_BOOT_TRACE] Executing queries", { fetchId, isInitial, tenantId: curTenant, role: curRole, date: curDate });
+    console.log("[CALENDAR_BOOT_TRACE] Executing queries", { fetchId, isInitial, tenantId: curTenant, role: curRole, view: curView, date: curDate });
 
     let fetchSuccess = false;
 
     try {
-      const start = startOfDay(curView === "day" ? curDate : startOfWeek(curDate, { weekStartsOn: 0 }));
-      const end = endOfDay(curView === "day" ? curDate : endOfWeek(curDate, { weekStartsOn: 0 }));
+      let start: Date;
+      let end: Date;
+
+      if (curView === "day") {
+        start = startOfDay(curDate);
+        end = endOfDay(curDate);
+      } else if (curView === "week") {
+        start = startOfWeek(curDate, { weekStartsOn: 0 });
+        end = endOfWeek(curDate, { weekStartsOn: 0 });
+      } else if (curView === "month") {
+        start = startOfWeek(startOfMonth(curDate), { weekStartsOn: 0 });
+        end = endOfWeek(endOfMonth(curDate), { weekStartsOn: 0 });
+      } else {
+        // Modo Período Personalizado
+        const pStart = parseISO(customStartRef.current);
+        const pEnd = parseISO(customEndRef.current);
+        start = isValid(pStart) ? startOfDay(pStart) : startOfMonth(curDate);
+        end = isValid(pEnd) ? endOfDay(pEnd) : endOfMonth(curDate);
+      }
 
       let appQuery = supabase
         .from("appointments")
@@ -268,6 +345,7 @@ const CalendarComponent = memo(() => {
         .gte("start_time", start.toISOString())
         .lte("start_time", end.toISOString());
 
+      // Controle estrito de escopo multiperfil no banco: barbeiro só vê a si mesmo
       if (curRole === 'barber') {
         const targetId = curUser?.id || curSession?.barber_id;
         if (targetId) {
@@ -276,7 +354,7 @@ const CalendarComponent = memo(() => {
       }
 
       const [appRes, barbRes, custRes, servRes] = await Promise.all([
-        appQuery.order("start_time", { ascending: false }),
+        appQuery.order("start_time", { ascending: true }),
         supabase.from("barbers").select("*").eq("tenant_id", curTenant).order("name"),
         supabase.from("customers").select("*").eq("tenant_id", curTenant).order("name"),
         supabase.from("services").select("*").eq("tenant_id", curTenant).eq("active", true).order("name"),
@@ -330,41 +408,19 @@ const CalendarComponent = memo(() => {
   }, [fetchData, queryClient]);
 
   useEffect(() => {
-    console.log("[CALENDAR_BOOT_TRACE] Starting fetchData", { 
-      hasUser: !!user, 
-      role, 
-      tenantId, 
-      view, 
-      currentDate 
-    });
     fetchData();
-  }, [user, currentDate, view, tenantId, fetchData]);
+  }, [user, currentDate, view, tenantId, customStartDate, customEndDate, fetchData]);
 
   useEffect(() => {
     if (!tenantId) return;
 
     const channelTopic = `calendar-realtime-${tenantId}`;
-    console.log("[CALENDAR_REALTIME_INIT]", {
-      tenantId,
-      hasUser: !!user,
-      role,
-      channelTopic,
-      filter: `tenant_id=eq.${tenantId}`
-    });
-
     const channel = supabase
       .channel(channelTopic)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
-          console.log("[CALENDAR_REALTIME_EVENT]", {
-            table: 'appointments',
-            eventType: payload.eventType,
-            recordId: payload.new?.id || payload.old?.id,
-            tenantMatch: (payload.new?.tenant_id || payload.old?.tenant_id) === tenantId,
-            commitTimestamp: payload.commit_timestamp
-          });
           debouncedFetchData('realtime:appointments');
         }
       )
@@ -372,37 +428,22 @@ const CalendarComponent = memo(() => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointment_checkins', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
-          console.log("[CALENDAR_REALTIME_EVENT]", {
-            table: 'appointment_checkins',
-            eventType: payload.eventType,
-            recordId: payload.new?.id || payload.old?.id,
-            tenantMatch: (payload.new?.tenant_id || payload.old?.tenant_id) === tenantId,
-            commitTimestamp: payload.commit_timestamp
-          });
           debouncedFetchData('realtime:checkins');
         }
       )
       .subscribe((status, err) => {
-        console.log("[CALENDAR_REALTIME_STATUS]", {
-          topic: channelTopic,
-          status,
-          error: err ? err.message : null
-        });
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn("[CALENDAR_REALTIME_STATUS] Re-fetching data due to channel disruption:", status);
           debouncedFetchData(`recovery:${status}`);
         }
       });
 
     const handleWindowRefresh = () => {
-      console.log("[CALENDAR_SYNC_TRACE] Window REFRESH_APPOINTMENTS_DATA received");
       debouncedFetchData('window:event');
     };
 
     window.addEventListener('REFRESH_APPOINTMENTS_DATA', handleWindowRefresh);
 
     return () => {
-      console.log("[CALENDAR_REALTIME_CLEANUP] Cleaning up channel and listeners:", channelTopic);
       if (calendarDebounceRef.current) {
         clearTimeout(calendarDebounceRef.current);
       }
@@ -411,9 +452,59 @@ const CalendarComponent = memo(() => {
     };
   }, [tenantId, debouncedFetchData, user, role]);
 
+  // Aplicação puramente client-side dos filtros sobre o período carregado
+  const filteredAppointments = useMemo(() => {
+    return applyAgendaFilters(appointments, filters, getAgendaOrigin);
+  }, [appointments, filters]);
+
+  const paymentMethods = useMemo(() => {
+    const set = new Set<string>();
+    appointments.forEach((a) => {
+      if (a.payment_method) set.add(String(a.payment_method));
+    });
+    return Array.from(set).sort();
+  }, [appointments]);
+
   const isToday = isSameDay(currentDate, new Date());
-  const todayApps = useMemo(() => appointments.filter(a => isSameDay(new Date(a.start_time), currentDate)), [appointments, currentDate]);
-  const todayRevenue = useMemo(() => todayApps.reduce((acc, a) => acc + Number(a.total_price || 0), 0), [todayApps]);
+  const activeApps = view === 'day' 
+    ? filteredAppointments.filter(a => isSameDay(new Date(a.start_time), currentDate))
+    : filteredAppointments;
+  const activeRevenue = useMemo(() => activeApps.reduce((acc, a) => acc + Number(a.total_price || 0), 0), [activeApps]);
+
+  const handleCustomRangeChange = (startStr: string, endStr: string) => {
+    const s = parseISO(startStr);
+    const e = parseISO(endStr);
+    if (!isValid(s) || !isValid(e)) {
+      setDateError("Formato de data inválido.");
+      return;
+    }
+    if (s > e) {
+      setDateError("A data inicial não pode ser posterior à data final.");
+      return;
+    }
+    const diff = differenceInDays(e, s);
+    if (diff > 90) {
+      setDateError("O intervalo máximo permitido é de 90 dias.");
+      return;
+    }
+    setDateError(null);
+    setCustomStartDate(startStr);
+    setCustomEndDate(endStr);
+  };
+
+  const applyPreset = (preset: "last7" | "last30" | "thisMonth" | "lastMonth") => {
+    const now = new Date();
+    if (preset === "last7") {
+      handleCustomRangeChange(format(subDays(now, 7), "yyyy-MM-dd"), format(now, "yyyy-MM-dd"));
+    } else if (preset === "last30") {
+      handleCustomRangeChange(format(subDays(now, 30), "yyyy-MM-dd"), format(now, "yyyy-MM-dd"));
+    } else if (preset === "thisMonth") {
+      handleCustomRangeChange(format(startOfMonth(now), "yyyy-MM-dd"), format(endOfMonth(now), "yyyy-MM-dd"));
+    } else if (preset === "lastMonth") {
+      const prev = subMonths(now, 1);
+      handleCustomRangeChange(format(startOfMonth(prev), "yyyy-MM-dd"), format(endOfMonth(prev), "yyyy-MM-dd"));
+    }
+  };
 
   if (loading && !user) {
     return (
@@ -467,80 +558,264 @@ const CalendarComponent = memo(() => {
           </Alert>
         )}
 
+        {/* Card de Resumo Operacional */}
         <div className="relative overflow-hidden rounded-3xl border border-[#F59E0B]/15 bg-[#0B1220] p-5 shadow-[0_10px_40px_-10px_rgba(245,158,11,0.25)]">
           <div className="relative flex items-start gap-4">
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#F5C542] to-[#D4A017] text-black shadow-[0_0_20px_rgba(245,197,66,0.35)]">
               <CalendarIcon className="h-6 w-6" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-2xl font-black text-white tracking-tight">Agenda</h2>
+              <h2 className="text-2xl font-black text-white tracking-tight">
+                {view === 'day' ? "Agenda do Dia" : view === 'week' ? "Agenda da Semana" : view === 'month' ? "Agenda do Mês" : "Período Personalizado"}
+              </h2>
               <p className="text-gray-400 text-xs font-medium mt-2">
-                <span className="text-white font-bold">{todayApps.length}</span> atendimentos • R$ {todayRevenue.toFixed(2)}
+                <span className="text-white font-bold">{activeApps.length}</span> atendimentos • R$ {activeRevenue.toFixed(2)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center bg-[#05070D] p-1 rounded-[18px] h-14 border border-white/5 w-full sm:w-auto">
-            {(["day", "week"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("flex-1 sm:px-10 h-full rounded-[14px] text-xs font-black uppercase tracking-widest transition-all", view === v ? "bg-gold text-black shadow-lg" : "text-slate-400")}>
-                {v === "day" ? "Dia" : "Semana"}
+        {/* Seletores de Modo de Visualização e Botões de Ação */}
+        <div className="flex flex-col lg:flex-row gap-3">
+          <div className="flex items-center bg-[#05070D] p-1 rounded-[18px] h-14 border border-white/5 w-full lg:w-auto">
+            {(["day", "week", "month", "custom"] as const).map(v => (
+              <button 
+                key={v} 
+                type="button"
+                onClick={() => setView(v)} 
+                className={cn(
+                  "flex-1 sm:px-6 h-full rounded-[14px] text-xs font-black uppercase tracking-wider transition-all", 
+                  view === v ? "bg-gold text-black shadow-lg" : "text-slate-400 hover:text-white"
+                )}
+              >
+                {v === "day" ? "Dia" : v === "week" ? "Semana" : v === "month" ? "Mês" : "Período"}
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => openNewAppointment()} className="flex-1 h-[60px] rounded-[18px] bg-gold text-black font-black">
-              <Plus className="mr-2" /> Novo Agendamento
+          <div className="flex gap-2 flex-1">
+            <Button onClick={() => openNewAppointment()} className="flex-1 h-14 rounded-[18px] bg-gold text-black font-black">
+              <Plus className="mr-2 h-4 w-4" /> Novo Agendamento
             </Button>
-            <Button onClick={() => setIsWalkinOpen(true)} className="flex-1 h-[60px] rounded-[18px] bg-emerald-600 text-white font-black">
-              <UserPlus className="mr-2" /> Walk-in
+            <Button onClick={() => setIsWalkinOpen(true)} className="flex-1 h-14 rounded-[18px] bg-emerald-600 hover:bg-emerald-500 text-white font-black">
+              <UserPlus className="mr-2 h-4 w-4" /> Walk-in
             </Button>
           </div>
         </div>
 
-        {isToday && view === 'day' && <WalkinQueuePanel tenantId={tenantId} date={currentDate} refreshKey={appointments.length} onChange={() => fetchData()} />}
+        {/* Barra de Filtros Avançados Integrada */}
+        <AgendaFilters
+          value={filters}
+          onChange={setFilters}
+          barbers={barbers}
+          services={services}
+          paymentMethods={paymentMethods}
+          resultCount={filteredAppointments.length}
+          barberLocked={isBarberRole}
+        />
 
+        {/* Walk-in Queue Panel apenas no dia de hoje em modo Dia */}
+        {isToday && view === 'day' && (
+          <WalkinQueuePanel tenantId={tenantId} date={currentDate} refreshKey={appointments.length} onChange={() => fetchData()} />
+        )}
+
+        {/* Navegador de Período */}
         <div className="rounded-3xl border border-[#F59E0B]/15 bg-[#0B1220] p-4">
           <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" size="icon" onClick={() => setCurrentDate(subDays(currentDate, view === 'day' ? 1 : 7))} className="rounded-2xl border-white/10 text-gold h-11 w-11"><ChevronLeft /></Button>
-            <h3 className="font-black capitalize tracking-tight text-lg">{format(currentDate, view === 'day' ? "EEEE, d 'de' MMMM" : "'Semana de' d 'de' MMMM", { locale: ptBR })}</h3>
-            <Button variant="outline" size="icon" onClick={() => setCurrentDate(addDays(currentDate, view === 'day' ? 1 : 7))} className="rounded-2xl border-white/10 text-gold h-11 w-11"><ChevronRight /></Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => {
+                  if (view === 'day') setCurrentDate(subDays(currentDate, 1));
+                  else if (view === 'week') setCurrentDate(subDays(currentDate, 7));
+                  else if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
+                }} 
+                disabled={view === 'custom'}
+                aria-label="Período anterior"
+                className="rounded-2xl border-white/10 text-gold h-11 w-11 disabled:opacity-30"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDate(new Date())}
+                className="rounded-xl border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-gold hover:border-gold/30 h-11 px-3"
+              >
+                Hoje
+              </Button>
+            </div>
+
+            <h3 className="font-black capitalize tracking-tight text-base sm:text-lg text-center truncate">
+              {view === 'day' && format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+              {view === 'week' && `Semana de ${format(startOfWeek(currentDate, { weekStartsOn: 0 }), "d 'de' MMMM", { locale: ptBR })}`}
+              {view === 'month' && format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
+              {view === 'custom' && `${format(parseISO(customStartDate), "dd/MM/yyyy")} até ${format(parseISO(customEndDate), "dd/MM/yyyy")}`}
+            </h3>
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => {
+                if (view === 'day') setCurrentDate(addDays(currentDate, 1));
+                else if (view === 'week') setCurrentDate(addDays(currentDate, 7));
+                else if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
+              }} 
+              disabled={view === 'custom'}
+              aria-label="Próximo período"
+              className="rounded-2xl border-white/10 text-gold h-11 w-11 disabled:opacity-30"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
+
+          {/* Controles do Modo Período Personalizado */}
+          {view === 'custom' && (
+            <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Atalhos:</span>
+                <Button variant="ghost" size="sm" onClick={() => applyPreset("last7")} className="h-8 rounded-lg text-xs bg-white/5 hover:bg-gold/15 hover:text-gold">Últimos 7 dias</Button>
+                <Button variant="ghost" size="sm" onClick={() => applyPreset("last30")} className="h-8 rounded-lg text-xs bg-white/5 hover:bg-gold/15 hover:text-gold">Últimos 30 dias</Button>
+                <Button variant="ghost" size="sm" onClick={() => applyPreset("thisMonth")} className="h-8 rounded-lg text-xs bg-white/5 hover:bg-gold/15 hover:text-gold">Este Mês</Button>
+                <Button variant="ghost" size="sm" onClick={() => applyPreset("lastMonth")} className="h-8 rounded-lg text-xs bg-white/5 hover:bg-gold/15 hover:text-gold">Mês Passado</Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-slate-400 mb-1 block">Data Inicial</Label>
+                  <Input 
+                    type="date" 
+                    value={customStartDate} 
+                    onChange={(e) => handleCustomRangeChange(e.target.value, customEndDate)}
+                    className="h-10 rounded-xl border-white/10 bg-[#05070D] text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-400 mb-1 block">Data Final</Label>
+                  <Input 
+                    type="date" 
+                    value={customEndDate} 
+                    onChange={(e) => handleCustomRangeChange(customStartDate, e.target.value)}
+                    className="h-10 rounded-xl border-white/10 bg-[#05070D] text-white"
+                  />
+                </div>
+              </div>
+              {dateError && (
+                <p className="text-xs text-red-400 font-bold bg-red-950/40 border border-red-800/40 p-2 rounded-lg">
+                  {dateError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="space-y-4 pb-10">
-            {appointments.length === 0 ? (
-              <Card className="glass border-white/5 bg-[#0B1220] rounded-[32px] overflow-hidden">
-                <CardContent className="flex flex-col items-center justify-center py-20">
-                  <CalendarIcon className="h-16 w-16 text-[#F59E0B]/20 mb-4" />
-                  <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Nenhum atendimento</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {appointments.map(appt => (
-                  <div key={appt.id} onClick={() => { setSelectedAppointmentId(appt.id); setDetailsModalOpen(true); }} className="group relative flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-[#0B1220] hover:bg-white/[0.04] transition-all cursor-pointer">
-                    <div className="w-16 flex flex-col items-center">
-                      <span className="text-sm font-black text-white">{format(new Date(appt.start_time), 'HH:mm')}</span>
-                      <span className="text-[10px] text-slate-500 font-bold">{format(new Date(appt.end_time), 'HH:mm')}</span>
+        {/* Visualização de Conteúdo da Agenda */}
+        {view === "month" ? (
+          <MonthView
+            month={currentDate}
+            appointments={filteredAppointments}
+            selectedDate={currentDate}
+            onSelectDate={(d) => {
+              setCurrentDate(d);
+              setView("day");
+            }}
+            onView={(app) => {
+              setSelectedAppointmentId(app.id);
+              setDetailsModalOpen(true);
+            }}
+            onReschedule={(app) => {
+              setRescheduleAppt(app);
+              setRescheduleOpen(true);
+            }}
+          />
+        ) : (
+          <ScrollArea className="flex-1">
+            <div className="space-y-4 pb-10">
+              {filteredAppointments.length === 0 ? (
+                <Card className="glass border-white/5 bg-[#0B1220] rounded-[32px] overflow-hidden">
+                  <CardContent className="flex flex-col items-center justify-center py-20">
+                    <CalendarIcon className="h-16 w-16 text-[#F59E0B]/20 mb-4" />
+                    <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">
+                      Nenhum atendimento encontrado para os filtros selecionados
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-3">
+                  {filteredAppointments.map((appt) => (
+                    <div
+                      key={appt.id}
+                      onClick={() => {
+                        setSelectedAppointmentId(appt.id);
+                        setDetailsModalOpen(true);
+                      }}
+                      className="group relative flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-[#0B1220] hover:bg-white/[0.04] transition-all cursor-pointer"
+                    >
+                      <div className="w-20 flex flex-col items-center justify-center border-r border-white/5 pr-3">
+                        <span className="text-[11px] font-bold text-slate-400">
+                          {format(new Date(appt.start_time), 'dd/MM')}
+                        </span>
+                        <span className="text-sm font-black text-white">
+                          {format(new Date(appt.start_time), 'HH:mm')}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-white italic uppercase tracking-tight truncate">
+                            {appt.customers?.name || appt.customer_name || 'Cliente Final'}
+                          </p>
+                          {appt.total_price && (
+                            <span className="text-xs font-bold text-gold shrink-0">
+                              R$ {Number(appt.total_price).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 font-bold truncate">
+                          {appt.services?.name || 'Serviço'} • {appt.barbers?.name || 'Profissional'}
+                        </p>
+                      </div>
+                      <Badge className={cn("font-black uppercase text-[9px] shrink-0", getCalendarStatusConfig(appt.status).badge)}>
+                        {getCalendarStatusConfig(appt.status).label}
+                      </Badge>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-black text-white italic uppercase tracking-tight">{appt.customers?.name || 'Cliente Final'}</p>
-                      <p className="text-xs text-slate-400 font-bold">{appt.services?.name} • {appt.barbers?.name}</p>
-                    </div>
-                    <Badge className={cn("font-black uppercase text-[9px]", getCalendarStatusConfig(appt.status).badge)}>{getCalendarStatusConfig(appt.status).label}</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-        <AppointmentModal open={isDialogOpen} onOpenChange={setIsDialogOpen} initialDate={modalInitialData.date} initialTime={modalInitialData.time} onSuccess={fetchData} />
-        <AppointmentDetailsModal open={detailsModalOpen} onOpenChange={setDetailsModalOpen} appointmentId={selectedAppointmentId} onSuccess={fetchData} onReschedule={(appt) => { setRescheduleAppt(appt); setRescheduleOpen(true); }} />
-        <WalkinModal open={isWalkinOpen} onOpenChange={setIsWalkinOpen} onSuccess={fetchData} />
-        <RescheduleWizard open={rescheduleOpen} onOpenChange={setRescheduleOpen} appointment={rescheduleAppt} onSuccess={fetchData} actor={role === "barber" ? "barber" : "admin"} actorId={user?.id} source="admin_calendar" />
+                  ))}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        )}
+
+        {/* Modais Operacionais Preservados */}
+        <AppointmentModal 
+          open={isDialogOpen} 
+          onOpenChange={setIsDialogOpen} 
+          initialDate={modalInitialData.date} 
+          initialTime={modalInitialData.time} 
+          onSuccess={fetchData} 
+        />
+        <AppointmentDetailsModal 
+          open={detailsModalOpen} 
+          onOpenChange={setDetailsModalOpen} 
+          appointmentId={selectedAppointmentId} 
+          onSuccess={fetchData} 
+          onReschedule={(appt) => { 
+            setRescheduleAppt(appt); 
+            setRescheduleOpen(true); 
+          }} 
+        />
+        <WalkinModal 
+          open={isWalkinOpen} 
+          onOpenChange={setIsWalkinOpen} 
+          onSuccess={fetchData} 
+        />
+        <RescheduleWizard 
+          open={rescheduleOpen} 
+          onOpenChange={setRescheduleOpen} 
+          appointment={rescheduleAppt} 
+          onSuccess={fetchData} 
+          actor={role === "barber" ? "barber" : "admin"} 
+          actorId={user?.id} 
+          source="admin_calendar" 
+        />
       </div>
     </AppLayout>
   );

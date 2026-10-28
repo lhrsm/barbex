@@ -37,6 +37,7 @@ interface Props {
   services: any[];
   paymentMethods: string[];
   resultCount: number;
+  barberLocked?: boolean;
 }
 
 const selectCls =
@@ -49,6 +50,7 @@ export function AgendaFilters({
   services,
   paymentMethods,
   resultCount,
+  barberLocked = false,
 }: Props) {
   const [open, setOpen] = React.useState(false);
   const set = (patch: Partial<AgendaFilterState>) => onChange({ ...value, ...patch });
@@ -112,7 +114,7 @@ export function AgendaFilters({
 
       {open && (
         <div className="mt-3 grid grid-cols-1 gap-2 border-t border-white/5 pt-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Select value={value.barberId} onValueChange={(v) => set({ barberId: v })}>
+          <Select value={value.barberId} onValueChange={(v) => !barberLocked && set({ barberId: v })} disabled={barberLocked}>
             <SelectTrigger className={selectCls} aria-label="Filtrar por profissional">
               <SelectValue placeholder="Profissional" />
             </SelectTrigger>
@@ -188,7 +190,7 @@ export function AgendaFilters({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => onChange({ ...EMPTY_FILTERS })}
+              onClick={() => onChange({ ...EMPTY_FILTERS, barberId: barberLocked ? value.barberId : "all" })}
               className="h-8 rounded-lg text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-[#F5C542]"
             >
               Limpar filtros
