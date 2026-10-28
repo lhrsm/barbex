@@ -7,7 +7,8 @@ import {
   ChevronRight, 
   ExternalLink,
   BookOpen,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -20,6 +21,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { openOnboardingModal } from '@/components/onboarding/OnboardingModal';
 
 export interface HelpContextProps {
   moduleKey: string;
@@ -99,6 +101,14 @@ export const HelpDrawer = ({
                   <FileText className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
+              <Button
+                variant="outline"
+                onClick={() => openOnboardingModal()}
+                className="w-full justify-between border-gold/30 bg-gold/10 hover:bg-gold/20 text-gold font-black uppercase tracking-widest h-12 rounded-xl group px-6"
+              >
+                Rever Guia de Início
+                <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+              </Button>
             </div>
 
             {/* FAQs */}

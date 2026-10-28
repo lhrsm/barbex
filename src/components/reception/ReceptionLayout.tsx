@@ -13,7 +13,9 @@ import {
   User,
   ShieldCheck,
   Building2,
+  Sparkles,
 } from "lucide-react";
+import { OnboardingModal, openOnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +167,17 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
             >
               <User className="mr-2 h-3.5 w-3.5 text-gold" /> Meu Perfil
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs justify-start border-gold/30 bg-gold/5 text-gold hover:text-white hover:bg-gold/15"
+              onClick={() => {
+                setOpen(false);
+                openOnboardingModal();
+              }}
+            >
+              <Sparkles className="mr-2 h-3.5 w-3.5 text-gold" /> Guia da Recepção
+            </Button>
             {isOwner && (
               <Link
                 to="/dashboard"
@@ -242,6 +255,14 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
             >
               <User className="mr-2 h-3.5 w-3.5 text-gold" /> Meu Perfil
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs justify-start border-gold/30 bg-gold/5 text-gold hover:text-white hover:bg-gold/15"
+              onClick={() => openOnboardingModal()}
+            >
+              <Sparkles className="mr-2 h-3.5 w-3.5 text-gold" /> Guia da Recepção
+            </Button>
 
             {isOwner && (
               <Link
@@ -269,6 +290,7 @@ export function ReceptionLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      <OnboardingModal />
       <EditProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}

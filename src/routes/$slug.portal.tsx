@@ -10,8 +10,10 @@ import {
   User as UserIcon,
   ArrowLeft,
   ShieldCheck,
-  Building2
+  Building2,
+  HelpCircle
 } from "lucide-react";
+import { OnboardingModal, openOnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { toast } from "sonner";
 import { PortalNavigation } from "@/components/portal/premium/layout/PortalNavigation";
 import { HomeTab } from "@/components/portal/premium/layout/HomeTab";
@@ -873,6 +875,15 @@ function CustomerPortalPage() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openOnboardingModal()}
+              className="text-zinc-400 hover:text-gold gap-1.5 text-xs font-bold px-2.5 h-9 rounded-xl"
+            >
+              <HelpCircle className="h-4 w-4 text-gold" />
+              <span className="hidden sm:inline">Ajuda</span>
+            </Button>
             <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-gold rounded-xl transition-all">
               <Bell className="h-5 w-5" />
             </Button>
@@ -977,6 +988,7 @@ function CustomerPortalPage() {
         }}
       />
 
+      <OnboardingModal />
       {skipAppointment && (
         <SkipReviewDialog
           open={!!skipAppointment}

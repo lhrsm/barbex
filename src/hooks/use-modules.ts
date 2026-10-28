@@ -36,6 +36,7 @@ const ALWAYS_ON: string[] = [
   "services",
   "finances",
   "settings",
+  "tutorials",
 ];
 
 export const DEFAULT_MODULES: Record<string, boolean> = {
@@ -46,7 +47,7 @@ export const DEFAULT_MODULES: Record<string, boolean> = {
   campaigns: false,
   automations: false,
   commissions: false,
-  tutorials: false,
+  tutorials: true,
   integrations: false,
   support: true,
   coupons: false,
