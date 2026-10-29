@@ -41,3 +41,4 @@ scratch/
 supabase/.temp/
 scratch_last_prompt.json
 transcript_tail.txt
+scripts/backup_tutorials_manifest_*.json
