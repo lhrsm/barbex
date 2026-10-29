@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,10 +9,9 @@ import { HelpArticleCard } from "@/components/help-center/HelpArticleCard";
 import { HelpArticlePage } from "@/components/help-center/HelpArticlePage";
 import { HelpHistory } from "@/components/help-center/HelpHistory";
 import { HelpSkeleton } from "@/components/help-center/HelpSkeleton";
-import { BookOpen, Search as SearchIcon, Sparkles, GraduationCap } from "lucide-react";
+import { BookOpen, Search as SearchIcon, Sparkles, GraduationCap, ShieldAlert, ArrowLeft } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 import { Button } from "@/components/ui/button";
-import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useModules } from "@/hooks/use-modules";
@@ -21,10 +20,45 @@ import {
   type TutorialItem,
 } from "@/lib/tutorials.catalog";
 import { openOnboardingModal } from "@/components/onboarding/OnboardingModal";
+import { toast } from "sonner";
+
+interface TutorialsSearchParams {
+  article?: string;
+  category?: string;
+  q?: string;
+}
 
 export const Route = createFileRoute("/tutorials")({
+  validateSearch: (search: Record<string, unknown>): TutorialsSearchParams => ({
+    article: typeof search.article === "string" && search.article.trim() ? search.article.trim() : undefined,
+    category: typeof search.category === "string" && search.category.trim() ? search.category.trim() : undefined,
+    q: typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined,
+  }),
   component: withModule("tutorials", "Tutoriais", HelpCenterPage),
 });
+
+/**
+ * Mapeamento canônico de equivalência semântica comprovada entre itens
+ * do catálogo estruturado de onboarding e artigos persistidos no Supabase.
+ * Permite deduplicação inteligente sem excluir conteúdos distintos nem quebrar links.
+ */
+const SEMANTIC_EQUIVALENCES: Record<string, { canonicalDbPrefix: string }> = {
+  "client-online-booking": { canonicalDbPrefix: "Como o cliente agenda pelo site público" },
+  "client-portal-management": { canonicalDbPrefix: "Como funciona o portal do cliente" },
+  "client-loyalty-cashback": { canonicalDbPrefix: "Como funciona o portal do cliente e o Clube Barbex" },
+  "owner-config-barbershop": { canonicalDbPrefix: "Como configurar sua barbearia pela primeira vez" },
+  "owner-services-setup": { canonicalDbPrefix: "Como criar serviços" },
+  "owner-team-management": { canonicalDbPrefix: "Como cadastrar barbeiros" },
+  "owner-whatsapp-automation": { canonicalDbPrefix: "Como configurar Z-API" },
+  "owner-finances-reconciliation": { canonicalDbPrefix: "Como usar a Visão Gerencial e exportar PDF" },
+  "reception-comanda-digital": { canonicalDbPrefix: "Como usar a Comanda Digital" },
+  "reception-walkin-queue": { canonicalDbPrefix: "Como atender clientes sem agendamento" },
+  "reception-checkin-arrival": { canonicalDbPrefix: "Como usar o Check-in por QR Code" },
+  "barber-complete-appointment": { canonicalDbPrefix: "Como concluir ou cancelar um atendimento" },
+  "barber-commissions-statement": { canonicalDbPrefix: "Como o barbeiro acompanha sua comissão" },
+  "finance-cash-flow": { canonicalDbPrefix: "Como funciona o financeiro da barbearia" },
+  "finance-commission-payout": { canonicalDbPrefix: "Como pagar comissão ao barbeiro" },
+};
 
 function mapCatalogItemToArticle(tut: TutorialItem) {
   const iconMap: Record<string, string> = {
@@ -61,48 +95,84 @@ function mapCatalogItemToArticle(tut: TutorialItem) {
     category: { name: tut.badge || "Geral" },
     route: tut.route,
     type: "document",
+    profile_target: tut.targetRoles,
   };
 }
 
 function HelpCenterPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [recentArticles, setRecentArticles] = useState<any[]>([]);
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
 
-  const { user, role } = useAuth();
+  const [searchQuery, setSearchQuery] = useState(searchParams.q || "");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(searchParams.category || null);
+  const [recentArticles, setRecentArticles] = useState<{ id: string; title: string }[]>([]);
+
+  const { user, role, loading: authLoading, initialized: authInitialized } = useAuth();
   const { hasPermission } = usePermissions();
   const { isEnabled } = useModules();
 
-  // Load history from localStorage
+  // GATE 1 — CONTEXTO DE AUTENTICAÇÃO E COMPORTAMENTO FAIL-CLOSED
+  const isAuthResolving = !authInitialized || authLoading;
+  const isAnonymous = authInitialized && (!user || !role || role === "unknown");
+  const effectiveRole = useMemo(() => {
+    if (isAuthResolving || isAnonymous) return null;
+    return role;
+  }, [isAuthResolving, isAnonymous, role]);
+
+  // GATE 5 — HISTÓRICO ISOLADO POR CONTEXTO DE USUÁRIO
+  const historyStorageKey = useMemo(() => {
+    if (user?.id) return `help_history_${user.id}`;
+    return "help_history_anon";
+  }, [user?.id]);
+
   useEffect(() => {
-    const saved = localStorage.getItem("help_history");
-    if (saved) {
-      try {
-        setRecentArticles(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error parsing help history", e);
+    try {
+      const saved = localStorage.getItem(historyStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Armazena apenas referências mínimas { id, title }, nunca o corpo inteiro
+          setRecentArticles(parsed.map((item: any) => ({ id: item.id, title: item.title })));
+        } else {
+          setRecentArticles([]);
+        }
+      } else {
+        setRecentArticles([]);
       }
+    } catch {
+      setRecentArticles([]);
     }
-  }, []);
+  }, [historyStorageKey]);
 
-  const addToHistory = (article: any) => {
-    const newHistory = [article, ...recentArticles.filter((a) => a.id !== article.id)].slice(0, 5);
-    setRecentArticles(newHistory);
-    localStorage.setItem("help_history", JSON.stringify(newHistory));
-    setSelectedArticle(article);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  // Sincroniza query params da URL com os estados locais
+  useEffect(() => {
+    if (searchParams.category !== undefined && searchParams.category !== selectedCategoryId) {
+      setSelectedCategoryId(searchParams.category || null);
+    }
+  }, [searchParams.category]);
 
-  // Tutoriais canônicos do catálogo autorizados para o perfil do usuário
+  useEffect(() => {
+    if (searchParams.q !== undefined && searchParams.q !== searchQuery) {
+      setSearchQuery(searchParams.q || "");
+    }
+  }, [searchParams.q]);
+
+  // GATE 2 — CATÁLOGO ESTÁTICO AUTORIZADO
   const catalogArticles = useMemo(() => {
+    // Para visitantes anônimos ou durante resolução de autenticação: NUNCA injetar catálogo estático!
+    // Preserva estritamente os 3 artigos públicos provenientes do Supabase via RLS.
+    if (isAuthResolving || isAnonymous || !effectiveRole) {
+      return [];
+    }
+
     const authorized = getTutorialsForRole({
-      role,
+      role: effectiveRole,
       hasPermission,
       isModuleEnabled: (key: string) => isEnabled(key),
     });
+
     return authorized.map(mapCatalogItemToArticle);
-  }, [role, hasPermission, isEnabled]);
+  }, [isAuthResolving, isAnonymous, effectiveRole, hasPermission, isEnabled]);
 
   // Consulta ao banco de dados Supabase
   const { data: dbCategories } = useQuery({
@@ -118,9 +188,9 @@ function HelpCenterPage() {
   });
 
   const { data: dbArticles, isLoading } = useQuery({
-    queryKey: ["help-articles", selectedCategoryId],
+    queryKey: ["help-articles", isAnonymous, effectiveRole],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("tutorials")
         .select(`
           *,
@@ -128,84 +198,284 @@ function HelpCenterPage() {
         `)
         .order("order", { ascending: true });
 
-      if (selectedCategoryId) {
-        query = query.eq("category_id", selectedCategoryId);
-      }
-
-      const { data, error } = await query;
       if (error) return [];
       return data || [];
     },
   });
 
-  // Filtra e unifica artigos do banco e do catálogo de forma estritamente isolada e segura
-  const combinedArticles = useMemo(() => {
-    const isSuperAdmin = role === "super_admin";
+  // GATES 1, 2, 3 — DEFESA EM PROFUNDIDADE, UNIFICAÇÃO E DEDUPLICAÇÃO INTELIGENTE
+  const { combinedArticles, aliasMap } = useMemo(() => {
+    const isSuperAdmin = effectiveRole === "super_admin";
+    const aliases = new Map<string, string>();
 
-    // 1. Filtra artigos do banco para proteger conteúdos administrativos
+    // 1. Defesa em Profundidade nos artigos do banco de dados
     const safeDbArticles = (dbArticles || []).filter((art: any) => {
-      // Se for tutorial restrito a super admin e o usuário não for super admin, bloqueia
-      if (!isSuperAdmin) {
-        const targetProfiles = art.metadata?.target_profiles || [];
-        if (targetProfiles.length === 1 && targetProfiles[0] === "super_admin") {
-          return false;
-        }
-        if (art.type === "super_admin_internal") {
-          return false;
-        }
+      // Visitante Anônimo: apenas artigos expressamente públicos para clientes
+      if (isAnonymous) {
+        const targets = Array.isArray(art.profile_target) ? art.profile_target : [];
+        const isClientEligible = targets.includes("client") || targets.includes("customer");
+        return isClientEligible && !art.is_admin_only && art.type !== "super_admin_internal";
       }
+
+      // Super Admin: acesso irrestrito a todos os artigos publicados
+      if (isSuperAdmin) return true;
+
+      // Não-superadmin NUNCA pode ver artigos internos de superadmin
+      if (art.type === "super_admin_internal") return false;
+      const targets = Array.isArray(art.profile_target) ? art.profile_target : [];
+      if (targets.length === 1 && targets[0] === "super_admin") return false;
+
+      // Artigos administrativos exclusivos requerem cargo de gestão
+      const isAdminRole =
+        effectiveRole === "tenant_admin" || effectiveRole === "admin" || effectiveRole === "manager";
+      if (art.is_admin_only && !isAdminRole) return false;
+
+      // Verificação de compatibilidade de role
+      if (targets.length > 0 && effectiveRole) {
+        const roleMatches =
+          targets.includes(effectiveRole) ||
+          (effectiveRole === "tenant_admin" && targets.includes("admin")) ||
+          (effectiveRole === "admin" && targets.includes("tenant_admin")) ||
+          (effectiveRole === "reception" && targets.includes("receptionist")) ||
+          (effectiveRole === "receptionist" && targets.includes("reception")) ||
+          (effectiveRole === "barber" && targets.includes("professional")) ||
+          (effectiveRole === "professional" && targets.includes("barber")) ||
+          (effectiveRole === "financial" && (targets.includes("finance") || targets.includes("cashier"))) ||
+          (effectiveRole === "finance" && (targets.includes("financial") || targets.includes("cashier"))) ||
+          (effectiveRole === "cashier" && (targets.includes("financial") || targets.includes("finance"))) ||
+          (effectiveRole === "customer" && targets.includes("client")) ||
+          (effectiveRole === "client" && targets.includes("customer"));
+
+        if (!roleMatches) return false;
+      }
+
       return true;
     });
 
-    // 2. Unifica com artigos do catálogo autorizado
-    const map = new Map<string, any>();
-    catalogArticles.forEach((a) => map.set(a.id, a));
-    safeDbArticles.forEach((a) => map.set(a.id, a));
+    // Mapeamento dos artigos do banco por ID
+    const articleMap = new Map<string, any>();
+    safeDbArticles.forEach((art: any) => {
+      articleMap.set(art.id, art);
+    });
 
-    let list = Array.from(map.values());
+    // 2. Unificação e Deduplicação com Catálogo Estático Autorizado
+    catalogArticles.forEach((catItem: any) => {
+      const equiv = SEMANTIC_EQUIVALENCES[catItem.id];
+      let matchingDbArticle: any = null;
 
-    // 3. Filtro por categoria selecionada
+      if (equiv) {
+        matchingDbArticle = safeDbArticles.find(
+          (dbArt: any) =>
+            dbArt.title && dbArt.title.toLowerCase().startsWith(equiv.canonicalDbPrefix.toLowerCase())
+        );
+      } else {
+        matchingDbArticle = safeDbArticles.find(
+          (dbArt: any) =>
+            dbArt.title && dbArt.title.trim().toLowerCase() === catItem.title.trim().toLowerCase()
+        );
+      }
+
+      if (matchingDbArticle) {
+        // Registra alias do catálogo para o artigo canônico do banco
+        aliases.set(catItem.id, matchingDbArticle.id);
+      } else {
+        // Conteúdo distinto do catálogo sem equivalente no banco: inclui mantendo o ID
+        articleMap.set(catItem.id, catItem);
+      }
+    });
+
+    return { combinedArticles: Array.from(articleMap.values()), aliasMap: aliases };
+  }, [dbArticles, catalogArticles, effectiveRole, isAnonymous]);
+
+  // GATE 4 — CATEGORIAS DINÂMICAS: EXIBIR SOMENTE AS QUE TÊM ARTIGOS ACESSÍVEIS
+  const categories = useMemo(() => {
+    if (!combinedArticles || combinedArticles.length === 0) return [];
+
+    const activeCatIds = new Set<string>();
+    const activeCatNames = new Set<string>();
+
+    combinedArticles.forEach((art: any) => {
+      if (art.category_id) activeCatIds.add(String(art.category_id).toLowerCase());
+      if (art.category?.id) activeCatIds.add(String(art.category.id).toLowerCase());
+      if (art.category?.name) activeCatNames.add(String(art.category.name).toLowerCase());
+    });
+
+    if (dbCategories && dbCategories.length > 0) {
+      const filtered = dbCategories.filter((cat: any) => {
+        const catId = String(cat.id).toLowerCase();
+        const catName = String(cat.name).toLowerCase();
+        return activeCatIds.has(catId) || activeCatNames.has(catName);
+      });
+      if (filtered.length > 0) return filtered;
+    }
+
+    const uniqueNames = Array.from(
+      new Set(combinedArticles.map((a: any) => a.category?.name).filter(Boolean))
+    );
+    return uniqueNames.map((name, idx) => ({
+      id: name,
+      name: name,
+      icon: "BookOpen",
+      order: idx,
+    }));
+  }, [combinedArticles, dbCategories]);
+
+  // GATE 4 — FILTRAGEM POR CATEGORIA E BUSCA
+  const filteredArticles = useMemo(() => {
+    let list = combinedArticles;
+
     if (selectedCategoryId) {
+      list = list.filter((a: any) => {
+        const catId = a.category_id || a.category?.id;
+        const catName = a.category?.name;
+        return (
+          catId === selectedCategoryId ||
+          (catName && catName.toLowerCase() === selectedCategoryId.toLowerCase())
+        );
+      });
+    }
+
+    const q = searchQuery.toLowerCase().trim();
+    if (q) {
       list = list.filter(
-        (a) => a.category_id === selectedCategoryId || a.category?.name === selectedCategoryId
+        (a: any) =>
+          (a.title && a.title.toLowerCase().includes(q)) ||
+          (a.description && a.description.toLowerCase().includes(q)) ||
+          (a.long_description && a.long_description.toLowerCase().includes(q))
       );
     }
 
     return list;
-  }, [dbArticles, catalogArticles, role, selectedCategoryId]);
+  }, [combinedArticles, selectedCategoryId, searchQuery]);
 
-  // Monta categorias combinadas dinâmicas
-  const categories = useMemo(() => {
-    if (dbCategories && dbCategories.length > 0) {
-      return dbCategories;
+  // GATE 6 — ROTAS DE DETALHES E PROTEÇÃO DE ACESSO DIRETO POR URL
+  const requestedArticleId = searchParams.article;
+
+  const activeArticle = useMemo(() => {
+    if (!requestedArticleId) return null;
+    let match = combinedArticles.find((a: any) => a.id === requestedArticleId);
+    if (!match && aliasMap.has(requestedArticleId)) {
+      const canonicalId = aliasMap.get(requestedArticleId);
+      match = combinedArticles.find((a: any) => a.id === canonicalId);
     }
+    return match || null;
+  }, [requestedArticleId, combinedArticles, aliasMap]);
 
-    // Se o banco não tem categorias cadastradas, gera a partir dos badges do catálogo
-    const uniqueBadges = Array.from(new Set(catalogArticles.map((a) => a.category?.name).filter(Boolean)));
-    return uniqueBadges.map((badge, idx) => ({
-      id: badge,
-      name: badge,
-      icon: "BookOpen",
-      order: idx,
-    }));
-  }, [dbCategories, catalogArticles]);
+  const isRequestedArticleUnauthorized = Boolean(
+    requestedArticleId && !isAuthResolving && !isLoading && !activeArticle
+  );
 
-  const filteredArticles = useMemo(() => {
-    if (!combinedArticles) return [];
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return combinedArticles;
+  // GATE 5 — HISTÓRICO REVALIDADO EM TEMPO REAL
+  const visibleHistory = useMemo(() => {
+    const allowedMap = new Map(combinedArticles.map((a: any) => [a.id, a]));
+    return recentArticles
+      .filter((h: any) => {
+        const targetId = aliasMap.get(h.id) || h.id;
+        return allowedMap.has(targetId);
+      })
+      .map((h: any) => {
+        const targetId = aliasMap.get(h.id) || h.id;
+        return allowedMap.get(targetId) || h;
+      });
+  }, [recentArticles, combinedArticles, aliasMap]);
 
-    return combinedArticles.filter(
-      (a: any) =>
-        a.title.toLowerCase().includes(q) ||
-        (a.description && a.description.toLowerCase().includes(q)) ||
-        (a.long_description && a.long_description.toLowerCase().includes(q))
-    );
-  }, [combinedArticles, searchQuery]);
+  const addToHistory = (article: any) => {
+    const minimalItem = { id: article.id, title: article.title };
+    setRecentArticles((prev) => {
+      const updated = [minimalItem, ...prev.filter((a) => a.id !== article.id)].slice(0, 5);
+      try {
+        localStorage.setItem(historyStorageKey, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Could not save help history", e);
+      }
+      return updated;
+    });
+  };
+
+  const handleSelectArticle = (article: any) => {
+    addToHistory(article);
+    navigate({
+      to: "/tutorials",
+      search: (prev) => ({ ...prev, article: article.id }),
+      replace: false,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSelectHistory = (historyItem: any) => {
+    const targetId = aliasMap.get(historyItem.id) || historyItem.id;
+    const authorized = combinedArticles.find((a: any) => a.id === targetId);
+    if (!authorized) {
+      setRecentArticles((prev) => prev.filter((a) => a.id !== historyItem.id));
+      toast.error("Este tutorial não está disponível para o seu perfil.");
+      return;
+    }
+    handleSelectArticle(authorized);
+  };
+
+  const handleBackToList = () => {
+    navigate({
+      to: "/tutorials",
+      search: (prev) => ({ ...prev, article: undefined }),
+      replace: true,
+    });
+  };
+
+  const handleSelectCategory = (catId: string | null) => {
+    setSelectedCategoryId(catId);
+    navigate({
+      to: "/tutorials",
+      search: (prev) => ({ ...prev, category: catId || undefined }),
+      replace: true,
+    });
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    navigate({
+      to: "/tutorials",
+      search: (prev) => ({ ...prev, q: query.trim() || undefined }),
+      replace: true,
+    });
+  };
 
   return (
     <HelpCenterLayout>
-      {!selectedArticle ? (
+      {/* CENÁRIO 1: ACESSO DIRETO NÃO AUTORIZADO (GATE 6) */}
+      {isRequestedArticleUnauthorized ? (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Button
+            variant="ghost"
+            onClick={handleBackToList}
+            className="text-zinc-400 hover:text-white -ml-2 h-9 text-xs sm:text-sm font-semibold gap-1.5"
+          >
+            <ArrowLeft className="h-4 w-4" /> Voltar para a Central de Ajuda
+          </Button>
+
+          <div className="bg-[#0b0f17] border border-amber-500/30 rounded-2xl p-6 sm:p-10 text-center space-y-4 max-w-xl mx-auto shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center mx-auto text-amber-400">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-bold text-white">Conteúdo Restrito</h3>
+              <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed max-w-md mx-auto">
+                Este tutorial não está disponível para o seu nível de acesso atual ou requer autenticação como perfil
+                autorizado.
+              </p>
+            </div>
+            <Button
+              onClick={handleBackToList}
+              className="bg-gold text-black hover:bg-gold/90 font-bold text-xs rounded-xl h-9 px-5 shadow-[0_2px_12px_rgba(212,175,55,0.25)]"
+            >
+              Ver Tutoriais Disponíveis
+            </Button>
+          </div>
+        </div>
+      ) : activeArticle ? (
+        /* CENÁRIO 2: ARTIGO AUTORIZADO SELECIONADO */
+        <HelpArticlePage article={activeArticle} onBack={handleBackToList} />
+      ) : (
+        /* CENÁRIO 3: LISTAGEM PRINCIPAL DA CENTRAL DE AJUDA */
         <div className="space-y-4 sm:space-y-6">
           {/* 1. Identificação da Central de Ajuda */}
           <div className="flex items-center justify-between pb-2 border-b border-zinc-800/60">
@@ -213,9 +483,7 @@ function HelpCenterPage() {
               <GraduationCap className="w-3.5 h-3.5 text-gold" />
               <span>Central de Ajuda 2.0</span>
             </div>
-            <span className="text-[11px] text-zinc-500 font-medium hidden sm:inline">
-              Base oficial Barbex
-            </span>
+            <span className="text-[11px] text-zinc-500 font-medium hidden sm:inline">Base oficial Barbex</span>
           </div>
 
           {/* 2. Título e descrição compactos + 3. Campo de pesquisa */}
@@ -228,21 +496,19 @@ function HelpCenterPage() {
             </p>
             {/* 3. Campo de pesquisa */}
             <div className="pt-1.5">
-              <HelpSearch value={searchQuery} onChange={setSearchQuery} />
+              <HelpSearch value={searchQuery} onChange={handleSearchChange} />
             </div>
           </div>
 
-          {/* 4. Categorias */}
+          {/* 4. Categorias filtradas dinamicamente (GATE 4) */}
           {categories.length > 0 && (
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Categorias
-                </span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Categorias</span>
                 {selectedCategoryId && (
                   <button
                     type="button"
-                    onClick={() => setSelectedCategoryId(null)}
+                    onClick={() => handleSelectCategory(null)}
                     className="text-xs text-gold hover:underline font-bold"
                   >
                     Limpar filtro
@@ -252,7 +518,7 @@ function HelpCenterPage() {
               <HelpCategories
                 categories={categories || []}
                 selectedId={selectedCategoryId}
-                onSelect={setSelectedCategoryId}
+                onSelect={handleSelectCategory}
               />
             </div>
           )}
@@ -273,12 +539,13 @@ function HelpCenterPage() {
                 </span>
               </div>
 
-              {isLoading && combinedArticles.length === 0 ? (
+              {/* Fail-closed skeleton durante carregamento */}
+              {isAuthResolving || (isLoading && combinedArticles.length === 0) ? (
                 <HelpSkeleton />
               ) : filteredArticles.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
                   {filteredArticles.map((article) => (
-                    <HelpArticleCard key={article.id} article={article} onClick={addToHistory} />
+                    <HelpArticleCard key={article.id} article={article} onClick={handleSelectArticle} />
                   ))}
                 </div>
               ) : (
@@ -286,7 +553,9 @@ function HelpCenterPage() {
                   <SearchIcon className="h-10 w-10 text-zinc-600 mx-auto mb-2" />
                   <h4 className="text-base font-bold text-white">Nenhum tutorial encontrado</h4>
                   <p className="text-zinc-500 max-w-sm mx-auto mt-1 text-xs sm:text-sm">
-                    Não encontramos tutoriais para "{searchQuery}". Tente outros termos ou limpe os filtros.
+                    {searchQuery
+                      ? `Não encontramos tutoriais para "${searchQuery}". Tente outros termos ou limpe os filtros.`
+                      : "Nenhum tutorial disponível para a categoria selecionada."}
                   </p>
                 </div>
               )}
@@ -298,9 +567,7 @@ function HelpCenterPage() {
               <div className="p-4 rounded-2xl bg-[#0b0f17] border border-gold/25 space-y-2">
                 <div className="flex items-center gap-2 text-gold">
                   <Sparkles className="w-4 h-4 text-gold" />
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-white">
-                    Guia de Início
-                  </h4>
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-white">Guia de Início</h4>
                 </div>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   Reveja o painel com as principais ferramentas e atalhos da sua função.
@@ -315,13 +582,12 @@ function HelpCenterPage() {
                 </Button>
               </div>
 
-              <HelpHistory recentArticles={recentArticles} onSelect={addToHistory} />
+              {/* Histórico Isolado (GATE 5) */}
+              <HelpHistory recentArticles={visibleHistory} onSelect={handleSelectHistory} />
 
               {/* Card Suporte Direto */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-gold/10 to-[#0b0f17] border border-gold/30 space-y-2 shadow-[0_4px_20px_rgba(212,175,55,0.15)]">
-                <h4 className="font-black text-gold uppercase text-[11px] tracking-wider">
-                  Suporte Direto
-                </h4>
+                <h4 className="font-black text-gold uppercase text-[11px] tracking-wider">Suporte Direto</h4>
                 <p className="text-xs text-zinc-300 leading-relaxed">
                   Não encontrou o que precisava? Fale com nosso suporte especializado.
                 </p>
@@ -337,8 +603,6 @@ function HelpCenterPage() {
             </aside>
           </div>
         </div>
-      ) : (
-        <HelpArticlePage article={selectedArticle} onBack={() => setSelectedArticle(null)} />
       )}
     </HelpCenterLayout>
   );
