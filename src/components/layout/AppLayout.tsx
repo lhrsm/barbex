@@ -185,6 +185,12 @@ const barberNavItems = (slug: string) => [
   { label: "Perfil", icon: User, to: `/${slug}/profissional?tab=profile` },
 ];
 
+const customerNavItems = (slug: string) => [
+  { label: "Meu Painel", icon: LayoutDashboard, to: `/${slug}/portal` },
+  { label: "Agendamentos", icon: Calendar, to: `/${slug}/portal?tab=appointments` },
+  { label: "Ajuda e Tutoriais", icon: BookOpen, to: "/tutorials" },
+];
+
 export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -279,12 +285,18 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
 
   const resolvedBarberSlug =
     tenantProfile?.slug || session?.tenant_slug || (slug !== "general" ? slug : "");
+  const resolvedClientSlug =
+    authIdentity?.tenantSlug || tenantProfile?.slug || (slug !== "general" ? slug : "");
   const rawNav =
     role === "barber" || role === "professional"
       ? resolvedBarberSlug
         ? [...barberNavItems(resolvedBarberSlug)]
         : []
-      : [...defaultNavItems];
+      : role === "client" || role === "customer"
+        ? resolvedClientSlug
+          ? [...customerNavItems(resolvedClientSlug)]
+          : [{ label: "Ajuda e Tutoriais", icon: BookOpen, to: "/tutorials" }]
+        : [...defaultNavItems];
   const navItems = rawNav.filter((item: NavItem) => {
     const moduleEnabled = !item.module || isModuleEnabled(item.module);
     const permissionGranted = !item.permission || hasPermission(item.permission);

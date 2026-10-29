@@ -9,7 +9,9 @@ import { HelpArticleCard } from "@/components/help-center/HelpArticleCard";
 import { HelpArticlePage } from "@/components/help-center/HelpArticlePage";
 import { HelpHistory } from "@/components/help-center/HelpHistory";
 import { HelpSkeleton } from "@/components/help-center/HelpSkeleton";
-import { BookOpen, Search as SearchIcon, Sparkles, GraduationCap, ShieldAlert, ArrowLeft } from "lucide-react";
+import { BookOpen, Search as SearchIcon, Sparkles, GraduationCap, ShieldAlert, ArrowLeft,
+  Loader2
+} from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -118,6 +120,17 @@ function HelpCenterPage() {
     if (isAuthResolving || isAnonymous) return null;
     return role;
   }, [isAuthResolving, isAnonymous, role]);
+
+  // GATE 1 — REDIRECIONA VISITANTES ANÔNIMOS PARA A TELA DE LOGIN
+  useEffect(() => {
+    if (isAnonymous) {
+      navigate({
+        to: "/auth",
+        search: { redirect: "/tutorials" } as any,
+        replace: true,
+      });
+    }
+  }, [isAnonymous, navigate]);
 
   // GATE 5 — HISTÓRICO ISOLADO POR CONTEXTO DE USUÁRIO
   const historyStorageKey = useMemo(() => {
@@ -439,6 +452,19 @@ function HelpCenterPage() {
     });
   };
 
+  if (isAuthResolving || isAnonymous) {
+    return (
+      <HelpCenterLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+          <Loader2 className="w-7 h-7 animate-spin text-gold" />
+          <p className="text-xs text-zinc-400 font-medium">Verificando autorização...</p>
+        </div>
+      </HelpCenterLayout>
+    );
+  }
+
+
+
   return (
     <HelpCenterLayout>
       {/* CENÁRIO 1: ACESSO DIRETO NÃO AUTORIZADO (GATE 6) */}
@@ -479,10 +505,29 @@ function HelpCenterPage() {
         <div className="space-y-4 sm:space-y-6">
           {/* 1. Identificação da Central de Ajuda */}
           <div className="flex items-center justify-between pb-2 border-b border-zinc-800/60">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/25 text-gold text-xs font-semibold">
-              <GraduationCap className="w-3.5 h-3.5 text-gold" />
-              <span>Central de Ajuda 2.0</span>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/25 text-gold text-xs font-semibold">
+                <GraduationCap className="w-3.5 h-3.5 text-gold" />
+                <span>Central de Ajuda 2.0</span>
+              </div>
             </div>
+            {effectiveRole === "client" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    navigate({ to: "/" });
+                  }
+                }}
+                className="text-xs text-zinc-400 hover:text-gold gap-1.5 h-8 px-2.5 rounded-lg border border-white/5 hover:border-gold/30 hover:bg-gold/5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-gold" />
+                <span>Voltar ao Painel</span>
+              </Button>
+            )}
             <span className="text-[11px] text-zinc-500 font-medium hidden sm:inline">Base oficial Barbex</span>
           </div>
 

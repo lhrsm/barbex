@@ -11,7 +11,9 @@ import {
   ArrowLeft,
   ShieldCheck,
   Building2,
-  HelpCircle
+  HelpCircle,
+  BookOpen,
+  Sparkles
 } from "lucide-react";
 import { OnboardingModal, openOnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { toast } from "sonner";
@@ -875,14 +877,26 @@ function CustomerPortalPage() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            <Link to="/tutorials">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-zinc-400 hover:text-gold gap-1.5 text-xs font-bold px-2.5 h-9 rounded-xl"
+                title="Central de Ajuda e Tutoriais"
+              >
+                <BookOpen className="h-4 w-4 text-gold" />
+                <span className="hidden sm:inline">Ajuda</span>
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => openOnboardingModal()}
               className="text-zinc-400 hover:text-gold gap-1.5 text-xs font-bold px-2.5 h-9 rounded-xl"
+              title="Guia Rápido"
             >
-              <HelpCircle className="h-4 w-4 text-gold" />
-              <span className="hidden sm:inline">Ajuda</span>
+              <Sparkles className="h-4 w-4 text-gold" />
+              <span className="hidden md:inline">Guia</span>
             </Button>
             <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-gold rounded-xl transition-all">
               <Bell className="h-5 w-5" />

@@ -11,7 +11,8 @@ import {
   ShieldCheck, 
   ShoppingBag,
   Ticket,
-  LayoutDashboard
+  LayoutDashboard,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +90,15 @@ export function PortalNavigation({
             </button>
           );
         })}
+        <div className="h-4 w-px bg-white/10 mx-2" />
+        <Link 
+          to="/tutorials"
+          className="flex items-center gap-2 px-4 h-10 rounded-xl transition-all whitespace-nowrap text-sm font-bold text-white/40 hover:text-gold hover:bg-gold/5"
+          title="Central de Ajuda e Tutoriais"
+        >
+          <BookOpen size={16} className="text-inherit" />
+          Ajuda e Tutoriais
+        </Link>
       </div>
     </div>
   );
