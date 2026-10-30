@@ -5,6 +5,7 @@
 **Projeto:** Barbex — [barbex.shop](https://barbex.shop)  
 **Ambiente:** Supabase Production (`ywdwrstxvsdqiryhieiz`)  
 **Baseline Git Pré-Cutover:** `d39d7ca7`  
+**Commit de Cutover Homologado:** `466625ca` (branch `main` sincronizado com `origin/main`)  
 **Origem:** `R2E26E20C4A_READY_FOR_CUTOVER`  
 **Modalidade:** **GO CONDICIONADO / PREFLIGHT / BACKUP / MIGRATION ATÔMICA / SMOKE TESTS EM PRODUÇÃO**  
 **Data e Hora do Cutover:** 30 de Outubro de 2026 — 08:47 BRT  
