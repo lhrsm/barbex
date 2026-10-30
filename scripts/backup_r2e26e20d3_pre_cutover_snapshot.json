@@ -1,0 +1,1069 @@
+{
+  "timestamp": "2026-10-30T14:18:54.297Z",
+  "total_articles": 65,
+  "stage": "R2E.26E.20D.3_PRE_CUTOVER",
+  "articles": [
+    {
+      "category_id": "fa046d64-efcd-4235-8616-d04b3c4eaed7",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Colete feedback e avaliações em estrelas com envio automático e moderação no painel.",
+      "id": "0a65cc62-5ef4-4f15-b9db-5122b8f90740",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como funcionam as avaliações pós-atendimento",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Aprenda a preencher nome, logo, slug, endereço, redes sociais e dados básicos.",
+      "id": "226261c0-ab96-4320-801d-57a5bcf67c50",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar sua barbearia pela primeira vez",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Entenda serviços vendidos, entrada em caixa, receita líquida, saídas e pendências.",
+      "id": "24ac8596-a0b7-4bc8-8e7b-49977309331b",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como funciona o financeiro da barbearia",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Adicione produtos, preços, estoque, categorias e imagens.",
+      "id": "60a1afbb-4cdf-4dcb-a9a4-ea95dc134b73",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como cadastrar produtos",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Envie dúvidas, erros e solicitações para o suporte.",
+      "id": "682301b1-34a3-4c8f-b860-b4702a3c1aa6",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como abrir chamado de suporte",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Cadastre instância, token e client token da Z-API para disparos automáticos de WhatsApp.",
+      "id": "905468c9-b4eb-4554-9493-e072cc92ec0e",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar Z-API",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Configure planos, usos mensais, serviços inclusos e métodos de pagamento.",
+      "id": "a3ba57c9-60a7-4c2d-8a5a-544dde3c0451",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como criar planos de assinatura",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Veja como registrar atendimentos pelo painel da barbearia.",
+      "id": "cf240ea1-0dec-4817-8afe-8626c4968e21",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como criar um novo agendamento",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Defina percentual, valor fixo e regras de comissão.",
+      "id": "d41f3d07-4b37-4b97-ba99-a2b8d3e44206",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar comissão do barbeiro",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Configure meta de atendimentos e recompensa com acompanhamento no portal e aviso via WhatsApp.",
+      "id": "e16bb3fd-1359-4da2-91cd-cc8a03619e0d",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como ativar fidelidade tradicional",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Módulos aparecem no menu e no frontend conforme plano e configuração.",
+      "id": "fc102b15-773e-4c5d-a093-81e5adfbdc2f",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como ativar ou desativar módulos",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Valide a integração com a Z-API antes de ativar as automações de agendamento.",
+      "id": "1ce9d357-4170-4be6-a50d-c1115faf1676",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como testar conexão do WhatsApp",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Cadastre assinante, escolha plano e acompanhe MRR/ARR.",
+      "id": "2f8df9f3-4f4c-4d62-891f-a3e05ad2a2b5",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como vender uma assinatura",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Veja status, respostas e histórico de atendimento.",
+      "id": "3420adbe-d44d-45b8-a92a-226c29839762",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como acompanhar chamados",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Altere cores, tema, identidade visual e estilo público.",
+      "id": "426fb66b-5034-4476-bcf2-11147b2b5637",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como personalizar aparência",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Cadastre chave PIX e QR Code para pagamentos no agendamento.",
+      "id": "a9dfe5d0-c280-47f8-a63f-3dc82781730e",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como configurar PIX",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Exibição pública, filtros por categoria e botão de compra.",
+      "id": "b3324233-56e8-49b8-a1ed-1e7acb6fc28e",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como vender produtos no frontend",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Defina percentual, valor mínimo e validade.",
+      "id": "b99f5dcd-77f5-437b-b708-f874c25b81f2",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como ativar cashback",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Cadastre cortes, barba, combos, preços e vincule profissionais.",
+      "id": "c7fc4eec-b64c-404d-8acd-450ff06f01e0",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como criar serviços",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "A comissão fica pendente até o administrador autorizar o pagamento.",
+      "id": "e1697c6d-c015-4a9a-a183-11ad0837223f",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como pagar comissão ao barbeiro",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Entenda quando um atendimento entra no financeiro, comissões e histórico.",
+      "id": "e8227c4e-15da-4c36-9dee-a044c4236199",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "barber",
+        "professional",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como concluir ou cancelar um atendimento",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Escolha modelos prontos e personalize campanhas.",
+      "id": "45e0fa0d-c0ec-4eba-9c96-1643efcdbb45",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como usar templates premium de fidelidade",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Acompanhe entradas, saídas e alertas de estoque baixo.",
+      "id": "4ec9d577-f0e8-4a9e-ae80-82cd5ff124b7",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como controlar estoque",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Combo consome 1 corte + 1 barba. Usos só são consumidos após conclusão.",
+      "id": "64f5bafc-7abb-44f1-9836-683dca7ce9d9",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como funcionam usos de assinatura",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Use a página de tutoriais para aprender recursos do Barbex.",
+      "id": "6a493a70-c0fd-4881-8e2a-66fb29f24d9b",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "barber",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como acessar tutoriais e ajuda",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Fluxo completo do cliente no portal web: escolha de serviço, barbeiro, data e confirmação.",
+      "id": "6eef64ad-7c7e-49cf-aef4-028dcb78dc68",
+      "order": 3,
+      "profile_target": [
+        "client",
+        "customer",
+        "tenant_admin"
+      ],
+      "status": "published",
+      "title": "Como o cliente agenda pelo site público",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "PIX + créditos, PIX + cashback, créditos + cashback e pagamento presencial.",
+      "id": "77cb39fc-8eb4-4a22-9308-a3ca18aa2395",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como funcionam pagamentos mistos",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Configure profissionais, comissões, horários e disponibilidade.",
+      "id": "dbad6386-64ac-4fa9-920f-d5ad1118d6ea",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como cadastrar barbeiros",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Termos, política de privacidade, cookies, exportação e exclusão de dados.",
+      "id": "e13485ca-a742-4ded-9d2b-f5f562e9262d",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar LGPD e privacidade",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Confirmação, lembrete, cancelamento, aniversário e régua de comunicação com clientes.",
+      "id": "e2e293be-0df7-4d80-8cf0-b27a7268e33d",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como funcionam as automações",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Painel do barbeiro, comissão gerada, paga e pendente.",
+      "id": "f54cdc13-df05-42c5-894c-3c3b3993f532",
+      "order": 3,
+      "profile_target": [
+        "barber",
+        "professional",
+        "tenant_admin"
+      ],
+      "status": "published",
+      "title": "Como o barbeiro acompanha sua comissão",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Veja solicitações de estorno, devoluções e créditos concedidos.",
+      "id": "00d14c7b-06e1-4203-94aa-8349326e9523",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como acompanhar estornos",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Configure seu link público, personalize a aparência e gere QR Codes para divulgação.",
+      "id": "8d1aa3cf-1d9a-4bc6-84e8-6b5fda268db2",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como publicar sua página",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Uso de benefício do plano, saldo disponível, reservas e pagamento avulso.",
+      "id": "a10df4f8-3f19-4c0e-b129-1f70608457c6",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como funciona o agendamento de assinantes",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Recompensas por tempo de assinatura, indicações e benefícios premium.",
+      "id": "b2242045-e3d5-4f89-9125-5a8cca7e4d32",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como funciona fidelidade para assinantes",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Upgrade, downgrade e regras de alteração de plano.",
+      "id": "cf8b2ce5-ab17-4801-a114-d6d3976fac5f",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como mudar plano de um assinante",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-01T17:39:55.374771+00:00",
+      "description": "Centro de acessibilidade, contraste, fonte, teclado e leitura.",
+      "id": "f8672138-3d17-432d-91d6-14bdd576c334",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar acessibilidade",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Venda pomadas, tônicos e produtos direto pelo site da barbearia com pagamento PIX.",
+      "id": "09eba6e4-6234-4641-95ce-f3901f655109",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "client",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como funciona a loja pública de produtos",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Adicione produtos ao atendimento em andamento e atualize o estoque automaticamente.",
+      "id": "1bf403d4-23ec-42db-bc16-2d0ade5372b5",
+      "order": 10,
+      "profile_target": [
+        "receptionist",
+        "reception",
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como usar a Comanda Digital",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Permita que o cliente envie gorjeta direto no PIX do barbeiro após a avaliação.",
+      "id": "25e450b5-ab99-45e8-bf1a-77b8ea121200",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "barber",
+        "professional"
+      ],
+      "status": "published",
+      "title": "Como ativar a Gorjeta Digital via PIX",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Instale o Barbex no celular e no desktop para acesso rápido sem navegador.",
+      "id": "3be978de-cd68-4763-8184-e7d6574811d3",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como instalar o Barbex como App (PWA)",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Receba avisos de novos agendamentos, mensagens e status mesmo com o app fechado.",
+      "id": "58726102-0ec1-4740-9172-87c6b083ae8e",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como ativar Notificações Push",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Receba alertas automáticos de novos agendamentos e cancelamentos no WhatsApp da equipe.",
+      "id": "628290d8-6193-463c-8058-16b68f84ee13",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar destinatários internos do WhatsApp",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "fa046d64-efcd-4235-8616-d04b3c4eaed7",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Área exclusiva para clientes consultarem agendamentos, planos de assinatura e fidelidade.",
+      "id": "7f0f541d-c72c-4aa8-bebb-764a292917b6",
+      "order": 10,
+      "profile_target": [
+        "client",
+        "customer",
+        "tenant_admin"
+      ],
+      "status": "published",
+      "title": "Como funciona o portal do cliente e o Clube Barbex",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Receba um mesmo atendimento em vários métodos (dinheiro, PIX, cartão) e adicione gorjeta.",
+      "id": "89d0363a-d477-4b84-8cba-54c8af36b6b1",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial"
+      ],
+      "status": "published",
+      "title": "Como fazer Split de Pagamento",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "9bd90387-929c-42f0-81fe-70832fef6944",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Aprenda a consultar clientes no diretório da recepção e a cadastrar novos clientes durante o atendimento no balcão.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29001",
+      "order": 10,
+      "profile_target": [
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como cadastrar clientes no balcão",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Habilite botões de confirmação, cancelamento e reagendamento nas mensagens de WhatsApp.",
+      "id": "2e2831f1-a060-4fe0-9eec-40a56096ae08",
+      "order": 11,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como usar fluxos conversacionais e botões inteligentes",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Mostre fotos do ambiente e trabalhos entre os especialistas e depoimentos.",
+      "id": "84dc0967-2b34-487c-b61e-c5a9819e96a2",
+      "order": 11,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como adicionar a Galeria de Fotos ao site público",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Confirmação de chegada rápida pelo celular do cliente na entrada da barbearia.",
+      "id": "9ddeff2f-e151-4d75-b393-d680f4ae9d17",
+      "order": 11,
+      "profile_target": [
+        "receptionist",
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como usar o Check-in por QR Code",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Saiba como ler o QR Code da carteirinha digital do Clube Barbex e validar o uso de benefícios do assinante.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29002",
+      "order": 11,
+      "profile_target": [
+        "reception",
+        "barber",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como validar carteirinha e QR Code de assinantes",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Analise fluxo de caixa, DRE simplificado e exporte relatórios em PDF.",
+      "id": "e9fb6c24-7f1c-4d74-9838-0b503abcf88b",
+      "order": 11,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como usar a Visão Gerencial e exportar PDF do financeiro",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "created_at": "2026-07-13T11:51:40.376344+00:00",
+      "description": "Mensagens diferentes quando quem cancela é o cliente, o barbeiro ou a barbearia.",
+      "id": "64032882-67d0-4d3a-ba4d-0ee186d8c175",
+      "order": 12,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Automações inteligentes de reagendamento e cancelamento",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "05fa32a0-54a1-42a2-bad2-e9f6f56f3fe5",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Como convidar novos colaboradores para a barbearia, definir papéis de acesso e gerenciar a matriz de permissões.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29003",
+      "order": 12,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "owner"
+      ],
+      "status": "published",
+      "title": "Como convidar usuários e configurar permissões",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "c55b3ff3-0fe8-4872-8449-d5700bc0e6b1",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Monitore a operação da barbearia em tempo real, acompanhe atrasos, faturamento do dia e alertas operacionais.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29004",
+      "order": 13,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "owner"
+      ],
+      "status": "published",
+      "title": "Como utilizar o Centro de Comando e os indicadores operacionais",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Como registrar bloqueios pessoais, pausas e ausências programadas na grade do profissional sem causar sobreposição de clientes.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29005",
+      "order": 14,
+      "profile_target": [
+        "barber",
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como bloquear horários e solicitar folgas",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Entenda como visualizar, reagendar e cancelar múltiplos serviços ou horários simultâneos através do link seguro de grupo.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29006",
+      "order": 15,
+      "profile_target": [
+        "client",
+        "customer",
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como funciona o agendamento em grupo",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "05fa32a0-54a1-42a2-bad2-e9f6f56f3fe5",
+      "created_at": "2026-10-30T11:45:28.484258+00:00",
+      "description": "Como funciona a página pública do profissional na web e como a administração da barbearia configura serviços, foto e chave PIX de gorjetas.",
+      "id": "e59a721d-9e0c-4c48-8df1-3f628ab29007",
+      "order": 16,
+      "profile_target": [
+        "barber",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar o portfólio e a página pública profissional",
+      "type": "document",
+      "updated_at": "2026-10-30T11:45:28.484258+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Encaixe clientes avulsos na fila de espera operacional da recepção e agenda.",
+      "id": "c452a442-a0c5-4e8a-b963-7f948eac4f04",
+      "order": 20,
+      "profile_target": [
+        "receptionist",
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como atender clientes sem agendamento (Walk-in)",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Bronze, Prata e Ouro: como o cliente evolui e como usar isso no atendimento.",
+      "id": "c46d4879-e831-4f29-9dbc-c6280ff995f8",
+      "order": 20,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como entender e usar os níveis de fidelidade dos clientes",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Seu feedback vira roadmap: como registrar ideias e acompanhar o retorno.",
+      "id": "f1f13775-30d4-4989-99b0-fc94dbad79ff",
+      "order": 20,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "barber",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como enviar sugestões de melhoria para o Barbex",
+      "type": "document",
+      "updated_at": "2026-10-30T09:33:05.022885+00:00"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Relatório de atendimentos, faturamento, comissões, gorjetas e avaliações por período.",
+      "id": "fd971753-ce48-43a5-8cfb-b4564c97f4df",
+      "order": 20,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como analisar o desempenho de cada profissional",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Assistente de reagendamento com checagem automática de grade, conflitos e intervalos.",
+      "id": "c334b3ba-0993-449a-a58e-88fb89f7f3d1",
+      "order": 21,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "barber",
+        "professional",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como reagendar trocando data, horário e profissional",
+      "type": "document",
+      "updated_at": "2026-10-30T10:32:06.698594+00:00"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Configure a folga entre serviços e entenda como o sistema bloqueia sobreposições.",
+      "id": "d63482d7-27c9-4dbe-bc79-43dfc194acfe",
+      "order": 22,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como evitar conflitos e ajustar o intervalo entre atendimentos",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Ative recursos extras do Barbex sem trocar de plano e entenda a cobrança proporcional.",
+      "id": "4ee61ba1-d59e-4d67-8332-a4a74cac5062",
+      "order": 30,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como contratar módulos adicionais (Add-ons)",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "created_at": "2026-07-26T12:18:58.803966+00:00",
+      "description": "Crie cupons percentuais ou de valor fixo e acompanhe o impacto no faturamento.",
+      "id": "d8a7ab64-9080-476f-be29-18829321c61c",
+      "order": 30,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como usar cupons de desconto",
+      "type": "document",
+      "updated_at": "2026-10-29T10:12:12.247666+00:00"
+    }
+  ]
+}
