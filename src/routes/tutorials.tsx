@@ -10,7 +10,8 @@ import { HelpArticlePage } from "@/components/help-center/HelpArticlePage";
 import { HelpHistory } from "@/components/help-center/HelpHistory";
 import { HelpSkeleton } from "@/components/help-center/HelpSkeleton";
 import { BookOpen, Search as SearchIcon, Sparkles, GraduationCap, ShieldAlert, ArrowLeft,
-  Loader2
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { withModule } from "@/components/modules/withModule";
 import { Button } from "@/components/ui/button";
@@ -200,7 +201,7 @@ function HelpCenterPage() {
     },
   });
 
-  const { data: dbArticles, isLoading } = useQuery({
+  const { data: dbArticles, isLoading, isError } = useQuery({
     queryKey: ["help-articles", isAnonymous, effectiveRole],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -211,7 +212,10 @@ function HelpCenterPage() {
         `)
         .order("order", { ascending: true });
 
-      if (error) return [];
+      if (error) {
+        console.error("Erro ao carregar tutoriais:", error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -361,6 +365,11 @@ function HelpCenterPage() {
     return list;
   }, [combinedArticles, selectedCategoryId, searchQuery]);
 
+  // GATE 2 (R2E.26E.20E.1) — CONTADORES DINÂMICOS
+  const totalAvailableCount = combinedArticles.length;
+  const isFilterActive = Boolean(searchQuery.trim() || selectedCategoryId);
+  const searchFilteredCount = filteredArticles.length;
+
   // GATE 6 — ROTAS DE DETALHES E PROTEÇÃO DE ACESSO DIRETO POR URL
   const requestedArticleId = searchParams.article;
 
@@ -503,32 +512,86 @@ function HelpCenterPage() {
       ) : (
         /* CENÁRIO 3: LISTAGEM PRINCIPAL DA CENTRAL DE AJUDA */
         <div className="space-y-4 sm:space-y-6">
-          {/* 1. Identificação da Central de Ajuda */}
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-800/60">
-            <div className="flex items-center gap-3">
+          {/* 1. Identificação da Central de Ajuda com Contador Dinâmico */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-zinc-800/60">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/25 text-gold text-xs font-semibold">
                 <GraduationCap className="w-3.5 h-3.5 text-gold" />
-                <span>Central de Ajuda 2.0</span>
+                <span>Central de Ajuda</span>
               </div>
+
+              {/* Contador Dinâmico de Tutoriais Disponíveis para o Perfil Autenticado */}
+              {isLoading && combinedArticles.length === 0 ? (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/70 border border-zinc-700/60 text-[11px] sm:text-xs text-zinc-400 font-medium animate-pulse"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 className="w-3 h-3 animate-spin text-gold" />
+                  <span>Carregando tutoriais...</span>
+                </span>
+              ) : isError ? (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/25 text-[11px] sm:text-xs text-red-400 font-medium"
+                  role="status"
+                  aria-live="polite"
+                  id="tutorials-error-counter"
+                >
+                  <AlertCircle className="w-3 h-3 text-red-400" aria-hidden="true" />
+                  <span>Indisponível</span>
+                </span>
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] sm:text-xs text-zinc-300 font-medium shadow-sm"
+                  role="status"
+                  aria-live="polite"
+                  id="tutorials-available-counter"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" aria-hidden="true" />
+                  <span>
+                    <strong className="text-white font-bold">{totalAvailableCount}</strong>{" "}
+                    {totalAvailableCount === 1 ? "tutorial disponível" : "tutoriais disponíveis"}
+                  </span>
+                </span>
+              )}
+
+              {/* Indicador Distinto de Resultados de Filtro / Busca Ativa */}
+              {isFilterActive && (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] sm:text-xs text-amber-300 font-medium animate-in fade-in"
+                  role="status"
+                  aria-live="polite"
+                  id="tutorials-filtered-counter"
+                >
+                  <SearchIcon className="w-3 h-3 text-amber-400" aria-hidden="true" />
+                  <span>
+                    <strong className="text-amber-200 font-bold">{searchFilteredCount}</strong>{" "}
+                    {searchFilteredCount === 1 ? "resultado encontrado" : "resultados encontrados"}
+                  </span>
+                </span>
+              )}
             </div>
-            {effectiveRole === "client" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (typeof window !== "undefined" && window.history.length > 1) {
-                    window.history.back();
-                  } else {
-                    navigate({ to: "/" });
-                  }
-                }}
-                className="text-xs text-zinc-400 hover:text-gold gap-1.5 h-8 px-2.5 rounded-lg border border-white/5 hover:border-gold/30 hover:bg-gold/5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 text-gold" />
-                <span>Voltar ao Painel</span>
-              </Button>
-            )}
-            <span className="text-[11px] text-zinc-500 font-medium hidden sm:inline">Base oficial Barbex</span>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {effectiveRole === "client" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (typeof window !== "undefined" && window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      navigate({ to: "/" });
+                    }
+                  }}
+                  className="text-xs text-zinc-400 hover:text-gold gap-1.5 h-8 px-2.5 rounded-lg border border-white/5 hover:border-gold/30 hover:bg-gold/5"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-gold" />
+                  <span>Voltar ao Painel</span>
+                </Button>
+              )}
+              <span className="text-[11px] text-zinc-500 font-medium hidden sm:inline">Base oficial Barbex</span>
+            </div>
           </div>
 
           {/* 2. Título e descrição compactos + 3. Campo de pesquisa */}
@@ -579,14 +642,35 @@ function HelpCenterPage() {
                     ? categories?.find((c) => c.id === selectedCategoryId)?.name || selectedCategoryId
                     : "Todos os Artigos"}
                 </h3>
-                <span className="text-xs text-zinc-500 font-medium">
-                  {filteredArticles.length} {filteredArticles.length === 1 ? "resultado" : "resultados"}
+                <span className="text-xs text-zinc-400 font-medium" aria-live="polite">
+                  {isError ? (
+                    <span className="text-red-400 font-medium">Erro ao carregar</span>
+                  ) : isFilterActive ? (
+                    <>
+                      <strong className="text-zinc-200">{searchFilteredCount}</strong> de{" "}
+                      <strong className="text-zinc-200">{totalAvailableCount}</strong>{" "}
+                      {totalAvailableCount === 1 ? "tutorial" : "tutoriais"}
+                    </>
+                  ) : (
+                    <>
+                      <strong className="text-zinc-200">{totalAvailableCount}</strong>{" "}
+                      {totalAvailableCount === 1 ? "tutorial disponível" : "tutoriais disponíveis"}
+                    </>
+                  )}
                 </span>
               </div>
 
-              {/* Fail-closed skeleton durante carregamento */}
+              {/* Fail-closed skeleton durante carregamento ou erro */}
               {isAuthResolving || (isLoading && combinedArticles.length === 0) ? (
                 <HelpSkeleton />
+              ) : isError ? (
+                <div className="text-center py-12 px-4 border-2 border-dashed rounded-2xl bg-[#0b0f17]/50 border-red-900/30 animate-in fade-in zoom-in-95 duration-200">
+                  <AlertCircle className="h-10 w-10 text-red-500/80 mx-auto mb-2" />
+                  <h4 className="text-base font-bold text-white">Falha ao carregar tutoriais</h4>
+                  <p className="text-zinc-500 max-w-sm mx-auto mt-1 text-xs sm:text-sm">
+                    Ocorreu uma instabilidade na consulta à Central de Ajuda. Por favor, tente recarregar a página.
+                  </p>
+                </div>
               ) : filteredArticles.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
                   {filteredArticles.map((article) => (
