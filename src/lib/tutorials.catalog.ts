@@ -144,7 +144,7 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
     ],
     status: "requires_configuration",
     badge: "Terceiro",
-    notes: "Atenção: A plataforma Barbex não inclui WhatsApp nativo. O disparo de mensagens depende da contratação e configuração de serviço externo compatível (como Z-API), com assinatura e custos mantidos separadamente pelo proprietário.",
+    notes: "Integração externa — WhatsApp (Z-API): As automações de mensagens pelo WhatsApp dependem da integração com a Z-API, serviço de terceiros contratado e pago separadamente pelo responsável pela barbearia. A contratação da Z-API não está incluída automaticamente nos planos do Barbex. A disponibilidade das automações depende da configuração e ativação da integração.",
   },
 
   // ---------------------------------------------------------------------------
@@ -333,9 +333,10 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
     moduleKey: "calendar",
     route: "/portal",
     steps: [
-      "Acesse o Portal do Cliente informando seu telefone.",
-      "Na aba 'Agendamentos', veja todos os seus horários marcados.",
-      "Clique em 'Remarcar' ou 'Cancelar' caso precise alterar a data com antecedência permitida."
+      "Acesse o Portal do Cliente no endereço oficial barbex.shop/{slug}/portal ou pelo link seguro do agendamento.",
+      "Na aba 'Agendamentos', veja todos os seus horários marcados em tempo real.",
+      "Clique em 'Remarcar' ou 'Cancelar' caso precise alterar a data (respeitando a política de antecedência da barbearia).",
+      "Em cancelamentos de serviços já pagos, você pode converter o valor em créditos na barbearia ou solicitar estorno via PIX."
     ],
     status: "available",
     badge: "Portal",

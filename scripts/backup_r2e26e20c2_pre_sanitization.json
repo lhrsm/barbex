@@ -1,0 +1,146 @@
+[
+  {
+    "category_name": "Agenda",
+    "description": "Entenda quando um atendimento entra no financeiro, comissões e histórico.",
+    "id": "e8227c4e-15da-4c36-9dee-a044c4236199",
+    "long_description": "Objetivo: fechar corretamente o ciclo de um atendimento.\n\nPasso a passo:\n1. Abra o agendamento na Agenda.\n2. Clique em Concluir para gerar receita, comissão e movimentar caixa.\n3. Use Cancelar quando o cliente não comparecer — o horário é liberado.\n4. Assinantes cobertos pelo plano não entram no fluxo de caixa.",
+    "module_key": "calendar",
+    "order": 2,
+    "profile_target": [
+      "tenant_admin",
+      "admin",
+      "receptionist",
+      "barber",
+      "professional",
+      "reception"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como concluir ou cancelar um atendimento"
+  },
+  {
+    "category_name": "Agenda",
+    "description": "Assistente de reagendamento com checagem automática de grade, conflitos e intervalos.",
+    "id": "c334b3ba-0993-449a-a58e-88fb89f7f3d1",
+    "long_description": "O assistente de reagendamento do Barbex permite alterar data, horário e profissional de forma rápida, validando em tempo real os conflitos de grade.\n\n**Passo a passo:**\n1. Na **Agenda** ou **Área da Recepção**, localize o agendamento e clique na ação **\"Reagendar\"**.\n2. **Seleção de Profissional:** mantenha o profissional original ou escolha outro membro da equipe habilitado para o serviço.\n3. **Seleção de Data:** o calendário destaca apenas os dias em que o barbeiro selecionado possui jornada de trabalho configurada.\n4. **Seleção de Horário:** os intervalos livres são recalculados considerando a duração total dos serviços, tempo de intervalo entre atendimentos e eventuais bloqueios manuais.\n5. **Revisão e Confirmação:** confira os novos dados na tela de resumo e confirme a alteração.\n6. A agenda é atualizada em tempo real para toda a equipe.\n7. Se a barbearia mantiver conexão ativa com a Z-API, o cliente recebe uma mensagem automática informando os novos dados do agendamento.\n\nDica: Clientes também podem reagendar com autonomia através do Portal do Cliente (barbex.shop/{slug}/portal), desde que respeitada a janela de antecedência permitida nas configurações.",
+    "module_key": "calendar",
+    "order": 21,
+    "profile_target": [
+      "tenant_admin",
+      "admin",
+      "receptionist",
+      "barber",
+      "professional",
+      "reception"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como reagendar trocando data, horário e profissional"
+  },
+  {
+    "category_name": "Experiência do Cliente",
+    "description": "Área exclusiva para clientes consultarem agendamentos, planos de assinatura e fidelidade.",
+    "id": "7f0f541d-c72c-4aa8-bebb-764a292917b6",
+    "long_description": "O Portal do Cliente é a área privativa onde seu cliente gerencia toda a sua experiência com a barbearia sem precisar sobrecarregar a recepção.\n\n**Recursos disponíveis no portal:**\n1. Acesso simples e sem senhas em barbex.shop/{slug}/portal informando o número de celular.\n2. Visualização do próximo agendamento em destaque com botão de reagendamento ou cancelamento (respeitando a política de antecedência mínima definida pela casa).\n3. Linha do tempo 'Sua Jornada': histórico de visitas anteriores, profissional de preferência e saldo de fidelidade/cashback.\n4. Área de Assinantes: carteirinha digital do Clube Barbex, contagem de cortes utilizados no mês e benefícios inclusos.\n5. Para clientes sem assinatura, exibe o banner comparativo com as vantagens de se associar ao Clube.\n6. Acesso a cupons de desconto disponíveis e botão de gorjeta direta via PIX para o barbeiro.\n\nNota: Para que o link do portal seja enviado automaticamente após o agendamento via WhatsApp, é necessária a integração ativa com a Z-API.",
+    "module_key": "portal",
+    "order": 10,
+    "profile_target": [
+      "client",
+      "customer",
+      "tenant_admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como funciona o portal do cliente e o Clube Barbex"
+  },
+  {
+    "category_name": "WhatsApp",
+    "description": "Cadastre instância, token e client token da Z-API para disparos automáticos de WhatsApp.",
+    "id": "905468c9-b4eb-4554-9493-e072cc92ec0e",
+    "long_description": "1. Acesse o provedor Z-API (z-api.io), crie sua conta e contrate uma instância dedicada à sua barbearia.\n2. No painel da Z-API, copie o Instance ID, Token da Instância e Client-Token de Segurança.\n3. No painel Barbex, acesse Configurações → Integrações → WhatsApp.\n4. Cole as três credenciais nos campos correspondentes e clique em \"Salvar Configurações\".\n5. Escaneie o QR Code exibido na tela utilizando o aplicativo WhatsApp no aparelho oficial da barbearia.\n6. Configure a URL de Webhook fornecida pelo Barbex no painel da Z-API para habilitar o recebimento de respostas e botões interativos.\n7. Clique no botão \"Testar Conexão\" para realizar um disparo de validação.\n\nAviso Comercial e Operacional: O Barbex não oferece integração nativa ou independente com WhatsApp incluída automaticamente nos planos. A plataforma utiliza a Z-API como provedor parceiro externo compatível, cuja contratação, mensalidade e custos de mensagens são contratados diretamente com a Z-API pelo proprietário. Recomendamos utilizar um chip exclusivo para o estabelecimento.",
+    "module_key": "whatsapp",
+    "order": 1,
+    "profile_target": [
+      "tenant_admin",
+      "admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como configurar Z-API"
+  },
+  {
+    "category_name": "WhatsApp",
+    "description": "Valide a integração com a Z-API antes de ativar as automações de agendamento.",
+    "id": "1ce9d357-4170-4be6-a50d-c1115faf1676",
+    "long_description": "1. No menu Configurações, acesse a aba Integrações → WhatsApp.\n2. Certifique-se de que sua instância Z-API está ativa e conectada ao aparelho oficial.\n3. Clique no botão \"Testar Conexão\".\n4. O Barbex consultará os servidores da Z-API para checar o status da sessão (Conectado / Desconectado).\n5. Insira seu número pessoal com DDD e clique em \"Enviar Mensagem de Teste\".\n6. Se a mensagem não chegar em instantes, verifique:\n   • Se o celular da barbearia está com bateria e conectado à internet.\n   • Se a mensalidade da instância Z-API está em dia.\n   • Se o Instance ID e Token foram colados sem espaços extras.\n7. O log de diagnósticos exibirá o código de retorno da Z-API para facilitar o suporte.\n\nAtenção: A ferramenta de teste valida a comunicação com sua instância Z-API externa contratada separadamente.",
+    "module_key": "whatsapp",
+    "order": 2,
+    "profile_target": [
+      "tenant_admin",
+      "admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como testar conexão do WhatsApp"
+  },
+  {
+    "category_name": "WhatsApp",
+    "description": "Confirmação, lembrete, cancelamento, aniversário e régua de comunicação com clientes.",
+    "id": "e2e293be-0df7-4d80-8cf0-b27a7268e33d",
+    "long_description": "1. No menu Automações, você gerencia as réguas de comunicação do estabelecimento: confirmação de agendamento, lembrete prévio (ex: 2h antes), agradecimento pós-atendimento, cancelamento, reagendamento e aniversário.\n2. Cada automação possui um gatilho do ciclo de vida, destinatário definido (cliente ou equipe interna) e modelo de mensagem personalizável.\n3. Utilize variáveis dinâmicas seguras como {customer_name}, {barbershop_name}, {service_name}, {date} e {time}.\n4. Ative ou desative cada régua individualmente conforme a necessidade operacional da barbearia.\n5. O painel de diagnósticos exibe o status de entrega e histórico de eventos processados.\n6. O mecanismo antiflood e deduplicação do Barbex impede que mensagens idênticas sejam enviadas em duplicidade.\n\nEsclarecimento Comercial: O disparo de automações via WhatsApp não é nativo nem gratuito, dependendo de provedor externo compatível (Z-API), cuja contratação e custos de plano são de responsabilidade do estabelecimento.",
+    "module_key": "whatsapp",
+    "order": 3,
+    "profile_target": [
+      "tenant_admin",
+      "admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como funcionam as automações"
+  },
+  {
+    "category_name": "WhatsApp",
+    "description": "Receba alertas automáticos de novos agendamentos e cancelamentos no WhatsApp da equipe.",
+    "id": "628290d8-6193-463c-8058-16b68f84ee13",
+    "long_description": "Além de notificar o cliente, o Barbex pode enviar alertas em tempo real para os telefones da sua equipe (gerentes, recepcionistas e barbeiros).\n\n**Como configurar:**\n1. Acesse **Configurações** → aba **WhatsApp** → seção **Destinatários Internos**.\n2. Clique em **\"Adicionar Destinatário\"** e informe o nome da pessoa e o telefone com DDD.\n3. Selecione quais eventos essa pessoa deve receber (ex: Novo Agendamento, Cancelamento de Última Hora, Check-in de Chegada).\n4. Clique em **Salvar**.\n5. Realize um disparo de teste para garantir que o número está recebendo alertas normalmente.\n\n**Aviso de Integração:** O envio de mensagens para destinatários internos utiliza a conexão da sua instância Z-API configurada. É necessário que a integração esteja conectada e com plano ativo junto ao provedor.",
+    "module_key": "whatsapp",
+    "order": 10,
+    "profile_target": [
+      "tenant_admin",
+      "admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como configurar destinatários internos do WhatsApp"
+  },
+  {
+    "category_name": "WhatsApp",
+    "description": "Habilite botões de confirmação, cancelamento e reagendamento nas mensagens de WhatsApp.",
+    "id": "2e2831f1-a060-4fe0-9eec-40a56096ae08",
+    "long_description": "O Barbex permite configurar mensagens automáticas contendo botões interativos de ação rápida diretamente na conversa do WhatsApp.\n\n**Como configurar:**\n1. Acesse o menu **Automações** e selecione o modelo de mensagem desejado (ex: Confirmação de Agendamento).\n2. Na aba **Interações / Botões**, adicione as opções de resposta:\n   • Botão 1: \"Confirmar Presença\" (ação: atualizar status para confirmado).\n   • Botão 2: \"Reagendar\" (ação: enviar link do assistente de reagendamento).\n   • Botão 3: \"Cancelar Horário\" (ação: cancelar agendamento e liberar horário na agenda).\n3. Salve o modelo e certifique-se de que o Webhook do Barbex está devidamente preenchido na sua conta da Z-API.\n4. Quando o cliente pressiona um botão no WhatsApp, o webhook processa a resposta instantaneamente e atualiza a agenda sem intervenção humana.\n\nAviso Técnico e Comercial: Os botões interativos dependem do suporte nativo da Z-API e de sua compatibilidade com os aplicativos WhatsApp oficiais. A Z-API é um serviço de terceiros contratado separadamente pela barbearia.",
+    "module_key": "whatsapp",
+    "order": 11,
+    "profile_target": [
+      "tenant_admin",
+      "admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Como usar fluxos conversacionais e botões inteligentes"
+  },
+  {
+    "category_name": "WhatsApp",
+    "description": "Mensagens diferentes quando quem cancela é o cliente, o barbeiro ou a barbearia.",
+    "id": "64032882-67d0-4d3a-ba4d-0ee186d8c175",
+    "long_description": "O Barbex identifica o **ator** da ação e envia a mensagem correta:\n\n- Cliente cancela → confirmação para o cliente + alerta para a equipe.\n- Barbeiro/Barbearia cancela → desculpas para o cliente com CTA para reagendar.\n- Reagendamento → mostra data antiga e nova (`{{old_date}}` e `{{new_date}}`).\n\n**Como personalizar:**\n1. **Automações** → filtre por **Cancelamento** ou **Reagendamento**.\n2. Edite os 18 templates conforme ator e destinatário.\n3. Use as variáveis disponíveis no editor.",
+    "module_key": "whatsapp",
+    "order": 12,
+    "profile_target": [
+      "tenant_admin",
+      "admin"
+    ],
+    "related_route": null,
+    "status": "published",
+    "title": "Automações inteligentes de reagendamento e cancelamento"
+  }
+]
