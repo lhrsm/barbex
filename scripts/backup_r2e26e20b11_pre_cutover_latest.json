@@ -1,0 +1,234 @@
+{
+  "policies": [
+    {
+      "polcmd": "*",
+      "polname": "Only super admins can manage tutorials",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text))))"
+    },
+    {
+      "polcmd": "r",
+      "polname": "Role-based tutorial access",
+      "qual": "((EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'super_admin'::text)))) OR (('client'::text = ANY (profile_target)) OR ('customer'::text = ANY (profile_target))) OR ((auth.role() = 'authenticated'::text) AND ((profile_target IS NULL) OR (cardinality(profile_target) = 0) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND ((profiles.role = ANY (tutorials.profile_target)) OR (profiles.role = ANY (ARRAY['admin'::text, 'tenant_admin'::text])))))))))"
+    }
+  ],
+  "restricted_records": [
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "2f8df9f3-4f4c-4d62-891f-a3e05ad2a2b5",
+      "module_key": "subscriptions",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como vender uma assinatura"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "4ec9d577-f0e8-4a9e-ae80-82cd5ff124b7",
+      "module_key": "products",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como controlar estoque"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "60a1afbb-4cdf-4dcb-a9a4-ea95dc134b73",
+      "module_key": "products",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como cadastrar produtos"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "a3ba57c9-60a7-4c2d-8a5a-544dde3c0451",
+      "module_key": "subscriptions",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como criar planos de assinatura"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "cf8b2ce5-ab17-4801-a114-d6d3976fac5f",
+      "module_key": "subscriptions",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como mudar plano de um assinante"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "d63482d7-27c9-4dbe-bc79-43dfc194acfe",
+      "module_key": "calendar",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como evitar conflitos e ajustar o intervalo entre atendimentos"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "d8a7ab64-9080-476f-be29-18829321c61c",
+      "module_key": "finances",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como usar cupons de desconto"
+    }
+  ],
+  "summary_counts": {
+    "total_tutorials": 58,
+    "with_client": 3,
+    "with_reception": 3,
+    "with_receptionist": 19
+  },
+  "target_records": [
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "09eba6e4-6234-4641-95ce-f3901f655109",
+      "module_key": "products",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "client"
+      ],
+      "status": "published",
+      "title": "Como funciona a loja pública de produtos"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "64f5bafc-7abb-44f1-9836-683dca7ce9d9",
+      "module_key": "subscriptions",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como funcionam usos de assinatura"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "id": "6a493a70-c0fd-4881-8e2a-66fb29f24d9b",
+      "module_key": "settings",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "barber"
+      ],
+      "status": "published",
+      "title": "Como acessar tutoriais e ajuda"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "a10df4f8-3f19-4c0e-b129-1f70608457c6",
+      "module_key": "calendar",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como funciona o agendamento de assinantes"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "b3324233-56e8-49b8-a1ed-1e7acb6fc28e",
+      "module_key": "products",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como vender produtos no frontend"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "c334b3ba-0993-449a-a58e-88fb89f7f3d1",
+      "module_key": "calendar",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "barber",
+        "professional"
+      ],
+      "status": "published",
+      "title": "Como reagendar trocando data, horário e profissional"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "cf240ea1-0dec-4817-8afe-8626c4968e21",
+      "module_key": "calendar",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como criar um novo agendamento"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "e8227c4e-15da-4c36-9dee-a044c4236199",
+      "module_key": "calendar",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "barber",
+        "professional"
+      ],
+      "status": "published",
+      "title": "Como concluir ou cancelar um atendimento"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "id": "f1f13775-30d4-4989-99b0-fc94dbad79ff",
+      "module_key": "settings",
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "barber"
+      ],
+      "status": "published",
+      "title": "Como enviar sugestões de melhoria para o Barbex"
+    }
+  ],
+  "timestamp": "2026-10-30T09:31:59.002298+00:00"
+}

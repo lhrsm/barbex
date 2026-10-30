@@ -1,0 +1,840 @@
+{
+  "all_tutorials": [
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "00d14c7b-06e1-4203-94aa-8349326e9523",
+      "module_key": "finances",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como acompanhar estornos",
+      "type": "document"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "09eba6e4-6234-4641-95ce-f3901f655109",
+      "module_key": "products",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "client",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como funciona a loja pública de produtos",
+      "type": "document"
+    },
+    {
+      "category_id": "fa046d64-efcd-4235-8616-d04b3c4eaed7",
+      "id": "0a65cc62-5ef4-4f15-b9db-5122b8f90740",
+      "module_key": "reviews",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como funcionam as avaliações pós-atendimento",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "1bf403d4-23ec-42db-bc16-2d0ade5372b5",
+      "module_key": "calendar",
+      "order": 10,
+      "profile_target": [
+        "receptionist",
+        "reception",
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como usar a Comanda Digital",
+      "type": "document"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "id": "1ce9d357-4170-4be6-a50d-c1115faf1676",
+      "module_key": "whatsapp",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como testar conexão do WhatsApp",
+      "type": "document"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "id": "226261c0-ab96-4320-801d-57a5bcf67c50",
+      "module_key": "settings",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar sua barbearia pela primeira vez",
+      "type": "document"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "24ac8596-a0b7-4bc8-8e7b-49977309331b",
+      "module_key": "finances",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como funciona o financeiro da barbearia",
+      "type": "document"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "id": "25e450b5-ab99-45e8-bf1a-77b8ea121200",
+      "module_key": "finances",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "barber",
+        "professional"
+      ],
+      "status": "published",
+      "title": "Como ativar a Gorjeta Digital via PIX",
+      "type": "document"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "id": "2e2831f1-a060-4fe0-9eec-40a56096ae08",
+      "module_key": "whatsapp",
+      "order": 11,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como usar fluxos conversacionais e botões inteligentes",
+      "type": "document"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "2f8df9f3-4f4c-4d62-891f-a3e05ad2a2b5",
+      "module_key": "subscriptions",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como vender uma assinatura",
+      "type": "document"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "id": "3420adbe-d44d-45b8-a92a-226c29839762",
+      "module_key": "support",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como acompanhar chamados",
+      "type": "document"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "id": "3be978de-cd68-4763-8184-e7d6574811d3",
+      "module_key": "settings",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como instalar o Barbex como App (PWA)",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "426fb66b-5034-4476-bcf2-11147b2b5637",
+      "module_key": "settings",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como personalizar aparência",
+      "type": "document"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "id": "45e0fa0d-c0ec-4eba-9c96-1643efcdbb45",
+      "module_key": "loyalty",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como usar templates premium de fidelidade",
+      "type": "document"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "4ec9d577-f0e8-4a9e-ae80-82cd5ff124b7",
+      "module_key": "products",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como controlar estoque",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "4ee61ba1-d59e-4d67-8332-a4a74cac5062",
+      "module_key": "settings",
+      "order": 30,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como contratar módulos adicionais (Add-ons)",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "58726102-0ec1-4740-9172-87c6b083ae8e",
+      "module_key": "settings",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como ativar Notificações Push",
+      "type": "document"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "60a1afbb-4cdf-4dcb-a9a4-ea95dc134b73",
+      "module_key": "products",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como cadastrar produtos",
+      "type": "document"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "id": "628290d8-6193-463c-8058-16b68f84ee13",
+      "module_key": "whatsapp",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar destinatários internos do WhatsApp",
+      "type": "document"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "id": "64032882-67d0-4d3a-ba4d-0ee186d8c175",
+      "module_key": "whatsapp",
+      "order": 12,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Automações inteligentes de reagendamento e cancelamento",
+      "type": "document"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "64f5bafc-7abb-44f1-9836-683dca7ce9d9",
+      "module_key": "subscriptions",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como funcionam usos de assinatura",
+      "type": "document"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "id": "682301b1-34a3-4c8f-b860-b4702a3c1aa6",
+      "module_key": "support",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como abrir chamado de suporte",
+      "type": "document"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "id": "6a493a70-c0fd-4881-8e2a-66fb29f24d9b",
+      "module_key": "settings",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "barber",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como acessar tutoriais e ajuda",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "6eef64ad-7c7e-49cf-aef4-028dcb78dc68",
+      "module_key": "calendar",
+      "order": 3,
+      "profile_target": [
+        "client",
+        "customer",
+        "tenant_admin"
+      ],
+      "status": "published",
+      "title": "Como o cliente agenda pelo site público",
+      "type": "document"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "77cb39fc-8eb4-4a22-9308-a3ca18aa2395",
+      "module_key": "finances",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como funcionam pagamentos mistos",
+      "type": "document"
+    },
+    {
+      "category_id": "fa046d64-efcd-4235-8616-d04b3c4eaed7",
+      "id": "7f0f541d-c72c-4aa8-bebb-764a292917b6",
+      "module_key": "portal",
+      "order": 10,
+      "profile_target": [
+        "client",
+        "customer",
+        "tenant_admin"
+      ],
+      "status": "published",
+      "title": "Como funciona o portal do cliente e o Clube Barbex",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "84dc0967-2b34-487c-b61e-c5a9819e96a2",
+      "module_key": "settings",
+      "order": 11,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como adicionar a Galeria de Fotos ao site público",
+      "type": "document"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "89d0363a-d477-4b84-8cba-54c8af36b6b1",
+      "module_key": "finances",
+      "order": 10,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial"
+      ],
+      "status": "published",
+      "title": "Como fazer Split de Pagamento",
+      "type": "document"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "id": "8d1aa3cf-1d9a-4bc6-84e8-6b5fda268db2",
+      "module_key": "settings",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como publicar sua página",
+      "type": "document"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "id": "905468c9-b4eb-4554-9493-e072cc92ec0e",
+      "module_key": "whatsapp",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar Z-API",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "9ddeff2f-e151-4d75-b393-d680f4ae9d17",
+      "module_key": "calendar",
+      "order": 11,
+      "profile_target": [
+        "receptionist",
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como usar o Check-in por QR Code",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "a10df4f8-3f19-4c0e-b129-1f70608457c6",
+      "module_key": "calendar",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como funciona o agendamento de assinantes",
+      "type": "document"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "a3ba57c9-60a7-4c2d-8a5a-544dde3c0451",
+      "module_key": "subscriptions",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como criar planos de assinatura",
+      "type": "document"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "a9dfe5d0-c280-47f8-a63f-3dc82781730e",
+      "module_key": "finances",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como configurar PIX",
+      "type": "document"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "id": "b2242045-e3d5-4f89-9125-5a8cca7e4d32",
+      "module_key": "loyalty",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como funciona fidelidade para assinantes",
+      "type": "document"
+    },
+    {
+      "category_id": "37a77850-8fb1-4746-83fb-8b1b6e8f51fc",
+      "id": "b3324233-56e8-49b8-a1ed-1e7acb6fc28e",
+      "module_key": "products",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como vender produtos no frontend",
+      "type": "document"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "id": "b99f5dcd-77f5-437b-b708-f874c25b81f2",
+      "module_key": "loyalty",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como ativar cashback",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "c334b3ba-0993-449a-a58e-88fb89f7f3d1",
+      "module_key": "calendar",
+      "order": 21,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "barber",
+        "professional",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como reagendar trocando data, horário e profissional",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "c452a442-a0c5-4e8a-b963-7f948eac4f04",
+      "module_key": "calendar",
+      "order": 20,
+      "profile_target": [
+        "receptionist",
+        "reception",
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como atender clientes sem agendamento (Walk-in)",
+      "type": "document"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "id": "c46d4879-e831-4f29-9dbc-c6280ff995f8",
+      "module_key": "loyalty",
+      "order": 20,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como entender e usar os níveis de fidelidade dos clientes",
+      "type": "document"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "id": "c7fc4eec-b64c-404d-8acd-450ff06f01e0",
+      "module_key": "services",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como criar serviços",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "cf240ea1-0dec-4817-8afe-8626c4968e21",
+      "module_key": "calendar",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como criar um novo agendamento",
+      "type": "document"
+    },
+    {
+      "category_id": "a19b101e-cd41-4b7c-93a5-c3cc43127113",
+      "id": "cf8b2ce5-ab17-4801-a114-d6d3976fac5f",
+      "module_key": "subscriptions",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como mudar plano de um assinante",
+      "type": "document"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "id": "d41f3d07-4b37-4b97-ba99-a2b8d3e44206",
+      "module_key": "finances",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar comissão do barbeiro",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "d63482d7-27c9-4dbe-bc79-43dfc194acfe",
+      "module_key": "calendar",
+      "order": 22,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como evitar conflitos e ajustar o intervalo entre atendimentos",
+      "type": "document"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "d8a7ab64-9080-476f-be29-18829321c61c",
+      "module_key": "finances",
+      "order": 30,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist"
+      ],
+      "status": "published",
+      "title": "Como usar cupons de desconto",
+      "type": "document"
+    },
+    {
+      "category_id": "f7d696f3-efb0-48fe-94a5-abe9759b73c2",
+      "id": "dbad6386-64ac-4fa9-920f-d5ad1118d6ea",
+      "module_key": "barbers",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como cadastrar barbeiros",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "e13485ca-a742-4ded-9d2b-f5f562e9262d",
+      "module_key": "settings",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar LGPD e privacidade",
+      "type": "document"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "id": "e1697c6d-c015-4a9a-a183-11ad0837223f",
+      "module_key": "finances",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como pagar comissão ao barbeiro",
+      "type": "document"
+    },
+    {
+      "category_id": "74fe2b6f-3efd-47cf-9c6f-8826161f59c6",
+      "id": "e16bb3fd-1359-4da2-91cd-cc8a03619e0d",
+      "module_key": "loyalty",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como ativar fidelidade tradicional",
+      "type": "document"
+    },
+    {
+      "category_id": "1f1a286c-5238-4efa-ad40-f0b656754c7d",
+      "id": "e2e293be-0df7-4d80-8cf0-b27a7268e33d",
+      "module_key": "whatsapp",
+      "order": 3,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como funcionam as automações",
+      "type": "document"
+    },
+    {
+      "category_id": "428c0ddc-fc67-42be-bc4f-aff6280344f3",
+      "id": "e8227c4e-15da-4c36-9dee-a044c4236199",
+      "module_key": "calendar",
+      "order": 2,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "receptionist",
+        "barber",
+        "professional",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como concluir ou cancelar um atendimento",
+      "type": "document"
+    },
+    {
+      "category_id": "3851298e-00d9-4c45-9f5f-bcad2479f6ca",
+      "id": "e9fb6c24-7f1c-4d74-9838-0b503abcf88b",
+      "module_key": "finances",
+      "order": 11,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "financial",
+        "finance"
+      ],
+      "status": "published",
+      "title": "Como usar a Visão Gerencial e exportar PDF do financeiro",
+      "type": "document"
+    },
+    {
+      "category_id": "effb1c97-4599-452c-9895-2f231b130022",
+      "id": "f1f13775-30d4-4989-99b0-fc94dbad79ff",
+      "module_key": "settings",
+      "order": 20,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager",
+        "receptionist",
+        "barber",
+        "reception"
+      ],
+      "status": "published",
+      "title": "Como enviar sugestões de melhoria para o Barbex",
+      "type": "document"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "id": "f54cdc13-df05-42c5-894c-3c3b3993f532",
+      "module_key": "finances",
+      "order": 3,
+      "profile_target": [
+        "barber",
+        "professional",
+        "tenant_admin"
+      ],
+      "status": "published",
+      "title": "Como o barbeiro acompanha sua comissão",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "f8672138-3d17-432d-91d6-14bdd576c334",
+      "module_key": "settings",
+      "order": 4,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como configurar acessibilidade",
+      "type": "document"
+    },
+    {
+      "category_id": "ac653d4f-6ff5-4a15-94ab-7d5c4dc13ec6",
+      "id": "fc102b15-773e-4c5d-a093-81e5adfbdc2f",
+      "module_key": "settings",
+      "order": 1,
+      "profile_target": [
+        "tenant_admin",
+        "admin"
+      ],
+      "status": "published",
+      "title": "Como ativar ou desativar módulos",
+      "type": "document"
+    },
+    {
+      "category_id": "a5ec4c8e-f49d-4817-afbd-8e7c19324215",
+      "id": "fd971753-ce48-43a5-8cfb-b4564c97f4df",
+      "module_key": "finances",
+      "order": 20,
+      "profile_target": [
+        "tenant_admin",
+        "admin",
+        "manager"
+      ],
+      "status": "published",
+      "title": "Como analisar o desempenho de cada profissional",
+      "type": "document"
+    }
+  ],
+  "summary_counts": {
+    "total": 58,
+    "with_client": 3,
+    "with_reception": 12,
+    "with_receptionist": 19
+  }
+}
