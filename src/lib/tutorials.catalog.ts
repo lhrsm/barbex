@@ -46,17 +46,19 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
   {
     id: "owner-config-barbershop",
     title: "Configurações da Barbearia e Chave PIX",
-    description: "Defina dados do estabelecimento, horários de funcionamento, logotipo e a chave PIX para pagamentos diretos.",
+    description: "Configure a chave PIX da barbearia e gerencie os dados cadastrais do estabelecimento.",
     targetRoles: ["tenant_admin", "admin"],
     requiredPermission: "settings:manage",
     moduleKey: "settings",
     route: "/settings",
     steps: [
-      "Acesse o menu Configurações na barra lateral.",
-      "Preencha o nome comercial, telefone de contato e horários de abertura e fechamento.",
-      "Adicione sua Chave PIX oficial para agilizar o recebimento dos clientes.",
-      "Envie a logo da barbearia para personalização da marca e clique em 'Salvar'."
+      "No menu lateral, acesse Configurações (/settings).",
+      "Selecione a aba 'PIX' no topo da página.",
+      "Localize o campo 'Chave PIX (CPF, E-mail, Celular ou Aleatória)'.",
+      "Informe sua Chave PIX oficial válida e, opcionalmente, envie a imagem do seu QR Code para agilizar o pagamento.",
+      "Clique no botão 'Salvar Configurações' ao final da página."
     ],
+    notes: "A chave PIX cadastrada e o QR Code são exibidos ao cliente na página pública de agendamento e na etapa de envio de comprovante. A confirmação do pagamento é realizada pelo estabelecimento mediante verificação da conta bancária ou do comprovante anexado.",
     status: "available",
     badge: "Essencial",
   },

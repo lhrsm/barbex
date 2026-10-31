@@ -1,7 +1,7 @@
 import React from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { 
-  Sparkles, 
+import {
+  Sparkles,
   Send,
   User,
   Bot,
@@ -13,7 +13,13 @@ import {
   Users,
   Wallet,
   ShieldAlert,
-  Loader2
+  Loader2,
+  RotateCcw,
+  BookOpen,
+  ExternalLink,
+  Scissors,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,12 +32,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTenant } from "@/hooks/use-tenant";
 import { resolveAIContext } from "@/lib/ai/context.functions";
 import { verifyTenantAdminIdentity } from "@/lib/ai/tenant-admin-auth";
+import { askAIAssistant } from "@/lib/ai/chat.functions";
 
 export const Route = createFileRoute("/dashboard/assistente")({
   beforeLoad: async () => {
     // Validação preliminar no Router Guard (Fail-Closed)
     if (typeof window !== "undefined") {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) {
         throw redirect({
           to: "/auth",
@@ -50,26 +59,41 @@ export const Route = createFileRoute("/dashboard/assistente")({
   component: AIAssistantPage,
 });
 
+interface SourceItem {
+  id: string;
+  title: string;
+  category: string;
+  route: string;
+}
+
 interface Message {
+  id: string;
   role: "user" | "assistant";
   content: string;
+  sources?: SourceItem[];
+  isError?: boolean;
   timestamp: Date;
 }
+
+const INITIAL_MESSAGE: Message = {
+  id: "welcome-1",
+  role: "assistant",
+  content:
+    "Olá! Sou o Assistente Barbex para administradores. Posso tirar dúvidas sobre como configurar sua barbearia, gerenciar profissionais, acompanhar comissões e operar a plataforma com base na nossa Central de Ajuda oficial. Como posso ajudar você hoje?",
+  timestamp: new Date(),
+};
 
 function AIAssistantPage() {
   const { user, role, loading: authLoading } = useAuth();
   const { tenantId, isLoading: tenantLoading, ownedShop } = useTenant();
 
-  const [messages, setMessages] = React.useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Olá! Sou o Assistente Barbex. Como posso ajudar com os dados da sua barbearia hoje?",
-      timestamp: new Date(),
-    }
-  ]);
+  // Histórico em memória temporária (Zero LocalStorage / Privacidade Total)
+  const [messages, setMessages] = React.useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [aiContextStatus, setAiContextStatus] = React.useState<string | null>(null);
   const [contextError, setContextError] = React.useState<string | null>(null);
+  const [bannerNotice, setBannerNotice] = React.useState<string | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   // Verificação em runtime contra bypasses client-side
@@ -102,40 +126,79 @@ function AIAssistantPage() {
   }, [isAuthorizedAdmin, user?.id]);
 
   const suggestedQuestions = [
-    { text: "Quanto faturei este mês?", icon: Wallet },
-    { text: "Qual profissional teve maior ocupação?", icon: User },
-    { text: "Quais clientes ainda não retornaram?", icon: Users },
-    { text: "Como está o meu ticket médio?", icon: TrendingUp },
+    { text: "Como configurar as comissões dos barbeiros?", icon: Scissors },
+    { text: "Como cadastrar novos serviços e valores?", icon: Wallet },
+    { text: "Como funciona a comanda digital e split de pagamento?", icon: TrendingUp },
+    { text: "Como configurar lembretes automáticos no WhatsApp?", icon: Users },
   ];
 
-  const handleSend = () => {
-    if (!input.trim() || !isAuthorizedAdmin) return;
-    
+  const handleSend = async (overrideText?: string) => {
+    const textToSend = (overrideText || input).trim();
+    if (!textToSend || !isAuthorizedAdmin || isSubmitting) return;
+
+    if (textToSend.length > 500) {
+      setBannerNotice("A pergunta deve ter no máximo 500 caracteres.");
+      return;
+    }
+
+    setBannerNotice(null);
+
     const userMsg: Message = {
+      id: `usr-${Date.now()}`,
       role: "user",
-      content: input,
+      content: textToSend,
       timestamp: new Date(),
     };
-    
-    setMessages(prev => [...prev, userMsg]);
-    setInput("");
 
-    // Simulate response with fail-closed protection
-    setTimeout(() => {
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await askAIAssistant({
+        data: { question: textToSend },
+      });
+
       const botMsg: Message = {
+        id: `ast-${Date.now()}`,
         role: "assistant",
-        content: "Estou processando seus dados operacionais da barbearia autorizada. Em breve poderei responder perguntas complexas usando a Central de KPIs do Barbex.",
+        content: response.reply,
+        sources: response.sources,
+        isError: !response.success,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, botMsg]);
-    }, 1000);
+
+      setMessages((prev) => [...prev, botMsg]);
+
+      if (!response.success && response.error === "RATE_LIMIT_EXCEEDED") {
+        setBannerNotice(response.reply);
+      }
+    } catch (err: any) {
+      const errorMsg: Message = {
+        id: `err-${Date.now()}`,
+        role: "assistant",
+        content:
+          err.message ||
+          "Não foi possível processar sua pergunta neste momento. Verifique sua conexão e tente novamente.",
+        isError: true,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClearHistory = () => {
+    setMessages([INITIAL_MESSAGE]);
+    setBannerNotice(null);
   };
 
   React.useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isSubmitting]);
 
   // Loading state
   if (authLoading || tenantLoading) {
@@ -181,119 +244,214 @@ function AIAssistantPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black text-white tracking-tight italic uppercase">Assistente AI</h1>
               <Badge className="bg-gold text-black font-black uppercase tracking-widest text-[9px] px-2 py-0.5 shadow-[0_0_15px_rgba(212,175,55,0.3)] border-none">
-                Beta
+                MVP Funcional
               </Badge>
             </div>
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-0.5">
-              Inteligência Operacional Barbex
+              Central de Conhecimento e Operação Barbex
             </p>
           </div>
         </div>
-        
-        <div className="hidden md:flex items-center gap-6">
-           <div className="flex flex-col items-end">
-             <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Base de Dados</span>
-             {contextError ? (
-               <span className="text-xs font-bold text-red-400 flex items-center gap-1.5">
-                 <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                 Falha no Contexto
-               </span>
-             ) : (
-               <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                 Sincronizado
-               </span>
-             )}
-           </div>
+
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearHistory}
+            className="border-white/10 hover:border-gold/30 hover:bg-gold/10 text-white/70 hover:text-white text-xs flex items-center gap-1.5"
+            title="Limpar mensagens e iniciar nova conversa"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-gold" />
+            <span className="hidden sm:inline">Nova Conversa</span>
+          </Button>
+
+          <div className="hidden md:flex flex-col items-end">
+            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Base de Dados</span>
+            {contextError ? (
+              <span className="text-xs font-bold text-red-400 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                Falha no Contexto
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Central de Ajuda (68 artigos)
+              </span>
+            )}
+          </div>
         </div>
       </div>
+
+      {bannerNotice && (
+        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium animate-in fade-in">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+          <span className="flex-1">{bannerNotice}</span>
+          <button
+            onClick={() => setBannerNotice(null)}
+            className="text-white/40 hover:text-white font-bold ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 gap-6 overflow-hidden">
         {/* Chat Area */}
         <Card className="flex-1 bg-[#0b0f17]/40 border-white/5 rounded-2xl flex flex-col overflow-hidden backdrop-blur-sm">
-          <div 
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
-          >
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
             <AnimatePresence initial={false}>
-              {messages.map((msg, idx) => (
+              {messages.map((msg) => (
                 <motion.div
-                  key={idx}
+                  key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={cn(
-                    "flex gap-4 max-w-[85%]",
+                    "flex gap-4 max-w-[88%]",
                     msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
                   )}
                 >
-                  <div className={cn(
-                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border",
-                    msg.role === "assistant" 
-                      ? "bg-gold/10 border-gold/20 text-gold" 
-                      : "bg-white/5 border-white/10 text-zinc-400"
-                  )}>
-                    {msg.role === "assistant" ? <Bot size={18} /> : <User size={18} />}
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border",
+                      msg.role === "assistant"
+                        ? msg.isError
+                          ? "bg-red-500/10 border-red-500/20 text-red-400"
+                          : "bg-gold/10 border-gold/20 text-gold"
+                        : "bg-white/5 border-white/10 text-zinc-400"
+                    )}
+                  >
+                    {msg.role === "assistant" ? (
+                      msg.isError ? (
+                        <AlertTriangle size={18} />
+                      ) : (
+                        <Bot size={18} />
+                      )
+                    ) : (
+                      <User size={18} />
+                    )}
                   </div>
-                  
-                  <div className={cn(
-                    "p-4 rounded-2xl text-sm leading-relaxed",
-                    msg.role === "assistant"
-                      ? "bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none"
-                      : "bg-gold text-black font-bold rounded-tr-none shadow-[0_10px_20px_-10px_rgba(212,175,55,0.3)]"
-                  )}>
-                    {msg.content}
+
+                  <div className="space-y-3 flex-1">
+                    <div
+                      className={cn(
+                        "p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-line",
+                        msg.role === "assistant"
+                          ? msg.isError
+                            ? "bg-red-500/5 border border-red-500/20 text-red-200 rounded-tl-none"
+                            : "bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none font-normal"
+                          : "bg-gold text-black font-bold rounded-tr-none shadow-[0_10px_20px_-10px_rgba(212,175,55,0.3)]"
+                      )}
+                    >
+                      {msg.content}
+                    </div>
+
+                    {/* Tutoriais Relacionados com Links Diretos */}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                        <span className="text-[10px] font-black text-gold/80 uppercase tracking-widest flex items-center gap-1.5">
+                          <BookOpen className="w-3 h-3 text-gold" /> Tutoriais Oficiais Recomendados:
+                        </span>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {msg.sources.map((src) => (
+                            <Link
+                              key={src.id}
+                              to="/tutorials"
+                              search={{ q: src.title } as any}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 hover:border-gold/40 hover:bg-gold/5 text-[11px] font-medium text-zinc-300 hover:text-white transition-all group"
+                            >
+                              <span>{src.title}</span>
+                              <ExternalLink className="w-2.5 h-2.5 text-zinc-500 group-hover:text-gold" />
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
+
+              {isSubmitting && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex gap-4 max-w-[85%] mr-auto"
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border bg-gold/10 border-gold/20 text-gold">
+                    <Bot size={18} />
+                  </div>
+                  <div className="p-4 rounded-2xl text-sm leading-relaxed bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none flex items-center gap-3">
+                    <Loader2 className="w-4 h-4 text-gold animate-spin" />
+                    <span className="text-xs text-white/60 font-medium">
+                      Consultando a Central de Ajuda do Barbex...
+                    </span>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
 
           <div className="p-6 bg-white/[0.02] border-t border-white/5">
             <div className="relative group">
-              <Input 
+              <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Ex: Qual foi meu faturamento hoje?" 
-                className="h-14 bg-zinc-950/50 border-white/10 rounded-2xl text-white font-medium pr-14 focus:border-gold/50 transition-all placeholder:text-zinc-600"
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                placeholder="Ex: Como configurar as comissões dos barbeiros?"
+                maxLength={500}
+                disabled={isSubmitting}
+                className="h-14 bg-zinc-950/50 border-white/10 rounded-2xl text-white font-medium pr-28 focus:border-gold/50 transition-all placeholder:text-zinc-600 disabled:opacity-50"
               />
-              <Button 
-                onClick={handleSend}
-                disabled={!input.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-gold hover:bg-gold/90 text-black p-0 disabled:opacity-30 disabled:bg-zinc-800"
-              >
-                <Send size={18} />
-              </Button>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <span className="text-[10px] text-zinc-500 font-mono pr-1 hidden sm:inline">
+                  {input.length}/500
+                </span>
+                <Button
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || isSubmitting || input.length > 500}
+                  className="w-10 h-10 rounded-xl bg-gold hover:bg-gold/90 text-black p-0 disabled:opacity-30 disabled:bg-zinc-800"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : (
+                    <Send size={18} />
+                  )}
+                </Button>
+              </div>
             </div>
-            <p className="text-[10px] text-zinc-600 mt-3 text-center font-medium">
-              O assistente analisa dados da barbearia autorizada para insights operacionais.
-            </p>
+            <div className="flex items-center justify-between text-[10px] text-zinc-600 mt-2 px-1">
+              <span>Orientação baseada nos tutoriais oficiais do Barbex.</span>
+              <span>Modo estritamente consultivo.</span>
+            </div>
           </div>
         </Card>
 
         {/* Sidebar Info */}
         <div className="hidden lg:flex flex-col gap-6 w-80 shrink-0">
           <Card className="bg-[#0b0f17]/40 border-white/5 rounded-2xl p-6 backdrop-blur-sm">
-            <h3 className="text-xs font-black text-gold uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <HelpCircle size={14} /> Sugestões
+            <h3 className="text-xs font-black text-gold uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <HelpCircle size={14} /> Dúvidas Frequentes
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {suggestedQuestions.map((q, i) => (
-                <button 
+                <button
                   key={i}
-                  onClick={() => setInput(q.text)}
-                  className="w-full text-left p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-gold/30 hover:bg-gold/5 group transition-all"
+                  disabled={isSubmitting}
+                  onClick={() => handleSend(q.text)}
+                  className="w-full text-left p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-gold/30 hover:bg-gold/5 group transition-all disabled:opacity-50"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-zinc-900 group-hover:bg-gold/10 transition-colors">
-                      <q.icon size={14} className="text-zinc-500 group-hover:text-gold" />
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-1.5 rounded-lg bg-zinc-900 group-hover:bg-gold/10 transition-colors mt-0.5">
+                      <q.icon size={13} className="text-zinc-500 group-hover:text-gold" />
                     </div>
                     <div className="flex-1">
                       <p className="text-[11px] font-bold text-zinc-400 group-hover:text-zinc-200 leading-snug">
                         {q.text}
                       </p>
                     </div>
-                    <ArrowRight size={12} className="text-zinc-700 group-hover:text-gold mt-1 opacity-0 group-hover:opacity-100 transition-all" />
+                    <ArrowRight
+                      size={12}
+                      className="text-zinc-700 group-hover:text-gold mt-1 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                    />
                   </div>
                 </button>
               ))}
@@ -301,26 +459,45 @@ function AIAssistantPage() {
           </Card>
 
           <Card className="bg-[#0b0f17]/40 border-white/5 rounded-2xl p-6 backdrop-blur-sm flex-1">
-            <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <Database size={14} /> Integração
+            <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <Database size={14} /> Base de Tutoriais
             </h3>
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {['CRM', 'Financeiro', 'Agenda', 'Estoque'].map(tag => (
-                  <Badge key={tag} variant="outline" className="bg-zinc-950/50 border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-widest px-2">
+              <div className="flex flex-wrap gap-1.5">
+                {["Comissões", "Serviços", "Comanda", "Z-API", "PIX", "Relatórios"].map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="bg-zinc-950/50 border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-widest px-2 py-0.5"
+                  >
                     {tag}
                   </Badge>
                 ))}
               </div>
               <p className="text-[10px] text-zinc-500 font-medium leading-relaxed">
-                Dados processados localmente via Central de KPIs Barbex.
+                As respostas são recuperadas diretamente dos 68 artigos homologados da Central de Ajuda.
               </p>
-              
-              <div className="pt-4 border-t border-white/5">
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                  <Zap size={14} className="text-emerald-400" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Tempo Real</span>
+
+              <div className="pt-3 border-t border-white/5 space-y-2">
+                <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Isolamento multi-tenant ativo</span>
                 </div>
+                <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Franquia 100% gratuita (Fail-Closed)</span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs font-bold border-white/10 hover:border-gold/30 hover:bg-gold/10 text-white"
+                >
+                  <Link to="/tutorials">Abrir Central de Ajuda</Link>
+                </Button>
               </div>
             </div>
           </Card>
