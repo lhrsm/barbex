@@ -6,14 +6,26 @@ import { computeTotals, computeDre } from "@/components/finances/erp/engine";
 /**
  * Service to aggregate data for AI Tools.
  * Each function follows strict read-only patterns and respects multi-tenancy.
+ * BARBEX R2E.26E.21B: Hardened fail-closed multi-tenant scoping.
  */
 
 export const AIInternalServices = {
   /**
    * Financial Summary Implementation
    */
-  getFinancialSummary: async (input: { start_date: string; end_date: string; professional_id?: string }, context: AIContext) => {
+  getFinancialSummary: async (
+    input: { start_date: string; end_date: string; professional_id?: string },
+    context: AIContext,
+  ) => {
     const { tenant_id } = context;
+    if (
+      !tenant_id ||
+      typeof tenant_id !== "string" ||
+      tenant_id === "00000000-0000-0000-0000-000000000000"
+    ) {
+      throw new Error("Tenant ID inválido ou não fornecido no contexto de IA.");
+    }
+
     const { start_date, end_date, professional_id } = input;
 
     // Parallel fetch using verified table names from useErpFinance.ts and schema inspection
@@ -24,15 +36,45 @@ export const AIInternalServices = {
       cashbackRes,
       creditsRes,
       subscriptionsRes,
-      commissionsRes
+      commissionsRes,
     ] = await Promise.all([
-      supabase.from("transactions").select("*").eq("tenant_id", tenant_id).gte("date", start_date).lte("date", end_date),
-      supabase.from("appointments").select("*").eq("tenant_id", tenant_id).gte("start_time", start_date).lte("start_time", end_date),
-      supabase.from("product_sales").select("*").eq("tenant_id", tenant_id).gte("created_at", start_date).lte("created_at", end_date),
-      supabase.from("cashback_transactions").select("*").eq("tenant_id", tenant_id).gte("created_at", start_date).lte("created_at", end_date),
-      supabase.from("credit_transactions").select("*").eq("tenant_id", tenant_id).gte("created_at", start_date).lte("created_at", end_date),
+      supabase
+        .from("transactions")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .gte("date", start_date)
+        .lte("date", end_date),
+      supabase
+        .from("appointments")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .gte("start_time", start_date)
+        .lte("start_time", end_date),
+      supabase
+        .from("product_sales")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .gte("created_at", start_date)
+        .lte("created_at", end_date),
+      supabase
+        .from("cashback_transactions")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .gte("created_at", start_date)
+        .lte("created_at", end_date),
+      supabase
+        .from("credit_transactions")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .gte("created_at", start_date)
+        .lte("created_at", end_date),
       supabase.from("customer_subscriptions").select("*").eq("tenant_id", tenant_id),
-      supabase.from("barber_commissions").select("*").eq("tenant_id", tenant_id).gte("created_at", start_date).lte("created_at", end_date)
+      supabase
+        .from("barber_commissions")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .gte("created_at", start_date)
+        .lte("created_at", end_date),
     ]);
 
     const transactions = transactionsRes.data || [];
@@ -44,18 +86,21 @@ export const AIInternalServices = {
     const commissions = commissionsRes.data || [];
 
     // Filter by professional if requested
-    const filteredAppointments = professional_id 
-      ? appointments.filter(a => a.barber_id === professional_id)
+    const filteredAppointments = professional_id
+      ? appointments.filter((a) => a.barber_id === professional_id)
       : appointments;
 
     const totals = computeTotals({
       transactions,
       appointments: filteredAppointments,
-      commissions: (commissions as any[]).map(c => ({ ...c, commission_amount: c.commission_amount || 0 })),
+      commissions: (commissions as any[]).map((c) => ({
+        ...c,
+        commission_amount: c.commission_amount || 0,
+      })),
       productSales,
       cashback,
       credits,
-      subscriptions
+      subscriptions,
     });
 
     const dre = computeDre(totals);
@@ -64,15 +109,26 @@ export const AIInternalServices = {
       period: { start: start_date, end: end_date },
       summary: totals,
       dre: dre,
-      is_filtered_by_professional: !!professional_id
+      is_filtered_by_professional: !!professional_id,
     };
   },
 
   /**
    * Appointment Summary Implementation
    */
-  getAppointmentSummary: async (input: { start_date: string; end_date: string }, context: AIContext) => {
+  getAppointmentSummary: async (
+    input: { start_date: string; end_date: string },
+    context: AIContext,
+  ) => {
     const { tenant_id } = context;
+    if (
+      !tenant_id ||
+      typeof tenant_id !== "string" ||
+      tenant_id === "00000000-0000-0000-0000-000000000000"
+    ) {
+      throw new Error("Tenant ID inválido ou não fornecido no contexto de IA.");
+    }
+
     const { data: appointments } = await supabase
       .from("appointments")
       .select("status, total_price, final_amount, start_time")
@@ -92,8 +148,8 @@ export const AIInternalServices = {
       total: appointments.length,
       status_breakdown,
       completed_revenue: (appointments as any[])
-        .filter(a => a.status === 'completed')
-        .reduce((sum, a) => sum + (Number(a.final_amount) || Number(a.total_price) || 0), 0)
+        .filter((a) => a.status === "completed")
+        .reduce((sum, a) => sum + (Number(a.final_amount) || Number(a.total_price) || 0), 0),
     };
-  }
+  },
 };

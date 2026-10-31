@@ -1,8 +1,7 @@
 import React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { 
   Sparkles, 
-  MessageSquare, 
   Send,
   User,
   Bot,
@@ -12,8 +11,9 @@ import {
   ArrowRight,
   TrendingUp,
   Users,
-  Calendar,
-  Wallet
+  Wallet,
+  ShieldAlert,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,32 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useTenant } from "@/hooks/use-tenant";
+import { resolveAIContext } from "@/lib/ai/context.functions";
+import { verifyTenantAdminIdentity } from "@/lib/ai/tenant-admin-auth";
 
 export const Route = createFileRoute("/dashboard/assistente")({
+  beforeLoad: async () => {
+    // Validação preliminar no Router Guard (Fail-Closed)
+    if (typeof window !== "undefined") {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw redirect({
+          to: "/auth",
+          search: { redirect: "/dashboard/assistente" } as any,
+        });
+      }
+
+      // Validação canônica centralizada
+      const authResult = await verifyTenantAdminIdentity(session.user.id);
+      if (!authResult.authorized) {
+        console.warn("[AI_ASSISTANT_GUARD] Acesso negado:", authResult.errorMessage);
+        throw redirect({ to: "/dashboard" });
+      }
+    }
+  },
   component: AIAssistantPage,
 });
 
@@ -33,6 +57,9 @@ interface Message {
 }
 
 function AIAssistantPage() {
+  const { user, role, loading: authLoading } = useAuth();
+  const { tenantId, isLoading: tenantLoading, ownedShop } = useTenant();
+
   const [messages, setMessages] = React.useState<Message[]>([
     {
       role: "assistant",
@@ -41,7 +68,38 @@ function AIAssistantPage() {
     }
   ]);
   const [input, setInput] = React.useState("");
+  const [aiContextStatus, setAiContextStatus] = React.useState<string | null>(null);
+  const [contextError, setContextError] = React.useState<string | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Verificação em runtime contra bypasses client-side
+  const isAuthorizedAdmin =
+    !authLoading &&
+    !tenantLoading &&
+    role !== "super_admin" &&
+    (role === "tenant_admin" || (role === "admin" && (!!tenantId || !!ownedShop)));
+
+  // Sincronização e verificação de contexto via Server Function
+  React.useEffect(() => {
+    let isMounted = true;
+    if (isAuthorizedAdmin && user?.id) {
+      resolveAIContext()
+        .then((ctx) => {
+          if (isMounted) {
+            setAiContextStatus(ctx.status);
+            setContextError(null);
+          }
+        })
+        .catch((err) => {
+          if (isMounted) {
+            setContextError(err.message || "Erro ao autenticar contexto de IA.");
+          }
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthorizedAdmin, user?.id]);
 
   const suggestedQuestions = [
     { text: "Quanto faturei este mês?", icon: Wallet },
@@ -51,7 +109,7 @@ function AIAssistantPage() {
   ];
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !isAuthorizedAdmin) return;
     
     const userMsg: Message = {
       role: "user",
@@ -62,11 +120,11 @@ function AIAssistantPage() {
     setMessages(prev => [...prev, userMsg]);
     setInput("");
 
-    // Simulate response
+    // Simulate response with fail-closed protection
     setTimeout(() => {
       const botMsg: Message = {
         role: "assistant",
-        content: "Estou processando seus dados operacionais. Em breve poderei responder perguntas complexas usando a Central de KPIs do Barbex.",
+        content: "Estou processando seus dados operacionais da barbearia autorizada. Em breve poderei responder perguntas complexas usando a Central de KPIs do Barbex.",
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, botMsg]);
@@ -78,6 +136,38 @@ function AIAssistantPage() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Loading state
+  if (authLoading || tenantLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-180px)] gap-4">
+        <Loader2 className="w-8 h-8 text-gold animate-spin" />
+        <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
+          Validando credenciais do administrador...
+        </p>
+      </div>
+    );
+  }
+
+  // Unauthorized Fallback (Caso de desvio ou sessão incompatível)
+  if (!isAuthorizedAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-180px)] max-w-lg mx-auto text-center gap-6 p-6">
+        <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black text-white uppercase tracking-tight">Acesso Restrito</h2>
+          <p className="text-white/60 text-sm">
+            O Assistente de IA Institucional é de uso exclusivo do administrador da barbearia.
+          </p>
+        </div>
+        <Button asChild className="bg-gold text-black hover:bg-gold/90 font-bold">
+          <Link to="/dashboard">Voltar ao Painel</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] max-w-5xl mx-auto gap-6 animate-in fade-in duration-500">
@@ -94,17 +184,26 @@ function AIAssistantPage() {
                 Beta
               </Badge>
             </div>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-0.5">Inteligência Operacional Barbex</p>
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-0.5">
+              Inteligência Operacional Barbex
+            </p>
           </div>
         </div>
         
         <div className="hidden md:flex items-center gap-6">
            <div className="flex flex-col items-end">
              <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Base de Dados</span>
-             <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-               Sincronizado
-             </span>
+             {contextError ? (
+               <span className="text-xs font-bold text-red-400 flex items-center gap-1.5">
+                 <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                 Falha no Contexto
+               </span>
+             ) : (
+               <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                 Sincronizado
+               </span>
+             )}
            </div>
         </div>
       </div>
@@ -167,7 +266,7 @@ function AIAssistantPage() {
               </Button>
             </div>
             <p className="text-[10px] text-zinc-600 mt-3 text-center font-medium">
-              O assistente analisa dados anonimizados para insights operacionais.
+              O assistente analisa dados da barbearia autorizada para insights operacionais.
             </p>
           </div>
         </Card>

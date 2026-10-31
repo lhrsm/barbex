@@ -75,6 +75,7 @@ interface NavItem {
   to: string;
   module?: ModuleKey;
   permission?: PermissionKey;
+  requireTenantAdmin?: boolean;
 }
 
 const defaultNavItems: NavItem[] = [
@@ -91,7 +92,7 @@ const defaultNavItems: NavItem[] = [
     label: "Assistente",
     icon: Sparkles,
     to: "/dashboard/assistente",
-    permission: "dashboard:view",
+    requireTenantAdmin: true,
   },
   { label: "Radar Op.", icon: Radar, to: "/operational-insights", permission: "dashboard:view" },
   { label: "Inteligência", icon: Radar, to: "/intelligence", permission: "dashboard:view" },
@@ -300,6 +301,16 @@ export const AppLayout = memo(({ children }: { children: React.ReactNode }) => {
   const navItems = rawNav.filter((item: NavItem) => {
     const moduleEnabled = !item.module || isModuleEnabled(item.module);
     const permissionGranted = !item.permission || hasPermission(item.permission);
+
+    // BARBEX R2E.26E.21B: Assistente exclusivo para tenant_admin com barbearia comprovada
+    if (item.requireTenantAdmin) {
+      const isAuthorizedTenantAdmin =
+        role !== "super_admin" &&
+        !isImpersonating &&
+        (role === "tenant_admin" || (role === "admin" && (!!tenantId || !!ownedShop)));
+      if (!isAuthorizedTenantAdmin) return false;
+    }
+
     return moduleEnabled && permissionGranted;
   });
 
