@@ -8,6 +8,8 @@
  * 4. A política FREE-ONLY / FAIL-CLOSED seja aplicada sem fallbacks pagos.
  */
 
+import { supabaseAdmin } from "../../integrations/supabase/client.server";
+
 export interface RateLimitResult {
   allowed: boolean;
   retryAfterSeconds?: number;
@@ -140,6 +142,14 @@ export function resetRateLimitsForTesting() {
 }
 
 /**
+ * Avança janela de minuto mantendo janelas de hora e dia (utilizado para testes)
+ */
+export function advanceMinuteForTesting() {
+  globalMinuteTimestamps = [];
+  userMinuteWindowMap.clear();
+}
+
+/**
  * Padrões Adversariais de Tentativa de Prompt Injection
  */
 const INJECTION_PATTERNS = [
@@ -207,40 +217,405 @@ export function sanitizeAndValidateInput(question: unknown): SanitizedQuery {
   };
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface CanaryAllowlistParseResult {
+  valid: boolean;
+  id?: string;
+  errorCode?:
+    | "ABSENT"
+    | "EMPTY"
+    | "MALFORMED"
+    | "WILDCARD_PROHIBITED"
+    | "MULTI_TARGET_PROHIBITED";
+  errorMessage?: string;
+}
+
 /**
- * Avaliação da Feature Flag do Assistente
+ * Validador estrito de lista de controle canário (R2E.26E.22N.2)
+ * Garante que apenas 1 UUID válido seja configurado, rejeitando listas múltiplas,
+ * vazias, malformadas ou com curingas (* / all).
  */
-export function isAIAssistantEnabled(): { enabled: boolean; status: string; reason?: string } {
+export function parseStrictSingleCanaryAllowlist(
+  envValue: string | undefined | null,
+  variableName: string
+): CanaryAllowlistParseResult {
+  if (envValue === undefined || envValue === null) {
+    return {
+      valid: false,
+      errorCode: "ABSENT",
+      errorMessage: `Variável ${variableName} ausente ou não configurada (fail-closed).`,
+    };
+  }
+
+  const trimmed = envValue.trim();
+  if (trimmed === "") {
+    return {
+      valid: false,
+      errorCode: "EMPTY",
+      errorMessage: `Variável ${variableName} vazia (fail-closed).`,
+    };
+  }
+
+  // Verificação contra curingas (* ou all)
+  if (
+    trimmed === "*" ||
+    trimmed.toLowerCase() === "all" ||
+    trimmed.includes("*")
+  ) {
+    return {
+      valid: false,
+      errorCode: "WILDCARD_PROHIBITED",
+      errorMessage: `Curingas e permissões universais ('${trimmed}') são terminantemente proibidos em ${variableName}.`,
+    };
+  }
+
+  // Divisão por vírgula para detectar múltiplos alvos
+  const parts = trimmed
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length > 1) {
+    return {
+      valid: false,
+      errorCode: "MULTI_TARGET_PROHIBITED",
+      errorMessage: `Múltiplos identificadores configurados em ${variableName}. A fase canário restringe-se estritamente a 1 alvo homologado.`,
+    };
+  }
+
+  const targetId = parts[0];
+  if (!UUID_REGEX.test(targetId)) {
+    return {
+      valid: false,
+      errorCode: "MALFORMED",
+      errorMessage: `Identificador em ${variableName} inválido ou malformado. Exige-se formato UUID canônico.`,
+    };
+  }
+
+  return {
+    valid: true,
+    id: targetId.toLowerCase(),
+  };
+}
+
+export interface CanaryAccessEvaluation {
+  allowed: boolean;
+  status:
+    | "active"
+    | "disabled"
+    | "canary_tenant_blocked"
+    | "canary_user_blocked"
+    | "canary_config_invalid";
+  reasonCode?: string;
+  reason?: string;
+}
+
+/**
+ * Avaliação mandante de isolamento canário por Tenant e Usuário (Gate 1)
+ */
+export function evaluateCanaryAccess(
+  tenantId?: string | null,
+  userId?: string | null
+): CanaryAccessEvaluation {
+  // 1. Verificação da Flag Global (Kill Switch)
   const envFlag = (
     process.env.BARBEX_AI_ASSISTANT_ENABLED ||
     process.env.ENABLE_TENANT_AI_ASSISTANT ||
     ""
-  ).toLowerCase();
+  )
+    .toLowerCase()
+    .trim();
 
-  // Em modo de testes automatizados ou desenvolvimento local sem bloqueio explícito
-  const isDevOrTest = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+  // Fail-Closed: Qualquer valor diferente de 'true' ou 'active' desativa
+  if (envFlag !== "true" && envFlag !== "active") {
+    return {
+      allowed: false,
+      status: "disabled",
+      reasonCode: "GLOBAL_KILLSWITCH_DISABLED",
+      reason:
+        "O Assistente de IA está temporariamente desativado pela administração da plataforma.",
+    };
+  }
+
+  // 2. Parser da allowlist de Tenants (Exatamente 1 UUID)
+  const tenantParsed = parseStrictSingleCanaryAllowlist(
+    process.env.BARBEX_AI_CANARY_TENANT_IDS,
+    "BARBEX_AI_CANARY_TENANT_IDS"
+  );
+  if (!tenantParsed.valid || !tenantParsed.id) {
+    return {
+      allowed: false,
+      status: "canary_config_invalid",
+      reasonCode: `CANARY_TENANT_CONFIG_${tenantParsed.errorCode}`,
+      reason:
+        tenantParsed.errorMessage ||
+        "Configuração canário de barbearia inválida.",
+    };
+  }
+
+  // 3. Parser da allowlist de Usuários (Exatamente 1 UUID)
+  const userParsed = parseStrictSingleCanaryAllowlist(
+    process.env.BARBEX_AI_CANARY_USER_IDS,
+    "BARBEX_AI_CANARY_USER_IDS"
+  );
+  if (!userParsed.valid || !userParsed.id) {
+    return {
+      allowed: false,
+      status: "canary_config_invalid",
+      reasonCode: `CANARY_USER_CONFIG_${userParsed.errorCode}`,
+      reason:
+        userParsed.errorMessage || "Configuração canário de usuário inválida.",
+    };
+  }
+
+  // 4. Validação do Tenant Autenticado
+  if (
+    !tenantId ||
+    typeof tenantId !== "string" ||
+    !UUID_REGEX.test(tenantId.trim())
+  ) {
+    return {
+      allowed: false,
+      status: "canary_tenant_blocked",
+      reasonCode: "CANARY_TENANT_INVALID",
+      reason: "Identificador de barbearia inválido ou malformado.",
+    };
+  }
+
+  if (tenantId.trim().toLowerCase() !== tenantParsed.id) {
+    return {
+      allowed: false,
+      status: "canary_tenant_blocked",
+      reasonCode: "CANARY_TENANT_NOT_AUTHORIZED",
+      reason:
+        "O Assistente de IA Institucional encontra-se em fase de homologação canário restrita.",
+    };
+  }
+
+  // 5. Validação do Usuário Autenticado
+  if (
+    !userId ||
+    typeof userId !== "string" ||
+    !UUID_REGEX.test(userId.trim())
+  ) {
+    return {
+      allowed: false,
+      status: "canary_user_blocked",
+      reasonCode: "CANARY_USER_INVALID",
+      reason: "Identificador de usuário inválido ou malformado.",
+    };
+  }
+
+  if (userId.trim().toLowerCase() !== userParsed.id) {
+    return {
+      allowed: false,
+      status: "canary_user_blocked",
+      reasonCode: "CANARY_USER_NOT_AUTHORIZED",
+      reason:
+        "Acesso restrito ao administrador homologado para a fase canário.",
+    };
+  }
+
+  // Acesso Canário 100% Homologado e Autorizado
+  return {
+    allowed: true,
+    status: "active",
+  };
+}
+
+/**
+ * Avaliação da Feature Flag do Assistente com Suporte a Isolamento Canário
+ */
+export function isAIAssistantEnabled(
+  tenantId?: string,
+  userId?: string
+): { enabled: boolean; status: string; reason?: string; reasonCode?: string } {
+  // Se tenantId ou userId forem passados, avalia a governança canário completa
+  if (tenantId !== undefined || userId !== undefined) {
+    const canaryEval = evaluateCanaryAccess(tenantId, userId);
+    return {
+      enabled: canaryEval.allowed,
+      status: canaryEval.status,
+      reason: canaryEval.reason,
+      reasonCode: canaryEval.reasonCode,
+    };
+  }
+
+  // Avaliação genérica do kill switch global (quando chamado sem contexto de usuário)
+  const envFlag = (
+    process.env.BARBEX_AI_ASSISTANT_ENABLED ||
+    process.env.ENABLE_TENANT_AI_ASSISTANT ||
+    ""
+  )
+    .toLowerCase()
+    .trim();
 
   if (envFlag === "false" || envFlag === "disabled" || envFlag === "off") {
     return {
       enabled: false,
       status: "disabled",
-      reason: "O Assistente de IA está temporariamente desativado pela administração da plataforma.",
+      reasonCode: "GLOBAL_KILLSWITCH_DISABLED",
+      reason:
+        "O Assistente de IA está temporariamente desativado pela administração da plataforma.",
     };
   }
 
-  if (envFlag === "active" || envFlag === "true" || envFlag === "local_mvp") {
-    return { enabled: true, status: "active" };
-  }
+  if (envFlag === "active" || envFlag === "true") {
+    // Se a flag global estiver ativa, mas allowlists canário forem exigidas
+    const tenantParsed = parseStrictSingleCanaryAllowlist(
+      process.env.BARBEX_AI_CANARY_TENANT_IDS,
+      "BARBEX_AI_CANARY_TENANT_IDS"
+    );
+    const userParsed = parseStrictSingleCanaryAllowlist(
+      process.env.BARBEX_AI_CANARY_USER_IDS,
+      "BARBEX_AI_CANARY_USER_IDS"
+    );
 
-  // Comportamento default seguro (Fail-Closed em produção; ativo para MVP demonstrável em dev/test)
-  if (isDevOrTest) {
-    return { enabled: true, status: "local_mvp" };
+    if (tenantParsed.valid && userParsed.valid) {
+      return {
+        enabled: false,
+        status: "canary_requires_identity",
+        reasonCode: "CANARY_IDENTITY_REQUIRED",
+        reason:
+          "O Assistente requer validação de identidade da barbearia canário.",
+      };
+    }
+
+    return {
+      enabled: false,
+      status: "disabled",
+      reasonCode: "CANARY_CONFIG_MISSING",
+      reason: "Configuração canário não estabelecida.",
+    };
   }
 
   return {
     enabled: false,
     status: "disabled",
+    reasonCode: "GLOBAL_KILLSWITCH_DISABLED",
     reason: "O Assistente de IA Institucional aguarda ativação de produção.",
+  };
+}
+
+export interface DistributedRateLimitResult {
+  allowed: boolean;
+  retryAfterSeconds?: number;
+  reason?: string;
+  source: "rpc" | "memory_fallback";
+  details?: Record<string, unknown>;
+}
+
+/**
+ * Validador Distribuído de Rate Limiting PostgreSQL (RPC) (Gate 2)
+ *
+ * Utiliza o cliente server-side autorizado (service_role) para invocar
+ * atomicamente public.check_and_increment_ai_rate_limit no PostgreSQL.
+ * Bloqueia estritamente (Fail-Closed) em caso de erro, NULL ou formato inesperado.
+ */
+export async function checkDistributedRateLimit(
+  tenantId: string,
+  userId: string,
+  supabaseClientOverride?: any
+): Promise<DistributedRateLimitResult> {
+  try {
+    let client = supabaseClientOverride;
+    if (!client) {
+      try {
+        client = supabaseAdmin;
+      } catch {
+        client = null;
+      }
+    }
+
+    if (client && typeof client.rpc === "function") {
+      const { data, error } = await client.rpc(
+        "check_and_increment_ai_rate_limit",
+        {
+          p_tenant_id: tenantId,
+          p_user_id: userId,
+          p_max_per_min: 5,
+          p_max_per_hour: 30,
+          p_estimated_tokens: 1800,
+          p_max_global_per_min: 20,
+          p_max_global_per_day: 800,
+        }
+      );
+
+      if (error) {
+        return {
+          allowed: false,
+          reason: `RATE_LIMIT_RPC_ERROR: ${error.message || "Erro de execução na RPC"}`,
+          source: "rpc",
+        };
+      }
+
+      if (!data || typeof data !== "object") {
+        return {
+          allowed: false,
+          reason: "RATE_LIMIT_RPC_INVALID_RESPONSE",
+          source: "rpc",
+        };
+      }
+
+      if (data.allowed === false) {
+        return {
+          allowed: false,
+          retryAfterSeconds: data.retry_after_seconds || 60,
+          reason: data.reason || "RATE_LIMIT_EXCEEDED",
+          source: "rpc",
+          details: data,
+        };
+      }
+
+      if (data.allowed === true) {
+        return {
+          allowed: true,
+          source: "rpc",
+          details: data,
+        };
+      }
+
+      // Resposta inesperada: Fail-Closed
+      return {
+        allowed: false,
+        reason: "RATE_LIMIT_RPC_UNEXPECTED_FORMAT",
+        source: "rpc",
+      };
+    }
+  } catch (err: any) {
+    if (process.env.NODE_ENV === "test" && !supabaseClientOverride) {
+      const memResult = checkRateLimit(userId, tenantId);
+      return {
+        allowed: memResult.allowed,
+        retryAfterSeconds: memResult.retryAfterSeconds,
+        reason: memResult.reason,
+        source: "memory_fallback",
+      };
+    }
+
+    return {
+      allowed: false,
+      reason: `RATE_LIMIT_RPC_EXCEPTION: ${err?.message || String(err)}`,
+      source: "rpc",
+    };
+  }
+
+  // Se nenhum cliente RPC estiver disponível:
+  if (process.env.NODE_ENV === "test") {
+    const memResult = checkRateLimit(userId, tenantId);
+    return {
+      allowed: memResult.allowed,
+      retryAfterSeconds: memResult.retryAfterSeconds,
+      reason: memResult.reason,
+      source: "memory_fallback",
+    };
+  }
+
+  return {
+    allowed: false,
+    reason: "RATE_LIMIT_CLIENT_UNAVAILABLE",
+    source: "rpc",
   };
 }
 
