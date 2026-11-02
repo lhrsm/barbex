@@ -1,13 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { verifyTenantAdminIdentity } from "./tenant-admin-auth";
+import { isAIAssistantEnabled } from "./guardrails.server";
 
 /**
- * Endpoint de Servidor: resolveAIContext (Barbex R2E.26E.21B)
+ * Endpoint de Servidor: resolveAIContext (Barbex R2E.26E.22N.8C)
  *
  * Restrito EXCLUSIVAMENTE a administradores de barbearia autorizados (tenant_admin).
  * Qualquer perfil operacional (reception, barber, finance, client) ou super_admin
  * é sumariamente rejeitado no servidor (fail-closed).
+ *
+ * Avalia o status em tempo real do Kill Switch Global e do Isolamento Canário.
  */
 export const resolveAIContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -30,9 +33,14 @@ export const resolveAIContext = createServerFn({ method: "GET" })
       .eq("tenant_id", authResult.tenantId)
       .eq("enabled", true);
 
+    // 3. Verificação do status real do Kill Switch Global e Isolamento Canário
+    const canaryStatus = isAIAssistantEnabled(authResult.tenantId, userId);
+
     return {
-      status: "active",
-      ai_assistant_enabled: "active",
+      status: canaryStatus.status,
+      ai_assistant_enabled: canaryStatus.enabled,
+      reason: canaryStatus.reason,
+      reasonCode: canaryStatus.reasonCode,
       context: {
         tenant_id: authResult.tenantId,
         user_id: userId,

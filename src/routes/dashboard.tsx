@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { AppointmentModal } from "@/components/calendar/AppointmentModal";
 import { AppointmentDetailsModal } from "@/components/calendar/AppointmentDetailsModal";
 import { RescheduleWizard } from "@/components/reschedule/RescheduleWizard";
+import { AIAssistantFloatingButton } from "@/components/ai/AIAssistantFloatingButton";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -67,6 +68,7 @@ function DashboardLayout() {
           source="admin_dashboard"
           onSuccess={handleRefresh}
         />
+        <AIAssistantFloatingButton />
       </div>
     </AppLayout>
   );

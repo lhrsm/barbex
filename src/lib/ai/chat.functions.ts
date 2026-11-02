@@ -32,7 +32,7 @@ export interface AskAssistantResult {
 }
 
 /**
- * Server Function: askAIAssistant (Barbex R2E.26E.22N.2)
+ * Server Function: askAIAssistant (Barbex R2E.26E.22N.8C)
  *
  * Endpoint server-side seguro para suporte e orientação de administradores de barbearia
  * fundamentado exclusivamente na Central de Ajuda do Barbex.
@@ -144,13 +144,21 @@ export const askAIAssistant = createServerFn({ method: "POST" })
         userIdMasked: maskIdentifier(userId),
       });
 
+      const isInternalRpcError =
+        rateLimit.reason?.startsWith("RATE_LIMIT_RPC_") ||
+        rateLimit.reason === "RATE_LIMIT_CLIENT_UNAVAILABLE";
+
+      const friendlyReply = isInternalRpcError
+        ? "O serviço de validação de cotas do assistente está temporariamente instável. Por segurança, tente novamente em instantes."
+        : (rateLimit.reason || "Limite de consultas atingido. Aguarde alguns instantes.");
+
       return {
         success: false,
-        reply:
-          rateLimit.reason ||
-          "Limite de consultas atingido. Aguarde alguns instantes.",
+        reply: friendlyReply,
         sources: [],
-        error: "RATE_LIMIT_EXCEEDED",
+        error: isInternalRpcError
+          ? (rateLimit.reason || "RATE_LIMIT_UNAVAILABLE")
+          : "RATE_LIMIT_EXCEEDED",
         retryAfterSeconds: rateLimit.retryAfterSeconds,
         timestamp: nowIso,
       };
@@ -241,4 +249,3 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       timestamp: nowIso,
     };
   });
-
