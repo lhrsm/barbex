@@ -269,7 +269,7 @@ export function AIAssistantFloatingButton() {
   return (
     <>
       {/* Botão Flutuante (Trigger) */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[calc(1rem+env(safe-area-inset-right,0px))] sm:bottom-6 sm:right-6 z-50">
         <button
           ref={buttonRef}
           type="button"
@@ -278,7 +278,7 @@ export function AIAssistantFloatingButton() {
             "group relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all duration-300",
             "focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-[#05070d]",
             isOpen
-              ? "bg-slate-800 text-slate-200 hover:bg-slate-700 shadow-slate-900/50"
+              ? "bg-slate-800 text-slate-200 hover:bg-slate-700 shadow-slate-900/50 border border-amber-500/30"
               : "bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 hover:from-amber-400 hover:to-amber-200 hover:scale-105 active:scale-95 shadow-amber-500/25"
           )}
           aria-label={isOpen ? "Fechar Assistente Barbex" : "Abrir Assistente Barbex"}
@@ -314,10 +314,10 @@ export function AIAssistantFloatingButton() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] h-[540px] max-h-[calc(100vh-8rem)] rounded-2xl bg-[#0c101d] border border-white/10 shadow-2xl flex flex-col z-50 overflow-hidden backdrop-blur-2xl"
+            className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-24 right-[calc(1rem+env(safe-area-inset-right,0px))] sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[calc(100vw-2rem)] sm:max-w-[400px] h-[540px] max-h-[calc(100dvh-7rem)] sm:max-h-[calc(100vh-8rem)] rounded-2xl bg-[#0c101d] border border-amber-500/30 shadow-[0_12px_45px_-10px_rgba(0,0,0,0.85),0_0_24px_rgba(245,158,11,0.08)] ring-1 ring-amber-500/10 flex flex-col z-50 overflow-hidden backdrop-blur-2xl box-border"
           >
             {/* Cabeçalho */}
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5 bg-white/[0.02]">
+            <div className="flex items-center justify-between border-b border-amber-500/20 px-4 py-3.5 bg-gradient-to-r from-amber-500/[0.04] via-white/[0.02] to-transparent shadow-[0_1px_0_0_rgba(245,158,11,0.05)]">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
                   <Bot className="h-5 w-5" />
@@ -368,10 +368,10 @@ export function AIAssistantFloatingButton() {
                     msg.role === "user"
                       ? "ml-auto bg-amber-500 text-slate-950 font-medium rounded-tr-sm shadow-sm"
                       : cn(
-                        "mr-auto text-slate-200 rounded-tl-sm",
+                        "mr-auto text-slate-100 rounded-tl-sm",
                         msg.isError
                           ? "bg-rose-950/40 border border-rose-500/30 text-rose-300"
-                          : "bg-white/[0.06] border border-white/10"
+                          : "bg-white/[0.07] border border-white/10"
                       )
                   )}
                 >
@@ -379,7 +379,7 @@ export function AIAssistantFloatingButton() {
 
                   {/* Fontes de Conhecimento citadas */}
                   {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-2.5 pt-2 border-t border-white/10 space-y-1">
+                    <div className="mt-2.5 pt-2 border-t border-amber-500/15 space-y-1">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                         Fontes da Central de Ajuda:
                       </p>
@@ -413,7 +413,7 @@ export function AIAssistantFloatingButton() {
 
               {/* Indicador de Carregamento */}
               {isSubmitting && (
-                <div className="mr-auto flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/[0.06] border border-white/10 px-3.5 py-2.5 text-xs text-slate-300">
+                <div className="mr-auto flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/[0.07] border border-white/10 px-3.5 py-2.5 text-xs text-slate-300">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
                   <span aria-live="polite">Consultando base de conhecimento...</span>
                 </div>
@@ -425,7 +425,7 @@ export function AIAssistantFloatingButton() {
             {/* Rodapé / Input de Pergunta */}
             <form
               onSubmit={handleSend}
-              className="border-t border-white/10 p-3 bg-white/[0.02]"
+              className="border-t border-amber-500/15 p-3 bg-white/[0.02]"
             >
               {aiStatus === "disabled" ? (
                 <div className="text-center py-2 px-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-slate-400">
