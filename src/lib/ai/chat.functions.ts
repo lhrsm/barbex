@@ -5,6 +5,7 @@ import { verifyTenantAdminIdentity } from "./tenant-admin-auth";
 import {
   checkRateLimit,
   checkDistributedRateLimit,
+  checkDynamicModuleAvailability,
   sanitizeAndValidateInput,
   isAIAssistantEnabled,
 } from "./guardrails.server";
@@ -126,6 +127,30 @@ export const askAIAssistant = createServerFn({ method: "POST" })
           "O Assistente de IA está temporariamente indisponível.",
         sources: [],
         error: canaryStatus.reasonCode || "FEATURE_DISABLED",
+        timestamp: nowIso,
+      };
+    }
+
+    // 3.1. Verificação do Kill Switch Dinâmico em Banco (Dual-Key Security - Fase R2E.26E.22N.13B)
+    const dynamicAvailability = await checkDynamicModuleAvailability(authSupabase);
+    if (!dynamicAvailability.available) {
+      logAITelemetry({
+        event: "AI_KILLSWITCH_BLOCKED",
+        timestamp: nowIso,
+        correlationId,
+        outcome: "BLOCKED",
+        reasonCode: dynamicAvailability.reasonCode || "DYNAMIC_KILLSWITCH_DISABLED",
+        tenantIdMasked: maskIdentifier(authResult.tenantId),
+        userIdMasked: maskIdentifier(userId),
+      });
+
+      return {
+        success: false,
+        reply:
+          dynamicAvailability.reason ||
+          "O Assistente de IA está temporariamente suspenso pela administração da plataforma.",
+        sources: [],
+        error: dynamicAvailability.reasonCode || "DYNAMIC_KILLSWITCH_DISABLED",
         timestamp: nowIso,
       };
     }

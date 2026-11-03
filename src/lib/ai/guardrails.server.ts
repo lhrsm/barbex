@@ -498,6 +498,180 @@ export function isAIAssistantEnabled(
   };
 }
 
+export interface DynamicModuleAvailabilityResult {
+  available: boolean;
+  reasonCode?:
+    | "DYNAMIC_KILLSWITCH_ACTIVE"
+    | "DYNAMIC_KILLSWITCH_DISABLED"
+    | "DYNAMIC_KILLSWITCH_TIMEOUT"
+    | "DYNAMIC_KILLSWITCH_ERROR"
+    | "DYNAMIC_KILLSWITCH_INVALID_RESPONSE"
+    | "DYNAMIC_KILLSWITCH_CLIENT_UNAVAILABLE";
+  reason?: string;
+  source: "rpc" | "table_fallback" | "test_mock";
+}
+
+/**
+ * Validador Dinâmico de Disponibilidade Global do Módulo de IA (Kill Switch Dinâmico Dual-Key)
+ * Fase: R2E.26E.22N.13B
+ *
+ * Consulta em tempo real (sem cache entre requisições) a RPC public.is_module_globally_available('ai')
+ * ou a tabela public.platform_module_availability no Supabase.
+ *
+ * Propriedades de Segurança:
+ * 1. Timeout estrito de 3.000 ms (Fail-Closed).
+ * 2. Em caso de timeout, erro de rede, retorno NULL ou formato inesperado: BLOQUEIA (Fail-Closed).
+ * 3. Se o módulo estiver is_available = false: BLOQUEIA com DYNAMIC_KILLSWITCH_DISABLED.
+ * 4. Não satura nem modifica a tabela de rate limits.
+ * 5. Não loga segredos ou dados pessoais.
+ */
+export async function checkDynamicModuleAvailability(
+  supabaseClientOverride?: any
+): Promise<DynamicModuleAvailabilityResult> {
+  // Em ambiente de teste automatizado, verificar flag de override de teste se injetada
+  if (process.env.BARBEX_TEST_DYNAMIC_KILLSWITCH_STATE !== undefined) {
+    const testState = process.env.BARBEX_TEST_DYNAMIC_KILLSWITCH_STATE;
+    if (testState === "false" || testState === "disabled") {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_DISABLED",
+        reason: "O Assistente de IA está temporariamente suspenso pela administração da plataforma.",
+        source: "test_mock",
+      };
+    }
+    if (testState === "timeout") {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_TIMEOUT",
+        reason: "O serviço de validação do assistente excedeu o tempo limite. Por segurança, tente novamente em instantes.",
+        source: "test_mock",
+      };
+    }
+    if (testState === "error") {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_ERROR",
+        reason: "Erro ao consultar a governança do assistente. Por segurança, tente novamente em instantes.",
+        source: "test_mock",
+      };
+    }
+    if (testState === "true" || testState === "active") {
+      return {
+        available: true,
+        reasonCode: "DYNAMIC_KILLSWITCH_ACTIVE",
+        source: "test_mock",
+      };
+    }
+  }
+
+  let client = supabaseClientOverride;
+  if (!client) {
+    try {
+      client = supabaseAdmin;
+    } catch {
+      client = null;
+    }
+  }
+
+  if (!client) {
+    return {
+      available: false,
+      reasonCode: "DYNAMIC_KILLSWITCH_CLIENT_UNAVAILABLE",
+      reason: "Serviço de validação de segurança indisponível no servidor.",
+      source: "rpc",
+    };
+  }
+
+  try {
+    // Timeout estrito de 3000ms com Promise.race
+    let timerId: any;
+    const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((_, reject) => {
+      timerId = setTimeout(() => reject(new Error("DYNAMIC_KILLSWITCH_TIMEOUT")), 3000);
+    });
+
+    let queryPromise: Promise<{ data: any; error: any }>;
+
+    if (typeof client.rpc === "function") {
+      queryPromise = client.rpc("is_module_globally_available", {
+        p_module_key: "ai",
+      });
+    } else if (typeof client.from === "function") {
+      queryPromise = client
+        .from("platform_module_availability")
+        .select("is_available")
+        .eq("module_key", "ai")
+        .maybeSingle();
+    } else {
+      clearTimeout(timerId);
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_CLIENT_UNAVAILABLE",
+        reason: "Cliente Supabase inválido para verificação de governança.",
+        source: "rpc",
+      };
+    }
+
+    const result: any = await Promise.race([queryPromise, timeoutPromise]);
+    clearTimeout(timerId);
+
+    if (result.error) {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_ERROR",
+        reason: "Instabilidade temporária na governança do assistente. Tente novamente em instantes.",
+        source: "rpc",
+      };
+    }
+
+    let isAvailable: boolean | null = null;
+    if (typeof result.data === "boolean") {
+      isAvailable = result.data;
+    } else if (result.data && typeof result.data.is_available === "boolean") {
+      isAvailable = result.data.is_available;
+    }
+
+    if (isAvailable === null || isAvailable === undefined) {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_INVALID_RESPONSE",
+        reason: "Resposta ambígua do serviço de segurança. Operação bloqueada.",
+        source: "rpc",
+      };
+    }
+
+    if (isAvailable === false) {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_DISABLED",
+        reason: "O Assistente de IA está temporariamente suspenso pela administração da plataforma.",
+        source: "rpc",
+      };
+    }
+
+    return {
+      available: true,
+      reasonCode: "DYNAMIC_KILLSWITCH_ACTIVE",
+      source: "rpc",
+    };
+  } catch (err: any) {
+    if (err?.message === "DYNAMIC_KILLSWITCH_TIMEOUT") {
+      return {
+        available: false,
+        reasonCode: "DYNAMIC_KILLSWITCH_TIMEOUT",
+        reason: "Tempo de resposta da governança excedido. Operação bloqueada por segurança.",
+        source: "rpc",
+      };
+    }
+
+    return {
+      available: false,
+      reasonCode: "DYNAMIC_KILLSWITCH_ERROR",
+      reason: "Falha de comunicação com o serviço de governança do assistente.",
+      source: "rpc",
+    };
+  }
+}
+
 export interface DistributedRateLimitResult {
   allowed: boolean;
   retryAfterSeconds?: number;

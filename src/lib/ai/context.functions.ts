@@ -1,16 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { verifyTenantAdminIdentity } from "./tenant-admin-auth";
-import { isAIAssistantEnabled } from "./guardrails.server";
+import {
+  isAIAssistantEnabled,
+  checkDynamicModuleAvailability,
+} from "./guardrails.server";
 
 /**
- * Endpoint de Servidor: resolveAIContext (Barbex R2E.26E.22N.8C)
+ * Endpoint de Servidor: resolveAIContext (Barbex R2E.26E.22N.13B)
  *
  * Restrito EXCLUSIVAMENTE a administradores de barbearia autorizados (tenant_admin).
  * Qualquer perfil operacional (reception, barber, finance, client) ou super_admin
  * é sumariamente rejeitado no servidor (fail-closed).
  *
- * Avalia o status em tempo real do Kill Switch Global e do Isolamento Canário.
+ * Avalia o status em tempo real do Kill Switch Global Vercel e do Kill Switch Dinâmico em Banco (Dual-Key).
  */
 export const resolveAIContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -33,14 +36,30 @@ export const resolveAIContext = createServerFn({ method: "GET" })
       .eq("tenant_id", authResult.tenantId)
       .eq("enabled", true);
 
-    // 3. Verificação do status real do Kill Switch Global e Isolamento Canário
+    // 3. Verificação do status real do Kill Switch Global Vercel e Isolamento Canário
     const canaryStatus = isAIAssistantEnabled(authResult.tenantId, userId);
 
+    // 3.1. Verificação do Kill Switch Dinâmico em Banco (Dual-Key)
+    const dynamicAvailability = await checkDynamicModuleAvailability(authSupabase);
+
+    const isFullyEnabled = canaryStatus.enabled && dynamicAvailability.available;
+    const effectiveReason = !canaryStatus.enabled
+      ? canaryStatus.reason
+      : (!dynamicAvailability.available ? dynamicAvailability.reason : undefined);
+    const effectiveReasonCode = !canaryStatus.enabled
+      ? canaryStatus.reasonCode
+      : (!dynamicAvailability.available ? dynamicAvailability.reasonCode : undefined);
+
+    let effectiveStatus = canaryStatus.status;
+    if (canaryStatus.enabled && !dynamicAvailability.available) {
+      effectiveStatus = "dynamically_disabled";
+    }
+
     return {
-      status: canaryStatus.status,
-      ai_assistant_enabled: canaryStatus.enabled,
-      reason: canaryStatus.reason,
-      reasonCode: canaryStatus.reasonCode,
+      status: effectiveStatus,
+      ai_assistant_enabled: isFullyEnabled,
+      reason: effectiveReason,
+      reasonCode: effectiveReasonCode,
       context: {
         tenant_id: authResult.tenantId,
         user_id: userId,
