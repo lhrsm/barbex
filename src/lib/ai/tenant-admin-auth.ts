@@ -11,6 +11,8 @@ export interface TenantAdminAuthResult {
     | "SUPER_ADMIN_DENIED"
     | "ROLE_UNAUTHORIZED"
     | "TENANT_NOT_RESOLVED"
+    | "TENANT_NOT_FOUND"
+    | "TENANT_INACTIVE"
     | "DATABASE_ERROR";
   errorMessage?: string;
 }
@@ -163,6 +165,37 @@ export async function verifyTenantAdminIdentity(
         errorCode: "TENANT_NOT_RESOLVED",
         errorMessage:
           "Associação ativa a uma barbearia não comprovada. Acesso negado ao Assistente.",
+      };
+    }
+
+    // 8. Validação explícita de atividade da barbearia (barbershops.is_active = true)
+    const { data: targetShop, error: shopErr } = await db
+      .from("barbershops")
+      .select("id, is_active")
+      .eq("id", resolvedTenantId)
+      .maybeSingle();
+
+    if (shopErr) {
+      return {
+        authorized: false,
+        errorCode: "DATABASE_ERROR",
+        errorMessage: `Erro ao validar barbearia vinculada: ${shopErr.message}`,
+      };
+    }
+
+    if (!targetShop) {
+      return {
+        authorized: false,
+        errorCode: "TENANT_NOT_FOUND",
+        errorMessage: "Barbearia vinculada não encontrada no sistema.",
+      };
+    }
+
+    if (targetShop.is_active === false) {
+      return {
+        authorized: false,
+        errorCode: "TENANT_INACTIVE",
+        errorMessage: "A barbearia vinculada está inativa. Acesso negado ao Assistente.",
       };
     }
 

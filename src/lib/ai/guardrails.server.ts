@@ -424,21 +424,147 @@ export function evaluateCanaryAccess(
   };
 }
 
+export interface TenantAIAccessEvaluation {
+  allowed: boolean;
+  status:
+    | "active"
+    | "disabled"
+    | "canary_tenant_blocked"
+    | "canary_user_blocked"
+    | "canary_config_invalid"
+    | "tenant_not_authorized"
+    | "user_not_authorized"
+    | "invalid_identity";
+  reasonCode?: string;
+  reason?: string;
+}
+
 /**
- * Avaliação da Feature Flag do Assistente com Suporte a Isolamento Canário
+ * Avaliação Centralizada de Acesso Multi-Tenant ao Assistente de IA (Fase R2E.26E.22N.14)
+ *
+ * 1. Kill Switch Global: BARBEX_AI_ASSISTANT_ENABLED = 'true' ou 'active'
+ * 2. Suporte retrocompatível ao modo canário (se BARBEX_AI_CANARY_MODE === 'true' ou allowlist única configurada sem general release)
+ * 3. Modo Multi-Tenant Geral:
+ *    - Validação de formato UUID de tenantId e userId
+ *    - Filtro opcional por allowlist multi-tenant em runtime (BARBEX_AI_ALLOWED_TENANT_IDS)
+ *    - Filtro opcional por allowlist multi-usuário em runtime (BARBEX_AI_ALLOWED_USER_IDS)
+ *    - Se allowlist não estiver configurada, permite qualquer barbearia ativa com administrador comprovado
+ */
+export function evaluateTenantAIAccess(
+  tenantId?: string | null,
+  userId?: string | null
+): TenantAIAccessEvaluation {
+  // 1. Verificação da Flag Global (Kill Switch)
+  const envFlag = (
+    process.env.BARBEX_AI_ASSISTANT_ENABLED ||
+    process.env.ENABLE_TENANT_AI_ASSISTANT ||
+    ""
+  )
+    .toLowerCase()
+    .trim();
+
+  // Fail-Closed: Qualquer valor diferente de 'true' ou 'active' desativa
+  if (envFlag !== "true" && envFlag !== "active") {
+    return {
+      allowed: false,
+      status: "disabled",
+      reasonCode: "GLOBAL_KILLSWITCH_DISABLED",
+      reason:
+        "O Assistente de IA está temporariamente desativado pela administração da plataforma.",
+    };
+  }
+
+  // 2. Se modo canário estrito estiver explicitamente ativado via BARBEX_AI_CANARY_MODE='true'
+  // OU se allowlists canário de alvo único estiverem configuradas E BARBEX_AI_GENERAL_RELEASE !== 'true'
+  const isCanaryMode =
+    process.env.BARBEX_AI_CANARY_MODE === "true" ||
+    (Boolean(process.env.BARBEX_AI_CANARY_TENANT_IDS) &&
+      process.env.BARBEX_AI_GENERAL_RELEASE !== "true");
+
+  if (isCanaryMode) {
+    return evaluateCanaryAccess(tenantId, userId);
+  }
+
+  // 3. Validação dos Identificadores (UUID)
+  if (!tenantId || typeof tenantId !== "string" || !UUID_REGEX.test(tenantId.trim())) {
+    return {
+      allowed: false,
+      status: "invalid_identity",
+      reasonCode: "INVALID_TENANT_UUID",
+      reason: "Identificador de barbearia ausente ou malformado.",
+    };
+  }
+
+  if (!userId || typeof userId !== "string" || !UUID_REGEX.test(userId.trim())) {
+    return {
+      allowed: false,
+      status: "invalid_identity",
+      reasonCode: "INVALID_USER_UUID",
+      reason: "Identificador de usuário ausente ou malformado.",
+    };
+  }
+
+  const cleanTenantId = tenantId.trim().toLowerCase();
+  const cleanUserId = userId.trim().toLowerCase();
+
+  // 4. Allowlist Opcional de Barbearias (BARBEX_AI_ALLOWED_TENANT_IDS)
+  const allowedTenantsRaw = process.env.BARBEX_AI_ALLOWED_TENANT_IDS?.trim();
+  if (allowedTenantsRaw && allowedTenantsRaw !== "*") {
+    const allowedTenants = allowedTenantsRaw
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => UUID_REGEX.test(t));
+
+    if (allowedTenants.length > 0 && !allowedTenants.includes(cleanTenantId)) {
+      return {
+        allowed: false,
+        status: "tenant_not_authorized",
+        reasonCode: "TENANT_NOT_IN_ALLOWLIST",
+        reason: "Esta barbearia não está contemplada no rol atual de ativação do assistente.",
+      };
+    }
+  }
+
+  // 5. Allowlist Opcional de Usuários (BARBEX_AI_ALLOWED_USER_IDS)
+  const allowedUsersRaw = process.env.BARBEX_AI_ALLOWED_USER_IDS?.trim();
+  if (allowedUsersRaw && allowedUsersRaw !== "*") {
+    const allowedUsers = allowedUsersRaw
+      .split(",")
+      .map((u) => u.trim().toLowerCase())
+      .filter((u) => UUID_REGEX.test(u));
+
+    if (allowedUsers.length > 0 && !allowedUsers.includes(cleanUserId)) {
+      return {
+        allowed: false,
+        status: "user_not_authorized",
+        reasonCode: "USER_NOT_IN_ALLOWLIST",
+        reason: "Este usuário não está contemplado no rol atual de ativação do assistente.",
+      };
+    }
+  }
+
+  // Acesso Multi-tenant Ativo
+  return {
+    allowed: true,
+    status: "active",
+  };
+}
+
+/**
+ * Avaliação da Feature Flag do Assistente com Suporte a Isolamento Multi-Tenant e Canário
  */
 export function isAIAssistantEnabled(
   tenantId?: string,
   userId?: string
 ): { enabled: boolean; status: string; reason?: string; reasonCode?: string } {
-  // Se tenantId ou userId forem passados, avalia a governança canário completa
+  // Se tenantId ou userId forem passados, avalia a governança de acesso (canário ou multi-tenant)
   if (tenantId !== undefined || userId !== undefined) {
-    const canaryEval = evaluateCanaryAccess(tenantId, userId);
+    const accessEval = evaluateTenantAIAccess(tenantId, userId);
     return {
-      enabled: canaryEval.allowed,
-      status: canaryEval.status,
-      reason: canaryEval.reason,
-      reasonCode: canaryEval.reasonCode,
+      enabled: accessEval.allowed,
+      status: accessEval.status,
+      reason: accessEval.reason,
+      reasonCode: accessEval.reasonCode,
     };
   }
 
@@ -451,7 +577,7 @@ export function isAIAssistantEnabled(
     .toLowerCase()
     .trim();
 
-  if (envFlag === "false" || envFlag === "disabled" || envFlag === "off") {
+  if (envFlag === "false" || envFlag === "disabled" || envFlag === "off" || envFlag === "") {
     return {
       enabled: false,
       status: "disabled",
@@ -462,31 +588,43 @@ export function isAIAssistantEnabled(
   }
 
   if (envFlag === "active" || envFlag === "true") {
-    // Se a flag global estiver ativa, mas allowlists canário forem exigidas
-    const tenantParsed = parseStrictSingleCanaryAllowlist(
-      process.env.BARBEX_AI_CANARY_TENANT_IDS,
-      "BARBEX_AI_CANARY_TENANT_IDS"
-    );
-    const userParsed = parseStrictSingleCanaryAllowlist(
-      process.env.BARBEX_AI_CANARY_USER_IDS,
-      "BARBEX_AI_CANARY_USER_IDS"
-    );
+    const isCanaryMode =
+      process.env.BARBEX_AI_CANARY_MODE === "true" ||
+      (Boolean(process.env.BARBEX_AI_CANARY_TENANT_IDS) &&
+        process.env.BARBEX_AI_GENERAL_RELEASE !== "true");
 
-    if (tenantParsed.valid && userParsed.valid) {
+    if (isCanaryMode) {
+      const tenantParsed = parseStrictSingleCanaryAllowlist(
+        process.env.BARBEX_AI_CANARY_TENANT_IDS,
+        "BARBEX_AI_CANARY_TENANT_IDS"
+      );
+      const userParsed = parseStrictSingleCanaryAllowlist(
+        process.env.BARBEX_AI_CANARY_USER_IDS,
+        "BARBEX_AI_CANARY_USER_IDS"
+      );
+
+      if (tenantParsed.valid && userParsed.valid) {
+        return {
+          enabled: false,
+          status: "canary_requires_identity",
+          reasonCode: "CANARY_IDENTITY_REQUIRED",
+          reason:
+            "O Assistente requer validação de identidade da barbearia canário.",
+        };
+      }
+
       return {
         enabled: false,
-        status: "canary_requires_identity",
-        reasonCode: "CANARY_IDENTITY_REQUIRED",
-        reason:
-          "O Assistente requer validação de identidade da barbearia canário.",
+        status: "disabled",
+        reasonCode: "CANARY_CONFIG_MISSING",
+        reason: "Configuração canário não estabelecida.",
       };
     }
 
+    // Modo Geral Multi-Tenant Ativo
     return {
-      enabled: false,
-      status: "disabled",
-      reasonCode: "CANARY_CONFIG_MISSING",
-      reason: "Configuração canário não estabelecida.",
+      enabled: true,
+      status: "active",
     };
   }
 
