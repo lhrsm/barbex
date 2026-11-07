@@ -261,10 +261,17 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       });
     }
 
+    // Só envia como fontes na resposta da API os artigos com alta relevância (score >= 3.5),
+    // ou o melhor artigo caso haja apenas um, protegendo a interface contra citações de artigos marginais
+    const confidentSources = relevantSources.filter((s) => s.score >= 3.5);
+    const finalSources = confidentSources.length > 0
+      ? confidentSources
+      : (relevantSources.length > 0 && relevantSources[0].score >= 2.5 ? [relevantSources[0]] : []);
+
     return {
       success: !response.error,
       reply: response.content,
-      sources: relevantSources.map((s) => ({
+      sources: finalSources.map((s) => ({
         id: s.id,
         title: s.title,
         category: s.category,
