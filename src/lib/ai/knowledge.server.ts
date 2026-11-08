@@ -29,6 +29,11 @@ const STOP_WORDS = new Set([
   "me", "mim", "comigo", "te", "ti", "contigo", "nos", "nós", "conosco", "lhe", "lhes",
   "muito", "pouco", "mais", "menos", "bem", "mal", "ja", "já", "ainda", "so", "só", "apenas",
   "tudo", "nada", "algo", "alguem", "alguém", "algum", "alguma", "alguns", "algumas", "nenhum", "nenhuma",
+  // Palavras discursivas e metalinguísticas sem valor temático de domínio
+  "forma", "formas", "direito", "explica", "explicar", "explicacao", "explicação",
+  "jeito", "entendi", "entender", "simplifica", "simplificar", "novamente", "novo",
+  "outro", "outra", "outros", "outras", "fala", "parceiro", "ajuda", "ajudar",
+  "quer", "quero", "queria", "quiser", "faco", "faço", "faz", "fazer",
   // Termos de domínio genéricos que não devem distorcer o ranking
   "barbearia", "barbearias", "sistema", "plataforma", "aplicativo", "app"
 ]);
@@ -62,9 +67,18 @@ const STEM_DICTIONARY: Record<string, string[]> = {
   cancelar: ["cancelo", "cancelamento", "desmarcar"],
   cancelamento: ["cancelo", "cancelar", "desmarcar"],
   reagendo: ["reagendar", "reagendamento", "remarcar"],
-  reagendar: ["reagendo", "reagendamento", "remarcar"],
-  reagendamento: ["reagendar", "remarcar"],
-  remarcar: ["reagendar", "reagendamento"],
+  reagendar: ["reagendo", "reagendamento", "remarcar", "mudar", "alterar"],
+  reagendamento: ["reagendar", "remarcar", "mudar", "alterar"],
+  remarcar: ["reagendar", "reagendamento", "mudar", "alterar"],
+  mudar: ["reagendar", "reagendamento", "remarcar", "alterar", "trocar", "horario"],
+  alterar: ["reagendar", "reagendamento", "remarcar", "mudar", "trocar"],
+  trocar: ["reagendar", "reagendamento", "remarcar", "mudar", "alterar"],
+  horario: ["horarios", "agendamento", "reagendar", "reagendamento", "remarcar", "agenda"],
+  horarios: ["horario", "agendamento", "reagendar", "reagendamento", "remarcar", "agenda"],
+
+  // Organização e Visualização da Agenda
+  organizar: ["agenda", "calendario", "grade", "painel", "visualizacao", "filtros"],
+  organizacao: ["agenda", "calendario", "grade", "painel"],
 
   // Planos / Assinaturas Barbex SaaS
   plano: ["planos", "assinatura", "starter", "pro", "elite", "upgrade", "limite", "limites"],
@@ -161,6 +175,78 @@ function matchTermInText(textNorm: string, variant: string): boolean {
 }
 
 /**
+ * Padrões indicativos de anáfora, continuidade ou pedido de reformulação.
+ */
+const CONTINUATION_PATTERNS = [
+  /\b(nao entendi|não entendi|entendi direito|explica(r)?|de novo|outra forma|outro jeito|mais simples|simplificar|simplifica|detalha(r)?|melhor)\b/i,
+  /\b(e quanto custa|quanto custa|quanto e|quanto é|qual o valor|qual o preco|qual o preço|qual a diferenca|qual a diferença)\b/i,
+  /\b(como faco isso|como faço isso|como funciona isso|como assim|onde fica isso|onde vejo isso)\b/i,
+  /\b(e no elite|e no pro|e no starter|e na recepcao|e na recepção|isso funciona na recepcao|isso funciona na recepção)\b/i,
+];
+
+/**
+ * Termos indicadores de temas específicos para ancoragem contextual e prevenção de contaminação cruzada.
+ */
+const TOPIC_DOMAIN_TERMS = new Set([
+  "pix", "chave", "qrcode", "comissao", "comissoes", "repasse",
+  "servico", "servicos", "corte", "barba",
+  "agendamento", "agendar", "agenda", "calendario", "cancelar", "reagendar", "desmarcar",
+  "walkin", "fila", "espera", "comanda", "split",
+  "whatsapp", "zapi", "notificacao",
+  "plano", "planos", "assinatura", "starter", "pro", "elite", "upgrade",
+  "barbeiro", "barbeiros", "profissional", "profissionais", "equipe",
+  "suporte", "chamado"
+]);
+
+/**
+ * Resolução Contextual Determinística de Consultas Anafóricas (Gate 3)
+ */
+export function resolveContextualQuery(
+  currentQuery: string,
+  history?: Array<{ role: string; content: string }>
+): string {
+  if (!history || history.length === 0) {
+    return currentQuery;
+  }
+
+  const normCurrent = normalizeText(currentQuery);
+  const currentWords = normCurrent.split(/\s+/).filter((w) => w.length >= 2);
+  const currentTopicHits = currentWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w));
+
+  const isExplicitContinuity = CONTINUATION_PATTERNS.some((p) => p.test(currentQuery));
+  const isShortQuery = currentWords.length <= 6;
+
+  // Se o usuário introduziu um novo tópico claro com múltiplos termos (ex: "como configuro a chave pix"),
+  // respeitamos a mudança explícita de assunto sem mesclar
+  if (!isExplicitContinuity && currentTopicHits.length >= 2) {
+    return currentQuery;
+  }
+
+  // Se não for anáfora nem pergunta curta, não mescla
+  if (!isExplicitContinuity && !isShortQuery) {
+    return currentQuery;
+  }
+
+  // Buscar o último turno do usuário
+  const previousUserMsg = [...history].reverse().find((m) => m.role === "user");
+  if (!previousUserMsg) {
+    return currentQuery;
+  }
+
+  const normPrev = normalizeText(previousUserMsg.content);
+  const prevWords = normPrev.split(/\s+/).filter((w) => w.length >= 2);
+  const prevTopicTerms = prevWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w));
+
+  if (prevTopicTerms.length > 0) {
+    // Combina os termos temáticos do turno anterior com a dúvida atual
+    const uniquePrevTerms = Array.from(new Set(prevTopicTerms)).join(" ");
+    return `${uniquePrevTerms} ${currentQuery}`;
+  }
+
+  return currentQuery;
+}
+
+/**
  * Recuperador Textual Canônico da Base de Conhecimento Barbex
  *
  * Busca tutoriais publicados e elegíveis para administradores de barbearia (tenant_admin).
@@ -172,11 +258,15 @@ export async function retrieveRelevantTutorials(
     maxResults?: number;
     minScoreThreshold?: number;
     supabaseClient?: any;
+    history?: Array<{ role: string; content: string }>;
   }
 ): Promise<TutorialSource[]> {
   const maxResults = options?.maxResults ?? 3;
   const minScoreThreshold = options?.minScoreThreshold ?? 2.5;
-  const terms = extractQueryTerms(query);
+
+  // Resolução contextual determinística (Gate 3)
+  const effectiveQuery = resolveContextualQuery(query, options?.history);
+  const terms = extractQueryTerms(effectiveQuery);
 
   if (terms.length === 0) {
     return [];
@@ -264,9 +354,21 @@ export async function retrieveRelevantTutorials(
       }
     }
 
-    // Filtro de Incidentalidade: se a consulta tiver múltiplos termos (>= 3)
-    // e apenas 1 termo coincidir superficialmente sem match no título ou categoria, descartar
+    // Filtro de Incidentalidade Fortalecido (Gate 7):
+    // 1. Se a consulta tiver múltiplos termos (>= 3) e apenas 1 termo coincidir superficialmente sem match no título ou categoria, descartar
     if (terms.length >= 3 && matchedTermsCount === 1 && !hasTitleOrCatMatch) {
+      score = 0;
+    }
+
+    // 2. Se não houver correspondência em título nem em categoria, descartar pontuações marginais (< 4.0)
+    if (!hasTitleOrCatMatch && score < 4.0) {
+      score = 0;
+    }
+
+    // 3. Proteção contra inclusão acidental de Walk-in (Gate 4 e 7):
+    // O artigo reception-walkin-queue só pontua se a pergunta mencionar expressamente walkin, fila, espera ou encaixe
+    const hasWalkinIntent = terms.some((t) => ["walkin", "fila", "espera", "encaixe"].includes(t));
+    if (article.id === "reception-walkin-queue" && !hasWalkinIntent) {
       score = 0;
     }
 

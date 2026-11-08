@@ -99,7 +99,7 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
   {
     id: "owner-calendar-multiprofile",
     title: "Agenda Avançada Multiperfil",
-    description: "Navegue nos 4 modos homologados: Dia, Semana, Mês e Período Personalizado de até 90 dias com filtros rápidos.",
+    description: "Navegue nos 4 modos homologados: Dia, Semana, Mês e Período Personalizado com filtros rápidos em tempo real para organizar seus agendamentos e atendimentos.",
     targetRoles: ["tenant_admin", "admin", "manager"],
     requiredPermission: "appointments:view",
     moduleKey: "calendar",
@@ -110,6 +110,7 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
       "Clique em qualquer agendamento para abrir detalhes, iniciar comanda ou concluir atendimento.",
       "Use os botões de ação rápidos para 'Novo Agendamento' ou 'Fila de Espera (Walk-in)'."
     ],
+    notes: "Os filtros da agenda operam dinamicamente em tempo real na interface e não possuem armazenamento de filtros salvos.",
     status: "available",
     badge: "Homologado",
   },
@@ -129,14 +130,14 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
       "Confira a data, horário de início, duração estimada e valor total.",
       "Clique em 'Confirmar Agendamento' para salvar. O horário será bloqueado na grade e o agendamento entrará com status 'Confirmado'."
     ],
-    notes: "Para encaixar clientes que chegam sem agendamento prévio, use o botão 'Fila de Espera (Walk-in)' em /reception/waiting-list.",
+    notes: "O agendamento confirmado bloqueia o horário na grade do profissional. Para clientes presenciais sem agendamento prévio, a recepção dispõe da fila operacional separada em /reception/waiting-list.",
     status: "available",
     badge: "Operação",
   },
   {
     id: "owner-appointment-cancellation-reschedule",
     title: "Cancelamento e Reagendamento de Atendimentos",
-    description: "Aprenda a cancelar ou reagendar atendimentos na Agenda ou Recepção, liberando a grade e atualizando o status do cliente.",
+    description: "Aprenda a cancelar ou reagendar atendimentos e mudar horários na Agenda ou Recepção, liberando a grade e atualizando o status do cliente.",
     targetRoles: ["tenant_admin", "admin", "reception", "receptionist", "manager"],
     requiredPermission: "appointments:manage",
     moduleKey: "calendar",
@@ -144,11 +145,11 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
     steps: [
       "Acesse a Agenda (/calendar) ou Recepção (/reception/agenda) e localize o card do atendimento.",
       "Clique sobre o agendamento para abrir a janela de detalhes do atendimento.",
-      "Para reagendar: clique no botão 'Reagendar Horário', selecione a nova data/horário ou troque o profissional, e confirme. O sistema valida automaticamente eventuais conflitos.",
-      "Para cancelar: clique no botão 'Cancelar Agendamento', selecione ou informe o motivo do cancelamento e confirme a operação.",
+      "Para reagendar: clique no botão 'Reagendar' (ou 'Reagendar Horário'), selecione a nova data/horário ou troque o profissional no Passo 1, e confirme. O sistema valida automaticamente eventuais conflitos na grade.",
+      "Para cancelar: clique no botão 'Cancelar' (ou 'Cancelar Agendamento') no rodapé da janela de detalhes, selecione a destinação financeira (devolução em créditos ou solicitação de estorno Pix se houver pagamento prévio) e confirme a operação.",
       "Após a confirmação, o status mudará para 'Cancelado', o horário na grade do barbeiro será liberado imediatamente para novos clientes e o histórico ficará registrado com segurança."
     ],
-    notes: "O cancelamento ou reagendamento só pode ser realizado em atendimentos com status 'Pendente' ou 'Confirmado'. Atendimentos já 'Concluídos' não podem ser cancelados.",
+    notes: "O cancelamento ou reagendamento só pode ser realizado em atendimentos com status 'Pendente', 'Agendado' ou 'Confirmado'. Atendimentos já 'Concluídos' ou 'Cancelados' não podem ser alterados.",
     status: "available",
     badge: "Operação",
   },

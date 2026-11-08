@@ -125,6 +125,12 @@ function AIAssistantPage() {
     };
   }, [isAuthorizedAdmin, user?.id]);
 
+  // Limpeza de contexto estritamente em memória se tenant ou usuário mudar
+  React.useEffect(() => {
+    setMessages([INITIAL_MESSAGE]);
+    setBannerNotice(null);
+  }, [user?.id, tenantId]);
+
   const suggestedQuestions = [
     { text: "Como configurar as comissões dos barbeiros?", icon: Scissors },
     { text: "Como cadastrar novos serviços e valores?", icon: Wallet },
@@ -143,6 +149,21 @@ function AIAssistantPage() {
 
     setBannerNotice(null);
 
+    // Histórico recente em memória da sessão (Gate 1: máx 6 mensagens, excluindo erros e welcome inicial)
+    const recentHistory = messages
+      .filter(
+        (m) =>
+          !m.isError &&
+          m.id !== "welcome-1" &&
+          m.content.trim().length > 0 &&
+          m.content.length <= 500
+      )
+      .slice(-6)
+      .map((m) => ({
+        role: m.role,
+        content: m.content.trim(),
+      }));
+
     const userMsg: Message = {
       id: `usr-${Date.now()}`,
       role: "user",
@@ -156,7 +177,10 @@ function AIAssistantPage() {
 
     try {
       const response = await askAIAssistant({
-        data: { question: textToSend },
+        data: {
+          question: textToSend,
+          history: recentHistory,
+        },
       });
 
       const botMsg: Message = {

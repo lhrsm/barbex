@@ -14,8 +14,14 @@ import { getAIProvider } from "./provider.server";
 import { logAITelemetry, maskIdentifier } from "./telemetry.server";
 import type { AIContext } from "./types";
 
-const AskAssistantInputSchema = z.object({
+const ChatMessageHistoryItemSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(500),
+});
+
+export const AskAssistantInputSchema = z.object({
   question: z.string().min(2).max(500),
+  history: z.array(ChatMessageHistoryItemSchema).max(6).optional(),
 });
 
 export interface AskAssistantResult {
@@ -85,6 +91,26 @@ export const askAIAssistant = createServerFn({ method: "POST" })
           : "INVALID_INPUT",
         timestamp: nowIso,
       };
+    }
+
+    // 1.1. Validação e sanitização estrita do histórico de conversação (Gate 1 e Gate 2)
+    const validatedHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
+    if (Array.isArray(data.history)) {
+      for (const item of data.history.slice(-6)) {
+        if (item.role === "user" || item.role === "assistant") {
+          const itemSanitization = sanitizeAndValidateInput(item.content);
+          if (
+            itemSanitization.isValid &&
+            !itemSanitization.isHighRiskInjection &&
+            itemSanitization.cleanText.length > 0
+          ) {
+            validatedHistory.push({
+              role: item.role,
+              content: itemSanitization.cleanText.slice(0, 500),
+            });
+          }
+        }
+      }
     }
 
     // 2. Validação canônica de identidade e vínculo com a barbearia (RBAC / Membership)
@@ -189,13 +215,14 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       };
     }
 
-    // 5. Recuperação de Conhecimento na Central de Ajuda
+    // 5. Recuperação de Conhecimento na Central de Ajuda com Resolução Contextual
     const relevantSources = await retrieveRelevantTutorials(
       sanitization.cleanText,
       {
         maxResults: 3,
-        minScoreThreshold: 1.5,
+        minScoreThreshold: 2.5,
         supabaseClient: authSupabase,
+        history: validatedHistory,
       },
     );
 
@@ -231,6 +258,9 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       sanitization.cleanText,
       relevantSources,
       aiContext,
+      {
+        history: validatedHistory,
+      },
     );
 
     const latencyMs = Date.now() - startTime;
