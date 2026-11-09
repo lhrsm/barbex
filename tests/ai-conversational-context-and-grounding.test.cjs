@@ -74,10 +74,17 @@ const guardrailsContent = fs.readFileSync(guardrailsPath, "utf8");
 // =============================================================================
 console.log("--- BLOCO 1: Validação de Esquemas Zod, Tipagem e Resiliência ---");
 
-const ChatMessageHistoryItemSchema = z.object({
-  role: z.enum(["user", "assistant"]),
-  content: z.string().min(1).max(500),
-});
+const ChatMessageHistoryItemSchema = z
+  .object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string().min(1).max(1500),
+  })
+  .refine(
+    (item) => (item.role === "user" ? item.content.length <= 500 : item.content.length <= 1500),
+    {
+      message: "Mensagem do usuário não pode exceder 500 caracteres.",
+    }
+  );
 
 const AskAssistantInputSchema = z.object({
   question: z.string().min(2).max(500),
@@ -113,6 +120,34 @@ test("Ponto 2: Histórico válido de até 6 mensagens é aceito", () => {
   assert.strictEqual(parsed.history?.length, 6);
   assert.strictEqual(parsed.history[0].role, "user");
   assert.strictEqual(parsed.history[1].role, "assistant");
+});
+
+test("Ponto 2b: Mensagens longas do assistente (> 500 caracteres) são aceitas e usuário > 500 é rejeitado", () => {
+  const longAssistantReply = "O plano Pro custa R$ 99,90 e permite até 10 barbeiros. ".repeat(15); // ~800 chars
+  const validLongHistory = [
+    { role: "user", content: "Me explica a diferença entre Pro e Elite" },
+    { role: "assistant", content: longAssistantReply },
+  ];
+
+  const parsed = AskAssistantInputSchema.parse({
+    question: "Não entendi direito. Pode explicar de outro jeito?",
+    history: validLongHistory,
+  });
+
+  assert.strictEqual(parsed.history?.length, 2);
+  assert.ok(parsed.history[1].content.length > 500, "Resposta do assistente deve ultrapassar 500 chars");
+
+  // Rejeita usuário acima de 500 caracteres no histórico
+  const invalidUserHistory = [
+    { role: "user", content: "A".repeat(501) },
+    { role: "assistant", content: "Resposta rápida" },
+  ];
+  assert.throws(() => {
+    AskAssistantInputSchema.parse({
+      question: "Dúvida",
+      history: invalidUserHistory,
+    });
+  });
 });
 
 test("Ponto 3: Histórico excessivo (> 6 mensagens) é rejeitado pelo schema e truncado pelo frontend", () => {
@@ -698,7 +733,7 @@ test("Ponto 19: Remoção de referências a funcionalidades não comprovadas (fi
   );
   assert.ok(
     providerContent.includes("Filtros da Agenda: Os filtros em /calendar") &&
-      providerContent.includes("NÃO possui funcionalidade de salvar filtros"),
+    providerContent.includes("NÃO possui funcionalidade de salvar filtros"),
     "System prompt deve reforçar ausência de filtros salvos"
   );
 });
@@ -708,20 +743,20 @@ test("Ponto 19: Remoção de referências a funcionalidades não comprovadas (fi
 // =============================================================================
 console.log("\n--- BLOCO 6: Limites de Tokens, Rate Limits e Diretrizes de Tom Groq ---");
 
-test("Ponto 13: Limites estritos de tokens no payload do provedor Groq Free Tier", () => {
+test("Ponto 13: Limites estritos de tokens no payload do provedor Groq Free Tier (Fase 32)", () => {
   assert.ok(providerContent.includes("maxTokens || 600"), "maxTokens default deve ser 600 para segurança de TPM");
   assert.ok(providerContent.includes("max_tokens: maxTokens"), "max_tokens deve ser passado na chamada Groq");
   assert.ok(providerContent.includes("options.history.slice(-4)"), "Deve limitar o histórico Groq a no máximo 4 mensagens");
-  assert.ok(providerContent.includes(".slice(0, 400)"), "Deve limitar o conteúdo de cada mensagem Groq a 400 caracteres");
+  assert.ok(providerContent.includes("h.role === \"user\" ? 500 : 800"), "Deve limitar usuário a 500 e assistente a 800 caracteres");
 
-  const systemPromptTokensEst = 650;
+  const systemPromptTokensEst = 700;
   const contextTokensEst = 550;
-  const history4TokensEst = (4 * 400) / 4;
+  const history4TokensEst = (2 * 500 + 2 * 800) / 4; // 650 tokens
   const userMsgTokensEst = 500 / 4;
   const maxOutputTokens = 600;
   const totalWorstCase = systemPromptTokensEst + contextTokensEst + history4TokensEst + userMsgTokensEst + maxOutputTokens;
 
-  assert.ok(totalWorstCase <= 2500, `Pior caso de tokens (${totalWorstCase}) deve ser bem inferior a 8000 TPM da Groq`);
+  assert.ok(totalWorstCase <= 3000, `Pior caso de tokens (${totalWorstCase}) deve ser bem inferior a 8000 TPM da Groq`);
 });
 
 test("Ponto 14: Rate limits e quotas são checados ANTES da chamada do provedor de IA", () => {
@@ -735,13 +770,25 @@ test("Ponto 14: Rate limits e quotas são checados ANTES da chamada do provedor 
   assert.ok(chatFunctionsContent.includes("if (!rateLimit.allowed)"), "Bloqueio de rate limit deve interromper a função");
 });
 
-test("Diretrizes de Tom e Grounding no System Prompt Barbex (Fase 29)", () => {
-  assert.ok(providerContent.includes("PERSONALIDADE E ESTILO CONVERSACIONAL (HUMANIZADO E BRASILEIRO):"), "Deve conter seção de personalidade e estilo");
-  assert.ok(providerContent.includes("Tom de voz: Brasileiro") && providerContent.includes("acolhedor, objetivo, prestativo e profissional"), "Deve definir tom brasileiro acolhedor e objetivo");
+test("Diretrizes de Tom e Grounding no System Prompt Barbex (Fase 32)", () => {
+  assert.ok(providerContent.includes("PERSONALIDADE E ESTILO CONVERSACIONAL (NATURAL, HUMANO E RESOLUTIVO — FASE 32):"), "Deve conter seção de personalidade e estilo da Fase 32");
+  assert.ok(providerContent.includes("Colega experiente que conhece o Barbex a fundo"), "Deve definir tom de colega experiente");
   assert.ok(providerContent.includes("NÃO repita saudações a cada mensagem"), "Não deve repetir saudações mecânicas");
-  assert.ok(providerContent.includes("utilize no máximo 1 ou 2 emojis"), "Deve limitar emojis a 1 ou 2 discretos");
+  assert.ok(providerContent.includes("NÃO use encerramentos obrigatórios ou repetitivos"), "Não deve exigir perguntas finais de encerramento");
+  assert.ok(providerContent.includes("NÃO force emojis"), "Deve limitar emojis com moderação");
   assert.ok(providerContent.includes("Z-API"), "Deve esclarecer que Z-API é externa");
   assert.ok(providerContent.includes("cancelamento e o reagendamento só podem ser realizados em agendamentos ativos"), "Deve detalhar status válidos para cancelamento/reagendamento");
+  assert.ok(providerContent.includes("<barbex_facts>"), "Prompt deve utilizar bloco de fatos oficiais <barbex_facts>");
+});
+
+test("Ponto 21: Interface com Indicador de Digitação e Fontes Recolhíveis (Fase 32)", () => {
+  assert.ok(frontendAssistenteContent.includes("function TypingIndicator"), "Deve implementar TypingIndicator");
+  assert.ok(frontendAssistenteContent.includes("function CollapsibleSources"), "Deve implementar CollapsibleSources");
+  assert.ok(frontendAssistenteContent.includes('role="status"'), "TypingIndicator deve ter role status para leitores de tela");
+  assert.ok(frontendAssistenteContent.includes('aria-live="polite"'), "TypingIndicator deve ter aria-live polite");
+  assert.ok(frontendAssistenteContent.includes("motion-reduce:animate-none"), "Deve respeitar prefers-reduced-motion");
+  assert.ok(!frontendAssistenteContent.includes("Consultando a Central de Ajuda do Barbex..."), "Não deve expor mensagens internas de consulta técnica");
+  assert.ok(frontendAssistenteContent.includes("Consultar na Central de Ajuda"), "Fontes devem ter botão recolhível de consulta");
 });
 
 // =============================================================================

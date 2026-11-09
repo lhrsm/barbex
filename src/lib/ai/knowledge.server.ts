@@ -182,6 +182,7 @@ const CONTINUATION_PATTERNS = [
   /\b(e quanto custa|quanto custa|quanto e|quanto é|qual o valor|qual o preco|qual o preço|qual a diferenca|qual a diferença)\b/i,
   /\b(como faco isso|como faço isso|como funciona isso|como assim|onde fica isso|onde vejo isso)\b/i,
   /\b(e no elite|e no pro|e no starter|e na recepcao|e na recepção|isso funciona na recepcao|isso funciona na recepção)\b/i,
+  /\b(e se eu tiver|e se tiver|e se for|e mudar o barbeiro|mudar o barbeiro tambem|mudar o barbeiro também|e quanto a|e sobre isso)\b/i,
 ];
 
 /**
@@ -192,8 +193,8 @@ const TOPIC_DOMAIN_TERMS = new Set([
   "servico", "servicos", "corte", "barba",
   "agendamento", "agendar", "agenda", "calendario", "cancelar", "reagendar", "desmarcar",
   "walkin", "fila", "espera", "comanda", "split",
-  "whatsapp", "zapi", "notificacao",
-  "plano", "planos", "assinatura", "starter", "pro", "elite", "upgrade",
+  "whatsapp", "zapi", "lembrete", "lembretes", "notificacao",
+  "plano", "planos", "assinatura", "starter", "pro", "elite", "upgrade", "limite", "limites",
   "barbeiro", "barbeiros", "profissional", "profissionais", "equipe",
   "suporte", "chamado"
 ]);
@@ -216,9 +217,9 @@ export function resolveContextualQuery(
   const isExplicitContinuity = CONTINUATION_PATTERNS.some((p) => p.test(currentQuery));
   const isShortQuery = currentWords.length <= 6;
 
-  // Se o usuário introduziu um novo tópico claro com múltiplos termos (ex: "como configuro a chave pix"),
-  // respeitamos a mudança explícita de assunto sem mesclar
-  if (!isExplicitContinuity && currentTopicHits.length >= 2) {
+  // Se o usuário introduziu um tópico autônomo específico (ex: "agora quero reagendar um cliente" ou "como configuro a chave pix")
+  // e NÃO utilizou um padrão de continuidade explícito, respeitamos a transição sem mesclar resíduos anteriores.
+  if (!isExplicitContinuity && currentTopicHits.length >= 1) {
     return currentQuery;
   }
 
@@ -227,19 +228,31 @@ export function resolveContextualQuery(
     return currentQuery;
   }
 
-  // Buscar o último turno do usuário
-  const previousUserMsg = [...history].reverse().find((m) => m.role === "user");
-  if (!previousUserMsg) {
-    return currentQuery;
+  // Buscar os termos temáticos dos turnos recentes (usuário e assistente - Gate 1 e 2 Fase 32)
+  const recentHistory = history.slice(-3);
+  let contextualTopicTerms: string[] = [];
+
+  // Prioridade 1: Termos do último turno do usuário
+  const previousUserMsg = [...recentHistory].reverse().find((m) => m.role === "user");
+  if (previousUserMsg) {
+    const normUser = normalizeText(previousUserMsg.content);
+    const userWords = normUser.split(/\s+/).filter((w) => w.length >= 2);
+    contextualTopicTerms = userWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w));
   }
 
-  const normPrev = normalizeText(previousUserMsg.content);
-  const prevWords = normPrev.split(/\s+/).filter((w) => w.length >= 2);
-  const prevTopicTerms = prevWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w));
+  // Prioridade 2: Se o turno do usuário não tiver termos suficientes, enriquecer com termos do último turno do assistente
+  if (contextualTopicTerms.length === 0) {
+    const previousAssistantMsg = [...recentHistory].reverse().find((m) => m.role === "assistant");
+    if (previousAssistantMsg) {
+      const normAssistant = normalizeText(previousAssistantMsg.content);
+      const assistantWords = normAssistant.split(/\s+/).filter((w) => w.length >= 2);
+      contextualTopicTerms = assistantWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w)).slice(0, 4);
+    }
+  }
 
-  if (prevTopicTerms.length > 0) {
-    // Combina os termos temáticos do turno anterior com a dúvida atual
-    const uniquePrevTerms = Array.from(new Set(prevTopicTerms)).join(" ");
+  if (contextualTopicTerms.length > 0) {
+    // Combina os termos temáticos do contexto anterior com a dúvida atual
+    const uniquePrevTerms = Array.from(new Set(contextualTopicTerms)).join(" ");
     return `${uniquePrevTerms} ${currentQuery}`;
   }
 
@@ -396,30 +409,29 @@ export async function retrieveRelevantTutorials(
 }
 
 /**
- * Monta o bloco seguro de contexto para o prompt do modelo.
- * Os dados são delimitados de forma passiva, impedindo injeção de instruções.
+ * Monta o bloco seguro de contexto para o prompt do modelo (Gate 2 - Fase 32).
+ * Formata os tutoriais em fatos e regras operacionais sem induzir reprodução literal de listas numeradas.
  */
 export function buildTutorialContextPrompt(sources: TutorialSource[]): string {
   if (sources.length === 0) {
-    return "<tutorial_context>\nNenhum tutorial oficial encontrado para os termos da pergunta.\n</tutorial_context>";
+    return "<barbex_facts>\nNenhum artigo ou regra oficial encontrada para os termos da pergunta.\n</barbex_facts>";
   }
 
-  const articlesText = sources
+  const factsText = sources
     .map((s, index) => {
-      const stepsText = s.steps.map((st, i) => `  ${i + 1}. ${st}`).join("\n");
-      const notesText = s.notes ? `\n  Observação: ${s.notes}` : "";
-      return `[Tutorial ${index + 1}]
+      const cleanSteps = s.steps.map((st) => `  - ${st}`).join("\n");
+      const notesText = s.notes ? `\n  - Regra do sistema: ${s.notes}` : "";
+      return `[Fato Operacional ${index + 1}: ${s.title}]
 ID: ${s.id}
-Título: ${s.title}
-Categoria: ${s.category}
-Rota da Tela no Barbex: ${s.route}
-Resumo: ${s.description}
-Passo a Passo Oficial:
-${stepsText}${notesText}`;
+Tema: ${s.category}
+Rota da Tela: ${s.route}
+Resumo do Recurso: ${s.description}
+Procedimento e Ações Oficiais:
+${cleanSteps}${notesText}`;
     })
     .join("\n\n---\n\n");
 
-  return `<tutorial_context>
-${articlesText}
-</tutorial_context>`;
+  return `<barbex_facts>
+${factsText}
+</barbex_facts>`;
 }

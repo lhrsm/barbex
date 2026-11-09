@@ -14,10 +14,17 @@ import { getAIProvider } from "./provider.server";
 import { logAITelemetry, maskIdentifier } from "./telemetry.server";
 import type { AIContext } from "./types";
 
-const ChatMessageHistoryItemSchema = z.object({
-  role: z.enum(["user", "assistant"]),
-  content: z.string().min(1).max(500),
-});
+const ChatMessageHistoryItemSchema = z
+  .object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string().min(1).max(1500),
+  })
+  .refine(
+    (item) => (item.role === "user" ? item.content.length <= 500 : item.content.length <= 1500),
+    {
+      message: "Mensagem do usuário não pode exceder 500 caracteres.",
+    }
+  );
 
 export const AskAssistantInputSchema = z.object({
   question: z.string().min(2).max(500),
@@ -104,9 +111,11 @@ export const askAIAssistant = createServerFn({ method: "POST" })
             !itemSanitization.isHighRiskInjection &&
             itemSanitization.cleanText.length > 0
           ) {
+            // Representação compacta: usuário até 500 chars, assistente até 1000 chars (Gate 1 - Fase 32)
+            const maxLen = item.role === "user" ? 500 : 1000;
             validatedHistory.push({
               role: item.role,
-              content: itemSanitization.cleanText.slice(0, 500),
+              content: itemSanitization.cleanText.slice(0, maxLen),
             });
           }
         }

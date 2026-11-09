@@ -20,6 +20,8 @@ import {
   Scissors,
   CheckCircle2,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,9 +81,98 @@ const INITIAL_MESSAGE: Message = {
   id: "welcome-1",
   role: "assistant",
   content:
-    "Olá! Sou o Assistente Barbex para administradores. Posso tirar dúvidas sobre como configurar sua barbearia, gerenciar profissionais, acompanhar comissões e operar a plataforma com base na nossa Central de Ajuda oficial. Como posso ajudar você hoje?",
+    "Olá! Sou o Assistente Barbex. Posso tirar dúvidas sobre a operação da barbearia, como comissões, agendamentos, chave PIX e planos. Como posso te ajudar?",
   timestamp: new Date(),
 };
+
+/**
+ * Componente de Referências Recolhíveis da Central de Ajuda (Gate 5 - Fase 32)
+ */
+function CollapsibleSources({ sources }: { sources?: SourceItem[] }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <div className="pt-2 border-t border-white/5">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
+        aria-expanded={isOpen}
+        aria-controls="sources-collapsible-content"
+        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/50 hover:text-gold transition-colors focus:outline-none focus:ring-1 focus:ring-gold/40 rounded px-1.5 py-0.5"
+      >
+        <BookOpen className="w-3 h-3 text-gold/70" />
+        <span>Consultar na Central de Ajuda ({sources.length})</span>
+        {isOpen ? (
+          <ChevronUp className="w-3 h-3 text-white/40" />
+        ) : (
+          <ChevronDown className="w-3 h-3 text-white/40" />
+        )}
+      </button>
+
+      {isOpen && (
+        <div
+          id="sources-collapsible-content"
+          className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200"
+          role="region"
+          aria-label="Artigos recomendados da Central de Ajuda"
+        >
+          {sources.map((src) => (
+            <Link
+              key={src.id}
+              to="/tutorials"
+              search={{ q: src.title } as any}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 hover:border-gold/40 hover:bg-gold/5 text-[11px] font-medium text-zinc-300 hover:text-white transition-all group"
+            >
+              <span>{src.title}</span>
+              <ExternalLink className="w-2.5 h-2.5 text-zinc-500 group-hover:text-gold" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Indicador de Digitação Fluido e Acessível (Gate 4 - Fase 32)
+ */
+function TypingIndicator() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2 }}
+      className="flex gap-4 max-w-[85%] mr-auto"
+      role="status"
+      aria-live="polite"
+      aria-label="Assistente virtual respondendo"
+    >
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border bg-gold/10 border-gold/20 text-gold">
+        <Bot size={18} />
+      </div>
+      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none flex items-center gap-3">
+        <div className="flex items-center gap-1.5 py-1">
+          <span className="w-2 h-2 rounded-full bg-gold/70 animate-bounce [animation-delay:-0.3s] motion-reduce:animate-none" />
+          <span className="w-2 h-2 rounded-full bg-gold/70 animate-bounce [animation-delay:-0.15s] motion-reduce:animate-none" />
+          <span className="w-2 h-2 rounded-full bg-gold/70 animate-bounce motion-reduce:animate-none" />
+        </div>
+        <span className="text-xs text-white/50 font-medium tracking-wide">
+          Respondendo...
+        </span>
+        <span className="sr-only">Assistente está gerando a resposta...</span>
+      </div>
+    </motion.div>
+  );
+}
 
 function AIAssistantPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -149,14 +240,14 @@ function AIAssistantPage() {
 
     setBannerNotice(null);
 
-    // Histórico recente em memória da sessão (Gate 1: máx 6 mensagens, excluindo erros e welcome inicial)
+    // Histórico recente em memória da sessão (Gate 1 - Fase 32: máx 6 mensagens, assistente até 1500 chars, usuário até 500 chars)
     const recentHistory = messages
       .filter(
         (m) =>
           !m.isError &&
           m.id !== "welcome-1" &&
           m.content.trim().length > 0 &&
-          m.content.length <= 500
+          (m.role === "assistant" ? m.content.length <= 1500 : m.content.length <= 500)
       )
       .slice(-6)
       .map((m) => ({
@@ -299,7 +390,7 @@ function AIAssistantPage() {
             ) : (
               <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Central de Ajuda (68 artigos)
+                Conhecimento Oficial Ativo
               </span>
             )}
           </div>
@@ -369,48 +460,15 @@ function AIAssistantPage() {
                       {msg.content}
                     </div>
 
-                    {/* Tutoriais Relacionados com Links Diretos */}
+                    {/* Referências Oficiais da Central de Ajuda Recolhíveis (Gate 5 - Fase 32) */}
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
-                        <span className="text-[10px] font-black text-gold/80 uppercase tracking-widest flex items-center gap-1.5">
-                          <BookOpen className="w-3 h-3 text-gold" /> Tutoriais Oficiais Recomendados:
-                        </span>
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {msg.sources.map((src) => (
-                            <Link
-                              key={src.id}
-                              to="/tutorials"
-                              search={{ q: src.title } as any}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 hover:border-gold/40 hover:bg-gold/5 text-[11px] font-medium text-zinc-300 hover:text-white transition-all group"
-                            >
-                              <span>{src.title}</span>
-                              <ExternalLink className="w-2.5 h-2.5 text-zinc-500 group-hover:text-gold" />
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
+                      <CollapsibleSources sources={msg.sources} />
                     )}
                   </div>
                 </motion.div>
               ))}
 
-              {isSubmitting && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-4 max-w-[85%] mr-auto"
-                >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border bg-gold/10 border-gold/20 text-gold">
-                    <Bot size={18} />
-                  </div>
-                  <div className="p-4 rounded-2xl text-sm leading-relaxed bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none flex items-center gap-3">
-                    <Loader2 className="w-4 h-4 text-gold animate-spin" />
-                    <span className="text-xs text-white/60 font-medium">
-                      Consultando a Central de Ajuda do Barbex...
-                    </span>
-                  </div>
-                </motion.div>
-              )}
+              {isSubmitting && <TypingIndicator />}
             </AnimatePresence>
           </div>
 
@@ -443,7 +501,7 @@ function AIAssistantPage() {
               </div>
             </div>
             <div className="flex items-center justify-between text-[10px] text-zinc-600 mt-2 px-1">
-              <span>Orientação baseada nos tutoriais oficiais do Barbex.</span>
+              <span>Assistente Institucional Barbex • Respostas baseadas em fatos oficiais.</span>
               <span>Modo estritamente consultivo.</span>
             </div>
           </div>
