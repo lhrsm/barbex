@@ -6,7 +6,6 @@ import {
   X,
   Send,
   Loader2,
-  BookOpen,
   AlertCircle,
   ExternalLink,
 } from "lucide-react";
@@ -16,13 +15,10 @@ import { useTenant } from "@/hooks/use-tenant";
 import { askAIAssistant } from "@/lib/ai/chat.functions";
 import { resolveAIContext } from "@/lib/ai/context.functions";
 import { cn } from "@/lib/utils";
-
-interface SourceItem {
-  id: string;
-  title: string;
-  category: string;
-  route: string;
-}
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { CollapsibleSources, type SourceItem } from "@/components/ai/CollapsibleSources";
+import { TypingIndicator } from "@/components/ai/TypingIndicator";
 
 interface ChatMessage {
   id: string;
@@ -37,7 +33,7 @@ const INITIAL_WELCOME_MESSAGE: ChatMessage = {
   id: "welcome-float-1",
   role: "assistant",
   content:
-    "Olá! Sou o Assistente Barbex. Como posso ajudar com a gestão da sua barbearia hoje?",
+    "Olá! Sou o Assistente Barbex. Posso tirar dúvidas sobre a operação da barbearia, como comissões, agendamentos, chave PIX e planos. Como posso te ajudar?",
   timestamp: new Date(),
 };
 
@@ -224,8 +220,25 @@ export function AIAssistantFloatingButton() {
     setIsSubmitting(true);
 
     try {
+      const recentHistory = messages
+        .filter(
+          (m) =>
+            !m.isError &&
+            m.id !== "welcome-float-1" &&
+            m.content.trim().length > 0 &&
+            (m.role === "assistant" ? m.content.length <= 1500 : m.content.length <= 500)
+        )
+        .slice(-6)
+        .map((m) => ({
+          role: m.role,
+          content: m.content.trim(),
+        }));
+
       const response = await askAIAssistant({
-        data: { question: cleanText },
+        data: {
+          question: cleanText,
+          history: recentHistory,
+        },
       });
 
       const assistantMsg: ChatMessage = {
@@ -375,26 +388,19 @@ export function AIAssistantFloatingButton() {
                       )
                   )}
                 >
-                  <p className="whitespace-pre-wrap text-[13px]">{msg.content}</p>
-
-                  {/* Fontes de Conhecimento citadas */}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-2.5 pt-2 border-t border-amber-500/15 space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        Fontes da Central de Ajuda:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {msg.sources.map((src) => (
-                          <span
-                            key={src.id}
-                            className="inline-flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-300"
-                          >
-                            <BookOpen className="h-2.5 w-2.5 text-amber-400" />
-                            {src.title}
-                          </span>
-                        ))}
-                      </div>
+                  {msg.role === "assistant" && !msg.isError ? (
+                    <div className="prose prose-invert prose-sm max-w-none text-[13px] prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-amber-200">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap text-[13px]">{msg.content}</p>
+                  )}
+
+                  {/* Fontes de Conhecimento Recolhíveis (Gate 6 - Fase 34) */}
+                  {msg.sources && msg.sources.length > 0 && (
+                    <CollapsibleSources sources={msg.sources} className="mt-2" />
                   )}
 
                   <span
@@ -411,13 +417,8 @@ export function AIAssistantFloatingButton() {
                 </div>
               ))}
 
-              {/* Indicador de Carregamento */}
-              {isSubmitting && (
-                <div className="mr-auto flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/[0.07] border border-white/10 px-3.5 py-2.5 text-xs text-slate-300">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
-                  <span aria-live="polite">Consultando base de conhecimento...</span>
-                </div>
-              )}
+              {/* Indicador de Digitação Fluido (Gate 5 - Fase 34) */}
+              {isSubmitting && <TypingIndicator compact />}
 
               <div ref={messagesEndRef} />
             </div>

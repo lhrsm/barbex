@@ -35,6 +35,10 @@ import { useTenant } from "@/hooks/use-tenant";
 import { resolveAIContext } from "@/lib/ai/context.functions";
 import { verifyTenantAdminIdentity } from "@/lib/ai/tenant-admin-auth";
 import { askAIAssistant } from "@/lib/ai/chat.functions";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { CollapsibleSources, type SourceItem } from "@/components/ai/CollapsibleSources";
+import { TypingIndicator } from "@/components/ai/TypingIndicator";
 
 export const Route = createFileRoute("/dashboard/assistente")({
   beforeLoad: async () => {
@@ -61,13 +65,6 @@ export const Route = createFileRoute("/dashboard/assistente")({
   component: AIAssistantPage,
 });
 
-interface SourceItem {
-  id: string;
-  title: string;
-  category: string;
-  route: string;
-}
-
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -84,95 +81,6 @@ const INITIAL_MESSAGE: Message = {
     "Olá! Sou o Assistente Barbex. Posso tirar dúvidas sobre a operação da barbearia, como comissões, agendamentos, chave PIX e planos. Como posso te ajudar?",
   timestamp: new Date(),
 };
-
-/**
- * Componente de Referências Recolhíveis da Central de Ajuda (Gate 5 - Fase 32)
- */
-function CollapsibleSources({ sources }: { sources?: SourceItem[] }) {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  if (!sources || sources.length === 0) return null;
-
-  return (
-    <div className="pt-2 border-t border-white/5">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setIsOpen(!isOpen);
-          }
-        }}
-        aria-expanded={isOpen}
-        aria-controls="sources-collapsible-content"
-        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/50 hover:text-gold transition-colors focus:outline-none focus:ring-1 focus:ring-gold/40 rounded px-1.5 py-0.5"
-      >
-        <BookOpen className="w-3 h-3 text-gold/70" />
-        <span>Consultar na Central de Ajuda ({sources.length})</span>
-        {isOpen ? (
-          <ChevronUp className="w-3 h-3 text-white/40" />
-        ) : (
-          <ChevronDown className="w-3 h-3 text-white/40" />
-        )}
-      </button>
-
-      {isOpen && (
-        <div
-          id="sources-collapsible-content"
-          className="mt-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200"
-          role="region"
-          aria-label="Artigos recomendados da Central de Ajuda"
-        >
-          {sources.map((src) => (
-            <Link
-              key={src.id}
-              to="/tutorials"
-              search={{ q: src.title } as any}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 hover:border-gold/40 hover:bg-gold/5 text-[11px] font-medium text-zinc-300 hover:text-white transition-all group"
-            >
-              <span>{src.title}</span>
-              <ExternalLink className="w-2.5 h-2.5 text-zinc-500 group-hover:text-gold" />
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Indicador de Digitação Fluido e Acessível (Gate 4 - Fase 32)
- */
-function TypingIndicator() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2 }}
-      className="flex gap-4 max-w-[85%] mr-auto"
-      role="status"
-      aria-live="polite"
-      aria-label="Assistente virtual respondendo"
-    >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border bg-gold/10 border-gold/20 text-gold">
-        <Bot size={18} />
-      </div>
-      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none flex items-center gap-3">
-        <div className="flex items-center gap-1.5 py-1">
-          <span className="w-2 h-2 rounded-full bg-gold/70 animate-bounce [animation-delay:-0.3s] motion-reduce:animate-none" />
-          <span className="w-2 h-2 rounded-full bg-gold/70 animate-bounce [animation-delay:-0.15s] motion-reduce:animate-none" />
-          <span className="w-2 h-2 rounded-full bg-gold/70 animate-bounce motion-reduce:animate-none" />
-        </div>
-        <span className="text-xs text-white/50 font-medium tracking-wide">
-          Respondendo...
-        </span>
-        <span className="sr-only">Assistente está gerando a resposta...</span>
-      </div>
-    </motion.div>
-  );
-}
 
 function AIAssistantPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -449,15 +357,23 @@ function AIAssistantPage() {
                   <div className="space-y-3 flex-1">
                     <div
                       className={cn(
-                        "p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-line",
+                        "p-4 rounded-2xl text-sm leading-relaxed",
                         msg.role === "assistant"
                           ? msg.isError
-                            ? "bg-red-500/5 border border-red-500/20 text-red-200 rounded-tl-none"
+                            ? "bg-red-500/5 border border-red-500/20 text-red-200 rounded-tl-none whitespace-pre-line"
                             : "bg-white/[0.03] border border-white/5 text-zinc-300 rounded-tl-none font-normal"
-                          : "bg-gold text-black font-bold rounded-tr-none shadow-[0_10px_20px_-10px_rgba(212,175,55,0.3)]"
+                          : "bg-gold text-black font-bold rounded-tr-none shadow-[0_10px_20px_-10px_rgba(212,175,55,0.3)] whitespace-pre-line"
                       )}
                     >
-                      {msg.content}
+                      {msg.role === "assistant" && !msg.isError ? (
+                        <div className="prose prose-invert prose-sm max-w-none prose-p:my-1.5 prose-p:leading-relaxed prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:mt-3 prose-headings:mb-1.5 prose-strong:text-white prose-strong:font-semibold">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
 
                     {/* Referências Oficiais da Central de Ajuda Recolhíveis (Gate 5 - Fase 32) */}

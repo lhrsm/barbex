@@ -23,7 +23,14 @@ console.log("BARBEX — R2E.26E.22N.32: TESTES DE INTERFACE DE CHAT E ACESSIBILI
 console.log("================================================================================\n");
 
 const assistentePath = path.resolve(__dirname, "../src/routes/dashboard.assistente.tsx");
-const content = fs.readFileSync(assistentePath, "utf8");
+const typingPath = path.resolve(__dirname, "../src/components/ai/TypingIndicator.tsx");
+const sourcesPath = path.resolve(__dirname, "../src/components/ai/CollapsibleSources.tsx");
+
+const content = [
+  fs.readFileSync(assistentePath, "utf8"),
+  fs.existsSync(typingPath) ? fs.readFileSync(typingPath, "utf8") : "",
+  fs.existsSync(sourcesPath) ? fs.readFileSync(sourcesPath, "utf8") : ""
+].join("\n");
 
 let passed = 0;
 let failed = 0;

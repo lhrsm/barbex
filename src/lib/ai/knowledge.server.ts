@@ -175,15 +175,77 @@ function matchTermInText(textNorm: string, variant: string): boolean {
 }
 
 /**
- * Padrões indicativos de anáfora, continuidade ou pedido de reformulação.
+ * Padrões indicativos de encerramento / agradecimento (sem necessidade de busca de tutoriais).
  */
-const CONTINUATION_PATTERNS = [
+export const CLOSURE_PATTERNS = [
+  /\b(valeu|obrigad[oa]|era isso|so isso|só isso|fechou|por hoje e so|por hoje é só|tchau|ate mais|até mais|falou|muito obrigado|perfeito valeu)\b/i,
+];
+
+/**
+ * Padrões indicativos de mudança explícita de assunto.
+ */
+export const TOPIC_SWITCH_PATTERNS = [
+  /\b(agora (outra coisa|outro assunto|quero|preciso|me ajuda a)|mudando de assunto|outra duvida|outra dúvida|sobre outro tema|agora sobre)\b/i,
+];
+
+/**
+ * Padrões indicativos de anáfora, continuidade, comparação, escolha ou pedido de reformulação.
+ */
+export const CONTINUATION_PATTERNS = [
   /\b(nao entendi|não entendi|entendi direito|explica(r)?|de novo|outra forma|outro jeito|mais simples|simplificar|simplifica|detalha(r)?|melhor)\b/i,
+  /\b(comecando agora|começando agora|como iniciante|iniciante|leigo|do zero|como se eu estivesse|como se fosse)\b/i,
+  /\b(qual (voce|você)? (escolheria|recomenda|indica|pegaria|seria melhor|e melhor|é melhor)|qual dos dois|qual deles|qual escolher)\b/i,
+  /\b(\d+|quantos?|tantos?)\s+(barbeiros?|profissionais?|cadeiras?)\b/i,
   /\b(e quanto custa|quanto custa|quanto e|quanto é|qual o valor|qual o preco|qual o preço|qual a diferenca|qual a diferença)\b/i,
   /\b(como faco isso|como faço isso|como funciona isso|como assim|onde fica isso|onde vejo isso)\b/i,
   /\b(e no elite|e no pro|e no starter|e na recepcao|e na recepção|isso funciona na recepcao|isso funciona na recepção)\b/i,
-  /\b(e se eu tiver|e se tiver|e se for|e mudar o barbeiro|mudar o barbeiro tambem|mudar o barbeiro também|e quanto a|e sobre isso)\b/i,
+  /\b(e se eu tiver|e se tiver|e se for|e se eu quiser|e mudar|e trocar|trocar o barbeiro|mudar o barbeiro|trocar o barbeiro dele|trocar o profissional|tambem|também)\b/i,
+  /\b(dele|dela|desse cliente|deste cliente|desse atendimento|deste agendamento)\b/i,
 ];
+
+export type TopicClusterKey = "PLANS" | "APPOINTMENTS" | "WHATSAPP" | "PIX" | "COMMISSIONS" | "TEAM";
+
+export const CLUSTER_IDENTIFIERS: Record<TopicClusterKey, RegExp[]> = {
+  PLANS: [
+    /\b(plano|planos|assinatura|starter|pro|elite|upgrade|downgrade|limite|limites)\b/i,
+  ],
+  APPOINTMENTS: [
+    /\b(agendamento|agendar|agenda|calendario|calendário|horario|horário|cancelar|reagendar|desmarcar|remarcar|atendimento)\b/i,
+  ],
+  WHATSAPP: [
+    /\b(whatsapp|zapi|lembrete|lembretes|notificacao|notificação|notificacoes|notificações|aviso|avisar)\b/i,
+  ],
+  PIX: [
+    /\b(pix|chave|qrcode|qr code)\b/i,
+  ],
+  COMMISSIONS: [
+    /\b(comissao|comissoes|comissões|repasse|fechamento de comissao)\b/i,
+  ],
+  TEAM: [
+    /\b(equipe|cadastrar barbeiro|adicionar barbeiro|novo barbeiro)\b/i,
+  ],
+};
+
+export function detectCluster(text: string): TopicClusterKey | null {
+  for (const [cluster, regexes] of Object.entries(CLUSTER_IDENTIFIERS) as [TopicClusterKey, RegExp[]][]) {
+    if (regexes.some((r) => r.test(text))) {
+      return cluster;
+    }
+  }
+  return null;
+}
+
+export function getActiveHistoryCluster(
+  history?: Array<{ role: string; content: string }>
+): TopicClusterKey | null {
+  if (!history || history.length === 0) return null;
+  const recent = history.slice(-4);
+  for (let i = recent.length - 1; i >= 0; i--) {
+    const cluster = detectCluster(recent[i].content);
+    if (cluster) return cluster;
+  }
+  return null;
+}
 
 /**
  * Termos indicadores de temas específicos para ancoragem contextual e prevenção de contaminação cruzada.
@@ -200,7 +262,7 @@ const TOPIC_DOMAIN_TERMS = new Set([
 ]);
 
 /**
- * Resolução Contextual Determinística de Consultas Anafóricas (Gate 3)
+ * Resolução Contextual Determinística de Consultas Anafóricas (Gate 3 - Fase 34)
  */
 export function resolveContextualQuery(
   currentQuery: string,
@@ -210,29 +272,58 @@ export function resolveContextualQuery(
     return currentQuery;
   }
 
+  // 1. Encerramento / Agradecimento (se não tiver intenção de pergunta)
+  const isClosure = CLOSURE_PATTERNS.some((p) => p.test(currentQuery));
+  const hasQuestionIntent = /[?]|(como|onde|qual|quando|por que|mudar|trocar|ajuda)/i.test(currentQuery);
+  if (isClosure && !hasQuestionIntent) {
+    return currentQuery;
+  }
+
+  // 2. Mudança explícita de assunto ("Agora outra coisa: ...", "Mudando de assunto...")
+  const isTopicSwitch = TOPIC_SWITCH_PATTERNS.some((p) => p.test(currentQuery));
+  if (isTopicSwitch) {
+    return currentQuery;
+  }
+
+  // 3. Resolução determinística baseada no cluster ativo da sessão
+  const isContinuation = CONTINUATION_PATTERNS.some((p) => p.test(currentQuery));
+  const activeCluster = getActiveHistoryCluster(history);
+
+  if (isContinuation && activeCluster) {
+    if (activeCluster === "PLANS") {
+      return `planos pro elite ${currentQuery}`;
+    }
+    if (activeCluster === "APPOINTMENTS") {
+      return `reagendamento agendamento calendar ${currentQuery}`;
+    }
+    if (activeCluster === "WHATSAPP") {
+      return `whatsapp notificacoes lembretes ${currentQuery}`;
+    }
+    if (activeCluster === "PIX") {
+      return `pix chave configuracoes ${currentQuery}`;
+    }
+    if (activeCluster === "COMMISSIONS") {
+      return `comissoes repasse financas ${currentQuery}`;
+    }
+  }
+
+  // 4. Fallback legado de proximidade de termos caso nenhum cluster forte seja identificado
   const normCurrent = normalizeText(currentQuery);
   const currentWords = normCurrent.split(/\s+/).filter((w) => w.length >= 2);
   const currentTopicHits = currentWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w));
-
-  const isExplicitContinuity = CONTINUATION_PATTERNS.some((p) => p.test(currentQuery));
   const isShortQuery = currentWords.length <= 6;
 
-  // Se o usuário introduziu um tópico autônomo específico (ex: "agora quero reagendar um cliente" ou "como configuro a chave pix")
-  // e NÃO utilizou um padrão de continuidade explícito, respeitamos a transição sem mesclar resíduos anteriores.
-  if (!isExplicitContinuity && currentTopicHits.length >= 1) {
+  if (!isContinuation && currentTopicHits.length >= 1) {
     return currentQuery;
   }
 
-  // Se não for anáfora nem pergunta curta, não mescla
-  if (!isExplicitContinuity && !isShortQuery) {
+  if (!isContinuation && !isShortQuery) {
     return currentQuery;
   }
 
-  // Buscar os termos temáticos dos turnos recentes (usuário e assistente - Gate 1 e 2 Fase 32)
   const recentHistory = history.slice(-3);
   let contextualTopicTerms: string[] = [];
 
-  // Prioridade 1: Termos do último turno do usuário
   const previousUserMsg = [...recentHistory].reverse().find((m) => m.role === "user");
   if (previousUserMsg) {
     const normUser = normalizeText(previousUserMsg.content);
@@ -240,7 +331,6 @@ export function resolveContextualQuery(
     contextualTopicTerms = userWords.filter((w) => TOPIC_DOMAIN_TERMS.has(w));
   }
 
-  // Prioridade 2: Se o turno do usuário não tiver termos suficientes, enriquecer com termos do último turno do assistente
   if (contextualTopicTerms.length === 0) {
     const previousAssistantMsg = [...recentHistory].reverse().find((m) => m.role === "assistant");
     if (previousAssistantMsg) {
@@ -251,7 +341,6 @@ export function resolveContextualQuery(
   }
 
   if (contextualTopicTerms.length > 0) {
-    // Combina os termos temáticos do contexto anterior com a dúvida atual
     const uniquePrevTerms = Array.from(new Set(contextualTopicTerms)).join(" ");
     return `${uniquePrevTerms} ${currentQuery}`;
   }
@@ -277,7 +366,14 @@ export async function retrieveRelevantTutorials(
   const maxResults = options?.maxResults ?? 3;
   const minScoreThreshold = options?.minScoreThreshold ?? 2.5;
 
-  // Resolução contextual determinística (Gate 3)
+  // Interceptador de Encerramento: se for apenas agradecimento/fechamento, não recupera tutoriais
+  const isClosure = CLOSURE_PATTERNS.some((p) => p.test(query));
+  const hasQuestionIntent = /[?]|(como|onde|qual|quando|por que|mudar|trocar|ajuda)/i.test(query);
+  if (isClosure && !hasQuestionIntent) {
+    return [];
+  }
+
+  // Resolução contextual determinística (Gate 3 - Fase 34)
   const effectiveQuery = resolveContextualQuery(query, options?.history);
   const terms = extractQueryTerms(effectiveQuery);
 
@@ -382,6 +478,23 @@ export async function retrieveRelevantTutorials(
     // O artigo reception-walkin-queue só pontua se a pergunta mencionar expressamente walkin, fila, espera ou encaixe
     const hasWalkinIntent = terms.some((t) => ["walkin", "fila", "espera", "encaixe"].includes(t));
     if (article.id === "reception-walkin-queue" && !hasWalkinIntent) {
+      score = 0;
+    }
+
+    // 4. Proteção contra desvio de planos e agendamentos para gestão de equipe (Fase 34):
+    // A. Quando a consulta envolve planos e dimensionamento/escolha por número de barbeiros,
+    // não poluir com cadastro e gestão de equipe.
+    const hasPlansIntent = terms.some((t) => ["plano", "planos", "pro", "elite", "starter", "assinatura"].includes(t));
+    const hasSizingOrChoice = terms.some((t) => /\d+/.test(t) || ["escolheria", "escolher", "indicaria", "recomenda", "limite", "limites"].includes(t));
+    if (article.id === "owner-team-management" && hasPlansIntent && hasSizingOrChoice) {
+      score = 0;
+    }
+
+    // B. Quando a consulta envolve reagendar/trocar o barbeiro de um agendamento existente (Passo 1 do reagendamento),
+    // não poluir com cadastro/gestão de equipe.
+    const hasAppointmentIntent = terms.some((t) => ["reagendar", "reagendamento", "agendamento", "horario"].includes(t));
+    const hasChangeBarberIntent = terms.some((t) => ["trocar", "mudar"].includes(t)) && terms.some((t) => ["barbeiro", "profissional"].includes(t));
+    if (article.id === "owner-team-management" && hasAppointmentIntent && hasChangeBarberIntent) {
       score = 0;
     }
 

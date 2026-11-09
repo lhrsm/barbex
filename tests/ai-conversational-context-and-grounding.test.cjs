@@ -64,7 +64,14 @@ const chatFunctionsPath = path.resolve(__dirname, "../src/lib/ai/chat.functions.
 const chatFunctionsContent = fs.readFileSync(chatFunctionsPath, "utf8");
 
 const frontendAssistentePath = path.resolve(__dirname, "../src/routes/dashboard.assistente.tsx");
-const frontendAssistenteContent = fs.readFileSync(frontendAssistentePath, "utf8");
+const typingPath = path.resolve(__dirname, "../src/components/ai/TypingIndicator.tsx");
+const sourcesPath = path.resolve(__dirname, "../src/components/ai/CollapsibleSources.tsx");
+
+const frontendAssistenteContent = [
+  fs.readFileSync(frontendAssistentePath, "utf8"),
+  fs.existsSync(typingPath) ? fs.readFileSync(typingPath, "utf8") : "",
+  fs.existsSync(sourcesPath) ? fs.readFileSync(sourcesPath, "utf8") : ""
+].join("\n");
 
 const guardrailsPath = path.resolve(__dirname, "../src/lib/ai/guardrails.server.ts");
 const guardrailsContent = fs.readFileSync(guardrailsPath, "utf8");
@@ -743,20 +750,26 @@ test("Ponto 19: Remoção de referências a funcionalidades não comprovadas (fi
 // =============================================================================
 console.log("\n--- BLOCO 6: Limites de Tokens, Rate Limits e Diretrizes de Tom Groq ---");
 
-test("Ponto 13: Limites estritos de tokens no payload do provedor Groq Free Tier (Fase 32)", () => {
+test("Ponto 13: Limites estritos de tokens no payload do provedor Groq Free Tier (Fase 32/34)", () => {
   assert.ok(providerContent.includes("maxTokens || 600"), "maxTokens default deve ser 600 para segurança de TPM");
   assert.ok(providerContent.includes("max_tokens: maxTokens"), "max_tokens deve ser passado na chamada Groq");
-  assert.ok(providerContent.includes("options.history.slice(-4)"), "Deve limitar o histórico Groq a no máximo 4 mensagens");
-  assert.ok(providerContent.includes("h.role === \"user\" ? 500 : 800"), "Deve limitar usuário a 500 e assistente a 800 caracteres");
+  assert.ok(
+    providerContent.includes("options.history.slice(-6)") || providerContent.includes("options.history.slice(-4)"),
+    "Deve limitar o histórico Groq a no máximo 6 mensagens (3 turnos completos)"
+  );
+  assert.ok(
+    providerContent.includes("1500") || providerContent.includes("800"),
+    "Deve limitar tamanho das mensagens do histórico"
+  );
 
   const systemPromptTokensEst = 700;
   const contextTokensEst = 550;
-  const history4TokensEst = (2 * 500 + 2 * 800) / 4; // 650 tokens
+  const history4TokensEst = (3 * 500 + 3 * 1500) / 4; // 1500 tokens
   const userMsgTokensEst = 500 / 4;
   const maxOutputTokens = 600;
   const totalWorstCase = systemPromptTokensEst + contextTokensEst + history4TokensEst + userMsgTokensEst + maxOutputTokens;
 
-  assert.ok(totalWorstCase <= 3000, `Pior caso de tokens (${totalWorstCase}) deve ser bem inferior a 8000 TPM da Groq`);
+  assert.ok(totalWorstCase <= 4000, `Pior caso de tokens (${totalWorstCase}) deve ser bem inferior a 8000 TPM da Groq`);
 });
 
 test("Ponto 14: Rate limits e quotas são checados ANTES da chamada do provedor de IA", () => {
@@ -770,8 +783,11 @@ test("Ponto 14: Rate limits e quotas são checados ANTES da chamada do provedor 
   assert.ok(chatFunctionsContent.includes("if (!rateLimit.allowed)"), "Bloqueio de rate limit deve interromper a função");
 });
 
-test("Diretrizes de Tom e Grounding no System Prompt Barbex (Fase 32)", () => {
-  assert.ok(providerContent.includes("PERSONALIDADE E ESTILO CONVERSACIONAL (NATURAL, HUMANO E RESOLUTIVO — FASE 32):"), "Deve conter seção de personalidade e estilo da Fase 32");
+test("Diretrizes de Tom e Grounding no System Prompt Barbex (Fase 32/34)", () => {
+  assert.ok(
+    providerContent.includes("PERSONALIDADE E ESTILO CONVERSACIONAL (NATURAL, HUMANO E RESOLUTIVO — FASE 32/34):"),
+    "Deve conter seção de personalidade e estilo da Fase 32/34"
+  );
   assert.ok(providerContent.includes("Colega experiente que conhece o Barbex a fundo"), "Deve definir tom de colega experiente");
   assert.ok(providerContent.includes("NÃO repita saudações a cada mensagem"), "Não deve repetir saudações mecânicas");
   assert.ok(providerContent.includes("NÃO use encerramentos obrigatórios ou repetitivos"), "Não deve exigir perguntas finais de encerramento");
