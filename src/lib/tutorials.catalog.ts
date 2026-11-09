@@ -164,11 +164,11 @@ export const TUTORIALS_CATALOG: TutorialItem[] = [
     steps: [
       "No menu lateral da plataforma, acesse 'Minha Assinatura' na rota /subscription.",
       "No topo da tela, consulte seu plano atual, status de pagamento, dias de trial restantes e o consumo dos limites da sua barbearia (profissionais ativos, clientes e automações).",
-      "Conheça os planos oficiais: Starter (R$ 59,90/mês ou R$ 499,00/ano para até 3 barbeiros, 300 clientes, 15 serviços e 3 automações), Pro (R$ 99,90/mês ou R$ 999,00/ano para até 10 barbeiros, clientes ilimitados, serviços ilimitados e 8 automações) e Elite (R$ 149,90/mês ou R$ 1.499,00/ano com profissionais, clientes e automações ilimitados).",
+      "Conheça os planos oficiais: Starter (R$ 59,90/mês ou R$ 499,00/ano para até 3 barbeiros, 300 clientes, 15 serviços e 3 automações), Pro (R$ 99,90/mês ou R$ 999,00/ano para até 10 barbeiros, clientes ilimitados, serviços ilimitados e exatamente 8 automações) e Elite (R$ 149,90/mês ou R$ 1.499,00/ano com profissionais, clientes, serviços e automações totalmente ilimitados).",
       "Upgrade e Downgrade: Para mudar de plano, clique em 'Fazer Upgrade' ou 'Alterar Plano' e conclua pelo Stripe Checkout. Em upgrades, a cobrança proporcional é imediata; em downgrades, o plano atual permanece ativo até o fim do ciclo faturado.",
-      "Módulos Adicionais (Add-ons): Você pode contratar add-ons avulsos pela aba 'Módulos Adicionais' (/subscription/addons), como Controle de Estoque (R$ 19,90/mês), Fidelidade & Cashback (R$ 19,90/mês), Cupons (R$ 14,90/mês), Marketing Hub (R$ 24,90/mês) ou Financeiro Pro (R$ 24,90/mês)."
+      "Módulos Adicionais (Add-ons): Você pode contratar add-ons avulsos pela aba 'Módulos Adicionais' (/subscription/addons), como IA para Atendimento ao Cliente (R$ 49,90/mês para plano Pro), Controle de Estoque (R$ 19,90/mês), Fidelidade & Cashback (R$ 19,90/mês), Cupons (R$ 14,90/mês), Marketing Hub (R$ 24,90/mês) ou Financeiro Pro (R$ 24,90/mês)."
     ],
-    notes: "Atenção sobre as rotas: A rota /subscription gerencia a assinatura do seu estabelecimento junto ao Barbex. Já a rota /subscriptions gerencia o Clube de Assinaturas oferecido pela sua barbearia aos clientes finais.",
+    notes: "Atenção sobre as rotas e IA: A rota /subscription gerencia a assinatura do seu estabelecimento junto ao Barbex. A rota /subscriptions gerencia o Clube de Assinaturas oferecido pela barbearia aos clientes finais. O Assistente Institucional em /dashboard/assistente é para suporte operacional ao administrador; robôs de agendamento automático para clientes no WhatsApp pertencem ao plano Elite ou ao add-on comercial 'IA para Atendimento' (ai_assistant, R$ 49,90/mês). Integrações de WhatsApp requerem API de terceiros (como Z-API) contratada à parte.",
     status: "available",
     badge: "Assinatura",
   },

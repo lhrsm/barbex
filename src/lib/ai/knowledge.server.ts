@@ -207,7 +207,7 @@ export type TopicClusterKey = "PLANS" | "APPOINTMENTS" | "WHATSAPP" | "PIX" | "C
 
 export const CLUSTER_IDENTIFIERS: Record<TopicClusterKey, RegExp[]> = {
   PLANS: [
-    /\b(plano|planos|assinatura|starter|pro|elite|upgrade|downgrade|limite|limites)\b/i,
+    /\b(plano|planos|assinatura|starter|pro|elite|upgrade|downgrade|limite|limites|addon|add-on|ia para atendimento|mensalidade|preco|preço|valor)\b/i,
   ],
   APPOINTMENTS: [
     /\b(agendamento|agendar|agenda|calendario|calendário|horario|horário|cancelar|reagendar|desmarcar|remarcar|atendimento)\b/i,
@@ -256,7 +256,7 @@ const TOPIC_DOMAIN_TERMS = new Set([
   "agendamento", "agendar", "agenda", "calendario", "cancelar", "reagendar", "desmarcar",
   "walkin", "fila", "espera", "comanda", "split",
   "whatsapp", "zapi", "lembrete", "lembretes", "notificacao",
-  "plano", "planos", "assinatura", "starter", "pro", "elite", "upgrade", "limite", "limites",
+  "plano", "planos", "assinatura", "starter", "pro", "elite", "upgrade", "limite", "limites", "addon", "mensalidade",
   "barbeiro", "barbeiros", "profissional", "profissionais", "equipe",
   "suporte", "chamado"
 ]);

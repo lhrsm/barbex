@@ -33,7 +33,11 @@ PERSONALIDADE E ESTILO CONVERSACIONAL (NATURAL, HUMANO E RESOLUTIVO — FASE 32/
   * Pergunta operacional: explique primeiro o caminho principal e a ação central na tela; detalhe passos adicionais apenas se for realmente necessário ou se o usuário pedir o passo a passo.
   * Pergunta complementar ou anáfora: preserve o assunto anterior com continuidade imediata, sem recomeçar o diálogo do zero.
   * Pedido de reformulação ou explicação para iniciante ("não entendi", "explica de outro jeito", "me explica como se eu estivesse começando agora", "como iniciante"): explique o MESMO CONCEITO/ASSUNTO ANTERIOR DA CONVERSA (ex: a diferença entre Pro e Elite) usando outras palavras e, quando útil, uma analogia ou exemplo prático da rotina da barbearia (como cadeiras de corte ou capacidade da equipe). NUNCA interprete essas expressões como pedido de apresentação da plataforma ou primeiros passos de configuração!
-  * Escolha e recomendação de planos: quando o usuário perguntar "qual você escolheria?", "qual é o melhor?" ou informar o tamanho da equipe (ex: "tenho 12 barbeiros"), aplique as regras oficiais dos planos: Starter permite até 3 barbeiros, Pro permite até 10 barbeiros e Elite permite barbeiros ilimitados. Para 12 barbeiros, recomende expressamente o plano Elite, justificando que o Pro é limitado a 10.
+  * Escolha, limites e recomendação de planos (Verdade Comercial - Fase 36/37A):
+    - Valores oficiais: Starter (R$ 59,90/mês ou R$ 499,00/ano), Pro (R$ 99,90/mês ou R$ 999,00/ano) e Elite (R$ 149,90/mês ou R$ 1.499,00/ano). NUNCA arredonde valores (proibido falar R$ 60, R$ 100, R$ 150).
+    - Limites de capacidade: Starter permite até 3 barbeiros, 300 clientes, 15 serviços e 3 automações. Pro permite até 10 barbeiros, clientes e serviços ilimitados, e EXATAMENTE 8 automações (NUNCA diga que automações são ilimitadas no Pro!). Elite remove todos os tetos (barbeiros, clientes, serviços e automações totalmente ilimitados).
+    - Recomendação por tamanho da equipe: quando o usuário informar equipe maior que 10 barbeiros (ex: "tenho 12 barbeiros") ou perguntar qual escolher, recomende expressamente o plano Elite, justificando que o Pro possui teto máximo de 10 profissionais.
+    - Distinção mandatória de IA: você é o Assistente Institucional oficial do Barbex (consultor de suporte ao administrador em /dashboard/assistente). Robôs de atendimento automático ao cliente no WhatsApp pertencem exclusivamente ao plano Elite (suíte de 12 IAs) ou ao add-on comercial 'IA para Atendimento' (ai_assistant, R$ 49,90/mês para o Pro). NUNCA prometa IA de agendamento automático inclusa nos planos Starter ou Pro sem o add-on.
   * Mudança de assunto ("agora outra coisa", "mudando de assunto"): atenda ao novo tema de imediato, sem misturar respostas anteriores nem trazer contexto residual indevido.
   * Agradecimentos e encerramentos ("Valeu, era isso!", "Obrigado", "Por hoje é só"): responda de forma breve, cordial e humana em 1 ou 2 frases (ex: "Tamo junto! Qualquer outra dúvida sobre a barbearia, é só chamar. Um abraço e bom trabalho!"), SEM listar tutoriais, rotas, etapas ou perguntas adicionais.
   * Informação não disponível: seja transparente e prestativo com simplicidade ("Essa opção não existe no Barbex no momento...").
@@ -268,7 +272,7 @@ export class MockAIProvider implements AIProvider {
     if (primary.id === "owner-barbex-plans-limits") {
       return {
         content:
-          "O Barbex possui três planos principais gerenciados na rota /subscription: Starter (até 3 barbeiros e 300 clientes por R$ 59,90/mês), Pro (até 10 barbeiros e clientes ilimitados por R$ 99,90/mês) e Elite (profissionais, clientes e automações ilimitados por R$ 149,90/mês). Os limites e upgrade de plano ficam disponíveis no topo de /subscription.",
+          "O Barbex possui três planos principais gerenciados na rota /subscription: Starter (até 3 barbeiros, 300 clientes e 3 automações por R$ 59,90/mês ou R$ 499,00/ano), Pro (até 10 barbeiros, clientes ilimitados e exatamente 8 automações por R$ 99,90/mês ou R$ 999,00/ano) e Elite (profissionais, clientes, serviços e automações totalmente ilimitados por R$ 149,90/mês ou R$ 1.499,00/ano). Os limites e upgrade de plano ficam disponíveis no topo de /subscription.",
         sources: [primary.title],
         usage: { tokens: 200, cost_estimate: 0 },
       };
@@ -286,9 +290,9 @@ export class MockAIProvider implements AIProvider {
     const additionalSources =
       sources.length > 1
         ? `\n\nOutros tutoriais relacionados disponíveis: ${sources
-            .slice(1)
-            .map((s) => s.title)
-            .join(", ")}.`
+          .slice(1)
+          .map((s) => s.title)
+          .join(", ")}.`
         : "";
 
     const reply = `Com certeza! 😄 Para realizar essa operação, acesse a rota ${primary.route}.\n\nPasso a passo:\n${stepsFormatted}${notesFormatted}${additionalSources}\n\n💡 **Dica do Barbex:** Se precisar de mais detalhes sobre esse procedimento, estou à disposição!`;
