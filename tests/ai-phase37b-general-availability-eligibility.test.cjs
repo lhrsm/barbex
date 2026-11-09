@@ -38,7 +38,7 @@ function mockVerifyTenantSubscriptionEligibility(tenantId, mockDb) {
   if (shop.is_active === false) {
     return { eligible: false, errorCode: "TENANT_INACTIVE" };
   }
-  if (shop.blocked_at) {
+  if (shop.blocked_at || (shop.owner_id && mockDb.profiles?.[shop.owner_id]?.blocked_at)) {
     return { eligible: false, errorCode: "TENANT_BLOCKED" };
   }
 
@@ -321,11 +321,15 @@ describe("BARBEX FASE R2E.26E.22N.37B — Dynamic Eligibility Engine & General A
   });
 
   // Scenario 9: Tenant suspended/blocked in DB or env killswitch (DENIED)
-  test("Scenario 9: Tenant suspended via barbershops.blocked_at or BARBEX_AI_BLOCKED_TENANT_IDS is BLOCKED (DENIED)", () => {
+  test("Scenario 9: Tenant suspended via owner blocked_at, inactive or BARBEX_AI_BLOCKED_TENANT_IDS is BLOCKED (DENIED)", () => {
     const tenantId = "44444444-4444-4444-8444-444444444444";
+    const ownerId = "55555555-5555-5555-8555-555555555555";
     const mockDb = {
       barbershops: {
-        [tenantId]: { id: tenantId, is_active: true, blocked_at: "2026-11-01T00:00:00Z" }
+        [tenantId]: { id: tenantId, is_active: true, owner_id: ownerId }
+      },
+      profiles: {
+        [ownerId]: { id: ownerId, blocked_at: "2026-11-01T00:00:00Z" }
       }
     };
 
@@ -336,7 +340,7 @@ describe("BARBEX FASE R2E.26E.22N.37B — Dynamic Eligibility Engine & General A
     // Also test env blacklist
     process.env.BARBEX_AI_BLOCKED_TENANT_IDS = tenantId;
     const resEnv = mockVerifyTenantSubscriptionEligibility(tenantId, {
-      barbershops: { [tenantId]: { id: tenantId, is_active: true, blocked_at: null } }
+      barbershops: { [tenantId]: { id: tenantId, is_active: true, owner_id: "other" } }
     });
     assert.strictEqual(resEnv.eligible, false);
     assert.strictEqual(resEnv.errorCode, "TENANT_BLOCKED");

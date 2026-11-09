@@ -282,10 +282,10 @@ export async function verifyTenantSubscriptionEligibility(
   const db = clientOverride || supabase;
 
   try {
-    // 2. Consulta à Barbearia (status de ativação e bloqueio)
+    // 2. Consulta à Barbearia (status de ativação e bloqueio via owner)
     const { data: shop, error: shopErr } = await db
       .from("barbershops")
-      .select("id, is_active, blocked_at")
+      .select("id, is_active, owner_id")
       .eq("id", cleanTenantId)
       .maybeSingle();
 
@@ -313,12 +313,21 @@ export async function verifyTenantSubscriptionEligibility(
       };
     }
 
-    if (shop.blocked_at) {
-      return {
-        eligible: false,
-        errorCode: "TENANT_BLOCKED",
-        errorMessage: "O estabelecimento encontra-se suspenso administrativamente.",
-      };
+    // Verificar se o proprietário da barbearia está com perfil bloqueado
+    if (shop.owner_id) {
+      const { data: ownerProfile } = await db
+        .from("profiles")
+        .select("blocked_at")
+        .eq("id", shop.owner_id)
+        .maybeSingle();
+
+      if (ownerProfile?.blocked_at) {
+        return {
+          eligible: false,
+          errorCode: "TENANT_BLOCKED",
+          errorMessage: "O estabelecimento encontra-se suspenso administrativamente.",
+        };
+      }
     }
 
     // 3. Consulta de Direitos via RPC Canônica resolve_tenant_entitlement
