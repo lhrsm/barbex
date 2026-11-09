@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { verifyTenantAdminIdentity } from "./tenant-admin-auth";
+import {
+  verifyTenantAdminIdentity,
+  verifyTenantSubscriptionEligibility,
+} from "./tenant-admin-auth";
 import {
   isAIAssistantEnabled,
   checkDynamicModuleAvailability,
@@ -35,6 +38,23 @@ export const resolveAIContext = createServerFn({ method: "GET" })
       .select("module_key")
       .eq("tenant_id", authResult.tenantId)
       .eq("enabled", true);
+
+    // 2.1. Validação Dinâmica de Elegibilidade Comercial de Assinatura (Fase R2E.26E.22N.37B)
+    const eligibilityResult = await verifyTenantSubscriptionEligibility(authResult.tenantId, authSupabase);
+    if (!eligibilityResult.eligible) {
+      return {
+        status: "subscription_ineligible",
+        ai_assistant_enabled: false,
+        reason: eligibilityResult.errorMessage || "Assinatura Starter, Pro ou Elite necessária para acesso ao assistente.",
+        reasonCode: eligibilityResult.errorCode || "SUBSCRIPTION_INELIGIBLE",
+        context: {
+          tenant_id: authResult.tenantId,
+          user_id: userId,
+          role: authResult.role,
+          enabled_modules: (tenantModules as any[])?.map((m) => m.module_key) || [],
+        },
+      };
+    }
 
     // 3. Verificação do status real do Kill Switch Global Vercel e Isolamento Canário
     const canaryStatus = isAIAssistantEnabled(authResult.tenantId, userId);

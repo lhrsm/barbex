@@ -1,13 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { verifyTenantAdminIdentity } from "./tenant-admin-auth";
+import {
+  verifyTenantAdminIdentity,
+  verifyTenantSubscriptionEligibility,
+} from "./tenant-admin-auth";
 import {
   checkRateLimit,
   checkDistributedRateLimit,
   checkDynamicModuleAvailability,
   sanitizeAndValidateInput,
   isAIAssistantEnabled,
+  acquireAIConcurrencySlot,
+  releaseAIConcurrencySlot,
 } from "./guardrails.server";
 import { retrieveRelevantTutorials } from "./knowledge.server";
 import { getAIProvider } from "./provider.server";
@@ -141,6 +146,33 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       );
     }
 
+    // 2.1. Validação Dinâmica de Elegibilidade Comercial de Assinatura (Fase R2E.26E.22N.37B)
+    const eligibilityResult = await verifyTenantSubscriptionEligibility(
+      authResult.tenantId,
+      authSupabase
+    );
+    if (!eligibilityResult.eligible) {
+      logAITelemetry({
+        event: "AI_SUBSCRIPTION_BLOCKED",
+        timestamp: nowIso,
+        correlationId,
+        outcome: "BLOCKED",
+        reasonCode: eligibilityResult.errorCode || "SUBSCRIPTION_INELIGIBLE",
+        tenantIdMasked: maskIdentifier(authResult.tenantId),
+        userIdMasked: maskIdentifier(userId),
+      });
+
+      return {
+        success: false,
+        reply:
+          eligibilityResult.errorMessage ||
+          "O Assistente Institucional é exclusivo para barbearias com assinatura ativa nos planos Starter, Pro ou Elite (/subscription).",
+        sources: [],
+        error: eligibilityResult.errorCode || "SUBSCRIPTION_INELIGIBLE",
+        timestamp: nowIso,
+      };
+    }
+
     // 3. Verificação do Kill Switch Global e Isolamento Canário por Tenant e Usuário
     const canaryStatus = isAIAssistantEnabled(authResult.tenantId, userId);
     if (!canaryStatus.enabled) {
@@ -250,6 +282,31 @@ export const askAIAssistant = createServerFn({ method: "POST" })
     };
 
     // 7. Geração de Resposta via Provedor (Groq Free Tier / Mock Determinístico)
+    // 7.1. Controle Concorrente de Semáforo (máx 4 requisições simultâneas)
+    const concurrencySlot = acquireAIConcurrencySlot();
+    if (!concurrencySlot.acquired) {
+      logAITelemetry({
+        event: "AI_RATE_LIMIT_BLOCKED",
+        timestamp: new Date().toISOString(),
+        correlationId,
+        outcome: "BLOCKED",
+        reasonCode: "CONCURRENCY_LIMIT_EXCEEDED",
+        tenantIdMasked: maskIdentifier(authResult.tenantId),
+        userIdMasked: maskIdentifier(userId),
+      });
+
+      return {
+        success: false,
+        reply:
+          concurrencySlot.reason ||
+          "O assistente atingiu a capacidade concorrente máxima. Aguarde alguns instantes e tente novamente.",
+        sources: [],
+        error: "CONCURRENCY_LIMIT_EXCEEDED",
+        retryAfterSeconds: concurrencySlot.retryAfterSeconds || 5,
+        timestamp: nowIso,
+      };
+    }
+
     const provider = getAIProvider();
 
     logAITelemetry({
@@ -263,14 +320,19 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       rateLimitSource: rateLimit.source,
     });
 
-    const response = await provider.generate(
-      sanitization.cleanText,
-      relevantSources,
-      aiContext,
-      {
-        history: validatedHistory,
-      },
-    );
+    let response;
+    try {
+      response = await provider.generate(
+        sanitization.cleanText,
+        relevantSources,
+        aiContext,
+        {
+          history: validatedHistory,
+        },
+      );
+    } finally {
+      releaseAIConcurrencySlot();
+    }
 
     const latencyMs = Date.now() - startTime;
 

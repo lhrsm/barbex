@@ -30,13 +30,46 @@ interface RateRecord {
 
 const userMinuteWindowMap = new Map<string, RateRecord>();
 const tenantHourWindowMap = new Map<string, RateRecord>();
+const tenantDayWindowMap = new Map<string, RateRecord>();
 let globalMinuteTimestamps: number[] = [];
 let globalDayTimestamps: number[] = [];
 
 const MAX_REQUESTS_PER_MINUTE_USER = 5;
 const MAX_REQUESTS_PER_HOUR_TENANT = 30;
+const MAX_REQUESTS_PER_DAY_TENANT = 20; // Limite diário por tenant para proteção do free tier Groq
 const MAX_REQUESTS_PER_MINUTE_GLOBAL = 20; // 33% de margem abaixo do limite Groq Free Tier (30 RPM)
 const MAX_REQUESTS_PER_DAY_GLOBAL = 800; // 20% de margem abaixo do limite Groq Free Tier (1000 RPD)
+
+// Concurrency Semaphore (Proteção contra saturação do limite de 8.000 TPM da Groq)
+// Máximo de 4 requisições simultâneas reservando ~1.800 tokens cada = 7.200 TPM (< 8.000 TPM)
+const MAX_CONCURRENT_AI_REQUESTS = 4;
+let activeAIRequestsCount = 0;
+
+export function acquireAIConcurrencySlot(): { acquired: boolean; retryAfterSeconds?: number; reason?: string } {
+  if (activeAIRequestsCount >= MAX_CONCURRENT_AI_REQUESTS) {
+    return {
+      acquired: false,
+      retryAfterSeconds: 5,
+      reason: `O assistente atingiu a capacidade concorrente máxima (${MAX_CONCURRENT_AI_REQUESTS} consultas simultâneas). Aguarde alguns instantes e tente novamente.`,
+    };
+  }
+  activeAIRequestsCount++;
+  return { acquired: true };
+}
+
+export function releaseAIConcurrencySlot(): void {
+  if (activeAIRequestsCount > 0) {
+    activeAIRequestsCount--;
+  }
+}
+
+export function getActiveAIConcurrencyCount(): number {
+  return activeAIRequestsCount;
+}
+
+export function resetAIConcurrencyForTesting(): void {
+  activeAIRequestsCount = 0;
+}
 
 /**
  * Limpa registros expirados para evitar acúmulo de memória
@@ -55,6 +88,11 @@ function cleanupOldRecords() {
   for (const [key, record] of tenantHourWindowMap.entries()) {
     record.timestamps = record.timestamps.filter((t) => t > oneHourAgo);
     if (record.timestamps.length === 0) tenantHourWindowMap.delete(key);
+  }
+
+  for (const [key, record] of tenantDayWindowMap.entries()) {
+    record.timestamps = record.timestamps.filter((t) => t > oneDayAgo);
+    if (record.timestamps.length === 0) tenantDayWindowMap.delete(key);
   }
 
   globalMinuteTimestamps = globalMinuteTimestamps.filter((t) => t > oneMinuteAgo);
@@ -118,12 +156,29 @@ export function checkRateLimit(userId: string, tenantId: string): RateLimitResul
     };
   }
 
-  // Registra a nova requisição em todos os 4 níveis de janela
+  // 5. Limite Diário por Barbearia/Tenant (20 req/dia) - Proteção da cota multi-tenant (Fase 37B)
+  const tenantDayRecord = tenantDayWindowMap.get(tenantId) || { timestamps: [] };
+  const tenantDayRecent = tenantDayRecord.timestamps.filter((t) => t > now - 24 * 60 * 60 * 1000);
+
+  if (tenantDayRecent.length >= MAX_REQUESTS_PER_DAY_TENANT) {
+    const oldest = tenantDayRecent[0];
+    const retryAfterSeconds = Math.max(1, Math.ceil((oldest + 24 * 60 * 60 * 1000 - now) / 1000));
+    return {
+      allowed: false,
+      retryAfterSeconds,
+      reason: `A cota diária da barbearia atingiu o limite de segurança (${MAX_REQUESTS_PER_DAY_TENANT} consultas/dia). Tente novamente amanhã.`,
+    };
+  }
+
+  // Registra a nova requisição em todos os níveis de janela
   userRecent.push(now);
   userMinuteWindowMap.set(userId, { timestamps: userRecent });
 
   tenantRecent.push(now);
   tenantHourWindowMap.set(tenantId, { timestamps: tenantRecent });
+
+  tenantDayRecent.push(now);
+  tenantDayWindowMap.set(tenantId, { timestamps: tenantDayRecent });
 
   globalMinuteTimestamps.push(now);
   globalDayTimestamps.push(now);
@@ -137,6 +192,7 @@ export function checkRateLimit(userId: string, tenantId: string): RateLimitResul
 export function resetRateLimitsForTesting() {
   userMinuteWindowMap.clear();
   tenantHourWindowMap.clear();
+  tenantDayWindowMap.clear();
   globalMinuteTimestamps = [];
   globalDayTimestamps = [];
 }
@@ -475,11 +531,12 @@ export function evaluateTenantAIAccess(
   }
 
   // 2. Se modo canário estrito estiver explicitamente ativado via BARBEX_AI_CANARY_MODE='true'
-  // OU se allowlists canário de alvo único estiverem configuradas E BARBEX_AI_GENERAL_RELEASE !== 'true'
+  // OU se allowlists canário de alvo único estiverem configuradas E BARBEX_AI_GENERAL_RELEASE !== 'true' E BARBEX_AI_GENERAL_AVAILABILITY !== 'true'
   const isCanaryMode =
-    process.env.BARBEX_AI_CANARY_MODE === "true" ||
-    (Boolean(process.env.BARBEX_AI_CANARY_TENANT_IDS) &&
-      process.env.BARBEX_AI_GENERAL_RELEASE !== "true");
+    (process.env.BARBEX_AI_CANARY_MODE === "true" ||
+      Boolean(process.env.BARBEX_AI_CANARY_TENANT_IDS)) &&
+    process.env.BARBEX_AI_GENERAL_RELEASE !== "true" &&
+    process.env.BARBEX_AI_GENERAL_AVAILABILITY !== "true";
 
   if (isCanaryMode) {
     return evaluateCanaryAccess(tenantId, userId);
@@ -506,6 +563,22 @@ export function evaluateTenantAIAccess(
 
   const cleanTenantId = tenantId.trim().toLowerCase();
   const cleanUserId = userId.trim().toLowerCase();
+
+  // 3.1. Verificação de Bloqueio Individual de Barbearia (Kill Switch Granular - Fase 37B)
+  const blockedTenantsRaw = process.env.BARBEX_AI_BLOCKED_TENANT_IDS?.trim();
+  if (blockedTenantsRaw) {
+    const blockedTenants = blockedTenantsRaw
+      .split(",")
+      .map((t) => t.trim().toLowerCase());
+    if (blockedTenants.includes(cleanTenantId)) {
+      return {
+        allowed: false,
+        status: "tenant_blocked",
+        reasonCode: "TENANT_BLOCKED",
+        reason: "O acesso ao Assistente Institucional está temporariamente suspenso para este estabelecimento.",
+      };
+    }
+  }
 
   // 4. Allowlist Opcional de Barbearias (BARBEX_AI_ALLOWED_TENANT_IDS)
   const allowedTenantsRaw = process.env.BARBEX_AI_ALLOWED_TENANT_IDS?.trim();
@@ -589,9 +662,10 @@ export function isAIAssistantEnabled(
 
   if (envFlag === "active" || envFlag === "true") {
     const isCanaryMode =
-      process.env.BARBEX_AI_CANARY_MODE === "true" ||
-      (Boolean(process.env.BARBEX_AI_CANARY_TENANT_IDS) &&
-        process.env.BARBEX_AI_GENERAL_RELEASE !== "true");
+      (process.env.BARBEX_AI_CANARY_MODE === "true" ||
+        Boolean(process.env.BARBEX_AI_CANARY_TENANT_IDS)) &&
+      process.env.BARBEX_AI_GENERAL_RELEASE !== "true" &&
+      process.env.BARBEX_AI_GENERAL_AVAILABILITY !== "true";
 
     if (isCanaryMode) {
       const tenantParsed = parseStrictSingleCanaryAllowlist(

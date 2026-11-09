@@ -215,3 +215,228 @@ export async function verifyTenantAdminIdentity(
   }
 }
 
+export interface TenantSubscriptionEligibilityResult {
+  eligible: boolean;
+  tenantId?: string;
+  plan?: string;
+  operationalState?: string;
+  errorCode?:
+    | "INVALID_TENANT_ID"
+    | "TENANT_NOT_FOUND"
+    | "TENANT_INACTIVE"
+    | "TENANT_BLOCKED"
+    | "NO_ACTIVE_SUBSCRIPTION"
+    | "TRIAL_EXPIRED"
+    | "SUBSCRIPTION_CANCELED"
+    | "PLAN_INELIGIBLE"
+    | "MODULE_DISABLED_FOR_TENANT"
+    | "DATABASE_ERROR";
+  errorMessage?: string;
+}
+
+const ELIGIBLE_PLANS = ["starter", "pro", "elite"];
+
+/**
+ * Validador Dinâmico de Elegibilidade Comercial de Assinatura (Fase R2E.26E.22N.37B)
+ *
+ * Garante que o Assistente Institucional seja liberado exclusivamente a barbearias
+ * adimplentes com assinatura ativa nos planos Starter, Pro ou Elite.
+ *
+ * Condições Mandatórias (ALL TRUE):
+ * 1. Barbearia ativa (is_active !== false).
+ * 2. Barbearia não bloqueada (blocked_at IS NULL).
+ * 3. Barbearia não presente na blacklist individual (BARBEX_AI_BLOCKED_TENANT_IDS).
+ * 4. Direitos operacionais comprovados via resolve_tenant_entitlement ou assinaturas ativas.
+ * 5. Plano comercial efetivo em ('starter', 'pro', 'elite').
+ * 6. Sem trial expirado e sem assinatura cancelada/inadimplente.
+ */
+export async function verifyTenantSubscriptionEligibility(
+  tenantId: string | null | undefined,
+  clientOverride?: any
+): Promise<TenantSubscriptionEligibilityResult> {
+  if (!tenantId || typeof tenantId !== "string" || tenantId.trim() === "") {
+    return {
+      eligible: false,
+      errorCode: "INVALID_TENANT_ID",
+      errorMessage: "Identificador de barbearia não fornecido para validação comercial.",
+    };
+  }
+
+  const cleanTenantId = tenantId.trim().toLowerCase();
+
+  // 1. Verificação de Bloqueio Individual de Tenant via Variável de Ambiente (Kill Switch Granular)
+  const blockedTenantsRaw = process.env.BARBEX_AI_BLOCKED_TENANT_IDS?.trim();
+  if (blockedTenantsRaw) {
+    const blockedTenants = blockedTenantsRaw
+      .split(",")
+      .map((t) => t.trim().toLowerCase());
+    if (blockedTenants.includes(cleanTenantId)) {
+      return {
+        eligible: false,
+        errorCode: "TENANT_BLOCKED",
+        errorMessage: "O acesso ao Assistente Institucional está temporariamente suspenso para este estabelecimento.",
+      };
+    }
+  }
+
+  const db = clientOverride || supabase;
+
+  try {
+    // 2. Consulta à Barbearia (status de ativação e bloqueio)
+    const { data: shop, error: shopErr } = await db
+      .from("barbershops")
+      .select("id, is_active, blocked_at")
+      .eq("id", cleanTenantId)
+      .maybeSingle();
+
+    if (shopErr) {
+      return {
+        eligible: false,
+        errorCode: "DATABASE_ERROR",
+        errorMessage: `Erro ao consultar estabelecimento: ${shopErr.message}`,
+      };
+    }
+
+    if (!shop) {
+      return {
+        eligible: false,
+        errorCode: "TENANT_NOT_FOUND",
+        errorMessage: "Estabelecimento não encontrado no sistema.",
+      };
+    }
+
+    if (shop.is_active === false) {
+      return {
+        eligible: false,
+        errorCode: "TENANT_INACTIVE",
+        errorMessage: "O estabelecimento está inativo no Barbex.",
+      };
+    }
+
+    if (shop.blocked_at) {
+      return {
+        eligible: false,
+        errorCode: "TENANT_BLOCKED",
+        errorMessage: "O estabelecimento encontra-se suspenso administrativamente.",
+      };
+    }
+
+    // 3. Consulta de Direitos via RPC Canônica resolve_tenant_entitlement
+    let entitlementData: {
+      can_operate?: boolean;
+      effective_plan?: string;
+      commercial_plan?: string;
+      operational_state?: string;
+      restriction_reason?: string | null;
+      modules?: string[];
+    } | null = null;
+
+    if (typeof db.rpc === "function") {
+      try {
+        const { data: entRes, error: entErr } = await db.rpc("resolve_tenant_entitlement", {
+          _tenant_id: cleanTenantId,
+        });
+        if (!entErr && entRes) {
+          entitlementData = entRes;
+        }
+      } catch (e) {
+        // Fallback para query direta em subscriptions
+      }
+    }
+
+    // 4. Consulta direta de assinaturas e trial (para confirmação e fallback)
+    const { data: subscription } = await db
+      .from("subscriptions")
+      .select("status, plan_id, current_period_end")
+      .eq("tenant_id", cleanTenantId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // 5. Avaliação das Regras de Elegibilidade
+    if (entitlementData) {
+      // Se a RPC identificou restrição explícita
+      if (entitlementData.can_operate === false || entitlementData.operational_state === "RESTRICTED") {
+        if (subscription?.status === "canceled" || entitlementData.restriction_reason === "subscription_canceled") {
+          return {
+            eligible: false,
+            errorCode: "SUBSCRIPTION_CANCELED",
+            errorMessage: "A assinatura do seu estabelecimento está cancelada. Reative seu plano em /subscription para acessar o Assistente Institucional.",
+          };
+        }
+
+        if (entitlementData.restriction_reason === "trial_expired") {
+          return {
+            eligible: false,
+            errorCode: "TRIAL_EXPIRED",
+            errorMessage: "O período de teste gratuito do seu estabelecimento expirou. Para utilizar o Assistente Institucional, ative um plano em /subscription.",
+          };
+        }
+
+        return {
+          eligible: false,
+          errorCode: "NO_ACTIVE_SUBSCRIPTION",
+          errorMessage: "Seu estabelecimento não possui uma assinatura ativa. O Assistente Institucional é exclusivo para assinantes dos planos Starter, Pro e Elite (/subscription).",
+        };
+      }
+
+      const planName = (entitlementData.effective_plan || entitlementData.commercial_plan || "").toLowerCase();
+      if (!ELIGIBLE_PLANS.includes(planName)) {
+        return {
+          eligible: false,
+          errorCode: "PLAN_INELIGIBLE",
+          errorMessage: `O plano atual (${planName || "gratuito"}) não inclui o Assistente Institucional. Conheça os planos Starter, Pro e Elite na rota /subscription.`,
+        };
+      }
+
+      return {
+        eligible: true,
+        tenantId: cleanTenantId,
+        plan: planName,
+        operationalState: entitlementData.operational_state || "ACTIVE",
+      };
+    }
+
+    // Fallback: Avaliação direta via tabela subscriptions e profiles
+    if (subscription) {
+      const subStatus = (subscription.status || "").toLowerCase();
+      if (subStatus === "canceled") {
+        return {
+          eligible: false,
+          errorCode: "SUBSCRIPTION_CANCELED",
+          errorMessage: "A assinatura do seu estabelecimento está cancelada. Reative seu plano em /subscription para acessar o Assistente Institucional.",
+        };
+      }
+
+      if (!["active", "trialing"].includes(subStatus)) {
+        return {
+          eligible: false,
+          errorCode: "NO_ACTIVE_SUBSCRIPTION",
+          errorMessage: `Assinatura com status '${subStatus}'. O Assistente Institucional requer uma assinatura ativa (/subscription).`,
+        };
+      }
+
+      return {
+        eligible: true,
+        tenantId: cleanTenantId,
+        plan: "starter", // plano base ativo
+        operationalState: "SUBSCRIPTION_ACTIVE",
+      };
+    }
+
+    // Se nenhum entitlement nem subscription forem encontrados: FAIL-CLOSED
+    return {
+      eligible: false,
+      errorCode: "NO_ACTIVE_SUBSCRIPTION",
+      errorMessage: "Nenhuma assinatura ativa encontrada para este estabelecimento. Ative seu plano em /subscription.",
+    };
+  } catch (err: any) {
+    return {
+      eligible: false,
+      errorCode: "DATABASE_ERROR",
+      errorMessage: `Exceção durante validação de elegibilidade: ${err?.message || err}`,
+    };
+  }
+}
+
+
