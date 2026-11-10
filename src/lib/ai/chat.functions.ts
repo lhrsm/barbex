@@ -296,7 +296,6 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       tenantId: authResult.tenantId,
       userId,
       reservedTokens: worstCaseTokens,
-      supabaseClientOverride: authSupabase,
     });
 
     if (!governanceSlot.allowed) {
@@ -333,7 +332,6 @@ export const askAIAssistant = createServerFn({ method: "POST" })
           leaseId: governanceSlot.leaseId,
           tenantId: authResult.tenantId,
           status: "released",
-          supabaseClientOverride: authSupabase,
         });
       }
 
@@ -392,7 +390,6 @@ export const askAIAssistant = createServerFn({ method: "POST" })
           tenantId: authResult.tenantId,
           actualTokens,
           status: releaseStatus,
-          supabaseClientOverride: authSupabase,
         });
       }
     }
