@@ -13,6 +13,9 @@ import {
   isAIAssistantEnabled,
   acquireAIConcurrencySlot,
   releaseAIConcurrencySlot,
+  acquireAIDistributedGovernanceSlot,
+  releaseAIDistributedGovernanceSlot,
+  estimateWorstCaseTokens,
 } from "./guardrails.server";
 import { retrieveRelevantTutorials } from "./knowledge.server";
 import { getAIProvider } from "./provider.server";
@@ -282,9 +285,58 @@ export const askAIAssistant = createServerFn({ method: "POST" })
     };
 
     // 7. Geração de Resposta via Provedor (Groq Free Tier / Mock Determinístico)
-    // 7.1. Controle Concorrente de Semáforo (máx 4 requisições simultâneas)
+    // 7.1. Controle Distribuído de Concorrência, Orçamento TPM e Leases (Fase R2E.26E.22N.39)
+    const worstCaseTokens = estimateWorstCaseTokens(
+      sanitization.cleanText,
+      relevantSources,
+      validatedHistory
+    );
+
+    const governanceSlot = await acquireAIDistributedGovernanceSlot({
+      tenantId: authResult.tenantId,
+      userId,
+      reservedTokens: worstCaseTokens,
+      supabaseClientOverride: authSupabase,
+    });
+
+    if (!governanceSlot.allowed) {
+      logAITelemetry({
+        event: "AI_RATE_LIMIT_BLOCKED",
+        timestamp: new Date().toISOString(),
+        correlationId,
+        outcome: "BLOCKED",
+        reasonCode: governanceSlot.reason,
+        tenantIdMasked: maskIdentifier(authResult.tenantId),
+        userIdMasked: maskIdentifier(userId),
+      });
+
+      return {
+        success: false,
+        reply:
+          governanceSlot.reason?.includes("CONCURRENCY")
+            ? "O assistente atingiu a capacidade concorrente máxima. Aguarde alguns instantes e tente novamente."
+            : (governanceSlot.reason?.includes("TPM")
+              ? "A capacidade momentânea de processamento do assistente foi atingida. Aguarde cerca de 30 segundos antes de enviar outra pergunta."
+              : (governanceSlot.reason || "O assistente está momentaneamente com alta demanda. Tente novamente em alguns segundos.")),
+        sources: [],
+        error: governanceSlot.reason || "CONCURRENCY_LIMIT_EXCEEDED",
+        retryAfterSeconds: governanceSlot.retryAfterSeconds || 5,
+        timestamp: nowIso,
+      };
+    }
+
+    // Semáforo em memória mantido para redundância local
     const concurrencySlot = acquireAIConcurrencySlot();
     if (!concurrencySlot.acquired) {
+      if (governanceSlot.leaseId) {
+        await releaseAIDistributedGovernanceSlot({
+          leaseId: governanceSlot.leaseId,
+          tenantId: authResult.tenantId,
+          status: "released",
+          supabaseClientOverride: authSupabase,
+        });
+      }
+
       logAITelemetry({
         event: "AI_RATE_LIMIT_BLOCKED",
         timestamp: new Date().toISOString(),
@@ -332,6 +384,17 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       );
     } finally {
       releaseAIConcurrencySlot();
+      if (governanceSlot.leaseId) {
+        const actualTokens = response?.usage?.tokens || 0;
+        const releaseStatus = response?.error ? "error" : "released";
+        await releaseAIDistributedGovernanceSlot({
+          leaseId: governanceSlot.leaseId,
+          tenantId: authResult.tenantId,
+          actualTokens,
+          status: releaseStatus,
+          supabaseClientOverride: authSupabase,
+        });
+      }
     }
 
     const latencyMs = Date.now() - startTime;

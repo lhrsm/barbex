@@ -1005,3 +1005,458 @@ export async function checkDistributedRateLimit(
   };
 }
 
+// ============================================================================
+// HARDENING DE GOVERNANÇA, CONCORRÊNCIA E ORÇAMENTO TPM DISTRIBUÍDOS (FASE 39)
+// ============================================================================
+
+export interface DistributedGovernanceAcquireParams {
+  tenantId: string;
+  userId: string;
+  reservedTokens?: number;
+  maxConcurrency?: number;
+  maxGlobalTPM?: number;
+  maxTenantDay?: number;
+  maxTenantHour?: number;
+  maxUserMin?: number;
+  maxGlobalMin?: number;
+  maxGlobalDay?: number;
+  leaseTtlSeconds?: number;
+  supabaseClientOverride?: any;
+}
+
+export interface DistributedGovernanceAcquireResult {
+  allowed: boolean;
+  leaseId?: string;
+  reservedTokens?: number;
+  expiresAt?: string;
+  currentConcurrency?: number;
+  retryAfterSeconds?: number;
+  reason?: string;
+  source: "rpc" | "memory_fallback";
+  details?: Record<string, unknown>;
+}
+
+export interface DistributedGovernanceReleaseParams {
+  leaseId: string;
+  tenantId: string;
+  actualTokens?: number | null;
+  status?: "released" | "expired" | "error";
+  supabaseClientOverride?: any;
+}
+
+export interface DistributedGovernanceReleaseResult {
+  released: boolean;
+  leaseId?: string;
+  reservedTokens?: number;
+  actualTokens?: number | null;
+  tokenDelta?: number;
+  alreadyProcessed?: boolean;
+  reason?: string;
+  source: "rpc" | "memory_fallback";
+}
+
+interface InMemoryLease {
+  leaseId: string;
+  tenantId: string;
+  userId: string;
+  reservedTokens: number;
+  actualTokens: number | null;
+  status: "active" | "released" | "expired";
+  expiresAt: number;
+  createdAt: number;
+}
+
+const inMemoryLeasesMap = new Map<string, InMemoryLease>();
+let inMemoryMinuteConsumedTokens = 0;
+let inMemoryMinuteBucketTimestamp = Math.floor(Date.now() / 60000) * 60000;
+
+function cleanupInMemoryLeases() {
+  const now = Date.now();
+  for (const [id, lease] of inMemoryLeasesMap.entries()) {
+    if (lease.status === "active" && lease.expiresAt <= now) {
+      lease.status = "expired";
+    }
+    if (lease.expiresAt < now - 3600000) {
+      inMemoryLeasesMap.delete(id);
+    }
+  }
+}
+
+/**
+ * Estimativa conservadora de pior caso de tokens para a chamada
+ * Considera: Prompt de Sistema + Fontes/Tutoriais + Histórico + Pergunta + MaxTokens de Saída
+ */
+export function estimateWorstCaseTokens(
+  question: string,
+  sources: Array<{ title?: string; steps?: string[]; notes?: string }>,
+  history?: Array<{ role: string; content: string }>,
+  maxOutputTokens: number = 600
+): number {
+  const systemPromptChars = 4000;
+  const questionChars = (question || "").length;
+  const historyChars = (history || []).reduce((acc, h) => acc + (h.content || "").length, 0);
+  const sourcesChars = (sources || []).reduce((acc, s) => {
+    const stepsLen = (s.steps || []).join(" ").length;
+    return acc + (s.title || "").length + stepsLen + (s.notes || "").length;
+  }, 0);
+
+  const totalChars = systemPromptChars + questionChars + historyChars + sourcesChars;
+  const inputTokensEst = Math.ceil(totalChars / 3.8);
+
+  // Piso seguro de 1800 e teto de 3500 para proteção contra estouro de TPM (8.000 teto Groq)
+  return Math.max(1800, Math.min(3500, inputTokensEst + maxOutputTokens));
+}
+
+/**
+ * Aquisição atômica em memória (para testes unitários sem PostgreSQL ativo)
+ */
+function acquireInMemoryGovernanceSlot(
+  params: DistributedGovernanceAcquireParams
+): DistributedGovernanceAcquireResult {
+  cleanupInMemoryLeases();
+  cleanupOldRecords();
+
+  const now = Date.now();
+  const currentMinuteBucket = Math.floor(now / 60000) * 60000;
+  if (currentMinuteBucket !== inMemoryMinuteBucketTimestamp) {
+    inMemoryMinuteBucketTimestamp = currentMinuteBucket;
+    inMemoryMinuteConsumedTokens = 0;
+  }
+
+  const {
+    tenantId,
+    userId,
+    reservedTokens = 2200,
+    maxConcurrency = 4,
+    maxGlobalTPM = 6000,
+    leaseTtlSeconds = 45,
+  } = params;
+
+  // 1. Concurrency Check (P1-01)
+  let activeConcurrency = 0;
+  let activeReservedTokens = 0;
+  for (const lease of inMemoryLeasesMap.values()) {
+    if (lease.status === "active" && lease.expiresAt > now) {
+      activeConcurrency++;
+      activeReservedTokens += lease.reservedTokens;
+    }
+  }
+
+  if (activeConcurrency >= maxConcurrency) {
+    return {
+      allowed: false,
+      reason: "CONCURRENCY_LIMIT_EXCEEDED",
+      retryAfterSeconds: 5,
+      currentConcurrency: activeConcurrency,
+      source: "memory_fallback",
+    };
+  }
+
+  // 2. TPM Check (P1-02)
+  if ((inMemoryMinuteConsumedTokens + activeReservedTokens + reservedTokens) > maxGlobalTPM) {
+    const secondsToNextMin = Math.max(1, 60 - Math.floor((now % 60000) / 1000));
+    return {
+      allowed: false,
+      reason: "TPM_LIMIT_EXCEEDED",
+      retryAfterSeconds: secondsToNextMin,
+      source: "memory_fallback",
+      details: {
+        currentTpm: inMemoryMinuteConsumedTokens + activeReservedTokens,
+        reservedRequested: reservedTokens,
+        limit: maxGlobalTPM,
+      },
+    };
+  }
+
+  // 3. Conventional Rate Limits (including Tenant Day - P2-01)
+  const rateLimitResult = checkRateLimit(userId, tenantId);
+  if (!rateLimitResult.allowed) {
+    return {
+      allowed: false,
+      reason: rateLimitResult.reason || "RATE_LIMIT_EXCEEDED",
+      retryAfterSeconds: rateLimitResult.retryAfterSeconds || 60,
+      source: "memory_fallback",
+    };
+  }
+
+  // 4. Criação da lease com TTL
+  const leaseId = `lease-${now}-${Math.random().toString(36).slice(2, 8)}`;
+  const expiresAt = now + leaseTtlSeconds * 1000;
+
+  inMemoryLeasesMap.set(leaseId, {
+    leaseId,
+    tenantId,
+    userId,
+    reservedTokens,
+    actualTokens: null,
+    status: "active",
+    expiresAt,
+    createdAt: now,
+  });
+
+  return {
+    allowed: true,
+    leaseId,
+    reservedTokens,
+    expiresAt: new Date(expiresAt).toISOString(),
+    currentConcurrency: activeConcurrency + 1,
+    source: "memory_fallback",
+  };
+}
+
+/**
+ * Liberação de slot em memória (para testes unitários)
+ */
+function releaseInMemoryGovernanceSlot(
+  params: DistributedGovernanceReleaseParams
+): DistributedGovernanceReleaseResult {
+  const { leaseId, tenantId, actualTokens = null, status = "released" } = params;
+  const lease = inMemoryLeasesMap.get(leaseId);
+
+  if (!lease) {
+    return {
+      released: false,
+      reason: "LEASE_NOT_FOUND",
+      source: "memory_fallback",
+    };
+  }
+
+  if (lease.tenantId !== tenantId) {
+    return {
+      released: false,
+      reason: "TENANT_MISMATCH",
+      source: "memory_fallback",
+    };
+  }
+
+  if (lease.status !== "active") {
+    return {
+      released: true,
+      alreadyProcessed: true,
+      source: "memory_fallback",
+    };
+  }
+
+  lease.status = status;
+  lease.actualTokens = actualTokens;
+
+  let tokenDelta = 0;
+  if (actualTokens !== null && actualTokens >= 0) {
+    tokenDelta = actualTokens - lease.reservedTokens;
+    inMemoryMinuteConsumedTokens = Math.max(0, inMemoryMinuteConsumedTokens + actualTokens);
+  }
+
+  return {
+    released: true,
+    leaseId,
+    reservedTokens: lease.reservedTokens,
+    actualTokens,
+    tokenDelta,
+    source: "memory_fallback",
+  };
+}
+
+/**
+ * Aquisição Distribuída de Slot de Governança (Concorrência, TPM e Rate Limits)
+ *
+ * Invoca a RPC public.ai_governance_acquire_slot no PostgreSQL.
+ * Não mantém transações abertas. Em caso de sucesso, retorna lease_id com TTL de 45s.
+ */
+export async function acquireAIDistributedGovernanceSlot(
+  params: DistributedGovernanceAcquireParams
+): Promise<DistributedGovernanceAcquireResult> {
+  const {
+    tenantId,
+    userId,
+    reservedTokens = 2200,
+    maxConcurrency = 4,
+    maxGlobalTPM = 6000,
+    maxTenantDay = 20,
+    maxTenantHour = 30,
+    maxUserMin = 5,
+    maxGlobalMin = 20,
+    maxGlobalDay = 800,
+    leaseTtlSeconds = 45,
+    supabaseClientOverride,
+  } = params;
+
+  let client = supabaseClientOverride;
+  if (!client) {
+    try {
+      client = supabaseAdmin;
+    } catch {
+      client = null;
+    }
+  }
+
+  if (client && typeof client.rpc === "function") {
+    try {
+      const { data, error } = await client.rpc("ai_governance_acquire_slot", {
+        p_tenant_id: tenantId,
+        p_user_id: userId,
+        p_reserved_tokens: reservedTokens,
+        p_max_concurrency: maxConcurrency,
+        p_max_global_tpm: maxGlobalTPM,
+        p_max_tenant_day: maxTenantDay,
+        p_max_tenant_hour: maxTenantHour,
+        p_max_user_min: maxUserMin,
+        p_max_global_min: maxGlobalMin,
+        p_max_global_day: maxGlobalDay,
+        p_lease_ttl_seconds: leaseTtlSeconds,
+      });
+
+      if (error) {
+        return {
+          allowed: false,
+          reason: `GOVERNANCE_RPC_ERROR: ${error.message || "Erro na RPC de governança"}`,
+          source: "rpc",
+        };
+      }
+
+      if (!data || typeof data !== "object") {
+        return {
+          allowed: false,
+          reason: "GOVERNANCE_RPC_INVALID_RESPONSE",
+          source: "rpc",
+        };
+      }
+
+      if (data.allowed === false) {
+        return {
+          allowed: false,
+          retryAfterSeconds: data.retry_after_seconds || 5,
+          reason: data.reason || "GOVERNANCE_LIMIT_EXCEEDED",
+          source: "rpc",
+          details: data,
+        };
+      }
+
+      if (data.allowed === true && data.lease_id) {
+        return {
+          allowed: true,
+          leaseId: data.lease_id,
+          reservedTokens: data.reserved_tokens || reservedTokens,
+          expiresAt: data.expires_at,
+          currentConcurrency: data.current_concurrency,
+          source: "rpc",
+          details: data,
+        };
+      }
+
+      return {
+        allowed: false,
+        reason: "GOVERNANCE_RPC_UNEXPECTED_FORMAT",
+        source: "rpc",
+      };
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "test" && !supabaseClientOverride) {
+        return acquireInMemoryGovernanceSlot(params);
+      }
+      return {
+        allowed: false,
+        reason: `GOVERNANCE_RPC_EXCEPTION: ${err?.message || String(err)}`,
+        source: "rpc",
+      };
+    }
+  }
+
+  if (process.env.NODE_ENV === "test") {
+    return acquireInMemoryGovernanceSlot(params);
+  }
+
+  return {
+    allowed: false,
+    reason: "GOVERNANCE_CLIENT_UNAVAILABLE",
+    source: "rpc",
+  };
+}
+
+/**
+ * Liberação Distribuída de Slot e Reconciliação Real de Tokens (Gate 2 e 3)
+ *
+ * Invoca public.ai_governance_release_slot atomicamente no PostgreSQL.
+ * Atualiza o consumo real informado pelo provedor e encerra a lease.
+ */
+export async function releaseAIDistributedGovernanceSlot(
+  params: DistributedGovernanceReleaseParams
+): Promise<DistributedGovernanceReleaseResult> {
+  const {
+    leaseId,
+    tenantId,
+    actualTokens = null,
+    status = "released",
+    supabaseClientOverride,
+  } = params;
+
+  let client = supabaseClientOverride;
+  if (!client) {
+    try {
+      client = supabaseAdmin;
+    } catch {
+      client = null;
+    }
+  }
+
+  if (client && typeof client.rpc === "function") {
+    try {
+      const { data, error } = await client.rpc("ai_governance_release_slot", {
+        p_lease_id: leaseId,
+        p_tenant_id: tenantId,
+        p_actual_tokens: actualTokens,
+        p_status: status,
+      });
+
+      if (error) {
+        return {
+          released: false,
+          reason: `GOVERNANCE_RELEASE_RPC_ERROR: ${error.message || "Erro ao liberar lease"}`,
+          source: "rpc",
+        };
+      }
+
+      if (data && typeof data === "object") {
+        return {
+          released: data.released === true,
+          leaseId: data.lease_id || leaseId,
+          reservedTokens: data.reserved_tokens,
+          actualTokens: data.actual_tokens,
+          tokenDelta: data.token_delta,
+          alreadyProcessed: data.already_processed === true,
+          source: "rpc",
+        };
+      }
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "test" && !supabaseClientOverride) {
+        return releaseInMemoryGovernanceSlot(params);
+      }
+      return {
+        released: false,
+        reason: `GOVERNANCE_RELEASE_EXCEPTION: ${err?.message || String(err)}`,
+        source: "rpc",
+      };
+    }
+  }
+
+  if (process.env.NODE_ENV === "test") {
+    return releaseInMemoryGovernanceSlot(params);
+  }
+
+  return {
+    released: false,
+    reason: "GOVERNANCE_CLIENT_UNAVAILABLE",
+    source: "rpc",
+  };
+}
+
+/**
+ * Reset de governança distribuída para ambiente de testes
+ */
+export function resetDistributedGovernanceForTesting(): void {
+  inMemoryLeasesMap.clear();
+  inMemoryMinuteConsumedTokens = 0;
+  inMemoryMinuteBucketTimestamp = Math.floor(Date.now() / 60000) * 60000;
+  resetAIConcurrencyForTesting();
+  resetRateLimitsForTesting();
+}
+
+
