@@ -336,7 +336,7 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       model: provider.name,
       tenantIdMasked: maskIdentifier(authResult.tenantId),
       userIdMasked: maskIdentifier(userId),
-      rateLimitSource: rateLimit.source,
+      rateLimitSource: governanceSlot.source,
     });
 
     let response;
