@@ -225,39 +225,8 @@ export const askAIAssistant = createServerFn({ method: "POST" })
       };
     }
 
-    // 4. Verificação de Rate Limiting Distribuído (RPC PostgreSQL + salvaguarda em memória)
-    const rateLimit = await checkDistributedRateLimit(authResult.tenantId, userId);
-    if (!rateLimit.allowed) {
-      logAITelemetry({
-        event: "AI_RATE_LIMIT_BLOCKED",
-        timestamp: nowIso,
-        correlationId,
-        outcome: "BLOCKED",
-        reasonCode: rateLimit.reason,
-        rateLimitSource: rateLimit.source,
-        tenantIdMasked: maskIdentifier(authResult.tenantId),
-        userIdMasked: maskIdentifier(userId),
-      });
-
-      const isInternalRpcError =
-        rateLimit.reason?.startsWith("RATE_LIMIT_RPC_") ||
-        rateLimit.reason === "RATE_LIMIT_CLIENT_UNAVAILABLE";
-
-      const friendlyReply = isInternalRpcError
-        ? "O serviço de validação de cotas do assistente está temporariamente instável. Por segurança, tente novamente em instantes."
-        : (rateLimit.reason || "Limite de consultas atingido. Aguarde alguns instantes.");
-
-      return {
-        success: false,
-        reply: friendlyReply,
-        sources: [],
-        error: isInternalRpcError
-          ? (rateLimit.reason || "RATE_LIMIT_UNAVAILABLE")
-          : "RATE_LIMIT_EXCEEDED",
-        retryAfterSeconds: rateLimit.retryAfterSeconds,
-        timestamp: nowIso,
-      };
-    }
+    // 4. Governança, Concorrência e Orçamento de Tokens são executados atomicamente no Step 7.1
+    // (Consolidado na RPC public.ai_governance_acquire_slot para eliminar contagem duplicada e vazamento de leases)
 
     // 5. Recuperação de Conhecimento na Central de Ajuda com Resolução Contextual
     const relevantSources = await retrieveRelevantTutorials(

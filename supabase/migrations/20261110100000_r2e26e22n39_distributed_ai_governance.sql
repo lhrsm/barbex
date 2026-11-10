@@ -404,7 +404,7 @@ BEGIN
 END;
 $$;
 
--- 5. Atualização da RPC legado check_and_increment_ai_rate_limit para compatibilidade
+-- 5. Função RPC legada check_and_increment_ai_rate_limit (preservada para backward compatibility sem criar leases)
 CREATE OR REPLACE FUNCTION public.check_and_increment_ai_rate_limit(
   p_tenant_id UUID,
   p_user_id UUID,
@@ -418,20 +418,107 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_min_bucket TIMESTAMPTZ := date_trunc('minute', now());
+  v_hour_bucket TIMESTAMPTZ := date_trunc('hour', now());
+  v_day_bucket TIMESTAMPTZ := date_trunc('day', now());
+  v_user_count INT;
+  v_tenant_count INT;
+  v_global_min_count INT;
+  v_global_day_count INT;
+  v_sentinel_tenant UUID := '00000000-0000-0000-0000-000000000000'::uuid;
+  v_sentinel_user UUID := '00000000-0000-0000-0000-000000000000'::uuid;
 BEGIN
-  -- Delega para ai_governance_acquire_slot preservando a assinatura e formato de retorno legado
-  RETURN public.ai_governance_acquire_slot(
-    p_tenant_id := p_tenant_id,
-    p_user_id := p_user_id,
-    p_reserved_tokens := p_estimated_tokens,
-    p_max_concurrency := 4,
-    p_max_global_tpm := 6000,
-    p_max_tenant_day := 20,
-    p_max_tenant_hour := p_max_per_hour,
-    p_max_user_min := p_max_per_min,
-    p_max_global_min := p_max_global_per_min,
-    p_max_global_day := p_max_global_per_day,
-    p_lease_ttl_seconds := 45
+  IF p_tenant_id IS NULL OR p_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'INVALID_IDENTIFIERS',
+      'error', 'tenant_id and user_id are strictly required'
+    );
+  END IF;
+
+  -- 1. Controle Global por Minuto
+  INSERT INTO public.ai_rate_limits (tenant_id, user_id, window_bucket, window_type, request_count, estimated_tokens)
+  VALUES (v_sentinel_tenant, v_sentinel_user, v_min_bucket, 'global_min', 1, p_estimated_tokens)
+  ON CONFLICT (tenant_id, user_id, window_type, window_bucket)
+  DO UPDATE SET 
+    request_count = public.ai_rate_limits.request_count + 1,
+    estimated_tokens = public.ai_rate_limits.estimated_tokens + EXCLUDED.estimated_tokens
+  RETURNING request_count INTO v_global_min_count;
+
+  IF v_global_min_count > p_max_global_per_min THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'GLOBAL_RATE_LIMIT_EXCEEDED',
+      'retry_after_seconds', GREATEST(1, (60 - EXTRACT(SECOND FROM now()))::int),
+      'current', v_global_min_count,
+      'limit', p_max_global_per_min
+    );
+  END IF;
+
+  -- 2. Controle Global por Dia
+  INSERT INTO public.ai_rate_limits (tenant_id, user_id, window_bucket, window_type, request_count, estimated_tokens)
+  VALUES (v_sentinel_tenant, v_sentinel_user, v_day_bucket, 'global_day', 1, p_estimated_tokens)
+  ON CONFLICT (tenant_id, user_id, window_type, window_bucket)
+  DO UPDATE SET 
+    request_count = public.ai_rate_limits.request_count + 1,
+    estimated_tokens = public.ai_rate_limits.estimated_tokens + EXCLUDED.estimated_tokens
+  RETURNING request_count INTO v_global_day_count;
+
+  IF v_global_day_count > p_max_global_per_day THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'GLOBAL_DAILY_LIMIT_EXCEEDED',
+      'retry_after_seconds', 3600,
+      'current', v_global_day_count,
+      'limit', p_max_global_per_day
+    );
+  END IF;
+
+  -- 3. Controle por Tenant / Hora
+  INSERT INTO public.ai_rate_limits (tenant_id, user_id, window_bucket, window_type, request_count, estimated_tokens)
+  VALUES (p_tenant_id, v_sentinel_user, v_hour_bucket, 'tenant_hour', 1, p_estimated_tokens)
+  ON CONFLICT (tenant_id, user_id, window_type, window_bucket)
+  DO UPDATE SET 
+    request_count = public.ai_rate_limits.request_count + 1,
+    estimated_tokens = public.ai_rate_limits.estimated_tokens + EXCLUDED.estimated_tokens
+  RETURNING request_count INTO v_tenant_count;
+
+  IF v_tenant_count > p_max_per_hour THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'TENANT_RATE_LIMIT_EXCEEDED',
+      'retry_after_seconds', GREATEST(1, (3600 - (EXTRACT(MINUTE FROM now())::int * 60 + EXTRACT(SECOND FROM now())::int))),
+      'current', v_tenant_count,
+      'limit', p_max_per_hour
+    );
+  END IF;
+
+  -- 4. Controle por Usuário / Minuto
+  INSERT INTO public.ai_rate_limits (tenant_id, user_id, window_bucket, window_type, request_count, estimated_tokens)
+  VALUES (p_tenant_id, p_user_id, v_min_bucket, 'user_min', 1, p_estimated_tokens)
+  ON CONFLICT (tenant_id, user_id, window_type, window_bucket)
+  DO UPDATE SET 
+    request_count = public.ai_rate_limits.request_count + 1,
+    estimated_tokens = public.ai_rate_limits.estimated_tokens + EXCLUDED.estimated_tokens
+  RETURNING request_count INTO v_user_count;
+
+  IF v_user_count > p_max_per_min THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'USER_RATE_LIMIT_EXCEEDED',
+      'retry_after_seconds', GREATEST(1, (60 - EXTRACT(SECOND FROM now()))::int),
+      'current', v_user_count,
+      'limit', p_max_per_min
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'user_minute_count', v_user_count,
+    'tenant_hour_count', v_tenant_count,
+    'global_minute_count', v_global_min_count,
+    'global_day_count', v_global_day_count
   );
 END;
 $$;
